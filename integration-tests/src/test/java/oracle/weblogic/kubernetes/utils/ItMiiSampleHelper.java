@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -48,11 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItMiiSampleHelper {
 
-  private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
-      + "/model-in-image-sample-work-dir";
-  private static final String MII_SAMPLES_SCRIPT =
-      "../operator/integration-tests/model-in-image/run-test.sh";
-  private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
+  private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
+  private final String currentDateTime = getDateAndTimeStamp();
+  private final String successSearchString = "Finished without errors";
 
   private String opNamespace = null;
   private String domainNamespace = null;
@@ -91,7 +90,6 @@ public class ItMiiSampleHelper {
     logger = getLogger();
     domainType = domainTypeParam;
     imageType = imageTypeParam;
-
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -108,13 +106,16 @@ public class ItMiiSampleHelper {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
+    String miiSampleWorkDir =
+        RESULTS_ROOT + "/" + domainNamespace + "/model-in-image-sample-work-dir";
+
     // env variables to override default values in sample scripts
     envMap = new HashMap<>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
-    envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
+    envMap.put("WORKDIR", miiSampleWorkDir);
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
@@ -213,7 +214,7 @@ public class ItMiiSampleHelper {
         assertImageExistsAndPushIfNeeded();
 
       } else {
-        String command = MII_SAMPLES_SCRIPT
+        String command = miiSampleScript
             + " "
             + arg
             + (domainType == DomainType.JRF ? " -jrf " : "");
@@ -229,7 +230,7 @@ public class ItMiiSampleHelper {
             result != null
                 && result.exitValue() == 0
                 && result.stdout() != null
-                && result.stdout().contains(SUCCESS_SEARCH_STRING);
+                && result.stdout().contains(successSearchString);
 
         String outStr = errString;
         outStr += ", domainType=" + domainType + "\n";
@@ -313,12 +314,6 @@ public class ItMiiSampleHelper {
    */
   public void callCheckMiiSampleSource(String args,
                                               String errString) {
-    /*
-    final String baseImageNameKey = "BASE_IMAGE_NAME";
-    envMap.remove(baseImageNameKey);
-    execTestScriptAndAssertSuccess(domainType, args, errString);
-    envMap.put(baseImageNameKey, WEBLOGIC_IMAGE_NAME);*/
-
     final String baseImageNameKey = "BASE_IMAGE_NAME";
     final String origImageName = envMap.get(baseImageNameKey);
     try {
@@ -346,7 +341,7 @@ public class ItMiiSampleHelper {
     if (domainType.equals(DomainType.JRF) && envMap != null) {
       logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
-          .command(MII_SAMPLES_SCRIPT + " -precleandb")
+          .command(miiSampleScript + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
     }
