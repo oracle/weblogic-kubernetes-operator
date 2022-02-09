@@ -87,6 +87,13 @@ docker version
 
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}
+#export IT_TEST=**/It*
+#export MAVEN_PROFILE_NAME=wko-okd-fmw-cert
+#export PARALLEL_RUN=true
+
+if [[ -z "${WORKSPACE}" ]]; then
+  export WORKSPACE=${PWD}
+fi
 
 cd $WORKSPACE
 [ -d ${WORKSPACE}/logdir ] && rm -rf ${WORKSPACE}/logdir && mkdir -p ${WORKSPACE}/logdir
@@ -97,4 +104,4 @@ echo "Info: Run tests.."
 echo " PWD is: ${PWD}"
 chmod 777 ${WORKSPACE}/okdtest.sh
 
-sh -x ./okdtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME}
+sh -x ./okdtest.sh -t "${IT_TEST}" -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME}
