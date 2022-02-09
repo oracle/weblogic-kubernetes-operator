@@ -282,6 +282,14 @@ class WdtUpdateFilterCase(unittest.TestCase):
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
+  def test_isAdministrationPortEnabledForDomain(self):
+    model = self.getModel()
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForDomain(model['topology']))
+
+  def test_isAdministrationPortEnabledForServer(self):
+    model = self.getModel()
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model['topology']))
+
   def test_istioVersionRequiresLocalHostBindings(self):
     model = self.getModel()
     self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())

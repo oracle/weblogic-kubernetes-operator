@@ -669,7 +669,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
-    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled']:
       ssl_listen_port = ssl['ListenPort']
       if ssl_listen_port is None:
         ssl_listen_port = "7002"
