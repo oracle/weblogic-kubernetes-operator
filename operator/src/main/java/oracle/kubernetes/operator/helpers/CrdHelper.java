@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,7 @@ import io.kubernetes.client.util.Yaml;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -74,7 +76,7 @@ public class CrdHelper {
   }
 
   static void writeCrdFiles(String crdFileName) throws URISyntaxException {
-    CrdContext context = new CrdContext(null, null, null);
+    CrdContext context = new CrdContext(null, null);
 
     final URI outputFile = asFileURI(crdFileName);
 
@@ -120,8 +122,8 @@ public class CrdHelper {
   // Map = gson.fromJson(Map.class)
   // yaml dump ?  // ordering and format likely to change massively
 
-  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
-    return new CrdStep(version, productVersion);
+  public static Step createDomainCrdStep(MainDelegate mainDelegate) {
+    return new CrdStep(mainDelegate);
   }
 
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
@@ -144,8 +146,8 @@ public class CrdHelper {
   static class CrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(KubernetesVersion version, SemanticVersion productVersion) {
-      context = new CrdContext(version, productVersion, this);
+    CrdStep(MainDelegate mainDelegate) {
+      context = new CrdContext(mainDelegate, this);
     }
 
     @Override
@@ -158,14 +160,12 @@ public class CrdHelper {
   static class CrdContext {
     private final Step conflictStep;
     private final V1CustomResourceDefinition model;
-    private final KubernetesVersion version;
-    private final SemanticVersion productVersion;
+    private final MainDelegate mainDelegate;
 
-    CrdContext(KubernetesVersion version, SemanticVersion productVersion, Step conflictStep) {
-      this.version = version;
-      this.productVersion = productVersion;
+    CrdContext(MainDelegate mainDelegate, Step conflictStep) {
+      this.mainDelegate = mainDelegate;
       this.conflictStep = conflictStep;
-      this.model = createModel(productVersion);
+      this.model = createModel(Optional.ofNullable(mainDelegate).map(MainDelegate::getProductVersion).orElse(null));
     }
 
     static V1CustomResourceDefinition createModel(SemanticVersion productVersion) {
@@ -294,7 +294,7 @@ public class CrdHelper {
     }
 
     private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
-      return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, this.model);
+      return COMPARATOR.isOutdatedCrd(mainDelegate.getProductVersion(), existingCrd, this.model);
     }
 
     private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
@@ -349,6 +349,8 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
         V1CustomResourceDefinition existingCrd = callResponse.getResult();
+        mainDelegate.getCrdReference().set(existingCrd);
+
         if (existingCrd == null) {
           return doNext(createCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
@@ -362,6 +364,7 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+        mainDelegate.getCrdReference().set(null);
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -381,7 +384,10 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
+        V1CustomResourceDefinition existingCrd = callResponse.getResult();
+        mainDelegate.getCrdReference().set(existingCrd);
+
+        LOGGER.info(MessageKeys.CREATING_CRD, existingCrd.getMetadata().getName());
         return doNext(packet);
       }
 
@@ -407,7 +413,9 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
+        V1CustomResourceDefinition existingCrd = callResponse.getResult();
+        mainDelegate.getCrdReference().set(existingCrd);
+        LOGGER.info(MessageKeys.CREATING_CRD, existingCrd.getMetadata().getName());
         return doNext(packet);
       }
 
