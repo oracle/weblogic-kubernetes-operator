@@ -506,7 +506,7 @@ class ItParameterizedDomain {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -817,7 +817,7 @@ class ItParameterizedDomain {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
