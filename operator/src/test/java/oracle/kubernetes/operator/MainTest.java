@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -358,10 +360,21 @@ class MainTest extends ThreadFactoryTestBase {
   void whenNoCRD_logReasonForFailure() {
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
     simulateMissingCRD();
+    delegate.hideCRD();
 
     recheckDomains();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
+  @Test
+  void whenCRDCreated_dontLogFailure() {
+    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    simulateMissingCRD();
+
+    recheckDomains();
+
+    assertThat(logRecords, not(containsSevere(CRD_NOT_INSTALLED)));
   }
 
   @Test
@@ -380,6 +393,7 @@ class MainTest extends ThreadFactoryTestBase {
   void afterMissingCRDdetected_correctionOfTheConditionAllowsProcessingToOccur() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
     simulateMissingCRD();
+    delegate.hideCRD();
     recheckDomains();
 
     testSupport.cancelFailures();
@@ -397,6 +411,7 @@ class MainTest extends ThreadFactoryTestBase {
 
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
     simulateMissingCRD();
+    delegate.hideCRD();
     recheckDomains();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
@@ -1155,6 +1170,8 @@ class MainTest extends ThreadFactoryTestBase {
   abstract static class MainDelegateStub implements MainDelegate {
     private final FiberTestSupport testSupport;
     private final DomainNamespaces domainNamespaces;
+    private final AtomicReference<V1CustomResourceDefinition> crdReference = new AtomicReference<>();
+    private boolean hideCRD = false;
 
     public MainDelegateStub(FiberTestSupport testSupport, DomainNamespaces domainNamespaces) {
       this.testSupport = testSupport;
@@ -1186,6 +1203,15 @@ class MainTest extends ThreadFactoryTestBase {
     @Override
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
+    }
+
+    public void hideCRD() {
+      this.hideCRD = true;
+    }
+
+    @Override
+    public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
+      return hideCRD ? new AtomicReference<>() : crdReference;
     }
   }
 
