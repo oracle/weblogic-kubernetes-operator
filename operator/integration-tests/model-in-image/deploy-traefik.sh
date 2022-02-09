@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Summary:
@@ -10,12 +10,12 @@
 # it monitors namespace DOMAIN_NAMESPACE. It uses this operator
 # release's sample helm chart in 'kubernetes/samples/charts/traefik'.
 #
-# Defaults: 
+# Defaults:
 #   WORKDIR:           /tmp/$USER/model-in-image-sample-work-dir
 #   TRAEFIK_NAME:      traefik-operator
 #   TRAEFIK_NAMESPACE: ${TRAEFIK_NAME}-ns
 #   DOMAIN_NAMESPACE:  sample-domain1-ns
-# 
+#
 # This script also tracks an release checksum in the
 # WORKDIR/test-out directory so it can skip itself
 # if one already occurred.
@@ -31,8 +31,8 @@ source $TESTDIR/test-env.sh
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
-TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator}
 TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-traefik-operator-ns}
+TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator-$TRAEFIK_NAMESPACE}
 TRAEFIK_HTTP_NODEPORT=${TRAEFIK_HTTP_NODEPORT:-30305}
 TRAEFIK_HTTPS_NODEPORT=${TRAEFIK_HTTPS_NODEPORT:-30433}
 
@@ -40,7 +40,7 @@ DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 mkdir -p $WORKDIR/test-out
 
-function kubehost() {
+kubehost() {
   kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
 }
 
@@ -88,7 +88,7 @@ else
     --namespace $TRAEFIK_NAMESPACE \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
     --set "ports.web.nodePort=${TRAEFIK_HTTP_NODEPORT}" \
-    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" 
+    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}"
 
   set +x
 
@@ -100,11 +100,9 @@ else
 fi
 
 cat<<EOF
-
     HTTP node port:
       kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
       =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
-
     HTTPS node port:
       kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'
       =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
