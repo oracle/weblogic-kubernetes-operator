@@ -248,8 +248,6 @@ class ItPodsRestart {
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
         DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the domain resource changed messages is logged");
-    assertTrue(event.getMessage().contains("domain resource changed"));
 
     event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
@@ -326,11 +324,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the resource changed messages is logged");
-    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
-
-    event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
@@ -416,8 +409,6 @@ class ItPodsRestart {
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
         DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the env changed messages is logged");
-    assertTrue(event.getMessage().contains("domain resource changed"));
 
     event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
@@ -510,8 +501,6 @@ class ItPodsRestart {
 
     event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the uid");
-    assertTrue(event.getMessage().contains(domainUid));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -583,12 +572,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the 'imagePullPolicy' "
-        + "changed from 'IfNotPresent' to 'Never' message is logged");
-    assertTrue(event.getMessage().contains("Never"));
-
-    event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the 'imagePullPolicy' "
@@ -621,7 +604,7 @@ class ItPodsRestart {
 
     String oldVersion = assertDoesNotThrow(()
         -> getDomainCustomResource(domainUid, domainNamespace).getSpec().getRestartVersion());
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    int newVersion = oldVersion == null ? 1 : Integer.parseInt(oldVersion) + 1;
 
     logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
     String patchStr
@@ -657,8 +640,6 @@ class ItPodsRestart {
     event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the restartVersion changed message is logged");
-    assertTrue(event.getMessage().contains("restart version"));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
