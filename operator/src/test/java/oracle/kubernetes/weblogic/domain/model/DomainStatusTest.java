@@ -233,6 +233,18 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenDomainRollingStatusAdded_statusHasRollingStatus() {
+    domainStatus.setRolling(true);
+
+    assertThat(domainStatus.isRolling(), is(true));
+  }
+
+  @Test
+  void whenDomainRollingStatusNull_returnFalse() {
+    assertThat(domainStatus.isRolling(), is(false));
+  }
+
+  @Test
   void whenClusterStatusAdded_statusHasClusterStatus() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3));
 
