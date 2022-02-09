@@ -128,10 +128,8 @@ public final class SelfSignedCertUtils {
   @NotNull
   private static GeneralNames getSAN(String cert) {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
-    System.out.println("DEBUG: In get SAN.. cert is " + cert);
     if (WEBHOOK_CERTIFICATE.equals(cert)) {
       host = INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
-      System.out.println("DEBUG: In get SAN.. cert is webhoook, use host " + host);
     }
     return new GeneralNames(new GeneralName[] {
         new GeneralName(GeneralName.dNSName, host),

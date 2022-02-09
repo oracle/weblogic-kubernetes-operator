@@ -86,10 +86,9 @@ public class Main {
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
-  private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
-  /** The interval in msec that the operator will wait to ensure that CRD has been created. */
-  private static final long CRD_DETECTION_DELAY = 100;
+  /** The interval in sec that the operator will wait to ensure that CRD has been created. */
+  private static final long CRD_DETECTION_DELAY = 10;
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -445,26 +444,22 @@ public class Main {
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
-  Step createCRDPresenceCheck() {
+  private Step createCRDPresenceCheck() {
     return new CallBuilder().listDomainAsync(getOperatorNamespace(), new CrdPresenceResponseStep());
   }
 
   // on failure, aborts the processing.
-  class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+  private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      warnedOfCrdAbsence = false;
       return super.onSuccess(packet, callResponse);
     }
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
-      //if (!warnedOfCrdAbsence) {
-      LOGGER.info(MessageKeys.CRD_NOT_INSTALLED);
-      //  warnedOfCrdAbsence = true;
-      //}
-      return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+      LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
+      return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);
     }
   }
 

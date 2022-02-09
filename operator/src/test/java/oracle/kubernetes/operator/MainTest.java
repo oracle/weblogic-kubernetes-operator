@@ -49,7 +49,6 @@ import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,6 +86,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.OPERATOR_STARTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_NAMESPACE;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_SERVICE_ACCOUNT;
+import static oracle.kubernetes.operator.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
@@ -355,14 +355,14 @@ class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(new DomainRecheck(delegate, false).createReadNamespacesStep());
   }
 
-  @Ignore
+  @Test
   void whenNoCRD_logReasonForFailure() {
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WAIT_FOR_CRD_INSTALLATION);
     simulateMissingCRD();
 
     recheckDomains();
 
-    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+    assertThat(logRecords, containsInfo(WAIT_FOR_CRD_INSTALLATION));
   }
 
   @Test
@@ -389,18 +389,18 @@ class MainTest extends ThreadFactoryTestBase {
     verifyWatchersDefined(main.getDomainNamespaces(), getOperatorNamespace());
   }
 
-  @Ignore
+  @Test
   void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure() {
     simulateMissingCRD();
     recheckDomains();
     testSupport.cancelFailures();
     recheckDomains();
 
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WAIT_FOR_CRD_INSTALLATION);
     simulateMissingCRD();
     recheckDomains();
 
-    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+    assertThat(logRecords, containsInfo(WAIT_FOR_CRD_INSTALLATION));
   }
 
   @Test

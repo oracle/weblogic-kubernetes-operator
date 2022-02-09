@@ -51,7 +51,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 
-public class MigrationUtils {
+public class DomainUpgradeUtils {
 
   private Domain domain;
   private int containerIndex = 0;
@@ -122,7 +122,6 @@ public class MigrationUtils {
   }
 
   private void addInitContainersVolumeAndMounts(List<AuxiliaryImage> auxiliaryImages, ServerPod serverPod) {
-    System.out.println("DEBUG: aux image is " + auxiliaryImages);
     addEmptyDirVolume(serverPod, getAuxiliaryImageVolumes());
     for (int idx = 0; idx < auxiliaryImages.size(); idx++) {
       serverPod.addInitContainer(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), containerIndex,

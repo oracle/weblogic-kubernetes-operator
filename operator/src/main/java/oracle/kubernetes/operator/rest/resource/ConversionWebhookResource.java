@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
-import oracle.kubernetes.operator.utils.MigrationUtils;
+import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.utils.MigrationUtils;
 public class ConversionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final MigrationUtils conversionUtils = new MigrationUtils();
+  private static final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
 
   /** Construct a ConversionWebhookResource. */
   public ConversionWebhookResource() {

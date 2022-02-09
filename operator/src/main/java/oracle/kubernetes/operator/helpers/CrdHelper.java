@@ -56,7 +56,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.rest.RestWebhookConfigImpl.HTTPS_PORT;
+import static oracle.kubernetes.operator.rest.WebhookRestConfigImpl.HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
@@ -366,11 +366,9 @@ public class CrdHelper {
 
     Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
 
-      LOGGER.info("DEBUG: updating ExistingCrdWithConversion ");
       V1CustomResourceConversion customResourceConversion = createConversionWebhook();
       existingCrd.getSpec().conversion(customResourceConversion);
 
-      LOGGER.info("DEBUG: updating ExistingCrdWithConversion. existingCrd is " + customResourceConversion);
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }
@@ -396,16 +394,12 @@ public class CrdHelper {
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
         V1CustomResourceDefinition existingCrd = callResponse.getResult();
         if (existingCrd == null) {
-          LOGGER.info("DEBUG: existingCrd is null. creating crd");
           return doNext(createCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
-          LOGGER.info("DEBUG: existingCrd is outdated. updating crd");
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
-          LOGGER.info("DEBUG: existingCrd doesn't contain version. updating existing crd");
           return doNext(updateExistingCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsConversionWebhook(existingCrd)) {
-          LOGGER.info("DEBUG: existingCrd doesn't contain webhook. updating existing crd with webhook");
           return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);

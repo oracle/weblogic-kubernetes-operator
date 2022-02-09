@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.rest;
  * The RestWebhookConfig interface is used to pass the WebLogic Operator's WebHook REST configuration to the
  * RestWebhookServer.
  */
-public interface RestWebhookConfig {
+public interface WebhookRestConfig {
 
   /**
    * Gets the in-pod hostname of the WebLogic operator webhook REST api.

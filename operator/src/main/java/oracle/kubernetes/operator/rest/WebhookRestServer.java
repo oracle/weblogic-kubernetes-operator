@@ -38,15 +38,15 @@ import org.glassfish.jersey.server.ResourceConfig;
  * The Webhook RestServer that serves as endpoint for the conversion webhook for WebLogic operator.
  *
  */
-public class RestWebhookServer {
+public class WebhookRestServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 2;
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
-  private static RestWebhookServer INSTANCE = null;
-  private final RestWebhookConfig config;
+  private static WebhookRestServer INSTANCE = null;
+  private final WebhookRestConfig config;
   // private String baseHttpUri;
   private final String baseHttpsUri;
   private HttpServer httpsServer;
@@ -58,7 +58,7 @@ public class RestWebhookServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  private RestWebhookServer(RestWebhookConfig config) {
+  private WebhookRestServer(WebhookRestConfig config) {
     LOGGER.entering();
     this.config = config;
     baseHttpsUri = "https://" + config.getHost() + ":" + config.getHttpsPort();
@@ -71,11 +71,11 @@ public class RestWebhookServer {
    * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
    *     instance already created.
    */
-  public static synchronized void create(RestWebhookConfig restConfig) {
+  public static synchronized void create(WebhookRestConfig restConfig) {
     LOGGER.entering();
     try {
       if (INSTANCE == null) {
-        INSTANCE = new RestWebhookServer(restConfig);
+        INSTANCE = new WebhookRestServer(restConfig);
         return;
       }
 
@@ -90,7 +90,7 @@ public class RestWebhookServer {
    *
    * @return RestServer - Singleton instance of the RestServer
    */
-  public static synchronized RestWebhookServer getInstance() {
+  public static synchronized WebhookRestServer getInstance() {
     return INSTANCE;
   }
 
@@ -119,7 +119,7 @@ public class RestWebhookServer {
    * @param restConfig the operator REST configuration
    * @return a resource configuration
    */
-  static ResourceConfig createResourceConfig(RestWebhookConfig restConfig) {
+  static ResourceConfig createResourceConfig(WebhookRestConfig restConfig) {
     ResourceConfig rc =
         new ResourceConfig()
             .register(JacksonFeature.class)

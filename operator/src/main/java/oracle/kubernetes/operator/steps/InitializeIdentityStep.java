@@ -71,13 +71,10 @@ public class InitializeIdentityStep extends Step {
   public NextAction apply(Packet packet) {
     try {
       if (certFile.exists() && keyFile.exists()) {
-        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file " + certFile + "exists. Reuse it.");
         // The operator's internal ssl identity has already been created.
         reuseIdentity();
         return doNext(getNext(), packet);
       } else {
-        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file " + certFile
-                + "doesn't exists. Create Internal Identity.");
         // The operator's internal ssl identity hasn't been created yet.
         return createIdentity(packet);
       }
@@ -90,7 +87,6 @@ public class InitializeIdentityStep extends Step {
   private void reuseIdentity() throws IOException {
     // copy the certificate and key from the operator's config map and secret
     // to the locations the operator runtime expects
-    LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. reuse " + certFile);
     FileUtils.copyFile(certFile, new File(certificate));
     FileUtils.copyFile(keyFile, new File(certificateKey));
   }
@@ -131,12 +127,9 @@ public class InitializeIdentityStep extends Step {
 
   private static Step recordInternalOperatorCert(String certName, X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    LOGGER.info("DEBUG: In recordInternalOperatorCert.. name is " + certName);
     if (WEBHOOK_CERTIFICATE.equals(certName)) {
-      LOGGER.info("DEBUG: In recordInternalOperatorCert.. adding webhook cert");
       patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
     } else {
-      LOGGER.info("DEBUG: In recordInternalOperatorCert.. adding internal cert");
       patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
     }
 

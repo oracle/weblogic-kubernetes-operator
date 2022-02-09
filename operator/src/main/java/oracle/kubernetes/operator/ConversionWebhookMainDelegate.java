@@ -14,11 +14,9 @@ import oracle.kubernetes.operator.work.Step;
 /**
  * Definition of an interface that returns values that the Main class requires.
  */
-interface WebhookMainDelegate {
+interface ConversionWebhookMainDelegate {
 
   SemanticVersion getProductVersion();
-
-  String getPrincipal();
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);

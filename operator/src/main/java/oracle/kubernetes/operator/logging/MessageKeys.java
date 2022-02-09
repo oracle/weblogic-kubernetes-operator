@@ -153,9 +153,11 @@ public class MessageKeys {
   public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
   public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
   public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
-  public static final String OPERATOR_WEBHOOK_STARTED = "WLSKO-0205";
+  public static final String CONVERSION_WEBHOOK_STARTED = "WLSKO-0205";
   public static final String COULD_NOT_CREATE_WEBHOOK_LIVENESS_FILE = "WLSKO-0206";
   public static final String NO_WEBHOOK_CERTIFICATE = "WLSKO-0207";
+  public static final String WEBHOOK_CONFIG_NAMESPACE = "WLSKO-0208";
+  public static final String WAIT_FOR_CRD_INSTALLATION = "WLSKO-0209";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

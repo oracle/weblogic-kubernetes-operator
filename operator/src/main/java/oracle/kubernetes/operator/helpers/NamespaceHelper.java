@@ -33,6 +33,10 @@ public class NamespaceHelper {
     return Optional.ofNullable(getHelmVariable(OPERATOR_POD_UID_ENV)).orElse("");
   }
 
+  public static String getWebhookNamespace() {
+    return Optional.ofNullable(getHelmVariable(OPERATOR_NAMESPACE_ENV)).orElse(DEFAULT_NAMESPACE);
+  }
+
   /**
    * Parse a string of namespace names and return them as a collection.
    * @param namespaceString a comma-separated list of namespace names

@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,7 +18,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
@@ -29,8 +30,9 @@ import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.rest.RestWebhookConfigImpl;
-import oracle.kubernetes.operator.rest.RestWebhookServer;
+import oracle.kubernetes.operator.rest.WebhookRestConfigImpl;
+import oracle.kubernetes.operator.rest.WebhookRestServer;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
@@ -38,9 +40,11 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
@@ -58,15 +62,12 @@ public class ConversionWebhookMain {
   private static final Container container = new Container();
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService("operator", container);
+      Engine.wrappedExecutorService("webhook", container);
   private static final Semaphore shutdownSignal = new Semaphore(0);
 
-  private final WebhookMainDelegateImpl delegate;
+  private final ConversionWebhookMainDelegate delegate;
+  private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = ConversionWebhookMain::createInitializeWebhookIdentityStep;
-
-  private static String getConfiguredServiceAccount() {
-    return TuningParameters.getInstance().get("serviceaccount");
-  }
 
   static {
     try {
@@ -98,22 +99,19 @@ public class ConversionWebhookMain {
                 threadFactory));
   }
 
-  static class WebhookMainDelegateImpl implements WebhookMainDelegate {
-
-    private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
-    private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
+  static class ConversionWebhookMainDelegateImpl implements ConversionWebhookMainDelegate {
 
     private final String buildVersion;
-    private final String operatorImpl;
-    private final String operatorBuildTime;
+    private final String conversionWebhookImpl;
+    private final String conversionWebhookBuildTime;
     private final SemanticVersion productVersion;
     private final KubernetesVersion kubernetesVersion;
     private final Engine engine;
 
-    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
+    public ConversionWebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
-      operatorImpl = getBranch(buildProps) + "." + getCommit(buildProps);
-      operatorBuildTime = getBuildTime(buildProps);
+      conversionWebhookImpl = getBranch(buildProps) + "." + getCommit(buildProps);
+      conversionWebhookBuildTime = getBuildTime(buildProps);
 
       productVersion = new SemanticVersion(buildVersion);
       kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
@@ -144,20 +142,14 @@ public class ConversionWebhookMain {
     }
 
     private void logStartup() {
-      ConversionWebhookMain.LOGGER.info(MessageKeys.OPERATOR_WEBHOOK_STARTED, buildVersion,
-              operatorImpl, operatorBuildTime);
-      ConversionWebhookMain.LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
-      ConversionWebhookMain.LOGGER.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
+      ConversionWebhookMain.LOGGER.info(MessageKeys.CONVERSION_WEBHOOK_STARTED, buildVersion,
+              conversionWebhookImpl, conversionWebhookBuildTime);
+      ConversionWebhookMain.LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getOperatorNamespace());
     }
 
     @Override
     public @Nonnull SemanticVersion getProductVersion() {
       return productVersion;
-    }
-
-    @Override
-    public String getPrincipal() {
-      return principal;
     }
 
     @Override
@@ -191,13 +183,13 @@ public class ConversionWebhookMain {
     ConversionWebhookMain main = createMain(getBuildProperties());
 
     try {
-      main.startOperator(main::completeBegin);
+      main.startConversionWebhook(main::completeBegin);
 
       // now we just wait until the pod is terminated
       main.waitForDeath();
 
       // stop the REST server
-      stopRestServer();
+      stopWebhookRestServer();
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -218,17 +210,18 @@ public class ConversionWebhookMain {
   }
 
   static ConversionWebhookMain createMain(Properties buildProps) {
-    final WebhookMainDelegateImpl delegate = new WebhookMainDelegateImpl(buildProps, wrappedExecutorService);
+    final ConversionWebhookMainDelegateImpl delegate =
+            new ConversionWebhookMainDelegateImpl(buildProps, wrappedExecutorService);
 
     delegate.logStartup();
     return new ConversionWebhookMain(delegate);
   }
 
-  ConversionWebhookMain(WebhookMainDelegateImpl delegate) {
+  ConversionWebhookMain(ConversionWebhookMainDelegate delegate) {
     this.delegate = delegate;
   }
 
-  void startOperator(Runnable completionAction) {
+  void startConversionWebhook(Runnable completionAction) {
     try {
       delegate.runSteps(new Packet(), createStartupSteps(), completionAction);
     } catch (Throwable e) {
@@ -237,9 +230,7 @@ public class ConversionWebhookMain {
   }
 
   private Step createStartupSteps() {
-
-    //return NEXT_STEP_FACTORY.createInternalInitializationStep(createDomainCrdRecheckSteps());
-    return NEXT_STEP_FACTORY.createInternalInitializationStep(
+    return NEXT_STEP_FACTORY.createInitializationStep(
             CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()));
   }
 
@@ -263,16 +254,39 @@ public class ConversionWebhookMain {
     }
   }
 
-  private Runnable recheckCrd() {
-    return () -> delegate.runSteps(createDomainCRD());
+  Runnable recheckCrd() {
+    return () -> delegate.runSteps(createCRDRecheckSteps());
   }
 
-  private Step createDomainCRD() {
-    return createCRDRecheckSteps(OffsetDateTime.now());
+  Step createCRDRecheckSteps() {
+    return Step.chain(CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
+            createCRDPresenceCheck());
   }
 
-  private Step createCRDRecheckSteps(OffsetDateTime now) {
-    return CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion());
+  // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
+  // domains in the operator's namespace. That should succeed (although usually returning an empty list)
+  // if the CRD is present.
+  private Step createCRDPresenceCheck() {
+    return new CallBuilder().listDomainAsync(getOperatorNamespace(), new CrdPresenceResponseStep());
+  }
+
+  // on failure, aborts the processing.
+  private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
+      warnedOfCrdAbsence = false;
+      return super.onSuccess(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
+      if (!warnedOfCrdAbsence) {
+        LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
+        warnedOfCrdAbsence = true;
+      }
+      return doNext(null, packet);
+    }
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -281,8 +295,8 @@ public class ConversionWebhookMain {
 
   private void startRestWebhookServer()
           throws Exception {
-    RestWebhookServer.create(new RestWebhookConfigImpl());
-    RestWebhookServer.getInstance().start(container);
+    WebhookRestServer.create(new WebhookRestConfigImpl());
+    WebhookRestServer.getInstance().start(container);
   }
 
   // -----------------------------------------------------------------------------
@@ -292,9 +306,9 @@ public class ConversionWebhookMain {
   //
   // -----------------------------------------------------------------------------
 
-  private static void stopRestServer() {
-    RestWebhookServer.getInstance().stop();
-    RestWebhookServer.destroy();
+  private static void stopWebhookRestServer() {
+    WebhookRestServer.getInstance().stop();
+    WebhookRestServer.destroy();
   }
 
   private static void markReadyAndStartLivenessThread() {
@@ -359,7 +373,7 @@ public class ConversionWebhookMain {
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createInternalInitializationStep(Step next);
+    Step createInitializationStep(Step next);
   }
 
   private static class InitializeWebhookIdentityStep extends InitializeIdentityStep {

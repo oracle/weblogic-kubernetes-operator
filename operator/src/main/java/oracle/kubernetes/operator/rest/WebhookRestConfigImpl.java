@@ -6,14 +6,14 @@ package oracle.kubernetes.operator.rest;
 import oracle.kubernetes.operator.utils.Certificates;
 
 /** RestConfigImpl provides the REST api configuration for Webhook for WebLogic Operator. */
-public class RestWebhookConfigImpl implements RestWebhookConfig {
+public class WebhookRestConfigImpl implements WebhookRestConfig {
 
   public static final int HTTPS_PORT = 8084;
 
   /**
    * Constructs a RestWebhookConfigImpl.
    */
-  public RestWebhookConfigImpl() {
+  public WebhookRestConfigImpl() {
   }
 
   @Override
