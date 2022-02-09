@@ -702,67 +702,6 @@ public class CommonTestUtils {
   }
 
   /**
-   * Call the curl command and check the managed servers connect to each other.
-   *
-   * @param curlRequest curl command to call the clusterview app
-   * @param managedServerNames managed server names part of the cluster
-   */
-  public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
-    LoggingFacade logger = getLogger();
-
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
-
-    HashMap<String, Boolean> managedServers = new HashMap<>();
-    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
-
-    //verify each server in the cluster can connect to other
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          for (int i = 0; i < managedServerNames.size(); i++) {
-            logger.info(curlRequest);
-            // check the response contains managed server name
-            ExecResult result = null;
-            try {
-              result = ExecCommand.exec(curlRequest, true);
-            } catch (IOException | InterruptedException ex) {
-              logger.severe(ex.getMessage());
-            }
-            String response = result.stdout().trim();
-            logger.info(response);
-            for (var managedServer : managedServers.entrySet()) {
-              boolean connectToOthers = true;
-              logger.info("Looking for Server:" + managedServer.getKey());
-              if (response.contains("ServerName:" + managedServer.getKey())) {
-                for (String managedServerName : managedServerNames) {
-                  logger.info("Looking for Success:" + managedServerName);
-                  connectToOthers = connectToOthers && response.contains("Success:" + managedServerName);
-                }
-                if (connectToOthers) {
-                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
-                  managedServers.put(managedServer.getKey(), true);
-                }
-              }
-            }
-          }
-          managedServers.forEach((key, value) -> {
-            if (value) {
-              logger.info("The server {0} can see other cluster members", key);
-            } else {
-              logger.info("The server {0} unable to see other cluster members ", key);
-            }
-          });
-          return !managedServers.containsValue(false);
-        });
-  }
-
-  /**
    * Get the next free port between from and to.
    *
    * @param from range starting point
@@ -941,5 +880,66 @@ public class CommonTestUtils {
         },
         logger,
         "Waiting until each managed server can see other cluster members");
+  }
+
+  /**
+   * Call the curl command and check the managed servers connect to each other.
+   *
+   * @param curlRequest curl command to call the clusterview app
+   * @param managedServerNames managed server names part of the cluster
+   */
+  public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
+    LoggingFacade logger = getLogger();
+
+    ConditionFactory withStandardRetryPolicy
+        = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(10, MINUTES).await();
+
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
+
+    //verify each server in the cluster can connect to other
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Waiting until each managed server can see other cluster members"
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          for (int i = 0; i < managedServerNames.size(); i++) {
+            logger.info(curlRequest);
+            // check the response contains managed server name
+            ExecResult result = null;
+            try {
+              result = ExecCommand.exec(curlRequest, true);
+            } catch (IOException | InterruptedException ex) {
+              logger.severe(ex.getMessage());
+            }
+            String response = result.stdout().trim();
+            logger.info(response);
+            for (var managedServer : managedServers.entrySet()) {
+              boolean connectToOthers = true;
+              logger.info("Looking for Server:" + managedServer.getKey());
+              if (response.contains("ServerName:" + managedServer.getKey())) {
+                for (String managedServerName : managedServerNames) {
+                  logger.info("Looking for Success:" + managedServerName);
+                  connectToOthers = connectToOthers && response.contains("Success:" + managedServerName);
+                }
+                if (connectToOthers) {
+                  logger.info("Server:" + managedServer.getKey() + " can see all cluster members");
+                  managedServers.put(managedServer.getKey(), true);
+                }
+              }
+            }
+          }
+          managedServers.forEach((key, value) -> {
+            if (value) {
+              logger.info("The server {0} can see other cluster members", key);
+            } else {
+              logger.info("The server {0} unable to see other cluster members ", key);
+            }
+          });
+          return !managedServers.containsValue(false);
+        });
   }
 }
