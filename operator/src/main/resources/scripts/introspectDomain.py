@@ -449,10 +449,9 @@ class TopologyGenerator(Generator):
     self.validateNonDynamicClusterServerHaveSameCustomChannels(cluster)
     if not self.env.skipLeasingValidations():
       self.validateNonDynamicClusterAutoMigrationDisabled(cluster)
-      if self.isConsensusLeasing(cluster):
-        self.validateNonDynamicClusterNotUsingLeasing(cluster)
-      else:
-        self.validateAutoMigrationDataSourceConfigured(cluster)
+      leasingRequired = self.validateNonDynamicClusterLeasing(cluster)
+      if leasingRequired == True:
+        self.validateClusterLeasingDataSourceConfigured(cluster)
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
     for server in self.env.getDomain().getServers():
@@ -546,11 +545,12 @@ class TopologyGenerator(Generator):
                  self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
                  return
 
-  def validateNonDynamicClusterNotUsingLeasing(self, cluster):
-    self.validateNoSingletonServices(cluster)
+  def validateNonDynamicClusterLeasing(self, cluster):
+    leasingRequired = self.validateSingletonServices(cluster)
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
-        self.validateManualJTAMigrationPolicy(server.getJTAMigratableTarget(), "server", server, cluster)
+        leasingRequired |= self.validateJTAMigrationPolicy(server.getJTAMigratableTarget(), "server", server, cluster)
+    return leasingRequired
 
   def validateNonDynamicClusterAutoMigrationDisabled(self, cluster):
     for server in self.env.getDomain().getServers():
@@ -563,10 +563,9 @@ class TopologyGenerator(Generator):
     self.validateDynamicClusterNotReferencedByAnyServers(cluster)
     if not self.env.skipLeasingValidations():
       self.validateDynamicClusterAutoMigrationDisabled(cluster)
-      if self.isConsensusLeasing(cluster):
-        self.validateDynamicClusterNotUsingLeasing(cluster)
-      else:
-        self.validateAutoMigrationDataSourceConfigured(cluster)
+      leasingRequired = self.validateDynamicClusterLeasing(cluster)
+      if leasingRequired == True:
+        self.validateClusterLeasingDataSourceConfigured(cluster)
 
   def validateDynamicClusterReferencedByOneServerTemplate(self, cluster):
     server_template=None
@@ -597,13 +596,14 @@ class TopologyGenerator(Generator):
                 'value during domain '
                 'creation')
 
-  def validateDynamicClusterNotUsingLeasing(self, cluster):
-    self.validateNoSingletonServices(cluster)
+  def validateDynamicClusterLeasing(self, cluster):
+    leasingRequired = self.validateSingletonServices(cluster)
     dynamicServers = self.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       serverTemplate = dynamicServers.getServerTemplate()
       if serverTemplate is not None:
-        self.validateManualJTAMigrationPolicy(serverTemplate.getJTAMigratableTarget(), "server template", serverTemplate, cluster)
+        leasingRequired |= self.validateJTAMigrationPolicy(serverTemplate.getJTAMigratableTarget(), "server template", serverTemplate, cluster)
+    return leasingRequired
 
   def validateDynamicClusterAutoMigrationDisabled(self, cluster):
     dynamicServers = self.getDynamicServersOrNone(cluster)
@@ -617,23 +617,31 @@ class TopologyGenerator(Generator):
       self.addMigrationError("Automatic whole server migration is enabled in cluster " + self.name(cluster) +
                              " but the feature is not supported by the WebLogic Kubernetes Operator.")
 
-  def validateAutoMigrationDataSourceConfigured(self, cluster):
+  def validateClusterLeasingDataSourceConfigured(self, cluster):
     if cluster.getDataSourceForAutomaticMigration() is None:
-      self.addMigrationError("DataSource for database leasing is not configued in cluster " + self.name(cluster) + ".")
+      self.addMigrationError("At least one configured service requires leasing, but datasource for database leasing is not configued in cluster " + self.name(cluster) + ".")
 
-  def validateNoSingletonServices(self, cluster):
+  def validateSingletonServices(self, cluster):
+    leasingRequired = False
     singletonServices = self.env.getDomain().getSingletonServices()
     if singletonServices is not None:
       for singletonService in singletonServices:
         if self.getClusterFromSingletonService(singletonService) == cluster:
-          self.addConsensusLeasingError("Singleton service " + self.name(singletonService) + " is configured in cluster " + self.name(cluster))
+          leasingRequired = True
+          if self.isConsensusLeasing(cluster):
+            self.addConsensusLeasingError("Singleton service " + self.name(singletonService) + " is configured in cluster " + self.name(cluster))
+    return leasingRequired
 
-  def validateManualJTAMigrationPolicy(self, jtaMigratableTarget, type_str, server_or_template, cluster):
+  def validateJTAMigrationPolicy(self, jtaMigratableTarget, type_str, server_or_template, cluster):
+    leasingRequired = False
     if jtaMigratableTarget is not None:
       migrationPolicy = jtaMigratableTarget.getMigrationPolicy()
       if migrationPolicy is not None and migrationPolicy != "manual":
-        self.addConsensusLeasingError("JTA migratable target in " + type_str + " " + self.name(server_or_template)
-                                      + " in cluster " + self.name(cluster) + " requires automatic service migration")
+        leasingRequired = True
+        if self.isConsensusLeasing(cluster):
+          self.addConsensusLeasingError("JTA migratable target in " + type_str + " " + self.name(server_or_template)
+                                        + " in cluster " + self.name(cluster) + " requires automatic service migration")
+    return leasingRequired
 
   def addMigrationError(self, message):
     self.addError(message + " Set SKIP_LEASING_VALIDATIONS environment variable to 'True' to skip this validation.")
@@ -654,19 +662,19 @@ class TopologyGenerator(Generator):
     domain = self.env.getDomain()
     if not self.env.skipLeasingValidations():
       for messagingBridge in domain.getMessagingBridges():
-        self.validateJMSResourceNotUsingConsensusLeasing(messagingBridge, "Messaging bridge")
+        self.validateJMSResourceMigrationPolicy(messagingBridge, "Messaging bridge")
       for jdbcStore in domain.getJDBCStores():
-        self.validateJMSResourceNotUsingConsensusLeasing(jdbcStore, "JDBCStore")
+        self.validateJMSResourceMigrationPolicy(jdbcStore, "JDBCStore")
       for fileStore in domain.getFileStores():
-        self.validateJMSResourceNotUsingConsensusLeasing(fileStore, "FileStore")
+        self.validateJMSResourceMigrationPolicy(fileStore, "FileStore")
 
-  def validateJMSResourceNotUsingConsensusLeasing(self, jmsResource, typeStr):
+  def validateJMSResourceMigrationPolicy(self, jmsResource, typeStr):
     if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy() != "Off":
       targets = jmsResource.getTargets();
       for target in targets:
-        self.validateJMSResourceTargetNotUsingConsensusLeasing(target, jmsResource, typeStr)
+        self.validateJMSResourceTargetLeasing(target, jmsResource, typeStr)
 
-  def validateJMSResourceTargetNotUsingConsensusLeasing(self, targetMBean, jmsResource, typeStr):
+  def validateJMSResourceTargetLeasing(self, targetMBean, jmsResource, typeStr):
     if targetMBean is not None:
       migratableTarget = self.findMigratableTarget(targetMBean.getName())
       if migratableTarget is not None:
@@ -679,6 +687,8 @@ class TopologyGenerator(Generator):
                                           self.name(jmsResource) + " with migratable target " +
                                           self.name(targetMBean) + " that is associated with cluster " +
                                           self.name(cluster) )
+          else:
+            self.validateClusterLeasingDataSourceConfigured(cluster)
       # targetMBean can also be a server or cluster, and we have already validated
       # all clusters with calls to validate[Non]DynamicClusterAutoMigrationDisabled functions
 
