@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1644269574" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1644269574" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1644416303" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1644416303" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1644269574"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1644416303"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1644269574"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1644269574"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1644416303"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1644416303"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1644269574"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1644416303"></script>
 
     
   </div>
@@ -3251,8 +3251,8 @@
 </ul>
 <h4 id="introduction">Introduction</h4>
 
-<p>Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You manage and maintain only the agent nodes. As a managed Kubernetes service, AKS is free - you pay for only the agent nodes within your clusters, not for the masters.</p>
-<p>To learn more, see <a href="https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a></p>
+<p>Azure Kubernetes Service (AKS) makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You manage and maintain only the agent nodes. As a managed Kubernetes service, AKS is free - you pay for only the agent nodes within your clusters, not for the masters.</p>
+<p>To learn more, see <a href="https://docs.microsoft.com/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a></p>
 
 
 <p>This document describes the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
@@ -3270,11 +3270,11 @@
 <tbody>
 <tr>
 <td>Subscription</td>
-<td>Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in <a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory">Associate or add an Azure subscription to your Azure Active Directory tenant</a>.</td>
+<td>Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in <a href="https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory">Associate or add an Azure subscription to your Azure Active Directory tenant</a>.</td>
 </tr>
 <tr>
 <td>Resource group</td>
-<td>A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the <strong>Create new</strong>, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the <a href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups">Azure documentation</a>.</td>
+<td>A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the <strong>Create new</strong>, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the <a href="https://docs.microsoft.com/azure/azure-resource-manager/resource-group-overview#resource-groups">Azure documentation</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3315,8 +3315,8 @@
 <td>Re-enter the value of the preceding field.</td>
 </tr>
 <tr>
-<td>Password for WebLogic Deploy Tooling runtime encrytion</td>
-<td>The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/">Encrypt Model Tool</a> and the <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/">WebLogic Deploy Tooling documentation</a>.</td>
+<td>Password for WebLogic Deploy Tooling runtime encryption</td>
+<td>The deployment uses the WebLogic Kubernetes Operator encryption feature, including the capability to encrypt the domain. This password is used for that encryption. For more information, see <a href="/weblogic-kubernetes-operator/security/encryption/">Encryption</a>.</td>
 </tr>
 <tr>
 <td>Confirm password</td>
@@ -3324,7 +3324,7 @@
 </tr>
 <tr>
 <td>User assigned managed identity</td>
-<td>The deployment requires a user-assigned managed identity with the <strong>Contributor</strong> or <strong>Owner</strong> role in the subscription referenced previously.  For more information, please see <a href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal">Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal</a>.</td>
+<td>The deployment requires a user-assigned managed identity with the <strong>Contributor</strong> or <strong>Owner</strong> role in the subscription referenced previously.  For more information, please see <a href="https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal">Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3357,14 +3357,6 @@
 <td>Custom Java Options to start WebLogic Server</td>
 <td>Java VM arguments passed to the invocation of WebLogic Server. For more information, see the <a href="/weblogic-kubernetes-operator/faq/resource-settings/">FAQ</a>.</td>
 </tr>
-<tr>
-<td>Enable T3 tunneling for Administration Server</td>
-<td>If selected, configure the necessary settings to enable T3 tunneling to the Administration Server.  For more details, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">External network access security</a>.</td>
-</tr>
-<tr>
-<td>Enable T3 tunneling for WebLogic cluster</td>
-<td>If selected, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">External network access security</a>.</td>
-</tr>
 </tbody>
 </table>
 <p>When you are satisfied with your selections, select <strong>Next : Configure AKS cluster</strong>.</p>
@@ -3390,15 +3382,15 @@
 </tr>
 <tr>
 <td>Node size</td>
-<td>The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select <strong>Change Size</strong>, select the size from the list (for example, A3) on the Select a VM size page, and select <strong>Select</strong>. For more information about sizing the virtual machine, see the <a href="https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs">Azure documentation on Sizes</a>.</td>
+<td>The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select <strong>Change Size</strong>, select the size from the list (for example, A3) on the Select a VM size page, and select <strong>Select</strong>. For more information about sizing the virtual machine, see the <a href="https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs">Azure documentation on Sizes</a>.</td>
 </tr>
 <tr>
 <td>Enable Container insights</td>
-<td>If selected, configure the necessary settings to integrate with Container insights. For more information, see <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
+<td>If selected, configure the necessary settings to integrate with Container insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see <a href="https://aka.ms/wls-aks-container-insights">Container insights overview</a>.</td>
 </tr>
 <tr>
 <td>Create Persistent Volume using Azure File share service</td>
-<td>If selected, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</td>
+<td>If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted to the nodes of the AKS cluster. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Oracle WebLogic Server persistent storage</a> and <a href="https://docs.microsoft.com/azure/aks/azure-files-volume">persistent volume with Azure Files share on AKS</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -3413,12 +3405,12 @@
 </thead>
 <tbody>
 <tr>
-<td>Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?</td>
-<td>If set to <strong>Yes</strong>, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. Note: the images in the Oracle Container Registry are unpatched. If set to <strong>No</strong>, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as with a specific set patches (PSUs). For more about WebLogic Server images see <a href="/weblogic-kubernetes-operator/userguide/base-images/">WebLogic Server images</a>.</td>
+<td>Use a pre-existing WebLogic Server Docker image from Oracle Container Registry (OCR)?</td>
+<td>If set to <strong>Yes</strong>, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. If set to <strong>No</strong>, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as with a specific set patches (PSUs). For more about WebLogic Server images see <a href="/weblogic-kubernetes-operator/userguide/base-images/">WebLogic Server images</a>.</td>
 </tr>
 <tr>
 <td>Create a new Azure Container Registry to store application images?</td>
-<td>If set to <strong>Yes</strong>, the offer will create a new Azure Container Registry (ACR) to hold the Docker images for use in the deployment.  If set to <strong>No</strong>, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see <a href="https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication?WT.mc_id=Portal-Microsoft_Azure_CreateUIDef&amp;tabs=azure-cli#admin-account">Admin account</a>.</td>
+<td>If set to <strong>Yes</strong>, the offer will create a new Azure Container Registry (ACR) to hold the Docker images for use in the deployment.  If set to <strong>No</strong>, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see <a href="https://docs.microsoft.com/azure/container-registry/container-registry-authentication?tabs=azure-cli#admin-account">Admin account</a>.</td>
 </tr>
 <tr>
 <td>Select existing ACR instance</td>
@@ -3439,6 +3431,10 @@
 <tr>
 <td>Confirm password</td>
 <td>Re-enter the value of the preceding field.</td>
+</tr>
+<tr>
+<td>Is the specified SSO account associated with an active Oracle support contract?</td>
+<td>If set to <strong>Yes</strong>, you must accept the license agreement in the <code>middleware/weblogic_cpu</code> repository. If set to <strong>No</strong>, you must accept the license agreement in the <code>middleware/weblogic</code>. Steps to accept the license agreement: log in to the <a href="https://container-registry.oracle.com/">Oracle Container Registry</a>; navigate to the <code>middleware/weblogic_cpu</code> and <code>middleware/weblogic</code> repository; accept license agreement. See this <a href="https://aka.ms/wls-aks-ocr-doc">document</a> for more information.</td>
 </tr>
 <tr>
 <td>Select WebLogic Server Docker tag</td>
@@ -3462,7 +3458,7 @@
 </tr>
 <tr>
 <td>Application package (.war,.ear,.jar)</td>
-<td>With the <strong>Browse</strong> button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see <a href="https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal">Create a storage account</a>.</td>
+<td>With the <strong>Browse</strong> button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see <a href="https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal">Create a storage account</a> and <a href="https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal">Create a Storage Container and upload application files</a>.</td>
 </tr>
 <tr>
 <td>Fail deployment if application does not become ACTIVE.</td>
@@ -3476,8 +3472,8 @@
 </table>
 <p>When you are satisfied with your selections, select <strong>Next : TLS/SSL configuration</strong>.</p>
 <h4 id="tlsssl-configuration">TLS/SSL configuration</h4>
-<p>With the <strong>TLS/SSL configuration</strong> blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA).</p>
-<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next : Networking</strong> &gt;. If you select <strong>Yes</strong>, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.</p>
+<p>With the <strong>TLS/SSL configuration</strong> blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See <a href="https://aka.ms/arm-oraclelinux-wls-ssl-configuration">Oracle WebLogic Server Keystores configuration</a> for more information.</p>
+<p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure WebLogic Server Administration Console, Remote Console, and cluster to use HTTPS (Secure) ports, with your own TLS/SSL certificate.</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next : Networking</strong>. If you select <strong>Yes</strong>, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.</p>
 <p>If you want to upload existing keystores, select <strong>Upload existing KeyStores</strong> for the option <strong>How would you like to provide required configuration</strong>, and enter the values for the fields listed in the following table.</p>
 <h5 id="tlsssl-configuration-settings">TLS/SSL configuration settings</h5>
 <table>
@@ -3538,18 +3534,13 @@
 <h4 id="networking">Networking</h4>
 <p>Use this blade to configure options for load balancing and ingress controller.</p>
 <h5 id="standard-load-balancer-service">Standard Load Balancer service</h5>
-<p>Selecting <strong>Yes</strong> here will cause the offer to provision the Azure Load Balancer as a Kubernetes load balancer service. Note, you must select <strong>Yes</strong> and provide further configuration when T3 tunneling is enabled on the Basics blade. For more information on the Standard Load Balancer see <a href="https://aka.ms/wls-aks-standard-load-balancer">Use a public Standard Load Balancer in Azure Kubernetes Service (AKS)</a>.  You can still deploy an Azure Application Gateway even if you select <strong>No</strong> here.</p>
+<p>Selecting <strong>Yes</strong> here will cause the offer to provision the Azure Load Balancer as a Kubernetes load balancer service. For more information on the Standard Load Balancer see <a href="https://aka.ms/wls-aks-standard-load-balancer">Use a public Standard Load Balancer in Azure Kubernetes Service (AKS)</a>.  You can still deploy an Azure Application Gateway even if you select <strong>No</strong> here.</p>
 <p>If you select <strong>Yes</strong>, you have the option of configuring the Load Balancer as an internal Load Balancer.  For more information on Azure internal load balancers see <a href="https://aka.ms/wls-aks-internal-load-balancer">Use an internal load balancer with Azure Kubernetes Service (AKS)</a>.</p>
 <p>If you select <strong>Yes</strong>, you must fill in the following table to map the services to load balancer ports.</p>
 <p><strong>Service name prefix</strong> column:</p>
 <p>You can fill in any valid value in this column.</p>
 <p><strong>Target</strong> and <strong>Port</strong> column:</p>
-<p>The current offer has some restrictions on the T3 ports.</p>
-<ul>
-<li>For a <strong>Target</strong> value of <strong>admin-server-t3</strong>, you must use port 7005.</li>
-<li>For a <strong>Target</strong> value of <strong>cluster-1-t3</strong>, you must use port 8011.</li>
-</ul>
-<p>For the non-T3 ports, the recommended values are the usual 7001 for the <strong>admin-server</strong> and 8001 for the <strong>cluster-1</strong>.</p>
+<p>For the ports, the recommended values are the usual 7001 for the <strong>admin-server</strong> and 8001 for the <strong>cluster-1</strong>.</p>
 <h5 id="application-gateway-ingress-controller">Application Gateway Ingress Controller</h5>
 <p>In this section, you can create an Azure Application Gateway instance as the ingress controller of your WebLogic Server. This Application Gateway is pre-configured for end-to-end-SSL with TLS termination at the gateway using the provided SSL certificate and load balances across your cluster.</p>
 <p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Connect to Azure Application Gateway?</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next : DNS Configuration &gt;</strong>. If you select <strong>Yes</strong>, you must specify the details required for the Application Gateway integration by entering the values for the fields as described next.</p>
@@ -3570,7 +3561,7 @@
 <tbody>
 <tr>
 <td>Frontend TLS/SSL certificate(.pfx)</td>
-<td>For information on how to create a certificate in PFX format, see <a href="https://docs.microsoft.com/en-us/azure/application-gateway/ssl-overview">Overview of TLS termination and end to end TLS with Application Gateway</a>.</td>
+<td>For information on how to create a certificate in PFX format, see <a href="https://docs.microsoft.com/azure/application-gateway/ssl-overview">Overview of TLS termination and end to end TLS with Application Gateway</a>.</td>
 </tr>
 <tr>
 <td>Password</td>
@@ -3586,7 +3577,7 @@
 </tr>
 <tr>
 <td>Service Principal</td>
-<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;sdk-auth</td>
+<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;role Contributor &ndash;sdk-auth</td>
 </tr>
 </tbody>
 </table>
@@ -3617,7 +3608,7 @@
 </tr>
 <tr>
 <td>Service Principal</td>
-<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;sdk-auth</td>
+<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;role Contributor &ndash;sdk-auth</td>
 </tr>
 </tbody>
 </table>
@@ -3636,7 +3627,7 @@
 </tr>
 <tr>
 <td>Service Principal</td>
-<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;sdk-auth</td>
+<td>A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac &ndash;role Contributor &ndash;sdk-auth</td>
 </tr>
 </tbody>
 </table>
@@ -3651,7 +3642,7 @@
 <tbody>
 <tr>
 <td>Enable cookie based affinity</td>
-<td>Select this box to enable cookie based affinity (sometimes called &ldquo;sticky sessions&rdquo;). For more information, see <a href="https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-cookie-affinity">Enable Cookie based affinity with an Application Gateway</a>.</td>
+<td>Select this box to enable cookie based affinity (sometimes called &ldquo;sticky sessions&rdquo;). For more information, see <a href="https://docs.microsoft.com/azure/application-gateway/ingress-controller-cookie-affinity">Enable Cookie based affinity with an Application Gateway</a>.</td>
 </tr>
 <tr>
 <td>Create ingress for Administration Console.</td>
@@ -3668,7 +3659,7 @@
 <p>With the <strong>DNS Configuration</strong> blade, you can provision the Oracle WebLogic Server Administration Console using a custom DNS name.</p>
 <p>Select <strong>Yes</strong> or <strong>No</strong> for the option <strong>Configure Custom DNS Alias?</strong> based on your preference. If you select <strong>No</strong>, you don&rsquo;t have to provide any details, and can proceed by selecting <strong>Next : Database &gt;</strong>. If you select <strong>Yes</strong>, you must choose either to configure a custom DNS alias based on an existing Azure DNS zone, or create an Azure DNS zone and a custom DNS alias. This can be done by selecting <strong>Yes</strong> or <strong>No</strong> for the option <strong>Use an existing Azure DNS Zone</strong>.</p>
 
-<div class="notices note" ><p>For more information about the DNS zones, see <a href="https://docs.microsoft.com/en-us/azure/dns/dns-zones-records">Overview of DNS zones and records</a>.</p>
+<div class="notices note" ><p>For more information about the DNS zones, see <a href="https://docs.microsoft.com/azure/dns/dns-zones-records">Overview of DNS zones and records</a>.</p>
 </div>
 
 <p>If you choose to configure a custom DNS alias based on an existing Azure DNS zone, by selecting <strong>Yes</strong> for the option <strong>Use an existing Azure DNS Zone</strong>, you must specify the DNS configuration details by entering the values for the fields listed in the following table.</p>
@@ -3706,7 +3697,7 @@
 </ul>
 <p>See the preceding table for the description of these fields.</p>
 
-<div class="notices note" ><p>In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See <a href="https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation">Delegation of DNS zones with Azure DNS</a>.</p>
+<div class="notices note" ><p>In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See <a href="https://docs.microsoft.com/azure/dns/dns-domain-delegation">Delegation of DNS zones with Azure DNS</a>.</p>
 </div>
 
 <p>When you are satisfied with your selections, select <strong>Next : Database</strong>.</p>
@@ -3761,7 +3752,7 @@
 <tbody>
 <tr>
 <td>DataSource driver (.jar)</td>
-<td>Use the <strong>Browse</strong> button to upload the JAR file for the JDBC driver to a storage container. To learn how to create a Storage Account and Container, see <a href="https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal">Create a storage account</a>.</td>
+<td>Use the <strong>Browse</strong> button to upload the JAR file for the JDBC driver to a storage container. To learn how to create a Storage Account and Container, see <a href="https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal">Create a storage account</a>.</td>
 </tr>
 <tr>
 <td>DataSource driver name</td>
@@ -5890,19 +5881,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1644269574"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1644416303"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1644269574"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1644269574"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1644416303"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1644416303"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1644269574"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1644416303"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
