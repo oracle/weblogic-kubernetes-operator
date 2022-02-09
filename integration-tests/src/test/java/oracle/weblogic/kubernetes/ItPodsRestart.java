@@ -510,9 +510,8 @@ class ItPodsRestart {
 
     event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the security context changed messages is logged");
-    assertTrue(event.getMessage().contains("securityContext"));
-    assertTrue(event.getMessage().contains("runAsUser: 1000"));
+    logger.info("verify the event message contains the uid");
+    assertTrue(event.getMessage().contains(domainUid));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -732,8 +731,8 @@ class ItPodsRestart {
 
   }
 
-  private Map getPodsWithTimeStamps() {
-
+  @SuppressWarnings("unchecked")
+  private <K,V> Map<K,V> getPodsWithTimeStamps() {
     // create the map with server pods and their original creation timestamps
     podsWithTimeStamps = new LinkedHashMap<>();
     podsWithTimeStamps.put(adminServerPodName,
@@ -748,7 +747,7 @@ class ItPodsRestart {
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace)));
     }
-    return podsWithTimeStamps;
+    return (Map<K,V>) podsWithTimeStamps;
   }
 
 
