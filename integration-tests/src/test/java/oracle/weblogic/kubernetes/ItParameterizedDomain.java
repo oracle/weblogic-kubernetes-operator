@@ -101,14 +101,16 @@ class ItParameterizedDomain {
   /**
    * Scale the cluster by patching domain resource for three different
    * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
-   *
+   * Also verify admin console login using admin node port.
    * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
-  @DisplayName("scale cluster by patching domain resource with three different type of domains")
+  @DisplayName("scale cluster by patching domain resource with three different type of domains and "
+      + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   void testScaleClustersByPatchingDomainResource(String domainType) {
 
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     Domain domain = createDomainBasedOnDomainType(domainType);
 
     // get the domain properties
@@ -131,26 +133,6 @@ class ItParameterizedDomain {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, null, managedServersBeforeScale);
 
-    // shutdown domain and verify the domain is shutdown
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-  }
-
-  /**
-   * Verify admin console login using admin node port.
-   * Skip the test for slim images due to unavailability of console application
-   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
-   */
-  @ParameterizedTest
-  @DisplayName("Test admin console login using admin node port")
-  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
-  void testAdminConsoleLoginUsingAdminNodePort(String domainType) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-    Domain domain = createDomainBasedOnDomainType(domainType);
-
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
@@ -159,7 +141,7 @@ class ItParameterizedDomain {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() ->
-        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+            adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
