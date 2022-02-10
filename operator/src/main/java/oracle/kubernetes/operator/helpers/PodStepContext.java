@@ -259,6 +259,12 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  boolean isDomainWideAdminPortEnabled() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isAdminPortEnabled();
+  }
+
   private String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
@@ -757,6 +763,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(shutdown.getWaitForAllSessions()));
   }
 
   private Shutdown getShutdownSpec() {
@@ -1015,8 +1022,22 @@ public abstract class PodStepContext extends BasePodStepContext {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        readinessProbe =
-            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
+        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
+        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
+        // request.
+        //
+        if (isDomainWideAdminPortEnabled()) {
+          readinessProbe =
+              readinessProbe.httpGet(
+                  httpGetAction(
+                      READINESS_PATH,
+                      getLocalAdminProtocolChannelPort(),
+                      isLocalAdminProtocolChannelSecure()));
+        } else {
+          readinessProbe =
+              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
+                  false));
+        }
       } else {
         readinessProbe =
             readinessProbe.httpGet(

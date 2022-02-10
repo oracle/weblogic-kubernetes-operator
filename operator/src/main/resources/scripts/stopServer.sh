@@ -38,6 +38,11 @@ check_for_shutdown() {
     return 0
   fi
 
+  if [ "$state" = "SHUTTING_DOWN" ]; then
+    trace "Server is shutting shutdown" &>> ${STOP_OUT_FILE}
+    return 0
+  fi
+
   if [ "$state" = "SHUTDOWN" ]; then
     trace "Server is shutdown" &>> ${STOP_OUT_FILE}
     return 0
@@ -67,7 +72,7 @@ check_for_shutdown() {
 
 # Check if the server is already shutdown
 check_for_shutdown
-[ $? -eq 0 ] && trace "Server already shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
+[ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
 # Otherwise, connect to the node manager and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
@@ -77,6 +82,7 @@ export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
 export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
 export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
 export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
+export SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG=${SHUTDOWN_WAIT_FOR_ALL_SESSIONS:-false}
 export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}

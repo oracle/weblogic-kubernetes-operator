@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -49,6 +49,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -72,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
@@ -155,8 +158,8 @@ class ItMiiUpdateDomainConfig {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -257,7 +260,11 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     String curlString = new StringBuffer()
-          .append("curl --user weblogic:welcome1 ")
+          .append("curl --user ")
+          .append(ADMIN_USERNAME_DEFAULT)
+          .append(":")
+          .append(ADMIN_PASSWORD_DEFAULT)
+          .append(" ")
           .append("\"http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
           .append("/management/weblogic/latest/domainConfig")
           .append("/JMSServers/TestClusterJmsServer")
@@ -847,7 +854,7 @@ class ItMiiUpdateDomainConfig {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(0))))
+                                            .nodePort(getNextFreePort()))))
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
@@ -874,8 +881,12 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
+    checkCluster = new StringBuffer("status=$(curl --user ");
+    checkCluster.append(ADMIN_USERNAME_DEFAULT)
+          .append(":")
+          .append(ADMIN_PASSWORD_DEFAULT)
+          .append(" ")
+          .append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
           .append(" --silent --show-error ")
@@ -918,9 +929,12 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     ExecResult result = null;
-
-    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
-    curlString.append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
+    curlString = new StringBuffer("curl --user ")
+         .append(ADMIN_USERNAME_DEFAULT)
+         .append(":")
+         .append(ADMIN_PASSWORD_DEFAULT)
+         .append(" ")
+         .append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
          .append("/management/wls/latest/datasources/id/")
          .append(resourcesName)
          .append("/")

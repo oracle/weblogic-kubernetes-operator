@@ -28,9 +28,11 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -38,7 +40,9 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -62,6 +66,8 @@ import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.Scan;
+import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -238,6 +244,7 @@ class DomainProcessorTest {
     testSupport.defineResources(newDomain);
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(), jobStatusSupplier);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
+    ScanCache.INSTANCE.registerScan(NS,UID, new Scan(domainConfig, SystemClock.now()));
   }
 
   @AfterEach
@@ -536,6 +543,7 @@ class DomainProcessorTest {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
+
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
@@ -1466,6 +1474,181 @@ class DomainProcessorTest {
     assertThat(runningPods.size(), equalTo(6));
   }
 
+  @Test
+  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+
+    String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+        + "#WebLogic User Configuration File; 2\n"
+        + "#Thu Oct 04 21:07:06 GMT 2018\n"
+        + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+        + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.864000Z][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/domainzip_hash\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xbo\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.867000Z][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/topology.yaml\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/topology.yaml\n"
+        + "%s\n"
+        + ">>> EOF\n";
+
+    String topologyxml = "domainValid: true\n"
+            + "domain:\n"
+            + "  name: \"base_domain\"\n"
+            + "  adminServerName: \"admin-server\"\n"
+            + "  configuredClusters:\n"
+            + "  - name: \"cluster-1\"\n"
+            + "    servers:\n"
+            + "      - name: \"managed-server1\"\n"
+            + "        listenPort: 7003\n"
+            + "        listenAddress: \"domain1-managed-server1\"\n"
+            + "        adminPort: 7099\n"
+            + "        sslListenPort: 7104\n"
+            + "      - name: \"managed-server2\"\n"
+            + "        listenPort: 7003\n"
+            + "        listenAddress: \"domain1-managed-server2\"\n"
+            + "        adminPort: 7099\n"
+            + "        sslListenPort: 7104\n"
+            + "  servers:\n"
+            + "    - name: \"admin-server\"\n"
+            + "      listenPort: 7001\n"
+            + "      listenAddress: \"domain1-admin-server\"\n"
+            + "      adminPort: 7099\n"
+            + "    - name: \"server1\"\n"
+            + "      listenPort: 9003\n"
+            + "      adminPort: 7099\n"
+            + "      listenAddress: \"domain1-server1\"\n"
+            + "      sslListenPort: 8003\n"
+            + "    - name: \"server2\"\n"
+            + "      listenPort: 9004\n"
+            + "      listenAddress: \"domain1-server2\"\n"
+            + "      adminPort: 7099\n"
+            + "      sslListenPort: 8004\n";
+
+    //establishPreviousIntrospection(null);
+    domainConfigurator.withIstio();
+    domainConfigurator.configureCluster("cluster-1").withReplicas(2);
+
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        String.format(introspectorResult, topologyxml));
+    makeRightOperation.execute();
+    List<V1Pod> runningPods = getRunningPods();
+    assertThat(runningPods.size(), equalTo(6));
+
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(7099));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(7099));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(7099));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(7099));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7099));
+
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"), equalTo("HTTPS"));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"), equalTo("HTTPS"));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"), equalTo("HTTPS"));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"), equalTo("HTTPS"));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"), equalTo("HTTPS"));
+
+  }
+
+  @Test
+  void whenIstioDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+
+    String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+        + "#WebLogic User Configuration File; 2\n"
+        + "#Thu Oct 04 21:07:06 GMT 2018\n"
+        + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+        + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.864000Z][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/domainzip_hash\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xbo\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.867000Z][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/topology.yaml\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/topology.yaml\n"
+        + "%s\n"
+        + ">>> EOF\n";
+
+    String topologyxml = "domainValid: true\n"
+        + "domain:\n"
+        + "  name: \"base_domain\"\n"
+        + "  adminServerName: \"admin-server\"\n"
+        + "  configuredClusters:\n"
+        + "  - name: \"cluster-1\"\n"
+        + "    servers:\n"
+        + "      - name: \"managed-server1\"\n"
+        + "        listenPort: 7003\n"
+        + "        listenAddress: \"domain1-managed-server1\"\n"
+        + "        sslListenPort: 7104\n"
+        + "      - name: \"managed-server2\"\n"
+        + "        listenPort: 7003\n"
+        + "        listenAddress: \"domain1-managed-server2\"\n"
+        + "        sslListenPort: 7104\n"
+        + "  servers:\n"
+        + "    - name: \"admin-server\"\n"
+        + "      listenPort: 7001\n"
+        + "      listenAddress: \"domain1-admin-server\"\n"
+        + "    - name: \"server1\"\n"
+        + "      listenPort: 9003\n"
+        + "      listenAddress: \"domain1-server1\"\n"
+        + "      sslListenPort: 8003\n"
+        + "    - name: \"server2\"\n"
+        + "      listenPort: 9004\n"
+        + "      listenAddress: \"domain1-server2\"\n"
+        + "      sslListenPort: 8004\n";
+
+    //establishPreviousIntrospection(null);
+    domainConfigurator.withIstio();
+    domainConfigurator.configureCluster("cluster-1").withReplicas(2);
+
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        String.format(introspectorResult, topologyxml));
+    makeRightOperation.execute();
+    List<V1Pod> runningPods = getRunningPods();
+    assertThat(runningPods.size(), equalTo(6));
+
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(8888));
+
+    // default  is not set
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"), equalTo(null));
+
+  }
+
+
   private void removeSecondClusterAndIndependentServerFromDomainTopology() throws JsonProcessingException {
     testSupport.deleteResources(new V1ConfigMap()
             .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE)));
@@ -1517,7 +1700,7 @@ class DomainProcessorTest {
   }
 
   private void defineServerResources(String serverName, String clusterName) {
-    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName));
+    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName, clusterName));
   }
 
   /**/
@@ -1552,16 +1735,25 @@ class DomainProcessorTest {
   }
   
   private V1Service createServerService(String serverName) {
-    return AnnotationHelper.withSha256Hash(
-        new V1Service()
-            .metadata(
-                withServerLabels(
-                    new V1ObjectMeta()
-                        .name(
-                            LegalNames.toServerServiceName(
-                                DomainProcessorTestSetup.UID, serverName))
-                        .namespace(NS),
-                    serverName)));
+    return createServerService(serverName, null);
+  }
+
+  private V1Service createServerService(String serverName, String clusterName) {
+    V1Service service = new V1Service()
+        .metadata(
+            withServerLabels(
+                new V1ObjectMeta()
+                    .name(
+                        LegalNames.toServerServiceName(
+                            DomainProcessorTestSetup.UID, serverName))
+                    .namespace(NS),
+                serverName));
+
+    if (clusterName != null && !clusterName.isEmpty()) {
+      service.getMetadata().putLabelsItem(CLUSTERNAME_LABEL, clusterName);
+    }
+
+    return AnnotationHelper.withSha256Hash(service);
   }
 
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
@@ -1625,6 +1817,39 @@ class DomainProcessorTest {
       }
     }
 
+    return null;
+  }
+
+  private Integer getContainerReadinessPort(List<V1Pod> pods, String podName) {
+    for (V1Pod pod : pods) {
+      if (pod.getMetadata().getName().equals(podName)) {
+        return Optional.ofNullable(pod)
+            .map(V1Pod::getSpec)
+            .map(V1PodSpec::getContainers)
+            .flatMap(c -> c.stream().findFirst())
+            .map(V1Container::getReadinessProbe)
+            .map(V1Probe::getHttpGet)
+            .map(V1HTTPGetAction::getPort)
+            .map(IntOrString::getIntValue)
+            .orElse(null);
+      }
+    }
+    return null;
+  }
+
+  private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
+    for (V1Pod pod : pods) {
+      if (pod.getMetadata().getName().equals(podName)) {
+        return Optional.ofNullable(pod)
+            .map(V1Pod::getSpec)
+            .map(V1PodSpec::getContainers)
+            .flatMap(c -> c.stream().findFirst())
+            .map(V1Container::getReadinessProbe)
+            .map(V1Probe::getHttpGet)
+            .map(V1HTTPGetAction::getScheme)
+            .orElse(null);
+      }
+    }
     return null;
   }
 

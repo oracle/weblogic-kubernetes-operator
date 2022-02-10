@@ -154,6 +154,19 @@
                             <skip>${skipITs}</skip>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>validate-shell-scripts</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                              ${project.basedir}/../validateScripts.sh
+                            </arguments>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -192,22 +205,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>validate-shell-scripts</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${project.basedir}/../validateScripts.sh</executable>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -403,7 +400,7 @@
                   **/ItProductionSecureMode,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
-		          **/ItServiceStartPolicyDynamicCluster,
+		  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
@@ -432,6 +429,23 @@
             </properties>
         </profile>
         <profile>
+            <id>wko-okd-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItConfigDistributionStrategy,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiDomain,
+                  **/ItMiiDynamicUpdate,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItParameterizedDomain,
+                  **/ItPodsShutdownOption,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>fmw-pipeline</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -448,6 +462,25 @@
                     **/ItProductionSecureMode,
                     **/ItSessionMigration,
                     **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>toolkits-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItParameterizedDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItMiiAuxiliaryImage40,
+                    **/ItMiiNewCreateAuxImage40,
+                    **/ItMiiDynamicUpdate*,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiSampleFmwAux,
+                    **/ItFmwSample,
+                    **/ItWlsSamples,
+                    **/ItMiiMultiModel
                 </includes-failsafe>
             </properties>
         </profile>

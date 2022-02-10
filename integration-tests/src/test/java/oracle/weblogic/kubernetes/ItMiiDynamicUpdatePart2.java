@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -129,7 +129,7 @@ class ItMiiDynamicUpdatePart2 {
     Path pathToUndeployAppYaml = Paths.get(WORK_DIR + "/undeployapp.yaml");
     String yamlToUndeployApp = "appDeployments:\n"
         + "  Application:\n"
-        + "    !myear:";
+        + "    '!myear':";
 
     assertDoesNotThrow(() -> Files.write(pathToUndeployAppYaml, yamlToUndeployApp.getBytes()));
 
@@ -197,7 +197,7 @@ class ItMiiDynamicUpdatePart2 {
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
         + "  JDBCSystemResource:\n"
-        + "    !TestDataSource2:";
+        + "    '!TestDataSource2':";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 

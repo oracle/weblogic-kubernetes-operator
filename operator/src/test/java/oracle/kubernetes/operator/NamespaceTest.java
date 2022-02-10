@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -64,13 +64,14 @@ class NamespaceTest {
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
-  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
+  private TestUtils.ConsoleHandlerMemento loggerControl;
+
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(NoopWatcherStarter.install());
     mementos.add(HelmAccessStub.install());

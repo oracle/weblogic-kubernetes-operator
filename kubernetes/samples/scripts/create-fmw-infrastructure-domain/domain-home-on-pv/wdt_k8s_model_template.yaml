@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 
 #
 # This is the template for kubernetes section for wdt_model file. This
@@ -88,7 +88,7 @@ kubernetes:
       %EXPOSE_ANY_CHANNEL_PREFIX%    default:
       %EXPOSE_ADMIN_PORT_PREFIX%       nodePort: %ADMIN_NODE_PORT%
       # Uncomment to export the T3Channel as a service
-      %EXPOSE_T3_CHANNEL_PREFIX%     T3Channel:
+      %EXPOSE_T3_CHANNEL_PREFIX%    T3Channel:
 
     # Istio service mesh support is experimental.
     %ISTIO_PREFIX%configuration:
