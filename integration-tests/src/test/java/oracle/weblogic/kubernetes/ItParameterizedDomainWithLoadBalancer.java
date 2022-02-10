@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
- * The tests class creates WebLogic domains with three models.
+ * The test class creates WebLogic domains with three models.
  *  domain-on-pv ( using WDT )
  *  domain-in-image ( using WDT )
  *  model-in-image

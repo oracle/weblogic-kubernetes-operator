@@ -39,15 +39,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
- * The tests class creates WebLogic domains with three models.
+ * The test class creates WebLogic domains with three models.
  * domain-on-pv ( using WDT )
  * domain-in-image ( using WDT )
  * model-in-image
- * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain and
- * triggering rolling ( in case of mii domain )
+ * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain.
+ * Also verify admin console login using admin node port.
  */
 @DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
-    + " with different domain types, and rolling restart behavior in a MII domain")
+    + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
 class ItParameterizedDomain {
 
@@ -60,7 +60,6 @@ class ItParameterizedDomain {
   private static final String dpvDomainUid = "domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
 
-  private static String opNamespace = null;
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String domainOnPVNamespace = null;
@@ -80,7 +79,7 @@ class ItParameterizedDomain {
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     // get unique namespaces for three different type of domains
     logger.info("Getting unique namespaces for three different type of domains");
@@ -103,29 +102,14 @@ class ItParameterizedDomain {
    * Scale the cluster by patching domain resource for three different
    * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
    *
-   * @param domainType domain type
+   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   void testScaleClustersByPatchingDomainResource(String domainType) {
 
-    Domain domain = null;
-    if (domainType.equalsIgnoreCase("modelInImage")) {
-      domain = createMiiDomainAndVerify(miiDomainNamespace, miiDomainUid,
-          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-          miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE,
-          miiDomainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
-    } else if (domainType.equalsIgnoreCase("domainInImage")) {
-      List<String> appSrcDirList = new ArrayList<>();
-      appSrcDirList.add(MII_BASIC_APP_NAME);
-      domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
-             wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
-    } else {
-      domain = createDomainOnPvUsingWdt(dpvDomainUid, domainOnPVNamespace, wlSecretName,
-             clusterName, replicaCount, ItParameterizedDomain.class.getSimpleName());
-    }
-    assertDomainNotNull(domain);
+    Domain domain = createDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -146,13 +130,15 @@ class ItParameterizedDomain {
     managedServersBeforeScale = listManagedServersBeforeScale(numberOfServers);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, null, managedServersBeforeScale);
+
+    // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
    * Verify admin console login using admin node port.
    * Skip the test for slim images due to unavailability of console application
-   * @param domainType domain type
+   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
@@ -160,23 +146,8 @@ class ItParameterizedDomain {
   void testAdminConsoleLoginUsingAdminNodePort(String domainType) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-    Domain domain = null;
-    if (domainType.equalsIgnoreCase("modelInImage")) {
-      domain = createMiiDomainAndVerify(miiDomainNamespace, miiDomainUid + "-ac",
-          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-          miiDomainUid + "-ac-" + ADMIN_SERVER_NAME_BASE,
-          miiDomainUid + "-ac-" + MANAGED_SERVER_NAME_BASE, replicaCount);
-    } else if (domainType.equalsIgnoreCase("domainInImage")) {
-      List<String> appSrcDirList = new ArrayList<>();
-      appSrcDirList.add(MII_BASIC_APP_NAME);
-      domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid + "-ac", domainInImageNamespace,
-          wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
-    } else {
-      domain = createDomainOnPvUsingWdt(dpvDomainUid + "-ac", domainOnPVNamespace, wlSecretName,
-          clusterName, replicaCount, ItParameterizedDomain.class.getSimpleName() + "-AC");
-    }
+    Domain domain = createDomainBasedOnDomainType(domainType);
 
-    assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
 
@@ -192,6 +163,7 @@ class ItParameterizedDomain {
         "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
+    // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
@@ -222,4 +194,25 @@ class ItParameterizedDomain {
     assertNotNull(domain.getSpec().getClusters(), domain.getSpec() + " getClusters() is null");
   }
 
+  private static Domain createDomainBasedOnDomainType(String domainType) {
+    Domain domain = null;
+
+    if (domainType.equalsIgnoreCase("modelInImage")) {
+      domain = createMiiDomainAndVerify(miiDomainNamespace, miiDomainUid,
+          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+          miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE,
+          miiDomainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
+    } else if (domainType.equalsIgnoreCase("domainInImage")) {
+      List<String> appSrcDirList = new ArrayList<>();
+      appSrcDirList.add(MII_BASIC_APP_NAME);
+      domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
+          wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
+    } else {
+      domain = createDomainOnPvUsingWdt(dpvDomainUid, domainOnPVNamespace, wlSecretName,
+          clusterName, replicaCount, ItParameterizedDomain.class.getSimpleName());
+    }
+
+    assertDomainNotNull(domain);
+    return domain;
+  }
 }
