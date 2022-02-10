@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarte
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -1497,7 +1498,7 @@ class ItServerStartPolicy {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(0))))
+                                            .nodePort(getNextFreePort()))))
                     .addClustersItem(new Cluster()
                             .clusterName(CLUSTER_1)
                             .replicas(ItServerStartPolicy.replicaCount)
