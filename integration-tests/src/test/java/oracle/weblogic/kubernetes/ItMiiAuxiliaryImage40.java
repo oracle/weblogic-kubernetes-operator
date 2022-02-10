@@ -326,6 +326,7 @@ class ItMiiAuxiliaryImage40 {
    * Use Case 1: Both the AI's have WDT install files but different versions.
    * One auxiliary image sourceWDTInstallHome set to default and the other auxiliary image
    * sourceWDTInstallHome set to None. The WDT install files from the second AI should be ignored.
+   * Default model home location have no files, should be ignored.
    * Use Case 2: Both the auxiliary images sourceWDTInstallHome set to default.
    * Introspector should log an error message.
    */
@@ -347,14 +348,9 @@ class ItMiiAuxiliaryImage40 {
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
         "Create directory failed");
 
-    // create models dir and copy model, archive files if any
+    // create models dir with no files at default locaiton
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-    Path multipleAIPathToFile2 =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2/test.txt");
-    String content2 = "2";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
-        "Can't write to file " + multipleAIPathToFile2);
 
     // unzip older release WDT installation file into work dir
     unzipWDTInstallationFile(multipleAIPath2.toString(),
