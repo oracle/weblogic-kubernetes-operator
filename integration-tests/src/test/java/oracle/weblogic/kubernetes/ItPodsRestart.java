@@ -496,8 +496,7 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace, DOMAIN_ROLL_STARTING, "Normal",  timestamp);
-    logger.info("verify the event message contains the domain resource changed messages is logged");
-    assertTrue(event.getMessage().contains("domain resource changed"));
+    logger.info(Yaml.dump(event));
 
     event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
@@ -604,7 +603,7 @@ class ItPodsRestart {
 
     String oldVersion = assertDoesNotThrow(()
         -> getDomainCustomResource(domainUid, domainNamespace).getSpec().getRestartVersion());
-    int newVersion = oldVersion == null ? 1 : Integer.parseInt(oldVersion) + 1;
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
 
     logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
     String patchStr
@@ -634,8 +633,6 @@ class ItPodsRestart {
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
         DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the restartVersion changed message is logged");
-    assertTrue(event.getMessage().contains("restart version"));
 
     event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
@@ -698,8 +695,7 @@ class ItPodsRestart {
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace,
         DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the image changed from mii-basic-image message is logged");
-    assertTrue(event.getMessage().contains(tag));
+    logger.info(Yaml.dump(event));
 
     event = getOpGeneratedEvent(domainNamespace,
         POD_CYCLE_STARTING, "Normal", timestamp);
