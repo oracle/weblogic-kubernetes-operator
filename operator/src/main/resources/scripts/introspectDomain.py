@@ -549,7 +549,9 @@ class TopologyGenerator(Generator):
     leasingRequired = self.validateSingletonServices(cluster)
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
-        leasingRequired |= self.validateJTAMigrationPolicy(server.getJTAMigratableTarget(), "server", server, cluster)
+        jtaMigratableTarget = server.getJTAMigratableTarget()
+        if jtaMigratableTarget is not None:
+          leasingRequired |= self.validateJTAMigrationPolicy(jtaMigratableTarget, "server", server, cluster)
     return leasingRequired
 
   def validateNonDynamicClusterAutoMigrationDisabled(self, cluster):
@@ -598,19 +600,17 @@ class TopologyGenerator(Generator):
 
   def validateDynamicClusterLeasing(self, cluster):
     leasingRequired = self.validateSingletonServices(cluster)
-    dynamicServers = self.getDynamicServersOrNone(cluster)
-    if dynamicServers is not None:
-      serverTemplate = dynamicServers.getServerTemplate()
-      if serverTemplate is not None:
-        leasingRequired |= self.validateJTAMigrationPolicy(serverTemplate.getJTAMigratableTarget(), "server template", serverTemplate, cluster)
+    serverTemplate = self.findDynamicClusterServerTemplate(cluster)
+    if serverTemplate is not None:
+      jtaMigratableTarget = serverTemplate.getJTAMigratableTarget()
+      if jtaMigratableTarget is not None:
+        leasingRequired |= self.validateJTAMigrationPolicy(jtaMigratableTarget, "server template", serverTemplate, cluster)
     return leasingRequired
 
   def validateDynamicClusterAutoMigrationDisabled(self, cluster):
-    dynamicServers = self.getDynamicServersOrNone(cluster)
-    if dynamicServers is not None:
-      serverTemplate = dynamicServers.getServerTemplate()
-      if serverTemplate is not None:
-        self.validateAutoMigrationDisabled(serverTemplate, cluster)
+    serverTemplate = self.findDynamicClusterServerTemplate(cluster)
+    if serverTemplate is not None:
+      self.validateAutoMigrationDisabled(serverTemplate, cluster)
 
   def validateAutoMigrationDisabled(self, server_or_template, cluster):
     if server_or_template.isAutoMigrationEnabled() == True:
