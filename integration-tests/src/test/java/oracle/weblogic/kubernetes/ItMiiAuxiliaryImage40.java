@@ -97,6 +97,7 @@ class ItMiiAuxiliaryImage40 {
   private static final String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "5";
   private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "6";
   private static final String miiAuxiliaryImage7 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "7";
+  private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "8";
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
@@ -533,6 +534,110 @@ class ItMiiAuxiliaryImage40 {
   }
 
   /**
+   * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
+   * location. Verify introspector log contains the expected error message.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
+  void testCreateDomainNoFilesAtSourceModelHome() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    final String domainUid = "domain5";
+
+    // creating image with no model files
+    // create stage dir for auxiliary image
+    Path aiWithNoModel = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "aiwithnomodel");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiWithNoModel.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(aiWithNoModel),
+        "Create directory failed");
+    Path pathToFile =
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "aiwithnomodel/test.txt");
+    String content = "1";
+    assertDoesNotThrow(() -> Files.write(pathToFile, content.getBytes()),
+        "Can't write to file " + pathToFile);
+
+    // create models dir and copy model, archive files if any for image1
+    Path modelsPath1 = Paths.get(aiWithNoModel.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(aiWithNoModel.toString());
+
+    // create image1 with model and wdt installation files
+    createAuxiliaryImage(aiWithNoModel.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(),
+        miiAuxiliaryImage8, auxiliaryImagePathCustom);
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage8, DOMAIN_IMAGES_REPO);
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage8);
+    }
+
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, miiAuxiliaryImage8);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+        miiAuxiliaryImage8);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
+
+    String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
+        + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, errorMessage);
+
+  }
+
+  /**
+   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
+   * another auxiliary image with JMS system resource but with sourceModelHome set to none,
+   * verify the domain is running and JMS resource is not added.
+   */
+  @Test
+  @DisplayName("Test to create domain using multiple auxiliary images with model files and one AI having "
+      + "sourceModelHome set to none")
+  void testWithAISourceModelHomeSetToNone() {
+
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid = "domain6";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+    // using the images created in initAll
+    // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
+    // and other with sourceWDTInstallHome set to none
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        miiAuxiliaryImage1, miiAuxiliaryImage2);
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4, domainNamespace);
+    createDomainAndVerify(domainUid, domainCR1, domainNamespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+
+    assertFalse(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
+        "TestClusterJmsModule2", "200"), "Model files from second AI are not ignored");
+  }
+
+
+  /**
    * Cleanup images.
    */
   public void tearDownAll() {
@@ -544,6 +649,7 @@ class ItMiiAuxiliaryImage40 {
     deleteImage(miiAuxiliaryImage5);
     deleteImage(miiAuxiliaryImage6);
     deleteImage(miiAuxiliaryImage7);
+    deleteImage(miiAuxiliaryImage8);
   }
 
   private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
@@ -617,7 +723,8 @@ class ItMiiAuxiliaryImage40 {
         auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
             .sourceModelHome(auxiliaryImagePath + "/models");
       } else {
-        auxImage.sourceWDTInstallHome("none");
+        auxImage.sourceWDTInstallHome("none")
+            .sourceModelHome("none");
       }
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
       index++;
