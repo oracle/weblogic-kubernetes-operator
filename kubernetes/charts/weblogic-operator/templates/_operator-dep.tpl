@@ -60,8 +60,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: "metadata.uid"
-        - name: "OPERATOR_VERBOSE"
-          value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
         - name: "KUBERNETES_PLATFORM"
@@ -79,10 +77,6 @@ spec:
           {{- else }}
           value: "n"
           {{- end }}
-        {{- end }}
-        {{- if .mockWLS }}
-        - name: "MOCK_WLS"
-          value: "true"
         {{- end }}
         resources:
           requests:

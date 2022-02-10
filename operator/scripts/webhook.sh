@@ -15,8 +15,6 @@ relay_SIGTERM() {
 
 trap relay_SIGTERM SIGTERM
 
-/operator/initialize-external-operator-identity.sh
-
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=$DEBUG_SUSPEND,address=*:$REMOTE_DEBUG_PORT"
   echo "DEBUG=$DEBUG"
@@ -54,10 +52,6 @@ fi
 
 sed -i -e "s|JAVA_LOGGING_MAXSIZE|${JAVA_LOGGING_MAXSIZE:-20000000}|g" $LOGGING_CONFIG
 sed -i -e "s|JAVA_LOGGING_COUNT|${JAVA_LOGGING_COUNT:-10}|g" $LOGGING_CONFIG
-
-if [ "${MOCK_WLS}" == 'true' ]; then
-  MOCKING_WLS="-DmockWLS=true"
-fi
 
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 mkdir -m 777 -p /logs

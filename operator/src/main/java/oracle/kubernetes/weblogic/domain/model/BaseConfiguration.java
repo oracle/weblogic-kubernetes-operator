@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -40,7 +39,6 @@ public abstract class BaseConfiguration {
   public abstract ServerPod getServerPod();
 
   @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
-  @PreserveUnknown
   protected final ServerPod serverPod = new ServerPod();
 
   @Description(

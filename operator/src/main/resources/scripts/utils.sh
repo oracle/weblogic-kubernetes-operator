@@ -737,14 +737,14 @@ checkAuxiliaryImage() {
 }
 
 #
-# checkAuxiliaryImage
+# checkInitContainersWithAuxImages
 #   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
 #            in ${AUXILIARY_IMAGE_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
 #            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/initContainerAuxImageLogs dirs.
 #            It also returns 1 if 'successfully' message is not found in the output files
 #            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
 #            See also 'auxImage.sh'.
-#            See also initAuxiliaryImage in 'utils_base.sh'.
+#            See also initContainerAuxiliaryImages in 'utils_base.sh'.
 #
 checkInitContainersWithAuxImages() {
   # check auxiliary image results (if any)

@@ -262,8 +262,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   boolean isDomainWideAdminPortEnabled() {
     return domainTopology
-            .getServerConfig(domainTopology.getAdminServerName())
-            .isAdminPortEnabled();
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isAdminPortEnabled();
   }
 
   private String getDataHome() {
@@ -859,7 +859,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
-  protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+  private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     getEnvironmentVariables(tuningParameters).forEach(envVar ->
@@ -970,6 +970,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       if (auxiliaryImages.size() > 0) {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
@@ -1040,7 +1041,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         } else {
           readinessProbe =
               readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
-                      false));
+                  false));
         }
       } else {
         readinessProbe =

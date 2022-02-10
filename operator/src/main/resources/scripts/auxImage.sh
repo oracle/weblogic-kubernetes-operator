@@ -41,7 +41,6 @@ if [ -z "$1" ]; then
   mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
   cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
 elif [ "$1" == "webhook_generated" ]; then
-  echo "DEBUG: First argument found -> webhook_generated"
   initContainerAuxiliaryImages > /tmp/initContainerAuxImages.out 2>&1
   cat /tmp/initContainerAuxImages.out
 

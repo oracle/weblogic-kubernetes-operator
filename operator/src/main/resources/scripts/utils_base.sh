@@ -358,14 +358,13 @@ checkSourceWDTInstallDirExistsAndNotEmpty() {
 }
 
 #
-# initAuxiliaryImage
+# initContainerAuxiliaryImages
 #   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
 #            If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message and returns.
-#            If the AUXILIARY_IMAGE_PATH directory doesn't exist or is empty, it logs error and returns.
 #            If the command execution fails, it logs error message with failure details. Otherwise it
 #            logs a success message with details.
 #            See also 'auxImage.sh'.
-#            See also checkAuxiliaryImage in 'utils.sh'.
+#            See also checkInitContainersWithAuxImages in 'utils.sh'.
 #
 initContainerAuxiliaryImages() {
 

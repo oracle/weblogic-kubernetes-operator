@@ -8,10 +8,8 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -102,9 +100,6 @@ public final class SelfSignedCertUtils {
                                                     String commonName, int certificateValidityDays)
           throws OperatorCreationException, CertificateException, CertIOException {
 
-    Provider bcProvider = new BouncyCastleProvider();
-    Security.addProvider(bcProvider);
-
     Instant now = Instant.now();
     Date notBefore = Date.from(now);
     Date notAfter = Date.from(now.plus(Duration.ofDays(certificateValidityDays)));
@@ -122,7 +117,7 @@ public final class SelfSignedCertUtils {
                     .addExtension(Extension.subjectAlternativeName, false, getSAN(cert));
 
     return new JcaX509CertificateConverter()
-            .setProvider(bcProvider).getCertificate(certificateBuilder.build(contentSigner));
+            .setProvider(new BouncyCastleProvider()).getCertificate(certificateBuilder.build(contentSigner));
   }
 
   @NotNull

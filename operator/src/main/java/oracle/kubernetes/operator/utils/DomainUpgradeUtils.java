@@ -89,7 +89,6 @@ public class DomainUpgradeUtils {
    */
   public Domain convertDomain(Domain domain) {
     this.domain = domain;
-    System.out.println("api version is " + domain.getApiVersion());
     addAuxiliaryImages(getSpec());
     addAuxiliaryImages(getAdminServer());
     getClusters().forEach(this::addAuxiliaryImages);

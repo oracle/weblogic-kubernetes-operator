@@ -86,7 +86,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1475,7 +1474,7 @@ class DomainProcessorTest {
     assertThat(runningPods.size(), equalTo(6));
   }
 
-  @Ignore
+  @Test
   void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
