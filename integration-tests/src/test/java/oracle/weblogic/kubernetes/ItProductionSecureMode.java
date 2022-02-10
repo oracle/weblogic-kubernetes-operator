@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -348,10 +349,10 @@ class ItProductionSecureMode {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(0))
+                                            .nodePort(getNextFreePort()))
                                     .addChannelsItem(new Channel()
                                             .channelName("default-admin")
-                                            .nodePort(0))))
+                                            .nodePort(getNextFreePort()))))
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
