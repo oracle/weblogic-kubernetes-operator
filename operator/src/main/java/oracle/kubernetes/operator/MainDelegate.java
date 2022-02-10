@@ -3,34 +3,15 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-
 /**
  * Definition of an interface that returns values that the Main class requires.
  */
-interface MainDelegate {
-
-  SemanticVersion getProductVersion();
+public interface MainDelegate extends CoreDelegate {
 
   String getPrincipal();
-
-  default void runSteps(Step firstStep) {
-    runSteps(new Packet(), firstStep, null);
-  }
-
-  void runSteps(Packet packet, Step firstStep, Runnable completionAction);
 
   DomainProcessor getDomainProcessor();
 
   DomainNamespaces getDomainNamespaces();
 
-  KubernetesVersion getKubernetesVersion();
-
-  ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
 }

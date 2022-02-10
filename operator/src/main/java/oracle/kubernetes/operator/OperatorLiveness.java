@@ -18,7 +18,11 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class OperatorLiveness implements Runnable {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private final File livenessFile = new File("/operator/.alive");
+  private final File livenessFile;
+
+  public OperatorLiveness(MainDelegate delegate) {
+    livenessFile = new File(delegate.getOperatorHome(), ".alive");
+  }
 
   @Override
   public void run() {

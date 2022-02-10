@@ -9,13 +9,17 @@ import java.io.IOException;
 /** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
 public class OperatorReady {
 
-  private static final File readinessFile = new File("/operator/.ready");
+  private final File readinessFile;
+
+  public OperatorReady(MainDelegate delegate) {
+    readinessFile = new File(delegate.getOperatorHome(), ".ready");
+  }
 
   /**
    * Create the Operator readiness indicator.
    * @throws IOException if the readiness file does not exist
    */
-  public static void create() throws IOException {
+  public void create() throws IOException {
     if (!readinessFile.exists()) {
       readinessFile.createNewFile();
     }

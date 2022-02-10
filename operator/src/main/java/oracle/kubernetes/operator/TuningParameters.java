@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -15,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public interface TuningParameters extends Map<String, String> {
 
   static TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) {
+      ScheduledExecutorService executorService, File mountPoint) {
     return TuningParametersImpl.initializeInstance(executorService, mountPoint);
   }
 
