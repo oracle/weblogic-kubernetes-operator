@@ -49,7 +49,8 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
-  @Description("True while pods have been intentionally deleted and have not yet returned to the ready state")
+  @Description("True while pods have been intentionally deleted and have not yet returned to the ready state. "
+        + "Defaults to null, which is interpreted as 'false'.")
   private Boolean rolling;
 
   @Description(
