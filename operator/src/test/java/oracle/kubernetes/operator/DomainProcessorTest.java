@@ -1395,6 +1395,7 @@ class DomainProcessorTest {
           .ifPresent(name -> introspectionRunBeforeUpdates.put(name, makeRightOperation.wasInspectionRun()));
   }
 
+  // Map of server names to a boolean, indicating that the introspection had already been run when the pod was created
   private final Map<String,Boolean> introspectionRunBeforeUpdates = new HashMap<>();
 
   @Test

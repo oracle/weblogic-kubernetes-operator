@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -230,6 +230,18 @@ class DomainStatusTest {
 
     assertThat(domainStatus.getMessage(), nullValue());
     assertThat(domainStatus.getReason(), nullValue());
+  }
+
+  @Test
+  void whenDomainRollingStatusAdded_statusHasRollingStatus() {
+    domainStatus.setRolling(true);
+
+    assertThat(domainStatus.isRolling(), is(true));
+  }
+
+  @Test
+  void whenDomainRollingStatusNull_returnFalse() {
+    assertThat(domainStatus.isRolling(), is(false));
   }
 
   @Test

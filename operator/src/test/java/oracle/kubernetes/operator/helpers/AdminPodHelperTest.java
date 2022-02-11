@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -30,6 +31,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -37,7 +39,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -155,6 +156,21 @@ class AdminPodHelperTest extends PodHelperTestBase {
     configureServer().withEnvironmentVariable("test", "???");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  void whenPodReplacedAndDomainNotRolling_generateRollStartedEvent() {
+    initializeExistingPod();
+    getConsoleHandlerMemento().ignoreMessage(getReplacedMessageKey());
+    configureServer().withEnvironmentVariable("test", "???");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainRollStartedEvent), is(true));
+  }
+
+  private boolean isDomainRollStartedEvent(CoreV1Event e) {
+    return DOMAIN_ROLL_STARTING_EVENT.equals(e.getReason());
   }
 
   @Override
@@ -858,24 +874,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
     logRecords.clear();
 
     assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
-  }
-
-  @Test
-  void whenDomainHomeChanged_andRunAfterUpStep_domainRollCompletedEventCreatedWithCorrectMessage()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    initializeExistingPod();
-    getConfiguredDomainSpec().setDomainHome("adfgg");
-
-    testSupport.runSteps(getStepFactory(), Step.chain(getAfterUpStep(), terminalStep));
-    logRecords.clear();
-
-    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED),
-        stringContainsInOrder("Rolling restart of domain", UID, " completed"));
-  }
-
-  Step getAfterUpStep() {
-    return new RollingHelper.AfterRollStep(null, false);
   }
 
   @Test
