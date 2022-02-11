@@ -38,10 +38,6 @@ public class WeblogicApi extends CustomObjectsApi {
    */
   public Call getNamespacedDomainAsync(String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering getNamespacedDomainAsync");
-
     return getNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace,
         DOMAIN_PLURAL, name, new DomainApiCallbackWrapper(callback));
   }
@@ -74,10 +70,6 @@ public class WeblogicApi extends CustomObjectsApi {
       Boolean watch,
       ApiCallback<DomainList> callback)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering listNamespacedDomainCall");
-
     return listNamespacedCustomObjectCall(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch, new DomainListApiCallbackWrapper(callback));
@@ -109,10 +101,6 @@ public class WeblogicApi extends CustomObjectsApi {
       Integer timeoutSeconds,
       Boolean watch)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering listNamespacedDomain");
-
     return toDomainList(listNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL, pretty,
         null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch));
@@ -146,11 +134,7 @@ public class WeblogicApi extends CustomObjectsApi {
       Boolean watch,
       ApiCallback<DomainList> callback)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering listNamespacedDomainAsync");
-
-    return listNamespacedCustomObjectCall(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
+    return listNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch, new DomainListApiCallbackWrapper(callback));
   }
@@ -166,10 +150,6 @@ public class WeblogicApi extends CustomObjectsApi {
    */
   public Domain patchNamespacedDomain(String name, String namespace, V1Patch body)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering patchNamespacedDomain");
-
     return toDomain(patchNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null, null));
   }
@@ -187,10 +167,6 @@ public class WeblogicApi extends CustomObjectsApi {
   public Call patchNamespacedDomainAsync(
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering patchNamespacedDomainAsync");
-
     return patchNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null, null, new DomainApiCallbackWrapper(callback));
   }
@@ -206,10 +182,6 @@ public class WeblogicApi extends CustomObjectsApi {
    */
   public Domain replaceNamespacedDomain(String name, String namespace, Domain body)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering replaceNamespacedDomain");
-
     return toDomain(replaceNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null));
   }
@@ -227,10 +199,6 @@ public class WeblogicApi extends CustomObjectsApi {
   public Call replaceNamespacedDomainAsync(
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering replaceNamespacedDomainAsync");
-
     return replaceNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null, new DomainApiCallbackWrapper(callback));
   }
@@ -246,10 +214,6 @@ public class WeblogicApi extends CustomObjectsApi {
    */
   public Domain replaceNamespacedDomainStatus(String name, String namespace, Domain body)
       throws ApiException {
-
-    // TEST
-    System.out.println("TEST: entering replaceNamespacedDomainStatus");
-
     return toDomain(replaceNamespacedCustomObjectStatus(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null));
   }
@@ -268,9 +232,6 @@ public class WeblogicApi extends CustomObjectsApi {
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
 
-    // TEST
-    System.out.println("TEST: entering replaceNamespacedDomainStatusAsync");
-
     return replaceNamespacedCustomObjectStatusAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         name, body, null, null, new DomainApiCallbackWrapper(callback));
   }
@@ -284,20 +245,11 @@ public class WeblogicApi extends CustomObjectsApi {
 
     @Override
     public void onFailure(ApiException e, int i, Map<String, List<String>> map) {
-
-      // TEST
-      System.out.println("TEST: Domain onFailure");
-      e.printStackTrace();
-
       domainApiCallback.onFailure(e, i, map);
     }
 
     @Override
     public void onSuccess(Object o, int i, Map<String, List<String>> map) {
-
-      // TEST
-      System.out.println("TEST: onSuccess, o class: " + o.getClass() + ", o: " + o.toString());
-
       domainApiCallback.onSuccess(toDomain(o), i, map);
     }
 
@@ -321,20 +273,11 @@ public class WeblogicApi extends CustomObjectsApi {
 
     @Override
     public void onFailure(ApiException e, int i, Map<String, List<String>> map) {
-
-      // TEST
-      System.out.println("TEST: DomainList onFailure");
-      e.printStackTrace();
-
       domainListApiCallback.onFailure(e, i, map);
     }
 
     @Override
     public void onSuccess(Object o, int i, Map<String, List<String>> map) {
-
-      // TEST
-      System.out.println("TEST: onSuccess, o class: " + o.getClass() + ", o: " + o.toString());
-
       domainListApiCallback.onSuccess(toDomainList(o), i, map);
     }
 
@@ -358,44 +301,13 @@ public class WeblogicApi extends CustomObjectsApi {
     if (o == null) {
       return null;
     }
-
-    // TEST
-    System.out.println("TEST: toDomain, o class: " + o.getClass() + ", o: " + o.toString());
-
-
-    Domain d = null;
-    try {
-      d = getApiClient().getJSON().getGson().fromJson(convertToJson(o), Domain.class);
-    } catch (Throwable t) {
-
-      // TEST
-      System.out.println("TEST: failed in toDomain");
-      t.printStackTrace();
-
-    }
-
-    return d;
+    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), Domain.class);
   }
 
   private DomainList toDomainList(Object o) {
     if (o == null) {
       return null;
     }
-
-    // TEST
-    System.out.println("TEST: toDomainList, o class: " + o.getClass() + ", o: " + o.toString());
-
-    DomainList dl = null;
-    try {
-      dl = getApiClient().getJSON().getGson().fromJson(convertToJson(o), DomainList.class);
-    } catch (Throwable t) {
-
-      // TEST
-      System.out.println("TEST: failed in toDomainList");
-      t.printStackTrace();
-
-    }
-
-    return dl;
+    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), DomainList.class);
   }
 }

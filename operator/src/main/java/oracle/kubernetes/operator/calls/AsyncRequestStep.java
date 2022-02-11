@@ -179,7 +179,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       this.packet = packet;
       retryStrategy = Optional.ofNullable(retry)
             .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
-      this.cont = Optional.ofNullable(cont).orElse("");
+      this.cont = Optional.ofNullable(cont).orElse(null);
       client = helper.take();
     }
 

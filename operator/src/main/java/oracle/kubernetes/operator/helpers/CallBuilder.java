@@ -103,7 +103,7 @@ public class CallBuilder {
   private ClientPool helper;
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
-  private final String pretty = "false";
+  private final String pretty = null;
   private final CallFactory<Domain> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -290,7 +290,7 @@ public class CallBuilder {
   private final String resourceVersion = "";
 
   private Integer maxRetryCount = 10;
-  private final Boolean watch = Boolean.FALSE;
+  private final Boolean watch = null;
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
