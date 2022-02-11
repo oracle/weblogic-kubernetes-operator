@@ -86,9 +86,12 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
@@ -119,6 +122,54 @@ public class DomainStatusUpdater {
    */
   public static Step createStatusUpdateStep(Step next) {
     return new StatusUpdateStep(next);
+  }
+
+
+  /**
+   * Creates an asynchronous step to update the domain status to indicate that a roll is starting.
+   */
+  public static Step createStartRollStep() {
+    return new StartRollStep();
+  }
+
+  public static class StartRollStep extends DomainStatusUpdaterStep {
+
+    private StartRollStep() {
+    }
+
+    @Override
+    void modifyStatus(DomainStatus status) {
+      status.setRolling(true);
+    }
+
+    @Override
+    DomainStatusUpdaterContext createContext(Packet packet, Step retryStep) {
+      return new StartRollUpdaterContext(packet, this);
+    }
+
+    static class StartRollUpdaterContext extends DomainStatusUpdaterContext {
+
+      StartRollUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
+        super(packet, domainStatusUpdaterStep);
+      }
+
+      @NotNull
+      @Override
+      List<EventData> createDomainEvents() {
+        final List<EventData> result = new ArrayList<>();
+        if (wasNotRolling()) {
+          LOGGER.info(DOMAIN_ROLL_START);
+          result.add(new EventData(DOMAIN_ROLL_STARTING));
+        }
+        return result;
+      }
+
+      private boolean wasNotRolling() {
+        return !Optional.ofNullable(getStatus()).map(DomainStatus::isRolling).orElse(false);
+      }
+    }
+
+
   }
 
   /**
@@ -404,6 +455,7 @@ public class DomainStatusUpdater {
     @Nonnull
     private final DomainPresenceInfo info;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
+    private DomainStatus newStatus;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
@@ -411,6 +463,14 @@ public class DomainStatusUpdater {
     }
 
     DomainStatus getNewStatus() {
+      if (newStatus == null) {
+        newStatus = createNewStatus();
+      }
+      return newStatus;
+    }
+
+    @NotNull
+    private DomainStatus createNewStatus() {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
 
@@ -597,7 +657,25 @@ public class DomainStatusUpdater {
         conditions.apply();
         List<EventData> list = getRemovedConditionEvents(conditions);
         list.addAll(getNewConditionEvents(conditions));
+
+        if (domainRollJustCompleted(list)) {
+          list.add(new EventData(DOMAIN_ROLL_COMPLETED));
+        }
+
+        list.sort(Comparator.comparing(EventData::getOrdering));
         return list;
+      }
+
+      private boolean domainRollJustCompleted(List<EventData> list) {
+        return wasRolling() && justCompleted(list);
+      }
+
+      private boolean wasRolling() {
+        return getStatus() != null && getStatus().isRolling();
+      }
+
+      private boolean justCompleted(List<EventData> list) {
+        return list.stream().map(EventData::getItem).anyMatch(DOMAIN_COMPLETE::equals);
       }
 
       @NotNull
@@ -605,7 +683,6 @@ public class DomainStatusUpdater {
         return conditions.getNewConditions().stream()
             .map(this::toEvent)
             .filter(Objects::nonNull)
-            .sorted(Comparator.comparing(EventData::getItem))
             .collect(Collectors.toList());
       }
 
@@ -613,7 +690,6 @@ public class DomainStatusUpdater {
         return conditions.getRemovedConditions().stream()
             .map(this::toRemovedEvent)
             .filter(Objects::nonNull)
-            .sorted(Comparator.comparing(EventData::getItem))
             .collect(Collectors.toList());
       }
 
@@ -684,6 +760,9 @@ public class DomainStatusUpdater {
           conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
           conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
           computeTooManyReplicasFailures();
+          if (isProcessingCompleted()) {
+            this.status.setRolling(null);
+          }
           this.oldStatus = getStatus();
         }
 
@@ -700,7 +779,7 @@ public class DomainStatusUpdater {
           return Optional.ofNullable(status).map(DomainStatus::getConditions).orElse(Collections.emptyList())
               .stream()
               .filter(c -> "True".equals(c.getStatus()))
-              .filter(c -> oldStatus == null || !oldStatus.hasConditionWith(matchFor(c)))
+              .filter(c -> oldStatus == null || oldStatus.lacksConditionWith(matchFor(c)))
               .collect(Collectors.toList());
         }
 
@@ -709,7 +788,7 @@ public class DomainStatusUpdater {
               .map(DomainStatus::getConditions).orElse(Collections.emptyList())
               .stream()
               .filter(c -> "True".equals(c.getStatus()))
-              .filter(c -> status == null || !status.hasConditionWith(matchFor(c)))
+              .filter(c -> status == null || status.lacksConditionWith(matchFor(c)))
               .collect(Collectors.toList());
         }
 
@@ -901,7 +980,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean hasReadyServerPod(String serverName) {
-          return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
+          return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::hasReadyStatus).isPresent();
         }
 
         private String getClusterNameFromPod(String serverName) {
@@ -1031,7 +1110,7 @@ public class DomainStatusUpdater {
 
       private boolean isServerReady(@Nonnull String serverName) {
         return RUNNING_STATE.equals(getRunningState(serverName))
-              && PodHelper.getReadyStatus(getInfo().getServerPod(serverName));
+              && PodHelper.hasReadyStatus(getInfo().getServerPod(serverName));
       }
 
       // returns true if the server pod does not have a label indicating that it needs to be rolled

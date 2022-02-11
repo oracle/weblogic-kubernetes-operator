@@ -63,8 +63,10 @@ import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.ServerStatus
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
 import static oracle.kubernetes.operator.EventConstants.SERVER_POD_ERROR;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -86,7 +88,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Config
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -134,6 +136,10 @@ abstract class DomainStatusUpdateTestBase {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
+  }
+
+  Domain getDomain() {
+    return domain;
   }
 
   abstract void processTopology(WlsDomainConfig domainConfig);
@@ -492,6 +498,16 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAllDesiredServersRunningAndNoClusters_removeRollingStatus() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
+    domain.getOrCreateStatus().setRolling(true);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain().getStatus().isRolling(), is(false));
+  }
+
+  @Test
   void whenAnyServerLacksReadyState_establishCompletedConditionFalse() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
     deactivateServer("ms1");
@@ -597,7 +613,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(false));
+    assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
   }
 
   private List<CoreV1Event> getEvents() {
@@ -620,6 +636,46 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+  }
+
+  @Test
+  void whenRollInProcessAndSomeServersNotRunning_dontGenerateDomainRollCompletedEvent() {
+    domain.getStatus().setRolling(true);
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+    deactivateServer("server1");
+
+    updateDomainStatus();
+
+    assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
+  }
+
+  @Test
+  void whenRollInProcessAndAllServersRunning_generateDomainRollCompletedEvent() {
+    domain.getStatus().setRolling(true);
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+  }
+
+  @Test
+  void whenRollNotInProcessAndAllServersRunning_dontGenerateDomainRollCompletedEvent() {
+    domain.getStatus().setRolling(false);
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_COMPLETED_EVENT)));
   }
 
   @Test
@@ -790,7 +846,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));;
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -1029,10 +1085,12 @@ abstract class DomainStatusUpdateTestBase {
     return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
   }
 
+  @SuppressWarnings("ConstantConditions")
   private boolean isReplicasTooHighEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(REPLICAS_TOO_HIGH_ERROR);
   }
 
+  @SuppressWarnings("ConstantConditions")
   private boolean isServerPodFailedEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(SERVER_POD_ERROR);
   }
@@ -1053,10 +1111,11 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateTwoEventsInOrder() {
+  void whenMultipleEventsGeneratedInDomainStatus_preserveOrder() {
     domain.getStatus()
         .addCondition(new DomainCondition(Available).withStatus(FALSE))
-        .addCondition(new DomainCondition(Completed).withStatus(FALSE));
+        .addCondition(new DomainCondition(Completed).withStatus(FALSE))
+        .setRolling(true);
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -1065,8 +1124,11 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().sorted(this::compareEvents).collect(Collectors.toList()),
-        contains(eventWithReason(DOMAIN_AVAILABLE_EVENT), eventWithReason(DOMAIN_COMPLETED_EVENT)));
+    assertThat(getEvents().stream().sorted(this::compareEventTimes).collect(Collectors.toList()),
+        containsInRelativeOrder(
+              eventWithReason(DOMAIN_AVAILABLE_EVENT),
+              eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
+              eventWithReason(DOMAIN_COMPLETED_EVENT)));
   }
 
   private void setUniqueCreationTimestamp(Object event) {
@@ -1074,7 +1136,7 @@ abstract class DomainStatusUpdateTestBase {
     SystemClockTestSupport.increment();
   }
 
-  private int compareEvents(CoreV1Event event1, CoreV1Event event2) {
+  private int compareEventTimes(CoreV1Event event1, CoreV1Event event2) {
     return getCreationStamp(event1).compareTo(getCreationStamp(event2));
   }
 

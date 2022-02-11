@@ -323,6 +323,11 @@ public class EventHelper {
       }
 
       @Override
+      int getOrdering() {
+        return 1;
+      }
+
+      @Override
       public String getPattern() {
         return DOMAIN_AVAILABLE_PATTERN;
       }
@@ -353,6 +358,11 @@ public class EventHelper {
       @Override
       public String getReason() {
         return DOMAIN_COMPLETED_EVENT;
+      }
+
+      @Override
+      int getOrdering() {
+        return 20;
       }
 
       @Override
@@ -455,6 +465,11 @@ public class EventHelper {
       @Override
       public String getReason() {
         return EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
+      }
+
+      @Override
+      int getOrdering() {
+        return 10;
       }
 
       @Override
@@ -702,6 +717,13 @@ public class EventHelper {
       return EVENT_NORMAL;
     }
 
+    /**
+     * Returns the desired relative order of events generated. Events with lower numbers will be generated earlier.
+     */
+    int getOrdering() {
+      return Integer.MAX_VALUE;
+    }
+
     public abstract String getPattern();
 
     public abstract String getReason();
@@ -763,6 +785,10 @@ public class EventHelper {
 
     public EventItem getItem() {
       return eventItem;
+    }
+
+    public int getOrdering() {
+      return eventItem.getOrdering();
     }
 
     public String getNamespace() {

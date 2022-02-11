@@ -97,7 +97,7 @@ public class PodHelper {
    * @return true, if pod is ready
    */
   public static boolean isReady(V1Pod pod) {
-    boolean ready = getReadyStatus(pod);
+    boolean ready = hasReadyStatus(pod);
     if (ready) {
       LOGGER.fine(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
     }
@@ -105,7 +105,7 @@ public class PodHelper {
   }
 
   static boolean hasReadyServer(V1Pod pod) {
-    return Optional.ofNullable(pod).map(PodHelper::getReadyStatus).orElse(false);
+    return Optional.ofNullable(pod).map(PodHelper::hasReadyStatus).orElse(false);
   }
 
   static boolean isScheduled(@Nullable V1Pod pod) {
@@ -149,7 +149,7 @@ public class PodHelper {
    * @param pod pod
    * @return true, if pod is ready
    */
-  public static boolean getReadyStatus(V1Pod pod) {
+  public static boolean hasReadyStatus(V1Pod pod) {
     return Optional.ofNullable(pod.getStatus())
           .filter(PodHelper::isRunning)
           .map(V1PodStatus::getConditions)
@@ -327,7 +327,7 @@ public class PodHelper {
       if (MakeRightDomainOperation.isInspectionRequired(packet)) {
         return MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet);
       } else {
-        return createDomainRollStartEventIfNeeded(pod, createCyclePodStep(pod, next));
+        return createCyclePodStep(pod, next);
       }
     }
 
@@ -457,11 +457,11 @@ public class PodHelper {
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
       labelPodAsNeedingToRoll(pod);
-      deferProcessing(pod, createCyclePodStep(pod, next));
-      return createDomainRollStartEventIfNeeded(pod, null);
+      deferProcessing(createCyclePodStep(pod, next));
+      return null;
     }
 
-    private void deferProcessing(V1Pod pod, Step deferredStep) {
+    private void deferProcessing(Step deferredStep) {
       synchronized (packet) {
         Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
