@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -19,8 +19,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.helpers.RollingHelper.createDomainRollCompletedEventStepIfNeeded;
-
 public class ManagedServerUpAfterStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -31,7 +29,7 @@ public class ManagedServerUpAfterStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     if (getServersToRoll(packet).isEmpty()) {
-      return doNext(createDomainRollCompletedEventStepIfNeeded(getNext(), packet), packet);
+      return doNext(packet);
     } else if (MakeRightDomainOperation.isInspectionRequired(packet)) {
       return doNext(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet), packet);
     } else {
