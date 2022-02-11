@@ -630,12 +630,7 @@ class ItIntrospectVersion {
     checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getOpGeneratedEvent(introDomainNamespace, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the domain resource changed message");
-    assertTrue(event.getMessage().contains("resource changed"));
-
-    event = getOpGeneratedEvent(introDomainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(introDomainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the property changed in domain resource");
     assertTrue(event.getMessage().contains("ADMIN_PORT"));
