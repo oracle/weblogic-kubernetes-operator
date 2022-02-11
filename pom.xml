@@ -616,7 +616,7 @@
     <jersey-version>3.0.4</jersey-version>
     <jackson-version>2.13.1</jackson-version>
     <jackson-databind-version>2.13.1</jackson-databind-version>
-    <dependency-check-version>6.1.5</dependency-check-version>
+    <dependency-check-version>6.5.3</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>

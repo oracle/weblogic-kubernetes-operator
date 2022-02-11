@@ -17,6 +17,10 @@
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
+        <cpe>cpe:/a:google:protobuf-java</cpe>
+    </suppress>
+    <suppress>
         <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/weblogic\-kubernetes\-operator@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
