@@ -260,9 +260,9 @@ public interface TestConstants {
       "MONITORING_EXPORTER_BRANCH"))
       .orElse("master");
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
-      .orElse("11.1.5");
+      .orElse("15.2.0");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
-      .orElse("5.0.20");
+      .orElse("6.21.5");
   public static final String PROMETHEUS_REPO_NAME = "stable";
   public static final String PROMETHEUS_REPO_URL = "https://charts.helm.sh/stable/";
   public static final String GRAFANA_REPO_NAME = "stable";
@@ -285,7 +285,7 @@ public interface TestConstants {
 
   // Default ISTIO version is 1.10.4
   public static final String ISTIO_VERSION =
-        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.10.4");
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.11.1");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
