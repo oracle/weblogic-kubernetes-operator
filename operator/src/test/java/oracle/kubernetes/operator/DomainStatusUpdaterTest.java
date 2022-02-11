@@ -1,11 +1,13 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
@@ -34,10 +36,14 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -62,10 +68,13 @@ class DomainStatusUpdaterTest {
   private final RuntimeException failure = new RuntimeException(message);
   private final String validationWarning = generator.getUniqueString();
   private final V1Job job = createIntrospectorJob("JOB");
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @BeforeEach
   void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
+    mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords).ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(SystemClockTestSupport.installClock());
@@ -85,6 +94,48 @@ class DomainStatusUpdaterTest {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
+  }
+
+  @Test
+  void whenNeedToReplacePodAndNotRolling_setRollingStatus() {
+    testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
+
+    assertThat(getRecordedDomain().getStatus().isRolling(), is(true));
+  }
+
+  @Test
+  void whenNeedToReplacePodAndRolling_dontGenerateRollingStartedEvent() {
+    domain.getStatus().setRolling(true);
+
+    testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
+
+    assertThat(testSupport, not(hasEvent(DOMAIN_ROLL_STARTING_EVENT)));
+  }
+
+  @Test
+  void whenNeedToReplacePodAndRolling_dontLogDomainStarted() {
+    domain.getStatus().setRolling(true);
+    consoleHandlerMemento.trackMessage(DOMAIN_ROLL_START);
+
+    testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
+
+    assertThat(logRecords, not(containsInfo(DOMAIN_ROLL_START)));
+  }
+
+  @Test
+  void whenNeedToReplacePodAndNotRolling_generateRollingStartedEvent() {
+    testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
+
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_STARTING_EVENT).inNamespace(NS).withMessageContaining(UID));
+  }
+
+  @Test
+  void whenNeedToReplacePodAndRolling_logDomainStarted() {
+    consoleHandlerMemento.trackMessage(DOMAIN_ROLL_START);
+
+    testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
+
+    assertThat(logRecords, containsInfo(DOMAIN_ROLL_START));
   }
 
   @Test
@@ -215,6 +266,5 @@ class DomainStatusUpdaterTest {
   }
 
   // todo when new failures match old ones, leave the old matches
-
 
 }

@@ -138,8 +138,8 @@ public class MessageKeys {
   public static final String BEGIN_MANAGING_NAMESPACE = "WLSKO-0186";
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
-  public static final String DOMAIN_ROLL_STARTING = "WLSKO-0190";
-  public static final String DOMAIN_ROLL_COMPLETED = "WLSKO-0191";
+  public static final String DOMAIN_ROLL_START = "WLSKO-0190";
+  public static final String DOMAIN_ROLL_COMPLETE = "WLSKO-0191";
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
