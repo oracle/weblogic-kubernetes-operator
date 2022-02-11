@@ -108,7 +108,7 @@ class ItMultiDomainModels {
   @DisplayName("scale cluster by patching domain resource with three different type of domains and "
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
-  void testScaleClustersByPatchingDomainResource(String domainType) {
+  void testScaleClustersAndAdminConsoleLogin(String domainType) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     Domain domain = createDomainBasedOnDomainType(domainType);

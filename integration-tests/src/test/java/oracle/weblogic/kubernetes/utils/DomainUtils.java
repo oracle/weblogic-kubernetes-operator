@@ -312,8 +312,15 @@ public class DomainUtils {
     runCreateDomainOnPVJobUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace, testClassName);
 
-    return createDomainOnPVAndVerify(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+    Domain domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
         clusterName, replicaCount);
+
+    // Verify the domain custom resource is created.
+    // Also verify the admin server pod and managed server pods are up and running.
+    createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
+        domainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
+
+    return domain;
   }
 
   /**
@@ -328,13 +335,13 @@ public class DomainUtils {
    * @param replicaCount - repica count of the clsuter
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainOnPVAndVerify(String domainUid,
-                                                 String domainNamespace,
-                                                 String wlSecretName,
-                                                 String pvName,
-                                                 String pvcName,
-                                                 String clusterName,
-                                                 int replicaCount) {
+  public static Domain createDomainResourceForDomainOnPV(String domainUid,
+                                                         String domainNamespace,
+                                                         String wlSecretName,
+                                                         String pvName,
+                                                         String pvcName,
+                                                         String clusterName,
+                                                         int replicaCount) {
     // create the domain custom resource
     getLogger().info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -385,11 +392,6 @@ public class DomainUtils {
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
-
-    // Verify the domain custom resource is created.
-    // Also verify the admin server pod and managed server pods are up and running.
-    createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
-        domainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
 
     return domain;
   }
@@ -627,8 +629,8 @@ public class DomainUtils {
   }
 
   /**
-   * Create domain with domain-in-image type and verify the domain is created.
-   * Also verify the admin server pod and managed server pods are up and running.
+   * Create domain resource with domain-in-image type.
+   *
    * @param domainUid domain uid
    * @param domainNamespace domain namespace
    * @param imageName image name used to create domain-in-image domain
@@ -637,12 +639,12 @@ public class DomainUtils {
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
-  public static Domain createDomainInImageAndVerify(String domainUid,
-                                                    String domainNamespace,
-                                                    String imageName,
-                                                    String wlSecretName,
-                                                    String clusterName,
-                                                    int replicaCount) {
+  public static Domain createDomainResourceForDomainInImage(String domainUid,
+                                                            String domainNamespace,
+                                                            String imageName,
+                                                            String wlSecretName,
+                                                            String clusterName,
+                                                            int replicaCount) {
     // create the domain custom resource
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -685,21 +687,33 @@ public class DomainUtils {
                     .domainType(WLS_DOMAIN_TYPE))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
-    createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod ready and service exists in the domain namespace
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    getLogger().info("Check for admin server pod {0} ready and service exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    return domain;
+  }
 
-    // check managed server pods are ready and service exists in the domain namespace
-    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    for (int i = 1; i <= replicaCount; i++) {
-      getLogger().info("Wait for managed server pod {0} to be ready and services exist in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
+  /**
+   * Create domain with domain-in-image type and verify the domain is created.
+   * Also verify the admin server pod and managed server pods are up and running.
+   * @param domainUid domain uid
+   * @param domainNamespace domain namespace
+   * @param imageName image name used to create domain-in-image domain
+   * @param wlSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param replicaCount replica count of the cluster
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static Domain createDomainInImageAndVerify(String domainUid,
+                                                    String domainNamespace,
+                                                    String imageName,
+                                                    String wlSecretName,
+                                                    String clusterName,
+                                                    int replicaCount) {
+    // create the domain custom resource
+    Domain domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
+        clusterName, replicaCount);
+
+    createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
+        domainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
 
     return domain;
   }
