@@ -236,7 +236,7 @@
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter,
-                   **/ItParameterizedDomain,
+                   **/ItMultiDomainModels,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
@@ -295,7 +295,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
@@ -334,7 +334,7 @@
                 <includes-failsafe>
                     **/ItKubernetesEvents,
                     **/ItMiiAuxiliaryImage,
-                    **/ItParameterizedDomain,
+                    **/ItMultiDomainModels,
                     **/ItPodsRestart,
                     **/ItTwoDomainsManagedByTwoOperators
                 </includes-failsafe>
@@ -345,7 +345,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItParameterizedDomain,
+                    **/ItMultiDomainModels,
                     **/ItMiiUpdateDomainConfig,
                     **/ItMiiAuxiliaryImage,
                     **/ItMiiNewCreateAuxImage,

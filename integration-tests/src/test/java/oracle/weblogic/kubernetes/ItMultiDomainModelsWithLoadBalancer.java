@@ -131,7 +131,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
         + "rolling restart behavior in a multi-cluster MII domain and "
         + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
-class ItParameterizedDomainWithLoadBalancer {
+class ItMultiDomainModelsWithLoadBalancer {
 
   // domain constants
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
@@ -943,7 +943,7 @@ class ItParameterizedDomainWithLoadBalancer {
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     Domain domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
-        replicaCount, ItParameterizedDomainWithLoadBalancer.class.getSimpleName());
+        replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
 
     // build application sample-app and opensessionapp
     List<String> appSrcDirList = new ArrayList<>();

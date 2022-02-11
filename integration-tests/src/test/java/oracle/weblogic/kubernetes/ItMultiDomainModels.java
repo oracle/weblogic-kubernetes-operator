@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
-class ItParameterizedDomain {
+class ItMultiDomainModels {
 
   // domain constants
   private static final String clusterName = "cluster-1";
@@ -191,7 +191,7 @@ class ItParameterizedDomain {
           wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
     } else {
       domain = createDomainOnPvUsingWdt(dpvDomainUid, domainOnPVNamespace, wlSecretName,
-          clusterName, replicaCount, ItParameterizedDomain.class.getSimpleName());
+          clusterName, replicaCount, ItMultiDomainModels.class.getSimpleName());
     }
 
     assertDomainNotNull(domain);
