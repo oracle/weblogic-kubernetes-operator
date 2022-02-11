@@ -24,7 +24,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -82,14 +81,16 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using auxiliary image")
+@DisplayName("Test to create model in image domain using auxiliary image. "
+    + "Multiple domains are created in the same namespace in this class.")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 class ItMiiAuxiliaryImage40 {
 
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
-  private final String domainUid = "domain1";
+  private static final String domainUid1 = "domain1";
+  private final String domainUid = "";
   private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "1";
   private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "2";
   private static final String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "3";
@@ -100,14 +101,19 @@ class ItMiiAuxiliaryImage40 {
   private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "8";
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
-  private final int replicaCount = 2;
+  private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
+  private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
+  private static final int replicaCount = 2;
   private String adminSvcExtHost = null;
+  private static String adminSvcExtHostDomain1 = null;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
   private static String opNamespace = null;
 
   /**
-   * Install Operator.
+   * Install Operator. Create a domain using multiple auxiliary images.
+   * One auxiliary image containing the domain configuration and another auxiliary image with
+   * JMS system resource, verify the domain is running and JMS resource is added.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -154,43 +160,31 @@ class ItMiiAuxiliaryImage40 {
     // image2 with model files for jms config
     createAuxiliaryImageWithJmsConfig(miiAuxiliaryImage2, "/auxiliary");
 
-  }
-
-
-  /**
-   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
-   * another auxiliary image with JMS system resource, verify the domain is running and JMS resource is added.
-   */
-  @Test
-  @Order(1)
-  @DisplayName("Test to create domain using multiple auxiliary images")
-  void testCreateDomainUsingMultipleAuxiliaryImages() {
-
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
-        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    Domain domainCR = createDomainResource40(domainUid, domainNamespace,
+        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
+    Domain domainCR = createDomainResource40(domainUid1, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage1, miiAuxiliaryImage2);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
-        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
-    createDomainAndVerify(domainUid, domainCR, domainNamespace,
-        adminServerPodName, managedServerPrefix, replicaCount);
+        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
+    createDomainAndVerify(domainUid1, domainCR, domainNamespace,
+        adminServerPodNameDomain1, managedServerPrefixDomain1, replicaCount);
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHost);
+    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHostDomain1);
   }
 
   /**
@@ -199,7 +193,6 @@ class ItMiiAuxiliaryImage40 {
    * Patch domain with updated JDBC URL info and verify the update.
    */
   @Test
-  @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
@@ -226,25 +219,25 @@ class ItMiiAuxiliaryImage40 {
     }
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for DataSource in the running domain
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodNameDomain1), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHostDomain1, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
         "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         "Can't find expected URL configuration for DataSource");
 
     logger.info("Found the DataResource configuration");
 
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid, domainNamespace);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid1, domainNamespace);
 
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
   }
 
   /**
@@ -253,19 +246,18 @@ class ItMiiAuxiliaryImage40 {
    * Verify configured JMS and JDBC resources.
    */
   @Test
-  @Order(3)
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageName() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
-    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix,
-            replicaCount);
+    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+        managedServerPrefixDomain1, replicaCount);
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
@@ -288,12 +280,12 @@ class ItMiiAuxiliaryImage40 {
         .append("\"}]");
     logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+    assertTrue(patchDomainResource(domainUid1, domainNamespace, patchStr),
         "patchDomainCustomResource(imageUpdate) failed");
 
-    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
@@ -302,22 +294,22 @@ class ItMiiAuxiliaryImage40 {
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
+        domainUid1, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespace));
 
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodNameDomain1, domainUid1, domainNamespace);
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHost);
+    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHostDomain1);
     //check configuration for JDBC
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
 
   }
 
@@ -663,7 +655,7 @@ class ItMiiAuxiliaryImage40 {
         .execute(), String.format("Failed to execute", cmdToExecute));
   }
 
-  private void checkConfiguredJMSresouce(String domainNamespace, String adminSvcExtHost) {
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminSvcExtHost) {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName("domain1-admin-server"), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
