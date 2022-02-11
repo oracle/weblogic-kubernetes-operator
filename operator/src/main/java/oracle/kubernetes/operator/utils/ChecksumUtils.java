@@ -1,10 +1,10 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import javax.xml.bind.DatatypeConverter;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -21,7 +21,7 @@ public class ChecksumUtils {
    */
   public static String getMD5Hash(String data) {
     try {
-      return bytesToHex(MessageDigest.getInstance("MD5").digest(data.getBytes("UTF-8")));
+      return bytesToHex(MessageDigest.getInstance("MD5").digest(data.getBytes(StandardCharsets.UTF_8)));
     } catch (Exception ex) {
       LOGGER.severe(MessageKeys.EXCEPTION, ex);
       return null;
@@ -29,6 +29,10 @@ public class ChecksumUtils {
   }
 
   private static String bytesToHex(byte[] hash) {
-    return DatatypeConverter.printHexBinary(hash).toLowerCase();
+    StringBuilder result = new StringBuilder();
+    for (byte b : hash) {
+      result.append(String.format("%02x", b));
+    }
+    return result.toString();
   }
 }
