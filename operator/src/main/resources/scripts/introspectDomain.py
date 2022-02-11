@@ -358,7 +358,6 @@ class TopologyGenerator(Generator):
     self.validateClusters()
     self.validateServerCustomChannelName()
     self.validateDynamicClustersDuplicateServerNamePrefix()
-    self.validateJMSResources()
     return self.isValid()
 
   def generate(self):
@@ -565,6 +564,7 @@ class TopologyGenerator(Generator):
 
   def validateNonDynamicClusterLeasing(self, cluster):
     leasingRequired = self.validateSingletonServices(cluster)
+    leasingRequired |= self.validateMigratableTargets(cluster)
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
         leasingRequired |= self.validateJTAMigrationPolicy(server, cluster)
@@ -610,6 +610,7 @@ class TopologyGenerator(Generator):
 
   def validateDynamicClusterLeasing(self, cluster):
     leasingRequired = self.validateSingletonServices(cluster)
+    leasingRequired |= self.validateMigratableTargets(cluster)
     serverTemplate = self.getDynamicClusterServerTemplate(cluster)
     if serverTemplate is not None:
       leasingRequired |= self.validateJTAMigrationPolicy(serverTemplate, cluster, True)
@@ -668,43 +669,46 @@ class TopologyGenerator(Generator):
         return migratableTarget
     return None
 
-  def validateJMSResources(self):
-    domain = self.env.getDomain()
-    if not self.env.skipLeasingValidations():
-      for messagingBridge in domain.getMessagingBridges():
-        self.validateJMSResourceMigrationPolicy(messagingBridge, "Messaging bridge")
-      for jdbcStore in domain.getJDBCStores():
-        self.validateJMSResourceMigrationPolicy(jdbcStore, "JDBCStore")
-      for fileStore in domain.getFileStores():
-        self.validateJMSResourceMigrationPolicy(fileStore, "FileStore")
+  def validateMigratableTargets(self, cluster):
+    leasingRequired = False;
+    for migratableTarget in self.env.getDomain().getMigratableTargets():
+      if migratableTarget.getCluster() is cluster:
+        # possible migration policy values are "manual", "exactly-once", and "failure-recovery".
+        # All values except "manual" requires cluster leasing.
+        migrationPolicy = migratableTarget.getMigrationPolicy()
+        if migrationPolicy is not None and migrationPolicy != "manual":
+          # check JMS resources targeted to this migratable target
+          leasingRequired |= self.validateJMSResourcesLeasing(migratableTarget)
+    return leasingRequired
 
-  def validateJMSResourceMigrationPolicy(self, jmsResource, typeStr):
+  def validateJMSResourcesLeasing(self, migratableTarget):
+    leasingRequired = False;
+    domain = self.env.getDomain()
+    for messagingBridge in domain.getMessagingBridges():
+      leasingRequired |= self.validateJMSResourceMigrationPolicy(messagingBridge, migratableTarget, "Messaging bridge")
+    for jdbcStore in domain.getJDBCStores():
+      leasingRequired |= self.validateJMSResourceMigrationPolicy(jdbcStore, migratableTarget, "JDBCStore")
+    for fileStore in domain.getFileStores():
+      leasingRequired |= self.validateJMSResourceMigrationPolicy(fileStore, migratableTarget, "FileStore")
+    return leasingRequired
+
+  def validateJMSResourceMigrationPolicy(self, jmsResource, migratableTarget, typeStr):
+    leasingRequired = False
     # valid migration policy values are "Off", "On-Failure", and "Always".
     # Cluster leasing must be configured for "On-Failure" and "Always".
     if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy() != "Off":
       targets = jmsResource.getTargets();
       for target in targets:
-        self.validateJMSResourceTargetLeasing(target, jmsResource, typeStr)
-
-  def validateJMSResourceTargetLeasing(self, targetMBean, jmsResource, typeStr):
-    if targetMBean is not None:
-      migratableTarget = self.findMigratableTarget(targetMBean.getName())
-      if migratableTarget is not None:
-        # targetMBean is a migratable target.
-        # possible migration policy values are "manual", "exactly-once", and "failure-recovery".
-        # All values except "manual" requires cluster leasing.
-        migrationPolicy = migratableTarget.getMigrationPolicy()
-        if migrationPolicy is not None and migrationPolicy != "manual":
+        # targetMBean can also be a server or cluster, and we have already validated
+        # all clusters with calls to validateAutoMigrationDisabled function
+        if target is migratableTarget:
+          leasingRequired = True
           cluster = migratableTarget.getCluster()
-          if self.isConsensusLeasing(cluster):
-            self.addConsensusLeasingError("Automatic service migration is enabled for " + typeStr + " " +
-                                          self.name(jmsResource) + " with migratable target " +
-                                          self.name(targetMBean) + " that is associated with cluster " +
-                                          self.name(cluster) )
-          else:
-            self.validateClusterLeasingDataSourceConfigured(cluster)
-      # targetMBean can also be a server or cluster, and we have already validated
-      # all clusters with calls to validateAutoMigrationDisabled function
+          self.addConsensusLeasingError("Automatic service migration is enabled for " + typeStr + " " +
+                                        self.name(jmsResource) + " with migratable target " +
+                                        self.name(migratableTarget) + " that is associated with cluster " +
+                                        self.name(cluster) )
+    return leasingRequired
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
