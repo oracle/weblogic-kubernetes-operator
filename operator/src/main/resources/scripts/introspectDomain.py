@@ -86,6 +86,7 @@ import sys
 import traceback
 import xml.dom.minidom
 from xml.dom.minidom import parse
+from sets import Set
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
@@ -317,6 +318,7 @@ class Generator(SecretManager):
     self.env = env
     self.path = path
     self.indentStack = [""]
+    self.jmsLeasingClusters = Set()
 
   def open(self):
     self.f =  open(self.path, 'w+')
@@ -355,6 +357,8 @@ class TopologyGenerator(Generator):
 
   def validate(self):
     self.validateAdminServer()
+    if not self.env.skipLeasingValidations():
+      self.validateJMSResourcesLeasing()
     self.validateClusters()
     self.validateServerCustomChannelName()
     self.validateDynamicClustersDuplicateServerNamePrefix()
@@ -564,11 +568,12 @@ class TopologyGenerator(Generator):
 
   def validateNonDynamicClusterLeasing(self, cluster):
     leasingRequired = self.validateSingletonServices(cluster)
-    leasingRequired |= self.validateMigratableTargets(cluster)
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
         leasingRequired |= self.validateJTAMigrationPolicy(server, cluster)
         self.validateAutoMigrationDisabled(server, cluster)
+    if cluster.getName() in self.jmsLeasingClusters:
+      leasingRequired = True
     if leasingRequired == True:
       self.validateClusterLeasingDataSourceConfigured(cluster)
 
@@ -610,11 +615,12 @@ class TopologyGenerator(Generator):
 
   def validateDynamicClusterLeasing(self, cluster):
     leasingRequired = self.validateSingletonServices(cluster)
-    leasingRequired |= self.validateMigratableTargets(cluster)
     serverTemplate = self.getDynamicClusterServerTemplate(cluster)
     if serverTemplate is not None:
       leasingRequired |= self.validateJTAMigrationPolicy(serverTemplate, cluster, True)
       self.validateAutoMigrationDisabled(serverTemplate, cluster)
+    if cluster.getName() in self.jmsLeasingClusters:
+      leasingRequired = True
     if leasingRequired == True:
         self.validateClusterLeasingDataSourceConfigured(cluster)
 
@@ -663,52 +669,71 @@ class TopologyGenerator(Generator):
                   "Please configure cluster to use database leasing " +
                   "or set SKIP_LEASING_VALIDATIONS environment variable to 'True' to skip this validation.")
 
+  def findCluster(self, name):
+    for cluster in self.env.getDomain().getClusters():
+      if cluster.getName() == name:
+        return cluster
+    return None
+
   def findMigratableTarget(self, name):
     for migratableTarget in self.env.getDomain().getMigratableTargets():
       if migratableTarget.getName() == name:
         return migratableTarget
     return None
 
-  def validateMigratableTargets(self, cluster):
-    leasingRequired = False;
-    for migratableTarget in self.env.getDomain().getMigratableTargets():
-      if migratableTarget.getCluster() is cluster:
-        # possible migration policy values are "manual", "exactly-once", and "failure-recovery".
-        # All values except "manual" requires cluster leasing.
-        migrationPolicy = migratableTarget.getMigrationPolicy()
-        if migrationPolicy is not None and migrationPolicy != "manual":
-          # check JMS resources targeted to this migratable target
-          leasingRequired |= self.validateJMSResourcesLeasing(migratableTarget)
-    return leasingRequired
-
-  def validateJMSResourcesLeasing(self, migratableTarget):
-    leasingRequired = False;
+  def validateJMSResourcesLeasing(self):
     domain = self.env.getDomain()
     for messagingBridge in domain.getMessagingBridges():
-      leasingRequired |= self.validateJMSResourceMigrationPolicy(messagingBridge, migratableTarget, "Messaging bridge")
+      self.validateJMSResourceTargets(messagingBridge, "Messaging bridge")
     for jdbcStore in domain.getJDBCStores():
-      leasingRequired |= self.validateJMSResourceMigrationPolicy(jdbcStore, migratableTarget, "JDBCStore")
+      self.validateJMSResourceTargets(jdbcStore, "JDBCStore")
     for fileStore in domain.getFileStores():
-      leasingRequired |= self.validateJMSResourceMigrationPolicy(fileStore, migratableTarget, "FileStore")
-    return leasingRequired
+      self.validateJMSResourceTargets(fileStore, "FileStore")
+    for pathService in domain.getPathServices():
+      self.validateJMSResourceTargets(pathService, "Path service", False)
+    for jmsServer in domain.getJMSServers():
+      self.validateJMSResourceTargets(jmsServer, "JMS Server", False)
+    for safAgent in domain.getSAFAgents():
+      self.validateJMSResourceTargets(safAgent, "SAF agent", False)
 
-  def validateJMSResourceMigrationPolicy(self, jmsResource, migratableTarget, typeStr):
-    leasingRequired = False
+  def validateJMSResourceTargets(self, jmsResource, typeStr, hasMigrationPolicy=True):
+    targets = jmsResource.getTargets();
+    for target in targets:
+      migratableTarget = self.findMigratableTarget(target.getName())
+      if migratableTarget is not None:
+        # target is a migratable target?
+        self.validateJMSResourceMigratableTargeted(jmsResource, migratableTarget, typeStr)
+      elif hasMigrationPolicy == True:
+        # only check cluster target if JMSResource mbean contains migrationPolicy attribute
+        cluster = self.findCluster(target.getName())
+        if cluster is not None:
+          # target is a cluster
+          self.validateJMSResourceClusterTargeted(jmsResource, cluster, typeStr)
+
+  def validateJMSResourceClusterTargeted(self, jmsResource, cluster, typeStr):
     # valid migration policy values are "Off", "On-Failure", and "Always".
     # Cluster leasing must be configured for "On-Failure" and "Always".
-    if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy() != "Off":
-      targets = jmsResource.getTargets();
-      for target in targets:
-        # targetMBean can also be a server or cluster, and we have already validated
-        # all clusters with calls to validateAutoMigrationDisabled function
-        if target is migratableTarget:
-          leasingRequired = True
-          cluster = migratableTarget.getCluster()
-          self.addConsensusLeasingError("Automatic service migration is enabled for " + typeStr + " " +
-                                        self.name(jmsResource) + " with migratable target " +
-                                        self.name(migratableTarget) + " that is associated with cluster " +
-                                        self.name(cluster) )
-    return leasingRequired
+    if jmsResource.getMigrationPolicy() is not None and jmsResource.getMigrationPolicy() != "Off":
+      self.jmsLeasingClusters.add(cluster.getName())
+      if self.isConsensusLeasing(cluster):
+        self.addConsensusLeasingError("Automatic service migration is enabled for " + typeStr + " " +
+                                      self.name(jmsResource) + " with cluster target " +
+                                      self.name(cluster) )
+
+  def validateJMSResourceMigratableTargeted(self, jmsResource, migratableTarget, typeStr):
+      # possible migration policy values are "manual", "exactly-once", and "failure-recovery".
+      # All values except "manual" requires cluster leasing.
+      migrationPolicy = migratableTarget.getMigrationPolicy()
+      if migrationPolicy is not None and migrationPolicy != "manual":
+        cluster = migratableTarget.getCluster()
+        if cluster is not None:
+          self.jmsLeasingClusters.add(cluster.getName())
+          if self.isConsensusLeasing(cluster):
+            self.addConsensusLeasingError("Automatic service migration is enabled for " + typeStr + " " +
+                                          self.name(jmsResource) + " with migratable target " +
+                                          self.name(migratableTarget) + " that is associated with cluster " +
+                                          self.name(cluster) )
+
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
