@@ -950,7 +950,7 @@ public class MonitoringUtils {
   }
 
   /**
-   * Verify the monitoring exporter app can be accessed from all managed servers in the domain
+   * Verify the monitoring exporter sidecar can be accessed from all managed servers in the domain
    * through direct access to managed server dashboard.
    * @param domainNS - domain namespace
    * @param podName  - managed server pod name
