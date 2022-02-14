@@ -9,7 +9,7 @@ description: "Use the WebLogic Remote Console to manage a domain running in Kube
 The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
 It is an _alternative_ to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
-For detailed documentation, see the [WebLogic Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
+For detailed documentation, see the [WebLogic Remote Console](https://oracle.github.io/weblogic-remote-console/).
 
 A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.
 You can use the Remote Console with WebLogic Server _slim_ installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
@@ -35,7 +35,7 @@ For more information, see [External network access security]({{<relref "/securit
 
 To set up access to WebLogic Server domains running in Kubernetes using the Remote Console:
 
-1. Install, configure, and start the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
+1. Install, configure, and start the Remote Console according to these [instructions](https://oracle.github.io/weblogic-remote-console/setup/).
 
    **NOTE**: These instructions assume that you are installing and running the Remote Console Java program externally to your Kubernetes cluster.
 
@@ -47,7 +47,7 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
 
    **Note**: If you want to customize the Remote Console listen address,
-     then see [Specify a Listen Address for the Remote Console Host](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md#remote). This is useful if you want to run the Remote Console
+     then see [Specify a Listen Address for the Remote Console Host](https://oracle.github.io/weblogic-remote-console/userguide/advanced-settings/#listen_address). This is useful if you want to run the Remote Console
      on a different machine than your browser, or if you want the Remote Console to use SSL.
 
 
