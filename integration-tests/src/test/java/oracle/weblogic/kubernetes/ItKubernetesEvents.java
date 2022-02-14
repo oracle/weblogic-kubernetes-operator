@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -609,12 +610,6 @@ class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
 
     CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the logHome changed messages is logged");
-    assertTrue(event.getMessage().contains("logHome"));
-
-    event = getOpGeneratedEvent(domainNamespace1,
         POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the LOG_HOME changed messages is logged");
@@ -686,13 +681,7 @@ class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
 
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
-    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
-
-    event = getOpGeneratedEvent(domainNamespace1, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace1, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the SERVER_OUT_IN_POD_LOG changed messages is logged");
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
@@ -1089,7 +1078,7 @@ class ItKubernetesEvents {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(cluster1Name)
                 .replicas(replicaCount)

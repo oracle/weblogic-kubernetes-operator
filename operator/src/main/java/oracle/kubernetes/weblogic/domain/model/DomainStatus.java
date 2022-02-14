@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -49,6 +49,10 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @Description("True while pods have been intentionally deleted and have not yet returned to the ready state. "
+        + "Defaults to null, which is interpreted as 'false'.")
+  private Boolean rolling;
+
   @Description(
       "Non-zero if the introspector job fails for any reason. "
           + "You can configure an introspector job retry limit for jobs that log script failures using "
@@ -96,6 +100,7 @@ public class DomainStatus {
   public DomainStatus(DomainStatus that) {
     message = that.message;
     reason = that.reason;
+    rolling = that.rolling;
     conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
     clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
@@ -158,11 +163,11 @@ public class DomainStatus {
   }
 
   /**
-   * Returns true if there is a condition matching the specified predicate.
+   * Returns true if there is no condition matching the specified predicate.
    * @param predicate a predicate to match against a condition
    */
-  public boolean hasConditionWith(Predicate<DomainCondition> predicate) {
-    return !getConditionsMatching(predicate).isEmpty();
+  public boolean lacksConditionWith(Predicate<DomainCondition> predicate) {
+    return getConditionsMatching(predicate).isEmpty();
   }
 
   /**
@@ -253,6 +258,14 @@ public class DomainStatus {
   public DomainStatus withReason(String reason) {
     this.reason = reason;
     return this;
+  }
+
+  public Boolean isRolling() {
+    return Optional.ofNullable(rolling).orElse(false);
+  }
+
+  public void setRolling(Boolean rolling) {
+    this.rolling = rolling;
   }
 
   /**
@@ -501,6 +514,7 @@ public class DomainStatus {
         .append("conditions", conditions)
         .append("message", message)
         .append("reason", reason)
+        .append("rolling", rolling)
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
@@ -514,6 +528,7 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
+        .append(rolling)
         .append(Domain.sortOrNull(servers))
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
@@ -534,6 +549,7 @@ public class DomainStatus {
     DomainStatus rhs = ((DomainStatus) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
+        .append(rolling, rhs.rolling)
         .append(startTime, rhs.startTime)
         .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
@@ -548,6 +564,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withBooleanField("rolling", DomainStatus::isRolling)
         .withStringField("failedIntrospectionUid", DomainStatus::getFailedIntrospectionUid)
         .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
