@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -25,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -144,7 +146,8 @@ class CrdHelperTest {
 
   @Test
   void whenCrdV1SupportedAndNoCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -154,7 +157,8 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -165,7 +169,8 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
     testSupport.runSteps(Step.chain(scriptCrdStep, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
@@ -176,7 +181,8 @@ class CrdHelperTest {
   void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE));
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE);
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
@@ -204,7 +210,8 @@ class CrdHelperTest {
                 .name(KubernetesConstants.DOMAIN_VERSION));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
   }
 
   @Test
@@ -219,7 +226,8 @@ class CrdHelperTest {
                 .served(true)
                 .name(KubernetesConstants.DOMAIN_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -230,7 +238,8 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -243,7 +252,8 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -256,4 +266,31 @@ class CrdHelperTest {
 
     assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
   }
+
+  abstract static class MainDelegateStub implements MainDelegate {
+    private final KubernetesVersion kubernetesVersion;
+    private final SemanticVersion productVersion;
+    private final AtomicReference<V1CustomResourceDefinition> crdReference = new AtomicReference<>();
+
+    MainDelegateStub(KubernetesVersion kubernetesVersion, SemanticVersion productVersion) {
+      this.kubernetesVersion = kubernetesVersion;
+      this.productVersion = productVersion;
+    }
+
+    @Override
+    public KubernetesVersion getKubernetesVersion() {
+      return kubernetesVersion;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return productVersion;
+    }
+
+    @Override
+    public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
+      return crdReference;
+    }
+  }
+
 }

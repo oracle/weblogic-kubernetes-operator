@@ -356,7 +356,7 @@ def getAdministrationPort(server, topology):
 def isAdministrationPortEnabledForServer(server, topology):
   administrationPortEnabled = False
   if 'AdministrationPortEnabled' in server:
-    administrationPortEnabled = server['AdministrationPortEnabled'] == 'true'
+    administrationPortEnabled = server['AdministrationPortEnabled']
   else:
     administrationPortEnabled = isAdministrationPortEnabledForDomain(topology)
   return administrationPortEnabled
@@ -366,7 +366,7 @@ def isAdministrationPortEnabledForDomain(topology):
   administrationPortEnabled = False
 
   if 'AdministrationPortEnabled' in topology:
-    administrationPortEnabled = topology['AdministrationPortEnabled'] == 'true'
+    administrationPortEnabled = topology['AdministrationPortEnabled']
   else:
     # AdministrationPortEnabled is not explicitly set so going with the default
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
@@ -378,11 +378,11 @@ def isAdministrationPortEnabledForDomain(topology):
 def isSecureModeEnabledForDomain(topology):
   secureModeEnabled = False
   if 'SecurityConfiguration' in topology and 'SecureMode' in topology['SecurityConfiguration'] and 'SecureModeEnabled' in topology['SecurityConfiguration']['SecureMode']:
-    secureModeEnabled = topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] == 'true'
+    secureModeEnabled = topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled']
   else:
     is_production_mode_enabled = False
     if 'ProductionModeEnabled' in topology:
-      is_production_mode_enabled = topology['ProductionModeEnabled'] == 'true'
+      is_production_mode_enabled = topology['ProductionModeEnabled']
     secureModeEnabled = is_production_mode_enabled and not env.wlsVersionEarlierThan("14.1.2.0")
   return secureModeEnabled
 
@@ -422,7 +422,7 @@ def _get_ssl_listen_port(server):
   ssl = getSSLOrNone(server)
   ssl_listen_port = None
   model = env.getModel()
-  if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+  if ssl is not None and 'Enabled' in ssl and ssl['Enabled']:
     ssl_listen_port = ssl['ListenPort']
     if ssl_listen_port is None:
       ssl_listen_port = "7002"
@@ -604,7 +604,7 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     ssl = getSSLOrNone(template)
     ssl_listen_port = None
     model = env.getModel()
-    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled']:
       ssl_listen_port = ssl['ListenPort']
       if ssl_listen_port is None:
         ssl_listen_port = "7002"
@@ -669,7 +669,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
-    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled']:
       ssl_listen_port = ssl['ListenPort']
       if ssl_listen_port is None:
         ssl_listen_port = "7002"

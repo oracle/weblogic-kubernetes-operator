@@ -65,7 +65,6 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -98,7 +97,6 @@ import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -117,7 +115,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -126,7 +123,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
@@ -2135,249 +2131,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .controller(true);
 
     assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
-  }
-
-
-  @Test
-  void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectMessage()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    initializeExistingPod();
-    getConfiguredDomainSpec().setDomainHome("adfgg");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "domainHome", " changed from", "to", "adfgg"));
-  }
-
-  @Test
-  void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectNS()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    initializeExistingPod();
-    getConfiguredDomainSpec().setDomainHome("adfgg");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertContainsEventWithNamespace(DOMAIN_ROLL_STARTING, NS);
-  }
-
-  @Test
-  void whenDomainHomeChanged_butEventAlreadyGenerated_dontCreateDomainRollStartEvent()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    initializeExistingPod();
-    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
-    getConfiguredDomainSpec().setDomainHome("adfgg");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Found unexpected Event " + DOMAIN_ROLL_STARTING,
-        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
-  }
-
-  @Test
-  void whenImageChanged_domainRollStartEventCreatedWithCorrectMessage()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    initializeExistingPod();
-    getConfiguredDomainSpec().setImage("adfgg");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "image", "changed","adfgg"));
-  }
-
-  @Test
-  void whenImageChanged_expectedLogMessageFound()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
-    initializeExistingPod();
-    getConfiguredDomainSpec().setImage("adfgg");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-
-    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
-    logRecords.clear();
-  }
-
-  @Test
-  void whenInitContainerLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
-    initializeExistingPod();
-    getConfigurator()
-        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "domain resource changed"));
-  }
-
-  @Test
-  void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
-    initializeExistingPod();
-    getConfigurator()
-        .withDefaultReadinessProbeSettings(12, 23, 45);
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID,
-            "readiness probe", "changed from", "1", "2", "3", "to", "12", "23", "45"));
-  }
-
-  @Test
-  void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
-    initializeExistingPod();
-    getConfigurator()
-        .withDefaultLivenessProbeSettings(12, 23, 45);
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID,
-            "liveness probe", "changed from", "4", "5", "6", "to", "12", "23", "45"));
-  }
-
-  @Test
-  void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
-    initializeExistingPod();
-    disableAutoIntrospectOnNewMiiPods();
-    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "WebLogic domain configuration changed"));
-  }
-
-  @Test
-  void whenDomainZipHashChanged_butIsMIIDynamicUpdate_dontCreateDomainRollStartEvent() {
-    initializeExistingPod();
-    disableAutoIntrospectOnNewMiiPods();
-    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
-    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
-
-    getConfigurator().withMIIOnlineUpdate();
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Found unexpected event " + DOMAIN_ROLL_STARTING,
-        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
-  }
-
-  @Test
-  void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
-    initializeExistingPod();
-    getConfiguredDomainSpec().setImage("adfgg");
-    getConfiguredDomainSpec().setDomainHome("12345");
-    getConfigurator().withRestartVersion("domainRestartV1");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-
-    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
-    logRecords.clear();
-  }
-
-  @Test
-  void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
-    initializeExistingPod();
-    getConfiguredDomainSpec().setImage("adfgg");
-    getConfiguredDomainSpec().setDomainHome("12345");
-    getConfigurator().withRestartVersion("domainRestartV1");
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-
-    logRecords.clear();
-
-    /*
-      message: Rolling restart the pods in domain uid1 because domain restart version changed,
-      'image' changed from image:latest to adfgg,
-      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345'
-     */
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID,
-            "domain restart version changed",
-            "image", "changed", "adfgg",
-            "domainHome", "changed", "12345"));
-  }
-
-  @Test
-  void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
-    initializeExistingPod();
-    getConfiguredDomainSpec().setImage("adfgg");
-    getConfiguredDomainSpec().setDomainHome("12345");
-    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
-    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-
-    logRecords.clear();
-
-    /*
-      message: Rolling restart the pods in domain uid1 because domain restart version changed,
-      'image' changed from image:latest to 'adcgg',
-      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345',
-      WebLogic domain configuration changed
-     */
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID,
-            "image", "changed", "adfgg",
-            "domainHome", "changed", "12345",
-            "WebLogic domain configuration changed"));
-  }
-
-  @Test
-  void whenInitContainerLivenessProbeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
-    initializeExistingPod();
-    getConfigurator()
-        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
-    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
-    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
-
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
-        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "domain resource changed",
-            "WebLogic domain configuration changed"));
-  }
-
-  protected static String getDomainRollStartingKey() {
-    return MessageKeys.DOMAIN_ROLL_STARTING;
   }
 
   protected void assertContainsEventWithNamespace(EventHelper.EventItem event, String ns) {

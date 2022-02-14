@@ -41,6 +41,7 @@ import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -74,8 +75,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
-import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
-import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
@@ -84,17 +83,14 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
-import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.DOMAIN;
-import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 
+@SuppressWarnings("ConstantConditions")
 public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -512,49 +508,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
   }
 
-  protected Step createDomainRollStartEventIfNeeded(V1Pod pod, Step next) {
-    if ("true".equals(packet.getValue(DOMAIN_ROLL_START_EVENT_GENERATED))) {
-      return next;
-    }
-
-    String domainIncompatibility = getDomainIncompatibility(pod);
-    if (haveReasonsToRoll(domainIncompatibility)) {
-      return createDomainRollStartEvent(next, domainIncompatibility);
-    }
-
-    return next;
-  }
-
-  private String getDomainIncompatibility(V1Pod pod) {
-    String domainIncompatibility = getReasonToRecycle(pod, DOMAIN);
-    if (!haveReasonsToRoll(domainIncompatibility)
-        && haveReasonsToRoll(getReasonToRecycle(pod, UNKNOWN))) {
-      domainIncompatibility = ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
-    }
-
-    if (!canUseNewDomainZip(pod)) {
-      if (haveReasonsToRoll(domainIncompatibility)) {
-        domainIncompatibility += ",\n" + ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
-      } else {
-        domainIncompatibility = ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
-      }
-    }
-    return domainIncompatibility;
-  }
-
-  private Step createDomainRollStartEvent(Step next, String domainIncompatibility) {
-    LOGGER.info(MessageKeys.DOMAIN_ROLL_STARTING, getDomainUid(), domainIncompatibility);
-    packet.put(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
-    return Step.chain(
-        EventHelper.createEventStep(
-            new EventData(DOMAIN_ROLL_STARTING, domainIncompatibility.trim())),
-        next);
-  }
-
-  private boolean haveReasonsToRoll(String domainIncompatibility) {
-    return domainIncompatibility != null && domainIncompatibility.length() != 0;
-  }
-
   abstract String getPodCreatedMessageKey();
 
   abstract String getPodExistsMessageKey();
@@ -564,7 +517,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   abstract String getPodReplacedMessageKey();
 
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next);
+    return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, next));
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
@@ -634,6 +587,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
     setLabel(toPod, key, getLabel(fromPod, key));
   }
@@ -644,11 +598,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getLabel(V1Pod currentPod, String key) {
     return currentPod.getMetadata().getLabels().get(key);
-  }
-
-  private V1Pod withLegacyDomainHash(V1Pod pod, String oldDomainHash) {
-    pod.getMetadata().putLabelsItem(MODEL_IN_IMAGE_DOMAINZIP_HASH, oldDomainHash);
-    return pod;
   }
 
   protected boolean canUseNewDomainZip(V1Pod currentPod) {
@@ -672,9 +621,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     return formatHashLabel(miiDomainZipHash).equals(getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
-  protected String getReasonToRecycle(V1Pod currentPod, CompatibilityScope scope) {
+  protected String getReasonToRecycle(V1Pod currentPod) {
     PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod);
-    return compatibility.getScopedIncompatibility(scope);
+    return compatibility.getScopedIncompatibility(CompatibilityScope.POD);
   }
 
   private ResponseStep<V1Pod> createResponse(Step next) {
@@ -816,14 +765,13 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    Optional.ofNullable(miiModelSecretsHash)
-          .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
+    Optional.ofNullable(miiModelSecretsHash).ifPresent(hash -> addHashLabel(metadata, hash));
 
     return metadata;
   }
 
-  private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
-    metadata.putLabelsItem(label, formatHashLabel(hash));
+  private void addHashLabel(V1ObjectMeta metadata, String hash) {
+    metadata.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, formatHashLabel(hash));
   }
 
   private static String formatHashLabel(String hash) {
@@ -1188,7 +1136,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = getReasonToRecycle(pod, CompatibilityScope.POD);
+      String reason = getReasonToRecycle(pod);
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),

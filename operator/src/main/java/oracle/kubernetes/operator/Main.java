@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -137,6 +138,7 @@ public class Main {
     private final Engine engine;
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces;
+    private final AtomicReference<V1CustomResourceDefinition> crdRefernce;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
@@ -152,6 +154,8 @@ public class Main {
       domainNamespaces = new DomainNamespaces(productVersion);
 
       PodHelper.setProductVersion(productVersion.toString());
+
+      crdRefernce = new AtomicReference<>();
     }
 
     private static String getBuildVersion(Properties buildProps) {
@@ -252,6 +256,11 @@ public class Main {
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       return engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+
+    @Override
+    public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
+      return crdRefernce;
     }
   }
 
@@ -433,7 +442,7 @@ public class Main {
     final DomainRecheck domainRecheck = new DomainRecheck(delegate, isFullRecheck);
     return Step.chain(
         domainRecheck.createOperatorNamespaceReview(),
-        CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
+        CrdHelper.createDomainCrdStep(delegate),
         createCRDPresenceCheck(),
         domainRecheck.createReadNamespacesStep());
   }
@@ -442,11 +451,29 @@ public class Main {
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   Step createCRDPresenceCheck() {
-    return new CallBuilder().listDomainAsync(getOperatorNamespace(), new CrdPresenceResponseStep());
+    return new CrdPresenceStep();
+  }
+
+  class CrdPresenceStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1CustomResourceDefinition existingCrd = delegate.getCrdReference().get();
+      if (existingCrd != null) {
+        warnedOfCrdAbsence = false;
+        return doNext(packet);
+      }
+      return doNext(new CallBuilder().listDomainAsync(getOperatorNamespace(),
+          new CrdPresenceResponseStep(getNext())), packet);
+    }
   }
 
   // on failure, aborts the processing.
   class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+
+    CrdPresenceResponseStep(Step next) {
+      super(next);
+    }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
