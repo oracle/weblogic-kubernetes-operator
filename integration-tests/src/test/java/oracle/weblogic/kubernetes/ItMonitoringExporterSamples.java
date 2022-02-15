@@ -33,8 +33,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -101,8 +101,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 /**
  * Verify Prometheus, Grafana, Webhook, Coordinator are installed and running
  * Verify the monitoring exporter installed in model in image domain can generate the WebLogic metrics.
@@ -113,7 +111,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItMonitoringExporterSamples {
 
-
   // domain constants
   private static final int replicaCount = 2;
   private static int managedServersCount = 2;
@@ -122,7 +119,7 @@ class ItMonitoringExporterSamples {
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
 
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
   private static List<String> ingressHost1List = null;
@@ -222,7 +219,7 @@ class ItMonitoringExporterSamples {
     if (!OKD) {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -464,7 +461,7 @@ class ItMonitoringExporterSamples {
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
     if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
           .as("Test uninstallNginx1 returns true")
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();

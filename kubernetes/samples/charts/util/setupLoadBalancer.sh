@@ -191,7 +191,7 @@ createTraefik() {
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
     if [ $? != 0 ]; then 
-     printError "Helm istallation of the Traefik ingress controller failed."
+     printError "Helm installation of the Traefik ingress controller failed."
      exit -1;
     fi
   else
@@ -201,7 +201,7 @@ createTraefik() {
   waitForIngressPod traefik ${ns}
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   traefik_image=$(${kubernetesCli} get ${tpod} -n ${ns} -o jsonpath='{.spec.containers[0].image}')
-  printInfo "Traefik image choosen [${traefik_image}]"
+  printInfo "Traefik image chosen [${traefik_image}]"
 }
 
 # Remove ingress related resources from default Namespace ( if any )
@@ -271,7 +271,7 @@ createNginx() {
          --set "controller.admissionWebhooks.enabled=false" \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
-     printError "Helm istallation of the Nginx ingress controller failed."
+     printError "Helm installation of the Nginx ingress controller failed."
      exit -1;
     fi
   else

@@ -53,7 +53,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -198,7 +198,7 @@ class ItParameterizedDomain {
 
   private static String opNamespace = null;
   private static String opServiceAccount = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
   private static List<Domain> domains = new ArrayList<>();
@@ -274,7 +274,7 @@ class ItParameterizedDomain {
     if (!OKD) {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
@@ -857,7 +857,7 @@ class ItParameterizedDomain {
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // uninstall NGINX release
       if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams))
+        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
             .as("Test uninstallNginx returns true")
             .withFailMessage("uninstallNginx() did not return true")
             .isTrue();

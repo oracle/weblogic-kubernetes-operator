@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1IngressBackend;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -76,7 +77,7 @@ class ItRemoteConsole {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nginxNodePort;
 
   // domain constants
@@ -276,7 +277,7 @@ class ItRemoteConsole {
     // create an ingress in domain namespace
     String ingressName = domainNamespace + "-nginx-path-routing";
 
-    String ingressClassName = "nginx";
+    String ingressClassName = nginxHelmParams.getIngressClassName();
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -311,7 +312,7 @@ class ItRemoteConsole {
     logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
     String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + nginxNodePort

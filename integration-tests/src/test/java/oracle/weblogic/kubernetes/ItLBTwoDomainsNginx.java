@@ -17,7 +17,7 @@ import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -62,7 +62,7 @@ class ItLBTwoDomainsNginx {
   private static List<String> domainUids = new ArrayList<>();
   private static String domainNamespace = null;
   private static String nginxNamespace = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static Path tlsCertFile;
   private static Path tlsKeyFile;
   private static LoggingFacade logger = null;
@@ -222,7 +222,7 @@ class ItLBTwoDomainsNginx {
     });
   }
 
-  private static void createNginxIngressHostRoutingForTwoDomains(boolean isTLS) {
+  private static void createNginxIngressHostRoutingForTwoDomains(String ingressClassName, boolean isTLS) {
     // create an ingress in domain namespace
     String ingressName;
     
@@ -231,8 +231,6 @@ class ItLBTwoDomainsNginx {
     } else {
       ingressName = domainNamespace + "-nginx-host-routing";
     }
-
-    String ingressClassName = "nginx";
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -306,7 +304,7 @@ class ItLBTwoDomainsNginx {
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("nginx.ingress.kubernetes.io/rewrite-target", "/$1");
 
-    String ingressClassName = "nginx";
+    String ingressClassName = nginxHelmParams.getIngressClassName();
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -365,7 +363,7 @@ class ItLBTwoDomainsNginx {
     annotations.put("nginx.ingress.kubernetes.io/configuration-snippet", configurationSnippet);
     annotations.put("nginx.ingress.kubernetes.io/ingress.allow-http", "false");
 
-    String ingressClassName = "nginx";
+    String ingressClassName = nginxHelmParams.getIngressClassName();
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -435,7 +433,7 @@ class ItLBTwoDomainsNginx {
    * @return NGINX load balancer node port
    */
   private static int getNginxLbNodePort(String channelName) {
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
 
     return getServiceNodePort(nginxNamespace, nginxServiceName, channelName);
   }
@@ -446,10 +444,10 @@ class ItLBTwoDomainsNginx {
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
     // create ingress rules with non-tls host routing for NGINX
-    createNginxIngressHostRoutingForTwoDomains(false);
+    createNginxIngressHostRoutingForTwoDomains(nginxHelmParams.getIngressClassName(), false);
 
     // create ingress rules with tls host routing for NGINX
-    createNginxIngressHostRoutingForTwoDomains(true);
+    createNginxIngressHostRoutingForTwoDomains(nginxHelmParams.getIngressClassName(), true);
 
     // create ingress rules with path routing for NGINX
     createNginxIngressPathRoutingForTwoDomains();

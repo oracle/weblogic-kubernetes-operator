@@ -155,7 +155,7 @@ public class LoadBalancerUtils {
    * @param nodeportshttps the https nodeport of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
     return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
@@ -170,7 +170,7 @@ public class LoadBalancerUtils {
    * @param chartVersion the chart version of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps,
                                                  String chartVersion) {
@@ -233,7 +233,7 @@ public class LoadBalancerUtils {
         "NGINX to be ready in namespace {0}",
         nginxNamespace);
 
-    return nginxHelmParams;
+    return nginxParams;
   }
 
   /**

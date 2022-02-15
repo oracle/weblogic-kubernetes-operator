@@ -31,7 +31,6 @@ public class Nginx {
 
   private static final String INGRESS_API_VERSION = "networking.k8s.io/v1";
   private static final String INGRESS_KIND = "Ingress";
-  private static final String INGRESS_NGINX_CLASS = "nginx";
 
   /**
    * Install NGINX Helm chart.
@@ -69,16 +68,18 @@ public class Nginx {
    * The ingress host is set to 'domainUid.clusterName.test'.
    *
    * @param ingressName name of the ingress to be created
+   * @param ingressClassName Ingress class name
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,
+                                      String ingressClassName,
                                       String domainNamespace,
                                       String domainUid,
                                       Map<String, Integer> clusterNameMsPortMap) {
-    return createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, true);
+    return createIngress(ingressName, ingressClassName, domainNamespace, domainUid, clusterNameMsPortMap, true);
   }
 
   /**
@@ -86,6 +87,7 @@ public class Nginx {
    * The ingress host is set to 'domainUid.domainNamespace.clusterName.test'.
    *
    * @param ingressName name of the ingress to be created
+   * @param ingressClassName Ingress class name
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
@@ -93,6 +95,7 @@ public class Nginx {
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,
+                                           String ingressClassName,
                                            String domainNamespace,
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
@@ -138,7 +141,7 @@ public class Nginx {
                     .namespace(domainNamespace))
             .spec(new V1IngressSpec()
                     .rules(ingressRules)
-                .ingressClassName(INGRESS_NGINX_CLASS));
+                .ingressClassName(ingressClassName));
 
     // create the ingress
     try {
