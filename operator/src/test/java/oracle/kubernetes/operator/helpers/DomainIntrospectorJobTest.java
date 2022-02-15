@@ -57,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -550,6 +551,18 @@ class DomainIntrospectorJobTest {
     assertThat(getUpdatedDomain(), hasCondition(Failed));
   }
 
+  @Test
+  void whenNewJobSucceededOnFailedDomain_clearFailedCondition() {
+    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineDomainFailedConditionTrue();
+    defineCompletedIntrospection();
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+  }
+
   private void ignoreIntrospectorFailureLogs() {
     consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
     consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
@@ -591,6 +604,10 @@ class DomainIntrospectorJobTest {
   private void definePreviousFailedIntrospectionWithoutPodLog() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
+  }
+
+  private void defineDomainFailedConditionTrue() {
+    getDomain().getOrCreateStatus().addCondition(new DomainCondition(Failed).withStatus("True"));
   }
 
   @Test
