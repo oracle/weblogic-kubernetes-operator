@@ -28,6 +28,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -260,12 +261,11 @@ public class DomainStatus {
     return this;
   }
 
-  public Boolean isRolling() {
-    return Optional.ofNullable(rolling).orElse(false);
-  }
-
-  public void setRolling(Boolean rolling) {
-    this.rolling = rolling;
+  /**
+   * Returns true if the status has a condition indicating that the domain is currently rolling.
+   */
+  public boolean isRolling() {
+    return conditions.stream().anyMatch(c -> c.getType().equals(Rolling));
   }
 
   /**

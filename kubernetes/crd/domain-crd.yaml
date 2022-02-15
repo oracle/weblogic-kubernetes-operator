@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f9960371f793c639582592809cd72099cbde3e13a5c8294579dcb686d95f7a08
+    weblogic.sha256: e93a129fef664c6b8fa2c9cdc152ab29c02f14245efc7684a02dcd395a8577da
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11330,6 +11330,7 @@ spec:
                       - Available
                       - Completed
                       - ConfigChangesPendingRestart
+                      - Rolling
                     lastTransitionTime:
                       format: date-time
                       description: Last time the condition transitioned from one status

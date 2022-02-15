@@ -33,6 +33,8 @@ import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
+import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -858,10 +860,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
-    assertThat(
-        "Expected Event " + POD_CYCLE_STARTING + " expected with message not found",
-        getExpectedEventMessage(POD_CYCLE_STARTING),
-        stringContainsInOrder("Replacing ", getPodName(), "DOMAIN_HOME", "changed from", "adfgg"));
+    assertThat(testSupport, hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName()));
   }
 
   @Test

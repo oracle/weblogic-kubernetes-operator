@@ -13,14 +13,19 @@ public enum DomainConditionType implements Obsoleteable {
     }
 
     @Override
-    boolean statusMustBeTrue() {
-      return true;
+    boolean statusMayBeFalse() {
+      return false;
     }
   },
   Available,
   Completed,
   ConfigChangesPendingRestart,
-
+  Rolling {
+    @Override
+    boolean statusMayBeFalse() {
+      return false;
+    }
+  },
   Progressing {
     @Override
     public boolean isObsolete() {
@@ -32,8 +37,8 @@ public enum DomainConditionType implements Obsoleteable {
     return false;
   }
 
-  boolean statusMustBeTrue() {
-    return false;
+  boolean statusMayBeFalse() {
+    return true;
   }
 
 }
