@@ -601,7 +601,7 @@ class ItDiagnosticsFailedCondition {
           opsswalletpassSecretName,
           replicaCount,
           fmwMiiImage,
-          10L);
+          5L);
 
       createDomainAndVerify(domain, domainNamespace);
 
