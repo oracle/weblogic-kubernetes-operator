@@ -125,12 +125,12 @@ class IntrospectionStatusTest {
   }
 
   @Test
-  void whenPodReadyAfterFailure_clearFailureStatus() {
+  void whenPodReadyAfterFailure_doNotClearFailureStatus() {
     createPodAddedEvent().withWaitingState(IMAGE_PULL_FAILURE, getMessage()).dispatch(processor);
 
     createPodModifiedEvent().withReady().dispatch(processor);
 
-    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+    assertThat(getDomain(), not(hasStatus().withEmptyReasonAndMessage()));
   }
 
   @Test
@@ -150,12 +150,12 @@ class IntrospectionStatusTest {
   }
 
   @Test
-  void whenPodWaitingWithNullReasonAndMessageAfterFailure_clearFailureStatus() {
+  void whenPodWaitingWithNullReasonAndMessageAfterFailure_doNotClearFailureStatus() {
     createPodAddedEvent().withWaitingState(IMAGE_PULL_FAILURE, getMessage()).dispatch(processor);
 
     createPodModifiedEvent().withWaitingState(null, null).dispatch(processor);
 
-    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+    assertThat(getDomain(), not(hasStatus().withEmptyReasonAndMessage()));
   }
 
   @Test
