@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -653,7 +655,7 @@ public class DomainStatusUpdater {
         Conditions newConditions = new Conditions(status);
         newConditions.apply();
 
-        if (isHasFailedPod() || hasUnreadyServerAndPod(newConditions)) {
+        if (isHasFailedPod() || hasPodNotReadyInTime()) {
           status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
@@ -665,10 +667,6 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
-      }
-
-      private boolean hasUnreadyServerAndPod(Conditions newConditions) {
-        return hasPodNotReady() && newConditions.hasIntendedServersNotReady();
       }
 
       private boolean haveServerData() {
@@ -758,14 +756,6 @@ public class DomainStatusUpdater {
               && allNonStartedServersAreShutdown()
               && serversMarkedForRoll().isEmpty();
         }
-
-        private boolean hasIntendedServersNotReady() {
-          return haveServerData()
-              && hasStartedServersNotReady()
-              && allNonStartedServersAreShutdown()
-              && serversMarkedForRoll().isEmpty();
-        }
-
 
         private boolean sufficientServersRunning() {
           return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
@@ -989,18 +979,6 @@ public class DomainStatusUpdater {
         return expectedRunningServers.stream().allMatch(this::isServerComplete);
       }
 
-      private boolean hasStartedServersNotReady() {
-        return hasStartedServersNotRunning() && noPendingServerToRoll();
-      }
-
-      private boolean noPendingServerToRoll() {
-        return expectedRunningServers.stream().allMatch(this::isNotMarkedForRoll);
-      }
-
-      private boolean hasStartedServersNotRunning() {
-        return expectedRunningServers.stream().anyMatch(this::isNotRunning);
-      }
-
       private boolean allNonStartedServersAreShutdown() {
         return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
       }
@@ -1053,10 +1031,6 @@ public class DomainStatusUpdater {
               && isNotMarkedForRoll(serverName);
       }
 
-      private boolean isNotRunning(@Nonnull String serverName) {
-        return !RUNNING_STATE.equals(getRunningState(serverName));
-      }
-
       private boolean isServerReady(@Nonnull String serverName) {
         return RUNNING_STATE.equals(getRunningState(serverName))
               && PodHelper.getReadyStatus(getInfo().getServerPod(serverName));
@@ -1079,8 +1053,25 @@ public class DomainStatusUpdater {
         return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
       }
 
-      private boolean hasPodNotReady() {
-        return !getInfo().getServerPods().allMatch(PodHelper::isReady);
+      private boolean hasPodNotReadyInTime() {
+        return getInfo().getServerPods().anyMatch(this::isNotReadyInTime);
+      }
+
+      public boolean isNotReadyInTime(V1Pod pod) {
+        return !PodHelper.isReady(pod) && hasCreatedLongEnough(pod);
+      }
+
+      private boolean hasCreatedLongEnough(V1Pod pod) {
+        return SystemClock.now().isAfter(getCreationTimestamp(pod).plusSeconds(getMaximumServerPodReadyWaitTime()));
+      }
+
+      private OffsetDateTime getCreationTimestamp(V1Pod pod) {
+        return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getCreationTimestamp)
+            .orElse(SystemClock.now().minusNanos(100L));
+      }
+
+      private long getMaximumServerPodReadyWaitTime() {
+        return getInfo().getDomain().getMaximumServerPodReadyWaitTimeSeconds();
       }
 
       private String getRunningState(String serverName) {

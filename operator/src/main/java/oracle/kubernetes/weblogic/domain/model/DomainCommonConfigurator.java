@@ -349,6 +349,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withMaximumServerPodReadyWaitTimeSeconds(long waitTime) {
+    getOrCreateConfiguration().setMaximumServerPodReadyWaitTimeSeconds(waitTime);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withModelConfigMap(String configmap) {
     getOrCreateModel().withConfigMap(configmap);
     return this;

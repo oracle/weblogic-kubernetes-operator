@@ -40,6 +40,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -292,38 +293,13 @@ abstract class DomainStatusUpdateTestBase {
           hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
   }
 
-  @Test
-  void whenServerIntentionallyNotStarted_reportDomainFailedCondition() {
-    defineScenario()
-        .withCluster("clusterB", "server1", "server2")
-        .withServersReachingState(RUNNING_STATE, "server1", "server2")
-        .build();
-    deactivateServerAndPod(0);
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(Failed));
+  private Configuration getConfiguration() {
+    return Optional.ofNullable(domain.getSpec().getConfiguration()).orElse(this.createNewConfiguration());
   }
 
-  @Test
-  void whenServerIntentionallyNotStarted_1_reportDomainFailedCondition() {
-    defineScenario()
-        .withCluster("clusterB", "server1", "server2")
-        .withServersReachingState(RUNNING_STATE, "server1", "server2")
-        .build();
-    deactivateServerAndPod(1);
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), hasCondition(Failed));
-  }
-
-  protected void deactivateServerAndPod(int i) {
-    String serverName = liveServers.get(i);
-    Map<String, String> servers = getServerStateMap();
-    servers.put(serverName, UNKNOWN_STATE);
-    testSupport.addToPacket(SERVER_STATE_MAP, servers);
-    deactivateServer(serverName);
+  private Configuration createNewConfiguration() {
+    domain.getSpec().setConfiguration(new Configuration());
+    return domain.getSpec().getConfiguration();
   }
 
   @Test
@@ -750,6 +726,11 @@ abstract class DomainStatusUpdateTestBase {
     getServerStateMap().put(serverName, UNKNOWN_STATE);
   }
 
+  private void unreadyPod(String serverName) {
+    getPod(serverName).setStatus(
+        new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().type("Ready").status("False")));
+  }
+
   @Nonnull
   private Map<String, String> getServerStateMap() {
     return Optional.ofNullable(testSupport.getPacket())
@@ -784,6 +765,35 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), not(hasCondition(Completed).withStatus(TRUE)));
+  }
+
+  @Test
+  void whenAtLeastOnePodNotReadyInTime_createFailedCondition() {
+    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(0L);
+    unreadyPod("server2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus(TRUE));
+  }
+
+  @Test
+  void whenAtLeastOnePodReadyInTime_dontCreateFailedCondition() {
+    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(0L);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed).withStatus(TRUE)));
+  }
+
+  @Test
+  void whenAtLeastOnePodWaitingForReady_dontCreateFailedCondition() {
+    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(2L);
+    unreadyPod("server2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed).withStatus(TRUE)));
   }
 
   @Test

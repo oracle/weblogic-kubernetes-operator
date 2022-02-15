@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6906c86f1d5ee2c883c607c47ae72dc4bc985a4ed15b04e441d147ddb63eab9a
+    weblogic.sha256: 7daddc5bdfe7f2c9c275aa4a17ca5bcd1f27f481d79fd433521cf81767fb1343
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -329,6 +329,11 @@ spec:
                     description: The introspector job timeout value in seconds. If
                       this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds`
                       value is ignored. Defaults to 120 seconds.
+                    type: number
+                  maximumServerPodReadyWaitTimeSeconds:
+                    description: The maximum time in seconds that the operator waits
+                      for a WebLogic server pod to get into ready state before it
+                      considers the server pod failed. Defaults to 1800 seconds.
                     type: number
                 type: object
               configOverrideSecrets:

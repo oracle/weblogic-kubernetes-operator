@@ -1199,6 +1199,10 @@ window.onload = function() {
         "introspectorJobActiveDeadlineSeconds": {
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
           "type": "number"
+        },
+        "maximumServerPodReadyWaitTimeSeconds": {
+          "description": "The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state before it considers the server pod failed. Defaults to 1800 seconds.",
+          "type": "number"
         }
       }
     },

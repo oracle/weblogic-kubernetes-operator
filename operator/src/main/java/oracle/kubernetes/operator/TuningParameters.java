@@ -47,6 +47,7 @@ public interface TuningParameters extends Map<String, String> {
     public final long initialShortDelay;
     public final long eventualLongDelay;
     public final int weblogicCredentialsSecretRereadIntervalSeconds;
+    public final long maximumServerStartupWaitTimeSeconds;
 
     /**
      * create main tuning.
@@ -61,19 +62,21 @@ public interface TuningParameters extends Map<String, String> {
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
      * @param weblogicCredentialsSecretRereadIntervalSeconds credentials secret reread interval
+     * @param maximumServerStartupWaitTimeSeconds maximum wait time for server startup
      */
     public MainTuning(
-          int initializationRetryDelaySeconds,
-          int domainPresenceFailureRetrySeconds,
-          int domainPresenceFailureRetryMaxCount,
-          int domainPresenceRecheckIntervalSeconds,
-          int domainNamespaceRecheckIntervalSeconds,
-          int statusUpdateTimeoutSeconds,
-          int unchangedCountToDelayStatusRecheck,
-          int stuckPodRecheckSeconds,
-          long initialShortDelay,
-          long eventualLongDelay,
-          int weblogicCredentialsSecretRereadIntervalSeconds) {
+        int initializationRetryDelaySeconds,
+        int domainPresenceFailureRetrySeconds,
+        int domainPresenceFailureRetryMaxCount,
+        int domainPresenceRecheckIntervalSeconds,
+        int domainNamespaceRecheckIntervalSeconds,
+        int statusUpdateTimeoutSeconds,
+        int unchangedCountToDelayStatusRecheck,
+        int stuckPodRecheckSeconds,
+        long initialShortDelay,
+        long eventualLongDelay,
+        int weblogicCredentialsSecretRereadIntervalSeconds,
+        long maximumServerStartupWaitTimeSeconds) {
       this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
@@ -85,6 +88,7 @@ public interface TuningParameters extends Map<String, String> {
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
       this.weblogicCredentialsSecretRereadIntervalSeconds = weblogicCredentialsSecretRereadIntervalSeconds;
+      this.maximumServerStartupWaitTimeSeconds  = maximumServerStartupWaitTimeSeconds;
     }
 
     @Override

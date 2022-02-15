@@ -592,7 +592,7 @@ class ItDiagnosticsFailedCondition {
       dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
-      Domain domain = FmwUtils.createDomainResource(domainName,
+      Domain domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
           domainNamespace,
           adminSecretName,
           OCIR_SECRET_NAME,
@@ -600,7 +600,8 @@ class ItDiagnosticsFailedCondition {
           rcuaccessSecretName,
           opsswalletpassSecretName,
           replicaCount,
-          fmwMiiImage);
+          fmwMiiImage,
+          10L);
 
       createDomainAndVerify(domain, domainNamespace);
 
