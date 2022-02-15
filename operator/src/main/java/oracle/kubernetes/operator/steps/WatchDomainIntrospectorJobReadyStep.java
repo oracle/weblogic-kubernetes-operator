@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.steps;
 
 import io.kubernetes.client.openapi.models.V1Job;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -21,7 +22,7 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
       JobAwaiterStepFactory jw = packet.getSpi(JobAwaiterStepFactory.class);
       return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
     } else {
-      return doNext(packet);
+      return doNext(Step.chain(DomainStatusUpdater.createRemoveFailuresStep(), getNext()), packet);
     }
   }
 
