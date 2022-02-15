@@ -698,17 +698,18 @@ class TopologyGenerator(Generator):
 
   def validateJMSResourceTargets(self, jmsResource, typeStr, hasMigrationPolicy=True):
     targets = jmsResource.getTargets();
-    for target in targets:
-      migratableTarget = self.findMigratableTarget(target.getName())
-      if migratableTarget is not None:
-        # target is a migratable target?
-        self.validateJMSResourceMigratableTargeted(jmsResource, migratableTarget, typeStr)
-      elif hasMigrationPolicy == True:
-        # only check cluster target if JMSResource mbean contains migrationPolicy attribute
-        cluster = self.findCluster(target.getName())
-        if cluster is not None:
-          # target is a cluster
-          self.validateJMSResourceClusterTargeted(jmsResource, cluster, typeStr)
+    if targets is not None:
+      for target in targets:
+        migratableTarget = self.findMigratableTarget(target.getName())
+        if migratableTarget is not None:
+          # target is a migratable target?
+          self.validateJMSResourceMigratableTargeted(jmsResource, migratableTarget, typeStr)
+        elif hasMigrationPolicy == True:
+          # only check cluster target if JMSResource mbean contains migrationPolicy attribute
+          cluster = self.findCluster(target.getName())
+          if cluster is not None:
+            # target is a cluster
+            self.validateJMSResourceClusterTargeted(jmsResource, cluster, typeStr)
 
   def validateJMSResourceClusterTargeted(self, jmsResource, cluster, typeStr):
     # valid migration policy values are "Off", "On-Failure", and "Always".
