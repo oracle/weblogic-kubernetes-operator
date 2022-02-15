@@ -571,7 +571,7 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
         leasingRequired |= self.validateJTAMigrationPolicy(server, cluster)
-        self.validateAutoMigrationDisabled(server, cluster)
+        self.validateWholeServerMigrationDisabled(server, cluster)
     if cluster.getName() in self.jmsLeasingClusters:
       leasingRequired = True
     if leasingRequired == True:
@@ -618,13 +618,13 @@ class TopologyGenerator(Generator):
     serverTemplate = self.getDynamicClusterServerTemplate(cluster)
     if serverTemplate is not None:
       leasingRequired |= self.validateJTAMigrationPolicy(serverTemplate, cluster, True)
-      self.validateAutoMigrationDisabled(serverTemplate, cluster)
+      self.validateWholeServerMigrationDisabled(serverTemplate, cluster)
     if cluster.getName() in self.jmsLeasingClusters:
       leasingRequired = True
     if leasingRequired == True:
         self.validateClusterLeasingDataSourceConfigured(cluster)
 
-  def validateAutoMigrationDisabled(self, server_or_template, cluster):
+  def validateWholeServerMigrationDisabled(self, server_or_template, cluster):
     if server_or_template.isAutoMigrationEnabled() == True:
       self.addMigrationError("Automatic whole server migration is enabled in cluster " + self.name(cluster) +
                              " but the feature is not supported by the WebLogic Kubernetes Operator.")
