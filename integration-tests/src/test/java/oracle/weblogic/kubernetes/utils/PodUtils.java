@@ -26,6 +26,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -333,5 +334,60 @@ public class PodUtils {
     } else {
       return "";
     }
+  }
+
+  /**
+   * Verify introspector log contains the error message.
+   * @param domainUid domain uid of the domain
+   * @param namespace domain namespace in which introspector runs
+   * @param expectedErrorMsg error message
+   */
+  public static void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                                String namespace,
+                                                                String expectedErrorMsg) {
+    final LoggingFacade logger = getLogger();
+    // wait and check whether the introspector log contains the expected error message
+    logger.info("verifying that the introspector log contains the expected error message");
+    testUntil(
+        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg),
+        logger,
+        "Checking for the log of introspector pod contains the expected error msg {0}",
+        expectedErrorMsg);
+  }
+
+  private static boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                             String namespace,
+                                                             String errormsg) {
+    String introspectPodName;
+    V1Pod introspectorPod;
+    final LoggingFacade logger = getLogger();
+
+    String introspectJobName = getIntrospectJobName(domainUid);
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    try {
+      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+      logger.info("found introspectore pod {0} in namespace {1}", introspectPodName, namespace);
+    } else {
+      return false;
+    }
+
+    String introspectorLog;
+    try {
+      introspectorLog = getPodLog(introspectPodName, namespace);
+      logger.info("introspector log: {0}", introspectorLog);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod log: {0}", apiEx);
+      return false;
+    }
+
+    return introspectorLog.contains(errormsg);
   }
 }

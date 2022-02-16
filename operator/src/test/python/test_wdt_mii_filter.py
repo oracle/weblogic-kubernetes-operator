@@ -282,6 +282,32 @@ class WdtUpdateFilterCase(unittest.TestCase):
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
+  def test_isAdministrationPortEnabledForDomain(self):
+    model = self.getModel()
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForDomain(model['topology']))
+
+  def test_isAdministrationPortEnabledForServer(self):
+    model = self.getModel()
+
+    # disable Administration port for domain
+    model['topology']['AdministrationPortEnabled'] = False
+
+    # enable Administration port for server
+    model['topology']['Server']['admin-server']['AdministrationPortEnabled'] = True
+
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model['topology']))
+
+  def test_isSecureModeEnabledForDomain(self):
+    model = self.getModel()
+
+    # enable secure mode for Domain
+    model['topology']['SecurityConfiguration'] = {}
+    model['topology']['SecurityConfiguration']['SecureMode'] = {}
+    model['topology']['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] = True
+
+    self.assertTrue(model_wdt_mii_filter.isSecureModeEnabledForDomain(model['topology']))
+
+
   def test_istioVersionRequiresLocalHostBindings(self):
     model = self.getModel()
     self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())

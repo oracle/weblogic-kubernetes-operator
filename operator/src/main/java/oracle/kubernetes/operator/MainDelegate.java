@@ -3,6 +3,10 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+
 /**
  * Definition of an interface that returns values that the Main class requires.
  */
@@ -14,4 +18,5 @@ public interface MainDelegate extends CoreDelegate {
 
   DomainNamespaces getDomainNamespaces();
 
+  AtomicReference<V1CustomResourceDefinition> getCrdReference();
 }
