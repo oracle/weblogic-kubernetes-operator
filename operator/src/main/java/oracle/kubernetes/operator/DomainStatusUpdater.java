@@ -656,6 +656,7 @@ public class DomainStatusUpdater {
         newConditions.apply();
 
         if (isHasFailedPod() || hasPodNotReadyInTime()) {
+          LOGGER.info("XX isHasFailedPod: {0}, hasPodNotReadyInTime: {1}", isHasFailedPod(), hasPodNotReadyInTime());
           status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
@@ -1062,6 +1063,8 @@ public class DomainStatusUpdater {
       }
 
       private boolean hasCreatedLongEnough(V1Pod pod) {
+        LOGGER.info("XX hasCreatedLongEnough creationTime: {0}, max: {1}",
+            getCreationTimestamp(pod), getMaximumServerPodReadyWaitTime());
         return SystemClock.now().isAfter(getCreationTimestamp(pod).plusSeconds(getMaximumServerPodReadyWaitTime()));
       }
 
