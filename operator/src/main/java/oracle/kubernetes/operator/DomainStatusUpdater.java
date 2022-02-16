@@ -1074,7 +1074,8 @@ public class DomainStatusUpdater {
       }
 
       private long getMaximumServerPodReadyWaitTime() {
-        return getInfo().getDomain().getMaximumServerPodReadyWaitTimeSeconds();
+        return Optional.ofNullable(getInfo().getDomain().getMaximumServerPodReadyWaitTimeSeconds())
+            .orElse(TuningParameters.getInstance().getMainTuning().maximumServerPodReadyWaitTimeSeconds);
       }
 
       private String getRunningState(String serverName) {

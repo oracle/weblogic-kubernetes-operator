@@ -47,7 +47,7 @@ public interface TuningParameters extends Map<String, String> {
     public final long initialShortDelay;
     public final long eventualLongDelay;
     public final int weblogicCredentialsSecretRereadIntervalSeconds;
-    public final long maximumServerStartupWaitTimeSeconds;
+    public final long maximumServerPodReadyWaitTimeSeconds;
 
     /**
      * create main tuning.
@@ -62,7 +62,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
      * @param weblogicCredentialsSecretRereadIntervalSeconds credentials secret reread interval
-     * @param maximumServerStartupWaitTimeSeconds maximum wait time for server startup
+     * @param maximumServerPodReadyWaitTimeSeconds maximum wait time for server startup
      */
     public MainTuning(
         int initializationRetryDelaySeconds,
@@ -76,7 +76,7 @@ public interface TuningParameters extends Map<String, String> {
         long initialShortDelay,
         long eventualLongDelay,
         int weblogicCredentialsSecretRereadIntervalSeconds,
-        long maximumServerStartupWaitTimeSeconds) {
+        long maximumServerPodReadyWaitTimeSeconds) {
       this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
@@ -88,7 +88,7 @@ public interface TuningParameters extends Map<String, String> {
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
       this.weblogicCredentialsSecretRereadIntervalSeconds = weblogicCredentialsSecretRereadIntervalSeconds;
-      this.maximumServerStartupWaitTimeSeconds  = maximumServerStartupWaitTimeSeconds;
+      this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
     }
 
     @Override

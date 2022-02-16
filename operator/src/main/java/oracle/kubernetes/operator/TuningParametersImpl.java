@@ -67,7 +67,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             readTuningParameter("statusUpdateInitialShortDelay", 5),
             readTuningParameter("statusUpdateEventualLongDelay", 30),
             (int) readTuningParameter("weblogicCredentialsSecretRereadIntervalSeconds", 120),
-            readTuningParameter("maximumServerStartupWaitTimeSeconds", 1800));
+            readTuningParameter("maximumServerPodReadyWaitTimeSeconds", 1800));
 
     CallBuilderTuning callBuilder =
         new CallBuilderTuning(

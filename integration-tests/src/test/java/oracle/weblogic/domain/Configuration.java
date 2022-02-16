@@ -194,15 +194,21 @@ public class Configuration {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
+  public Configuration maximumServerPodReadTimeSeconds(
+      Long maximumServerPodReadyWaitTimeSeconds) {
+    this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
+    return this;
+  }
+
   public Long maximumServerStartupWaitTimeSeconds() {
     return this.maximumServerPodReadyWaitTimeSeconds;
   }
 
   public Long getMaximumServerPodReadyWaitTimeSeconds() {
-    return maximumServerPodReadyWaitTimeSeconds;
+    return this.maximumServerPodReadyWaitTimeSeconds;
   }
 
-  public void setMaximumServerPodReadyWaitTimeSeconds(Long introspectorJobActiveDeadlineSeconds) {
+  public void setMaximumServerPodReadyWaitTimeSeconds(Long maximumServerPodReadyWaitTimeSeconds) {
     this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
   }
 
