@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -27,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import java.util.logging.Level;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
@@ -52,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Utility class for ELK Stack and WebLogic Logging Exporter.
@@ -80,11 +83,16 @@ public class LoggingExporter {
 
     // create Elasticsearch deployment
     logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(elasticsearchDeployment),
-        "createDeployment of Elasticsearch failed with ApiException");
-    assertTrue(deploymentCreated,
-        String.format("Failed to create Elasticsearch deployment for %s in namespace %s",
-            elasticsearchName, namespace));
+    try {
+      Kubernetes.createDeployment(elasticsearchDeployment);
+    } catch (ApiException apiex) {
+      if (apiex.getResponseBody().contains("AlreadyExists")) {
+        getLogger().log(Level.WARNING, apiex.getResponseBody());
+      } else {
+        getLogger().log(Level.SEVERE, apiex.getResponseBody());
+        fail("Elastic search deployment failed with unknown reason, see above");
+      }
+    }
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
     testUntil(
