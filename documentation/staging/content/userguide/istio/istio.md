@@ -544,6 +544,7 @@ See [Istio Authorization Policy](https://istio.io/latest/docs/reference/config/s
 
 Istio allows you to define traffic management polices applied to the service after the routing has occurred. You can use it to control load balancing, connection pool size from the sidecar, and outlier detection settings to detect and evict unhealthy hosts from the load balancing pool. You can also setup service level mutual TLS requirement instead of entire mesh or namespace based. 
 
+For example, to configure service leval mutual TLS
 
 ```text
 apiVersion: networking.istio.io/v1alpha3
@@ -551,11 +552,29 @@ kind: DestinationRule
 metadata:
   name: sample-domain1-service
 spec:
-  host: sample-domain1.sample-domain1-ns.svc.cluster.local
+  host: sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local
   trafficPolicy:
     tls:
       mode: ISTIO_MUTUAL
 ```
+
+For example, to configure a sticky session for a service using hashing-based hash key user_cookie
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sample-domain1-service
+spec:
+  host: sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpCookie:
+          name: user_cookie
+          ttl: 0s
+```
+
 
 See [Istio Destination Rule](https://istio.io/latest/docs/reference/config/networking/destination-rule/)
 
