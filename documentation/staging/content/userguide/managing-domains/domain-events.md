@@ -61,15 +61,6 @@ The operator generates these event types in a domain namespace, which indicate t
  * `FailureRessolved`: The failure condition that the domain was in has been resolved.
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
-    If the domain roll is due to a change to domain resource fields
-    `image`, `imagePullPolicy`, `livenessProbe`, `readinessProbe`, `restartVersion`,
-    `domainHome`, `includeServerOutInPodLog`, or `logHome`, then
-    the event message reports the field name plus its old and new values.
-    If the domain roll is due to other domain resource changes that cause servers to be restarted
-    (see [full list of fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})),
-    then the event message simply reports that the domain resource has changed.
-    If the domain roll is due to a Model in Image model update,
-    then the event message reports there has been a change in the WebLogic domain configuration without the details.
  * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain.
  * `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
  * `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
