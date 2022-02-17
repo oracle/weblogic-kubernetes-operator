@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -19,6 +18,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -44,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedSer
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.verifyExecuteResult;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -573,17 +575,16 @@ class ItServerStartPolicy {
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
           "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-      try {
-        logger.info("Sleeping for 3 hours");
-        TimeUnit.HOURS.sleep(3);
-      } catch (InterruptedException ex) {
-        //
-      }
-      checkPodReadyAndServiceExists(
+
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(),
           adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
-      checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), serverPodName, domainUid, domainNamespace);
       logger.info("(re)Started [" + serverName + "] on admin server restart");
     } finally {
       // restart admin server
