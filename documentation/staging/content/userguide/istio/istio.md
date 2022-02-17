@@ -22,6 +22,11 @@ description: "Lets you run the operator, and WebLogic domains managed by the ope
   - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
   - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
   - [Added network channel for WebLogic EJB and servlet session state replication traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+- [Security](#Security)
+  - [Mutual TLS](#mutual-tls)
+  - [Authorization Policy](#authorization-policy)
+  - [Destination Rule](#destination-rule)
+  - [Ingress Gateway](#ingress-gateway)
 
 #### Overview
 
@@ -455,3 +460,174 @@ if such a channel is already configured for a WebLogic cluster.
 (This is unnecessary when the channel already exists.)
 {{% /notice %}}
     
+#### Security 
+
+Istio provides rich sets of security features that you can use to secure the Istio service mesh environments.  For details refer to [Istio Security](https://istio.io/latest/docs/concepts/security/).   Below are some sample scenarios setup.
+
+##### Mutual TLS 
+
+By default, all traffic between the Istio sidecar proxies use mutual TLS within the mesh. However, service within the mesh can still be accessed by other pod outside the mesh.  For example, you have `domain-1`  deployed with the sidecar injection therefore within the mesh, another `domain-2` deployed without the sidecar injection therefore outside of the mesh. Services within `domain-2` and still access the services within `domain-1`, however the traffic will be `Plain` unecrypted traffic.   This is because by default, Istio configures the traffic using the `PERMISSIVE` mode which means it can accept both `Plain` and `mutual TLS` traffic.  You can restrict this behavior by only allowing `mutual TLS` traffic by locking down the entire mesh or by namespace within the mesh.   
+
+For locking down the entire mesh, you can
+
+```text
+kubectl apply -n istio-system -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+For namespace only, you can
+
+```text
+kubectl apply -n <your namespace> -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF```
+
+See [Istio mutual TLS Migration](https://istio.io/latest/docs/tasks/security/authentication/mtls-migration)
+
+##### Authorization Policy
+
+Istio provide policy based authorization using `AuthorizationPolicy`.  You can setup policies to deny or allow access to services deployed in the mesh.  For example, if you want to limit access to a particular service in the domain from only another namespace with a service account.
+
+Create a service account for the client namespace
+
+```text
+kubectl -n domain2-ns create serviceaccount privaccess 
+```
+
+Setup the serivce account with the client deployment pod.  For example, if it is another `WebLogic Domain` in the `Operator`, specify the `ServiceAccountName` in the `domain.spec.serverPod`
+
+
+```text
+spec:
+  serverPod:
+     serviceAccountName:  privaccess
+```
+
+Apply the AuthorizationPolicy for the target service
+
+```
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: privaccess
+  namespace: domain1-ns
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/domain2-ns/sa/privaccess"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/domain1-priv-service"]
+```
+
+
+See [Istio Authorization Policy](https://istio.io/latest/docs/reference/config/security/authorization-policy/)
+
+##### Destination Rule
+
+Istio allows you to define traffic management polices applied to the service after the routing has occurred. You can use it to control load balancing, connection pool size from the sidecar, and outlier detection settings to detect and evict unhealthy hosts from the load balancing pool. You can also setup service level mutual TLS requirement instead of entire mesh or namespace based. 
+
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sample-domain1-service
+spec:
+  host: sample-domain1.sample-domain1-ns.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+```
+
+See [Istio Destination Rule](https://istio.io/latest/docs/reference/config/networking/destination-rule/)
+
+##### Ingress Gateway
+
+Ingress Gateway provides similar but more advanced `Kubernetes Ingress` functionalities.
+
+For example, to configure an Ingress Gateway for SSL termination at the gateway.
+
+1. Create TLS certificate and secret.
+
+```text
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=secure-domain.org"
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+```
+
+2. Create the Ingress Gateway object.
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-domain1-gateway
+  namespace: sample-domain1-ns
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: domain1-tls-cert
+      hosts:
+      - 'secure-domain.org'
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+      - 'regular-domain.org'
+
+```
+
+For example, to configure an Ingress Gateway for SSL passthrough.
+
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-domain1-gateway
+  namespace: sample-domain1-ns
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+      - 'secure-domain.org'
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+      - 'regular-domain.org'
+```
+
+See [Istio Ingress](https://istio.io/latest/docs/tasks/traffic-management/ingress)
