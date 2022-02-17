@@ -493,7 +493,8 @@ metadata:
 spec:
   mtls:
     mode: STRICT
-EOF```
+EOF
+```
 
 See [Istio mutual TLS Migration](https://istio.io/latest/docs/tasks/security/authentication/mtls-migration)
 
@@ -507,7 +508,7 @@ Create a service account for the client namespace
 kubectl -n domain2-ns create serviceaccount privaccess 
 ```
 
-Setup the serivce account with the client deployment pod.  For example, if it is another `WebLogic Domain` in the `Operator`, specify the `ServiceAccountName` in the `domain.spec.serverPod`
+Setup the service account in the client deployment pod.  For example, if it is another `WebLogic Domain` in the `Operator`, specify the `ServiceAccountName` in the `domain.spec.serverPod`
 
 
 ```text
@@ -516,7 +517,7 @@ spec:
      serviceAccountName:  privaccess
 ```
 
-Apply the AuthorizationPolicy for the target service
+Create AuthorizationPolicy for the target service
 
 ```
 apiVersion: security.istio.io/v1beta1
@@ -560,7 +561,7 @@ See [Istio Destination Rule](https://istio.io/latest/docs/reference/config/netwo
 
 ##### Ingress Gateway
 
-Ingress Gateway provides similar but more advanced `Kubernetes Ingress` functionalities.
+Ingress Gateway provides similar functions to `Kubernetes Ingress` but with more advanced functionalities.
 
 For example, to configure an Ingress Gateway for SSL termination at the gateway.
 
@@ -571,7 +572,7 @@ $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out
 $ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 ```
 
-2. Create the Ingress Gateway object.
+2. Create the Ingress Gateway.
 
 ```text
 apiVersion: networking.istio.io/v1alpha3
@@ -598,7 +599,6 @@ spec:
         protocol: HTTP
       hosts:
       - 'regular-domain.org'
-
 ```
 
 For example, to configure an Ingress Gateway for SSL passthrough.
