@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -572,6 +573,12 @@ class ItServerStartPolicy {
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
           "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+      try {
+        logger.info("Sleeping for 3 hours");
+        TimeUnit.HOURS.sleep(3);
+      } catch (InterruptedException ex) {
+        //
+      }
       checkPodReadyAndServiceExists(
           adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
