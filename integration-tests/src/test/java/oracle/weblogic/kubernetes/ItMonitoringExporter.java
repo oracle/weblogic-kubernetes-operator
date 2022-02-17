@@ -413,7 +413,6 @@ class ItMonitoringExporter {
     logger.info("Create domain and verify that it's running");
     String destYamlFile = generateNewModelFileWithUpdatedDomainUid(domain7Uid,
         "ItMonitoringExporter", getOrigModelFile());
-    logger.info("====Debug destYamlFile is: " + destYamlFile);
     String miiImage1 = createAndVerifyMiiImage(destYamlFile);
     //String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
     String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
@@ -437,7 +436,8 @@ class ItMonitoringExporter {
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
         domain7Uid, domain7Namespace,
         "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "\"domain\":\"wls-sessmigr-domain-1\"");
+        "\"domain\":\"" + domain7Uid + "\"");
+    //"\"domain\":\"wls-sessmigr-domain-1\"");
 
     logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
