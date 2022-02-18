@@ -840,7 +840,7 @@ class ItMiiAuxiliaryImage40 {
    * via provided Dockerfile.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  //@Test - not working, commenting out
+  @Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
     final String domainUid2 = "domain8";
