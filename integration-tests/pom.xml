@@ -372,7 +372,6 @@
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMiiDynamicUpdate*,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMiiNewCreateAuxImage,
                   **/ItParameterizedDomain,
