@@ -359,6 +359,72 @@
             </properties>
         </profile>
         <profile>
+            <id>wko-okd-wls-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCrossDomainTransaction,
+                  **/ItKubernetesEvents,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiMultiModel,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMiiServiceMigration,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-wls-mrg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItDiagnosticsCompleteAvailableCondition,
+                  **/ItDiagnosticsFailedCondition,
+                  **/ItElasticLogging,
+                  **/ItElasticLoggingFluentd,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItManageNameSpace,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
+                  **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples,
+                  **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <!--profile>
             <id>wko-okd-wls-cert</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -400,7 +466,7 @@
                   **/ItProductionSecureMode,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
-		  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
@@ -411,7 +477,7 @@
                   **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
-        </profile>
+        </profile-->
         <profile>
             <id>wko-okd-fmw-cert</id>
             <properties>
