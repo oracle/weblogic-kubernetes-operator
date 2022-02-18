@@ -593,7 +593,9 @@ class ItServerStartPolicy {
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
     }
   }
 }

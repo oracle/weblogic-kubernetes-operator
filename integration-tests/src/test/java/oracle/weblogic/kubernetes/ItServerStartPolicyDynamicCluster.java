@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
@@ -46,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.scalingClusters;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -364,11 +367,15 @@ class ItServerStartPolicyDynamicCluster {
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
           "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-      checkPodReadyAndServiceExists(
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(),
           adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
-      checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), serverPodName, domainUid, domainNamespace);
       logger.info("(re)Started [" + serverName + "] on admin server restart");
     } finally {
       // restart admin server
@@ -377,7 +384,9 @@ class ItServerStartPolicyDynamicCluster {
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
     }
   }
 
