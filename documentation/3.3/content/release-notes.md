@@ -53,13 +53,13 @@ draft: false
 
 #### Operator 3.3.8
 
-* Resolved an issue where the WebLogic Administration Console is not accessible through port forwarding after upgrade to WebLogic Deploy Tooling (WDT) 2.0 ([#2776](https://github.com/oracle/weblogic-kubernetes-operator/pull/2776)).
+* Resolved an issue where the WebLogic Server Administration Console is not accessible through port forwarding after upgrade to WebLogic Deploy Tooling (WDT) 2.0 ([#2776](https://github.com/oracle/weblogic-kubernetes-operator/pull/2776)).
 * Resolved an issue where the operator would log a SEVERE message about failing to create the CRD even though the creation was successful ([#2772](https://github.com/oracle/weblogic-kubernetes-operator/pull/2772)).
 * Domain resource status now correctly displays problems pulling auxiliary container images ([#2681](https://github.com/oracle/weblogic-kubernetes-operator/pull/2681)).
-* Resolved an issue related to high CPU usage in the startServer.sh script ([#2684](https://github.com/oracle/weblogic-kubernetes-operator/pull/2684)).
+* Resolved an issue related to high CPU usage in the `startServer.sh` script ([#2684](https://github.com/oracle/weblogic-kubernetes-operator/pull/2684)).
 * Resolved [issue #2685](https://github.com/oracle/weblogic-kubernetes-operator/issues/2685) related to an NPE while reading server health information ([#2692](https://github.com/oracle/weblogic-kubernetes-operator/pull/2692)).
-* Resolved an issue related to the create-domain.sh sample script ([#2696](https://github.com/oracle/weblogic-kubernetes-operator/pull/2696)).
-* Added validation to reject domain configurations that use the same serverNamePrefix for multiple clusters ([#2700](https://github.com/oracle/weblogic-kubernetes-operator/pull/2700)).
+* Resolved an issue related to the `create-domain.sh` sample script ([#2696](https://github.com/oracle/weblogic-kubernetes-operator/pull/2696)).
+* Added validation to reject domain configurations that use the same `serverNamePrefix` for multiple clusters ([#2700](https://github.com/oracle/weblogic-kubernetes-operator/pull/2700)).
 * Resolved an issue related to properly handling WDT archive domainBin directory updates ([#2704](https://github.com/oracle/weblogic-kubernetes-operator/pull/2704)).
 * Restricted HTTP tunnelling for Istio related replication channels ([#2754](https://github.com/oracle/weblogic-kubernetes-operator/pull/2754)).
 

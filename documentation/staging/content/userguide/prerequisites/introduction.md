@@ -7,7 +7,7 @@ weight: 2
 
 For the current production release {{< latestVersion >}}:
 
-* Kubernetes 1.19.15+, 1.20.6+, and 1.20.11+  (check with `kubectl version`).
+* Kubernetes 1.19.15+, 1.20.11+, and 1.21.5+ (check with `kubectl version`).
 * Flannel networking v0.13.0-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
  *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1+ (check with `docker version`) *or* CRI-O 1.20.2+ (check with `crictl version | grep RuntimeVersion`).
