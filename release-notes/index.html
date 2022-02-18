@@ -12,20 +12,20 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1645208450" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1645208450" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1645210824" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1645210824" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1645208450"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1645210824"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1645208450"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1645208450"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1645210824"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1645210824"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1645208450"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1645210824"></script>
 
     
   </div>
@@ -3245,6 +3245,12 @@
 </thead>
 <tbody>
 <tr>
+<td>February 18, 2022</td>
+<td>v3.3.8</td>
+<td>no</td>
+<td>Resolved several issues related to WDT 2.0, Istio, and auxiliary images.</td>
+</tr>
+<tr>
 <td>December 21, 2021</td>
 <td>v3.3.7</td>
 <td>no</td>
@@ -3481,6 +3487,18 @@
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-338">Operator 3.3.8</h4>
+<ul>
+<li>Resolved an issue where the WebLogic Server Administration Console is not accessible through port forwarding after upgrade to WebLogic Deploy Tooling (WDT) 2.0 (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2776">#2776</a>).</li>
+<li>Resolved an issue where the operator would log a SEVERE message about failing to create the CRD even though the creation was successful (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2772">#2772</a>).</li>
+<li>Domain resource status now correctly displays problems pulling auxiliary container images (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2681">#2681</a>).</li>
+<li>Resolved an issue related to high CPU usage in the <code>startServer.sh</code> script (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2684">#2684</a>).</li>
+<li>Resolved <a href="https://github.com/oracle/weblogic-kubernetes-operator/issues/2685">issue #2685</a> related to an NPE while reading server health information (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2692">#2692</a>).</li>
+<li>Resolved an issue related to the <code>create-domain.sh</code> sample script (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2696">#2696</a>).</li>
+<li>Added validation to reject domain configurations that use the same <code>serverNamePrefix</code> for multiple clusters (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2700">#2700</a>).</li>
+<li>Resolved an issue related to properly handling WDT archive <code>domainBin</code> directory updates (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2704">#2704</a>).</li>
+<li>Restricted HTTP tunnelling for Istio related replication channels (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2754">#2754</a>).</li>
+</ul>
 <h4 id="operator-337">Operator 3.3.7</h4>
 <ul>
 <li>Resolved an issue related to the incorrect validation of the auxiliary image path when the default location has been overridden (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2659">#2659</a>).</li>
@@ -5780,19 +5798,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1645208450"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1645210824"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1645208450"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1645208450"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1645210824"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1645210824"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1645208450"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1645210824"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
