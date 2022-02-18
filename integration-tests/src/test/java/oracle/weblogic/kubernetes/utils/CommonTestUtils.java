@@ -866,13 +866,12 @@ public class CommonTestUtils {
 
     return destModelYamlFile;
   }
-  
-  /*
-   * Call the curl command and check the managed server in the cluster can connect to each other.
+
+  /**
+   * Call the curl command and check the managed servers connect to each other.
    *
    * @param curlRequest curl command to call the clusterview app
    * @param managedServerNames managed server names part of the cluster
-   * @param manServerName managed server to check
    */
   public static void verifyServerCommunication(String curlRequest, String manServerName,
                                                List<String> managedServerNames) {
