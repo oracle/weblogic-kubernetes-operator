@@ -60,7 +60,7 @@ draft: false
 * Resolved [issue #2685](https://github.com/oracle/weblogic-kubernetes-operator/issues/2685) related to an NPE while reading server health information ([#2692](https://github.com/oracle/weblogic-kubernetes-operator/pull/2692)).
 * Resolved an issue related to the `create-domain.sh` sample script ([#2696](https://github.com/oracle/weblogic-kubernetes-operator/pull/2696)).
 * Added validation to reject domain configurations that use the same `serverNamePrefix` for multiple clusters ([#2700](https://github.com/oracle/weblogic-kubernetes-operator/pull/2700)).
-* Resolved an issue related to properly handling WDT archive domainBin directory updates ([#2704](https://github.com/oracle/weblogic-kubernetes-operator/pull/2704)).
+* Resolved an issue related to properly handling WDT archive `domainBin` directory updates ([#2704](https://github.com/oracle/weblogic-kubernetes-operator/pull/2704)).
 * Restricted HTTP tunnelling for Istio related replication channels ([#2754](https://github.com/oracle/weblogic-kubernetes-operator/pull/2754)).
 
 #### Operator 3.3.7
