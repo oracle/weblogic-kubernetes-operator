@@ -15,6 +15,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 * [Managing lifecycle operations](#managing-lifecycle-operations)
 * [Scaling clusters](#scaling-clusters)
 * [About domain events](#about-domain-events)
+* [Monitoring a domain](#monitoring-a-domain)
 * [Log files](#log-files)
 
 #### Important considerations for WebLogic domains in Kubernetes
@@ -152,6 +153,10 @@ The operator lets you initiate scaling of clusters in various ways:
 
 The operator generates Kubernetes events at key points during domain processing.
 For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
+
+### Monitoring a domain
+
+The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, [Use the Monitoring Exporter with WebLogic Kubernetes Operator](https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator).
 
 ### Log files
 
