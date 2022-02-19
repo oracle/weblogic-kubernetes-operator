@@ -52,7 +52,6 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
-import oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -621,11 +620,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return formatHashLabel(miiDomainZipHash).equals(getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
-  protected String getReasonToRecycle(V1Pod currentPod) {
-    PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod);
-    return compatibility.getScopedIncompatibility(CompatibilityScope.POD);
-  }
-
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
@@ -1136,12 +1130,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = getReasonToRecycle(pod);
-      LOGGER.info(
-          MessageKeys.CYCLING_POD,
-          Objects.requireNonNull(pod.getMetadata()).getName(),
-          reason);
-      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
+      LOGGER.info(MessageKeys.CYCLING_POD, Objects.requireNonNull(pod.getMetadata()).getName());
+      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING).podName(getPodName())),
           next);
     }
   }
