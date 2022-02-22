@@ -38,7 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -52,6 +52,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkConfiguredJDBCresouce;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkConfiguredJMSresouce;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
@@ -91,8 +96,6 @@ class ItMiiNewCreateAuxImage40 {
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
-  public static final String ORACLELINUX_TEST_VERSION =
-      Optional.ofNullable(System.getenv("ORACLELINUX_TEST_VERSION")).orElse("7");
 
   /**
    * Install Operator.
@@ -279,7 +282,7 @@ class ItMiiNewCreateAuxImage40 {
     // verify the WDT version
     String wdtVersion =
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
-                "/aux"));
+                "/aux", this.getClass().getSimpleName()));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
   }
@@ -490,111 +493,5 @@ class ItMiiNewCreateAuxImage40 {
         deleteImage(miiAuxiliaryImage3);
       }
     }
-  }
-
-  private boolean createAuxImageUsingWIT(WitParams witParams) {
-
-    WitParams newWitParams = setupCommonWitParameters(witParams);
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using imagetool.sh", witParams.modelImageName(), witParams.modelImageTag());
-    return createAuxImage(newWitParams);
-  }
-
-  private ExecResult createAuxImageUsingWITAndReturnResult(WitParams witParams) {
-
-    WitParams newWitParams = setupCommonWitParameters(witParams);
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using imagetool.sh", witParams.modelImageName(), witParams.modelImageTag());
-    ExecResult result = createAuxImageAndReturnResult(newWitParams);
-    logger.info("result stdout={0}", result.stdout());
-    logger.info("result stderr={0}", result.stderr());
-    return result;
-  }
-
-  private WitParams setupCommonWitParameters(WitParams witParams) {
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
-
-    String witTarget = ((OKD) ? "OpenShift" : "Default");
-
-    return witParams.target(witTarget).env(env).redirect(true);
-  }
-
-  private Callable<Boolean> createAuxiliaryImage(String auxImage, List<String> modelList, List<String> archiveList) {
-
-    return (() -> {
-      WitParams witParams =
-          new WitParams()
-              .modelImageName(auxImage)
-              .modelImageTag(MII_BASIC_IMAGE_TAG)
-              .modelFiles(modelList)
-              .modelArchiveFiles(archiveList);
-
-      return createAuxImageUsingWIT(witParams);
-    });
-  }
-
-  private Callable<Boolean> createAuxiliaryImage(WitParams witParams) {
-
-    return (() -> createAuxImageUsingWIT(witParams));
-  }
-
-  private void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "TestClusterJmsModule2");
-    logger.info("Found the JMSSystemResource configuration");
-  }
-
-  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-            "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
-        logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
-    logger.info("Found the DataResource configuration");
-  }
-
-  private String checkWDTVersion(String domainNamespace, String adminServerPodName, String auxiliaryImagePath)
-      throws Exception {
-    assertDoesNotThrow(() ->
-        deleteQuietly(get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
-        " Can't find file in the pod, or failed to copy");
-
-
-    return readAllLines(get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
   }
 }
