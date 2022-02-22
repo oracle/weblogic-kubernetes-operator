@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -11,8 +11,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -54,6 +56,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Utility class for ELK Stack and WebLogic Logging Exporter.
@@ -87,11 +90,16 @@ public class LoggingExporter {
 
     // create Elasticsearch deployment
     logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(elasticsearchDeployment),
-        "createDeployment of Elasticsearch failed with ApiException");
-    assertTrue(deploymentCreated,
-        String.format("Failed to create Elasticsearch deployment for %s in namespace %s",
-            elasticsearchName, namespace));
+    try {
+      Kubernetes.createDeployment(elasticsearchDeployment);
+    } catch (ApiException apiex) {
+      if (apiex.getResponseBody().contains("AlreadyExists")) {
+        getLogger().log(Level.WARNING, apiex.getResponseBody());
+      } else {
+        getLogger().log(Level.SEVERE, apiex.getResponseBody());
+        fail("Elastic search deployment failed with unknown reason, see above");
+      }
+    }
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
     withStandardRetryPolicy
