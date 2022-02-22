@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -754,11 +754,9 @@ public class Kubernetes {
    * @param namespace in which to list the jobs
    * @param labelSelectors labels to narrow the list of jobs
    * @return V1JobList list of {@link V1Job} from Kubernetes cluster
-   * @throws ApiException when list fails
    */
-  public static V1JobList listJobs(String namespace, String labelSelectors)
-      throws ApiException {
-    V1JobList list;
+  public static V1JobList listJobs(String namespace, String labelSelectors) {
+    V1JobList list = null;
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       list = apiInstance.listNamespacedJob(
@@ -776,7 +774,6 @@ public class Kubernetes {
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
-      throw apex;
     }
     return list;
   }
