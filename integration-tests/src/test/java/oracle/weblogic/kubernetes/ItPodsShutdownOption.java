@@ -370,11 +370,11 @@ class ItPodsShutdownOption {
           .atMost(10, MINUTES).await(), podName, domainUid, domainNamespace);
     }
   }
+
   // create domain resource and verify all the server pods are ready
   private void createVerifyDomain(Domain domain) {
     createVerifyDomain(domain, 0);
   }
-
 
   // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
   private void verifyServerLog(String namespace, String podName, String[] envVars) {
