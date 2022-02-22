@@ -101,6 +101,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by
@@ -140,7 +141,7 @@ public class DomainStatusUpdater {
 
     @Override
     void modifyStatus(DomainStatus status) {
-      status.setRolling(true);
+      status.addCondition(new DomainCondition(Rolling));
     }
 
     @Override
@@ -663,13 +664,9 @@ public class DomainStatusUpdater {
       List<EventData> createDomainEvents() {
         Conditions conditions = new Conditions(getNewStatus());
         conditions.apply();
+
         List<EventData> list = getRemovedConditionEvents(conditions);
         list.addAll(getNewConditionEvents(conditions));
-
-        if (domainRollJustCompleted(list)) {
-          list.add(new EventData(DOMAIN_ROLL_COMPLETED));
-        }
-
         list.sort(Comparator.comparing(EventData::getOrdering));
         return list;
       }
@@ -710,8 +707,7 @@ public class DomainStatusUpdater {
           case Failed:
             if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
               return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
-            }
-            if (ServerPod.name().equals(newCondition.getReason())) {
+            } else if (ServerPod.name().equals(newCondition.getReason())) {
               return new EventData(DOMAIN_FAILED).failureReason(ServerPod);
             }
             return null;
@@ -726,6 +722,8 @@ public class DomainStatusUpdater {
             return new EventData(DOMAIN_INCOMPLETE);
           case Available:
             return new EventData(DOMAIN_UNAVAILABLE);
+          case Rolling:
+            return new EventData(DOMAIN_ROLL_COMPLETED);
           case Failed:
             return new EventData(DOMAIN_FAILURE_RESOLVED);
           default:
@@ -768,8 +766,8 @@ public class DomainStatusUpdater {
           conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
           conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
           computeTooManyReplicasFailures();
-          if (isProcessingCompleted()) {
-            this.status.setRolling(null);
+          if (allIntendedServersReady()) {
+            this.status.removeConditionsWithType(Rolling);
           }
           this.oldStatus = getStatus();
         }

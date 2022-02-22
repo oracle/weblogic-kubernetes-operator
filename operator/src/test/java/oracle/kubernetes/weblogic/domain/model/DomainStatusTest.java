@@ -28,6 +28,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Comple
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -234,13 +235,13 @@ class DomainStatusTest {
 
   @Test
   void whenDomainRollingStatusAdded_statusHasRollingStatus() {
-    domainStatus.setRolling(true);
+    domainStatus.addCondition(new DomainCondition(Rolling));
 
     assertThat(domainStatus.isRolling(), is(true));
   }
 
   @Test
-  void whenDomainRollingStatusNull_returnFalse() {
+  void whenDomainRollingConditionNotSet_accessorReturnsFalse() {
     assertThat(domainStatus.isRolling(), is(false));
   }
 
