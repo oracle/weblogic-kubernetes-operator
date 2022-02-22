@@ -112,7 +112,6 @@ fi
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
 echo "cleaning up k8s artifacts"
-sh -x ./operator/integration-tests/bash/cleanup.sh
 kubectl get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/weblogic/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/test-/{print $1}' | xargs kubectl delete ns || true
