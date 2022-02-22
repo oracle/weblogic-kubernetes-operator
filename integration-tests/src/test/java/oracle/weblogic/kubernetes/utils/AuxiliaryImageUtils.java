@@ -1,3 +1,6 @@
+// Copyright (c) 2022, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package oracle.weblogic.kubernetes.utils;
 
 import java.util.HashMap;
@@ -5,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Paths.get;
@@ -26,10 +31,15 @@ import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class AuxiliaryImageUtils {
+
+  /**
+   * Create a AuxImage using WIT.
+   *
+   * @param witParams wit params
+   *
+   */
   public static boolean createAuxImageUsingWIT(WitParams witParams) {
 
     WitParams newWitParams = setupCommonWitParameters(witParams);
@@ -39,6 +49,12 @@ public class AuxiliaryImageUtils {
     return createAuxImage(newWitParams);
   }
 
+  /**
+   * Create a AuxImage using WIT and return result output.
+   *
+   * @param witParams wit params
+   *
+   */
   public static ExecResult createAuxImageUsingWITAndReturnResult(WitParams witParams) {
 
     WitParams newWitParams = setupCommonWitParameters(witParams);
@@ -52,6 +68,12 @@ public class AuxiliaryImageUtils {
     return result;
   }
 
+  /**
+   * Setup common env with wit params.
+   *
+   * @param witParams wit params
+   *
+   */
   public static WitParams setupCommonWitParameters(WitParams witParams) {
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -71,7 +93,16 @@ public class AuxiliaryImageUtils {
     return witParams.target(witTarget).env(env).redirect(true);
   }
 
-  public static Callable<Boolean> createAuxiliaryImage(String auxImage, List<String> modelList, List<String> archiveList) {
+  /**
+   * Create a AuxImage.
+   *
+   * @param auxImage auxImage name
+   * @param modelList model list
+   * @param archiveList archive list
+   *
+   */
+  public static Callable<Boolean> createAuxiliaryImage(String auxImage, List<String> modelList,
+                                                       List<String> archiveList) {
 
     return (() -> {
       WitParams witParams =
@@ -85,12 +116,26 @@ public class AuxiliaryImageUtils {
     });
   }
 
+  /**
+   * Create a AuxImage using WIT.
+   *
+   * @param witParams wit params
+   *
+   */
   public static Callable<Boolean> createAuxiliaryImage(WitParams witParams) {
 
     return (() -> createAuxImageUsingWIT(witParams));
   }
 
-  public static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
+  /**
+   * Check Configured JMS Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  public static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                               String adminSvcExtHost) {
 
     LoggingFacade logger = getLogger();
     int adminServiceNodePort
@@ -108,7 +153,15 @@ public class AuxiliaryImageUtils {
     logger.info("Found the JMSSystemResource configuration");
   }
 
-  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
+  /**
+   * Check Configured JDBC Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
     LoggingFacade logger = getLogger();
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -126,6 +179,14 @@ public class AuxiliaryImageUtils {
     logger.info("Found the DataResource configuration");
   }
 
+  /**
+   * Check WDT installed version.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param auxiliaryImagePath  auxiliary image path
+   * @param className test class name
+   */
   public static String checkWDTVersion(String domainNamespace, String adminServerPodName,
                                        String auxiliaryImagePath, String className)
       throws Exception {
