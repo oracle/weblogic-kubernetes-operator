@@ -13,7 +13,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
@@ -68,7 +67,7 @@ public class LoggingExporterUtils {
    *
    * @return Elasticsearch installation parameters
    */
-  public static LoggingExporterParams installAndVerifyElasticsearch() {
+  public static LoggingExporterParams installAndVerifyElasticsearch(String namespace) {
     LoggingFacade logger = getLogger();
     final String elasticsearchPodNamePrefix = ELASTICSEARCH_NAME;
 
@@ -78,7 +77,7 @@ public class LoggingExporterUtils {
         .elasticsearchImage(ELASTICSEARCH_IMAGE)
         .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
         .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+        .loggingExporterNamespace(namespace);
 
     // install Elasticsearch
     assertThat(installElasticsearch(elasticsearchParams))
@@ -88,11 +87,11 @@ public class LoggingExporterUtils {
 
     // wait until the Elasticsearch pod is ready.
     testUntil(
-        assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
+        assertDoesNotThrow(() -> isElkStackPodReady(namespace, elasticsearchPodNamePrefix),
           "isElkStackPodReady failed with ApiException"),
         logger,
         "Elasticsearch to be ready in namespace {0}",
-        ELKSTACK_NAMESPACE);
+        namespace);
 
     return elasticsearchParams;
   }
@@ -102,7 +101,7 @@ public class LoggingExporterUtils {
    *
    * @return Kibana installation parameters
    */
-  public static LoggingExporterParams installAndVerifyKibana() {
+  public static LoggingExporterParams installAndVerifyKibana(String namespace) {
     LoggingFacade logger = getLogger();
     final String kibanaPodNamePrefix = ELASTICSEARCH_NAME;
 
@@ -111,7 +110,7 @@ public class LoggingExporterUtils {
         .kibanaName(KIBANA_NAME)
         .kibanaImage(KIBANA_IMAGE)
         .kibanaType(KIBANA_TYPE)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+        .loggingExporterNamespace(namespace)
         .kibanaContainerPort(KIBANA_PORT);
 
     // install Kibana
@@ -122,11 +121,11 @@ public class LoggingExporterUtils {
 
     // wait until the Kibana pod is ready.
     testUntil(
-        assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
+        assertDoesNotThrow(() -> isElkStackPodReady(namespace, kibanaPodNamePrefix),
           "isElkStackPodReady failed with ApiException"),
         logger,
         "Kibana to be ready in namespace {0}",
-        ELKSTACK_NAMESPACE);
+        namespace);
 
     return kibanaParams;
   }
