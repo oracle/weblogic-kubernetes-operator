@@ -51,7 +51,7 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
       description.appendText(
             getEvents(testSupport).stream()
                   .map(this::toEventString)
-                  .collect(Collectors.joining(", ", "found events: ", ".")));
+                  .collect(Collectors.joining("], [", "found events: [", "].")));
       return false;
     }
   }
