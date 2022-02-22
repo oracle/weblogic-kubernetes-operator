@@ -208,9 +208,9 @@ spec:
       WL-Proxy-Client-IP: "" # Removes
       WL-Proxy-SSL: "" # Removes
       WL-Proxy-SSL: "true" # Adds
-    redirectScheme:
-      scheme: https
-      permanent: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
