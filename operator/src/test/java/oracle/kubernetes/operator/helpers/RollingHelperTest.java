@@ -50,19 +50,17 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.utils.LogMatcher.containsInOrder;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 class RollingHelperTest {
@@ -308,10 +306,9 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
     logRecords.clear();
 
-    CLUSTERED_SERVER_NAMES.forEach(s -> assertThat(
-        getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
-        stringContainsInOrder("Replacing ", getPodName(s),
-            "domain restart version changed", "V5", "DOMAIN_HOME", "changed", "xxxx")));
+    CLUSTERED_SERVER_NAMES.forEach(s ->
+          assertThat(testSupport,
+                hasEvent(POD_CYCLE_STARTING_EVENT).inNamespace(NS).withMessageContaining(getPodName(s))));
   }
 
   private String getPodName(String s) {
@@ -320,17 +317,6 @@ class RollingHelperTest {
 
   private String getPodNameFromMetadata(V1Pod serverPod) {
     return Optional.ofNullable(serverPod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
-  }
-
-  @SuppressWarnings("ConstantConditions")
-  protected String getExpectedEventMessage(EventHelper.EventItem event, String name, String ns) {
-    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    for (CoreV1Event e : events) {
-      if (e.getMessage().contains(name) && e.getMetadata().getNamespace().equals(ns)) {
-        return e.getMessage();
-      }
-    }
-    return "Event not found";
   }
 
   @SuppressWarnings({"SameParameterValue", "ConstantConditions"})
