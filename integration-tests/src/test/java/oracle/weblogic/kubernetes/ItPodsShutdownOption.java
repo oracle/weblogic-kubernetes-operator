@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -332,12 +333,14 @@ class ItPodsShutdownOption {
     return domain;
   }
 
-  // create domain resource and verify all the server pods are ready
-  private void createVerifyDomain(Domain domain) {
+  private void createVerifyDomain(Domain domain, int sleepTimeInHours) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
+    if (sleepTimeInHours != 0) {
+      assertDoesNotThrow(() -> TimeUnit.HOURS.sleep(sleepTimeInHours));
+    }
 
     // check that admin service/pod exists in the domain namespace
     logger.info("Checking that admin service/pod {0} exists in namespace {1}",
@@ -366,7 +369,10 @@ class ItPodsShutdownOption {
           .and().with().pollInterval(10, SECONDS)
           .atMost(10, MINUTES).await(), podName, domainUid, domainNamespace);
     }
-
+  }
+  // create domain resource and verify all the server pods are ready
+  private void createVerifyDomain(Domain domain) {
+    createVerifyDomain(domain, 0);
   }
 
 
