@@ -26,8 +26,8 @@ usage() {
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
   echo "  -l WLE download URL"
   echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
-  echo "  -m Run integration-tests or wko-okd-wls-cert or wko-okd-fmw-cert"
-  echo "      (default: wko-okd-wls-cert, supported values: wko-okd-wls-cert, wko-okd-fmw-cert) "
+  echo "  -m Run integration-tests or wko-okd-wls-srg or wko-okd-wls-mrg or wko-okd-fmw-cert"
+  echo "      (default: wko-okd-wls-srg, supported values: wko-okd-wls-mrg, wko-okd-fmw-cert) "
   echo "  -h Help"
   exit $1
 }
@@ -112,6 +112,7 @@ fi
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
 echo "cleaning up k8s artifacts"
+sh -x ./operator/integration-tests/bash/cleanup.sh
 kubectl get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/weblogic/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/test-/{print $1}' | xargs kubectl delete ns || true
