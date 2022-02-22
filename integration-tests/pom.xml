@@ -480,7 +480,8 @@
                     **/ItMiiSampleFmwAux,
                     **/ItFmwSample,
                     **/ItWlsSamples,
-                    **/ItMiiMultiModel
+                    **/ItMiiMultiModel,
+                    **/ItLiftAndShiftFromOnPremDomain
                 </includes-failsafe>
             </properties>
         </profile>
