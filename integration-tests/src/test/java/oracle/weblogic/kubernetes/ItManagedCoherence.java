@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -191,12 +190,6 @@ class ItManagedCoherence {
       logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
 
       String hostAndPort = getHostAndPort(clusterHostname, ingressServiceNodePort);
-      try {
-        logger.info("SLeeping for 3 hours");
-        TimeUnit.HOURS.sleep(3);
-      } catch (InterruptedException ex) {
-        ;
-      }
       assertTrue(checkCoheranceApp(clusterHostname, hostAndPort), "Failed to access Coherance App cation");
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
