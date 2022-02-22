@@ -246,9 +246,9 @@ spec:
   replacePathRegex:
     regex: ^/domain1(.*)
     replacement: /$1
-    redirectScheme:
-      scheme: https
-      permanent: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -284,6 +284,6 @@ spec:
   replacePathRegex:
     regex: ^/domain2(.*)
     replacement: /$1
-    redirectScheme:
-      scheme: https
-      permanent: true
+  redirectScheme:
+    scheme: https
+    permanent: true
