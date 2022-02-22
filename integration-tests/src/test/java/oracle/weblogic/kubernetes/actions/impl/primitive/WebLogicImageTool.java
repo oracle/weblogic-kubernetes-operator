@@ -232,7 +232,7 @@ public class WebLogicImageTool {
     }
 
     // download WDT if it is not in the expected location
-    if (params.wdtVersion() != null && params.wdtVersion() !="NONE") {
+    if (params.wdtVersion() != null && params.wdtVersion() != "NONE") {
       if (!downloadWdt(params.wdtVersion())) {
         return false;
       }
