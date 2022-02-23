@@ -12,14 +12,12 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -61,7 +59,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -245,15 +242,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-
-    event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("cpu=Quantity"));
-
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
@@ -322,11 +310,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -405,16 +388,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-
-    event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the JAVA_OPTIONS changed message is logged");
-    assertTrue(event.getMessage().contains("JAVA_OPTIONS"));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -495,12 +468,6 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace, DOMAIN_ROLL_STARTING, "Normal",  timestamp);
-    logger.info(Yaml.dump(event));
-
-    event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
@@ -570,13 +537,6 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the 'imagePullPolicy' "
-        + "changed from 'IfNotPresent' to 'Never' message is logged");
-    assertTrue(event.getMessage().contains("Never"));
-
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
@@ -629,14 +589,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-
-    event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
@@ -692,15 +644,6 @@ class ItPodsRestart {
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-
-    event = getOpGeneratedEvent(domainNamespace,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains(tag));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,

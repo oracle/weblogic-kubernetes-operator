@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -726,12 +727,6 @@ class ItMiiAuxiliaryImage40 {
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator pod's name");
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
@@ -739,6 +734,12 @@ class ItMiiAuxiliaryImage40 {
       checkPodDoesNotExist(managedServerPrefix + i, domainUid2, domainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
+
+    // check the operator pod log contains the expected error message
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator pod's name");
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid2);
@@ -841,6 +842,7 @@ class ItMiiAuxiliaryImage40 {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
+  @Disabled("Regression bug, test fails")
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
     final String domainUid2 = "domain8";

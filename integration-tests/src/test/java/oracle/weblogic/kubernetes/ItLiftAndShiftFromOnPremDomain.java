@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -393,15 +393,15 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "domainHome: \\{\\{\\{domainHome\\}\\}\\}", "domainHome: /u01/domains/" + domainUid);
+          "\\{\\{\\{domainHome\\}\\}\\}", "/u01/domains/" + domainUid);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "domainHomeSourceType: \\{\\{\\{domainHomeSourceType\\}\\}\\}", "domainHomeSourceType: FromModel");
+          "\\{\\{\\{domainHomeSourceType\\}\\}\\}", "FromModel");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "image: \\{\\{\\{imageName\\}\\}\\}", "image: " + imageName);
+          "\\{\\{\\{imageName\\}\\}\\}", imageName);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "name: ocir", "name: ocir-secret");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "modelHome: \\{\\{\\{modelHome\\}\\}\\}", "modelHome: /u01/wdt/models");
+          "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");
     }
