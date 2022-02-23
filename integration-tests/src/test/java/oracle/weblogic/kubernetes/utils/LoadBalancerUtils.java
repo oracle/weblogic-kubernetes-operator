@@ -43,12 +43,10 @@ import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -179,14 +177,6 @@ public class LoadBalancerUtils {
       testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger, "docker login to be successful");
-
-      String localNginxImage = BASE_IMAGES_REPO + "/" 
-              + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
-      testUntil(
-          pullImageFromOcirAndTag(localNginxImage),
-          logger,
-          "pullImageFromOcirAndTag for image {0} to be successful",
-          localNginxImage);
     }
 
     // Helm install parameters
