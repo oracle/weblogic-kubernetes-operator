@@ -759,11 +759,9 @@ public class Kubernetes {
    * @param namespace in which to list the jobs
    * @param labelSelectors labels to narrow the list of jobs
    * @return V1JobList list of {@link V1Job} from Kubernetes cluster
-   * @throws ApiException when list fails
    */
-  public static V1JobList listJobs(String namespace, String labelSelectors)
-      throws ApiException {
-    V1JobList list;
+  public static V1JobList listJobs(String namespace, String labelSelectors) {
+    V1JobList list = null;
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       list = apiInstance.listNamespacedJob(
@@ -781,7 +779,6 @@ public class Kubernetes {
       );
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
-      throw apex;
     }
     return list;
   }

@@ -299,7 +299,8 @@
             "Failed",
             "Available",
             "Completed",
-            "ConfigChangesPendingRestart"
+            "ConfigChangesPendingRestart",
+            "Rolling"
           ]
         },
         "lastTransitionTime": {
@@ -495,10 +496,6 @@
         "reason": {
           "description": "A brief CamelCase message indicating details about why the domain is in this state.",
           "type": "string"
-        },
-        "rolling": {
-          "description": "True while pods have been intentionally deleted and have not yet returned to the ready state. Defaults to null, which is interpreted as \u0027false\u0027.",
-          "type": "boolean"
         },
         "servers": {
           "description": "Status of WebLogic Servers in this domain.",

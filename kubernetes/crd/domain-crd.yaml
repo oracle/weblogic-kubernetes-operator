@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f9960371f793c639582592809cd72099cbde3e13a5c8294579dcb686d95f7a08
+    weblogic.sha256: 50abf905846c7f7f0bdda043093324ab8f14862ef20532a6d3467bccdcd7d73f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11220,11 +11220,6 @@ spec:
                 description: A brief CamelCase message indicating details about why
                   the domain is in this state.
                 type: string
-              rolling:
-                description: True while pods have been intentionally deleted and have
-                  not yet returned to the ready state. Defaults to null, which is
-                  interpreted as 'false'.
-                type: boolean
               servers:
                 description: Status of WebLogic Servers in this domain.
                 items:
@@ -11330,6 +11325,7 @@ spec:
                       - Available
                       - Completed
                       - ConfigChangesPendingRestart
+                      - Rolling
                     lastTransitionTime:
                       format: date-time
                       description: Last time the condition transitioned from one status

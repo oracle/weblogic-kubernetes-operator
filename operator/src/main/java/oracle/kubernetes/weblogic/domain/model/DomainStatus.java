@@ -28,6 +28,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -48,10 +49,6 @@ public class DomainStatus {
   @Description(
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
-
-  @Description("True while pods have been intentionally deleted and have not yet returned to the ready state. "
-        + "Defaults to null, which is interpreted as 'false'.")
-  private Boolean rolling;
 
   @Description(
       "Non-zero if the introspector job fails for any reason. "
@@ -100,7 +97,6 @@ public class DomainStatus {
   public DomainStatus(DomainStatus that) {
     message = that.message;
     reason = that.reason;
-    rolling = that.rolling;
     conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
     clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
@@ -260,12 +256,11 @@ public class DomainStatus {
     return this;
   }
 
-  public Boolean isRolling() {
-    return Optional.ofNullable(rolling).orElse(false);
-  }
-
-  public void setRolling(Boolean rolling) {
-    this.rolling = rolling;
+  /**
+   * Returns true if the status has a condition indicating that the domain is currently rolling.
+   */
+  public boolean isRolling() {
+    return conditions.stream().anyMatch(c -> c.getType().equals(Rolling));
   }
 
   /**
@@ -514,7 +509,6 @@ public class DomainStatus {
         .append("conditions", conditions)
         .append("message", message)
         .append("reason", reason)
-        .append("rolling", rolling)
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
@@ -528,7 +522,6 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
-        .append(rolling)
         .append(Domain.sortOrNull(servers))
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
@@ -549,7 +542,6 @@ public class DomainStatus {
     DomainStatus rhs = ((DomainStatus) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
-        .append(rolling, rhs.rolling)
         .append(startTime, rhs.startTime)
         .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
