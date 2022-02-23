@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -100,7 +100,6 @@ class ItIstioSessionMigration {
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
-    //final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + SESSMIGR_MODEL_FILE);
     final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
 
     // create image with model files

@@ -414,7 +414,6 @@ class ItMonitoringExporter {
     String destYamlFile = generateNewModelFileWithUpdatedDomainUid(domain7Uid,
         "ItMonitoringExporter", getOrigModelFile());
     String miiImage1 = createAndVerifyMiiImage(destYamlFile);
-    //String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
     String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
     createAndVerifyDomain(miiImage1, domain7Uid, domain7Namespace, "FromModel", 2, false, yaml);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
@@ -437,7 +436,6 @@ class ItMonitoringExporter {
         domain7Uid, domain7Namespace,
         "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
         "\"domain\":\"" + domain7Uid + "\"");
-    //"\"domain\":\"wls-sessmigr-domain-1\"");
 
     logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
