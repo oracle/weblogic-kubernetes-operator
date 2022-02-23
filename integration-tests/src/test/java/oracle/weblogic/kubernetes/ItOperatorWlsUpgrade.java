@@ -169,14 +169,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.7 to latest.
+   * Operator upgrade from 3.3.8 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.7 to latest")
+  @DisplayName("Upgrade Operator from 3.3.8 to latest")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom337ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom337ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom338ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom338ToLatest with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.3.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
