@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -189,7 +189,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(String status) {
-    assert status.equals(TRUE) || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
+    assert status.equals(TRUE) || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
@@ -201,7 +201,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(boolean status) {
-    assert status || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
+    assert status || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status ? TRUE : FALSE;
     return this;
