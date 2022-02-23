@@ -198,6 +198,7 @@ class ItMiiAuxiliaryImage40 {
    * Reuse created a domain with datasource using auxiliary image containing the DataSource,
    * verify the domain is running and JDBC DataSource resource is added.
    * Patch domain with updated JDBC URL info and verify the update.
+   * Verify domain is rolling restarted.
    */
   @Test
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
@@ -242,7 +243,17 @@ class ItMiiAuxiliaryImage40 {
 
     logger.info("Found the DataResource configuration");
 
+    // get the map with server pods and their original creation timestamps
+    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+        managedServerPrefixDomain1, replicaCount);
+
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid1, domainNamespace);
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid1, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespace));
 
     checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
   }
