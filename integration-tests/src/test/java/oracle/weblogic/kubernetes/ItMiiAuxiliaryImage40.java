@@ -727,12 +727,6 @@ class ItMiiAuxiliaryImage40 {
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator pod's name");
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
     // check there are no admin server and managed server pods and services created
     checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
@@ -741,6 +735,11 @@ class ItMiiAuxiliaryImage40 {
       checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
 
+    // check the operator pod log contains the expected error message
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator pod's name");
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid2);
   }
