@@ -142,8 +142,7 @@ public class Ingress {
             .namespace(domainNamespace)
             .annotations(annotations))
         .spec(new V1IngressSpec()
-            .rules(ingressRules)
-            .ingressClassName(ingressClassName));
+            .rules(ingressRules));
     if (tlsSecret != null) {
       V1IngressSpec spec = ingress.getSpec().tls(tlsList);
       ingress.setSpec(spec);
@@ -186,8 +185,7 @@ public class Ingress {
             .namespace(namespace)
             .annotations(annotations))
         .spec(new V1IngressSpec()
-            .rules(ingressRules)
-            .ingressClassName(ingressClassName));
+            .rules(ingressRules));
 
     if (tlsList != null) {
       V1IngressSpec spec = ingress.getSpec().tls(tlsList);
