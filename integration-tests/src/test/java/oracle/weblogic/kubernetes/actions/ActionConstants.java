@@ -68,11 +68,11 @@ public interface ActionConstants {
   public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
   public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 
+  public static final String WLE_VERSION    = System.getProperty("wle.version", "latest");
   public static final String WLE_DOWNLOAD_URL_DEFAULT
-      = "https://github.com/oracle/weblogic-logging-exporter/releases/latest";
+      = "https://github.com/oracle/weblogic-logging-exporter/releases/" + WLE_VERSION;
   public static final String WLE_DOWNLOAD_URL
       = System.getProperty("wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
-  public static final String WLE_VERSION    = System.getProperty("wle.version", "latest");
   public static final String WLE_DOWNLOAD_FILENAME_DEFAULT = "weblogic-logging-exporter.jar";
 
   public static final String SNAKE_VERSION    = System.getProperty("snake.version", "1.27");
