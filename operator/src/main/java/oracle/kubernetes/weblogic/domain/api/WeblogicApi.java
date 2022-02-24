@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -39,7 +40,7 @@ public class WeblogicApi extends CustomObjectsApi {
   public Call getNamespacedDomainAsync(String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     return getNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace,
-        DOMAIN_PLURAL, name, new DomainApiCallbackWrapper(callback));
+        DOMAIN_PLURAL, name, wrapForDomain(callback));
   }
 
   /**
@@ -72,7 +73,7 @@ public class WeblogicApi extends CustomObjectsApi {
       throws ApiException {
     return listNamespacedCustomObjectCall(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
-        timeoutSeconds, watch, new DomainListApiCallbackWrapper(callback));
+        timeoutSeconds, watch, wrapForDomainList(callback));
   }
 
   /**
@@ -136,7 +137,7 @@ public class WeblogicApi extends CustomObjectsApi {
       throws ApiException {
     return listNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
         pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
-        timeoutSeconds, watch, new DomainListApiCallbackWrapper(callback));
+        timeoutSeconds, watch, wrapForDomainList(callback));
   }
 
   /**
@@ -168,7 +169,7 @@ public class WeblogicApi extends CustomObjectsApi {
       String name, String namespace, V1Patch body, ApiCallback<Domain> callback)
       throws ApiException {
     return patchNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
-        name, body, null, null, null, new DomainApiCallbackWrapper(callback));
+        name, body, null, null, null, wrapForDomain(callback));
   }
 
   /**
@@ -200,7 +201,7 @@ public class WeblogicApi extends CustomObjectsApi {
       String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return replaceNamespacedCustomObjectAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
-        name, body, null, null, new DomainApiCallbackWrapper(callback));
+        name, body, null, null, wrapForDomain(callback));
   }
 
   /**
@@ -233,7 +234,11 @@ public class WeblogicApi extends CustomObjectsApi {
       throws ApiException {
 
     return replaceNamespacedCustomObjectStatusAsync(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL,
-        name, body, null, null, new DomainApiCallbackWrapper(callback));
+        name, body, null, null, wrapForDomain(callback));
+  }
+
+  private ApiCallback<Object> wrapForDomain(ApiCallback<Domain> inner) {
+    return Optional.ofNullable(inner).map(DomainApiCallbackWrapper::new).orElse(null);
   }
 
   private class DomainApiCallbackWrapper implements ApiCallback<Object> {
@@ -262,6 +267,10 @@ public class WeblogicApi extends CustomObjectsApi {
     public void onDownloadProgress(long l, long l1, boolean b) {
       domainApiCallback.onDownloadProgress(l, l1, b);
     }
+  }
+
+  private ApiCallback<Object> wrapForDomainList(ApiCallback<DomainList> inner) {
+    return Optional.ofNullable(inner).map(DomainListApiCallbackWrapper::new).orElse(null);
   }
 
   private class DomainListApiCallbackWrapper implements ApiCallback<Object> {
