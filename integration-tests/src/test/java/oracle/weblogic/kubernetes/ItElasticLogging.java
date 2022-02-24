@@ -170,6 +170,7 @@ class ItElasticLogging {
     // build operator chart values
     OperatorParams opParams = new OperatorParams()
         .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
         .elasticSearchHost(elasticSearchHost);
 
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
