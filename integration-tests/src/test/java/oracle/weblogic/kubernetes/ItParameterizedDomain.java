@@ -171,7 +171,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * Also verify the sample application can be accessed via NGINX ingress controller.
  * Also verify the rolling restart behavior in a multi-cluster MII domain.
  * In OKD cluster, we do not use thrid party loadbalancers, so the tests that
- * specifically test nginx or traefik are diasbled for OKD cluster. 
+ * specifically test nginx or traefik are diasbled for OKD cluster.
  */
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
@@ -265,9 +265,9 @@ class ItParameterizedDomain {
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough 
+    // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
-    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace); 
+    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
@@ -303,7 +303,7 @@ class ItParameterizedDomain {
 
       String domainUid = domain.getSpec().getDomainUid();
       String domainNamespace = domain.getMetadata().getNamespace();
-  
+
       //create route for external admin service
       createRouteForOKD(domainUid + "-admin-server-ext", domainNamespace);
 
@@ -316,8 +316,8 @@ class ItParameterizedDomain {
       }
       if (!OKD) {
         logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
-              true, ADMIN_SERVER_PORT);
+        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
+            true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
       }
     }
   }
@@ -389,7 +389,7 @@ class ItParameterizedDomain {
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
 
     stopPortForwardProcess(domainNamespace);
-    
+
   }
 
   /**
@@ -1204,8 +1204,8 @@ class ItParameterizedDomain {
       logger.info("routeHost = {0}", routeHost);
       return String.format("curl -v --show-error --noproxy '*' http://%s/%s/index.jsp",
           routeHost, appContextRoot);
-    
-    } else { 
+
+    } else {
       return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
           domainUid + "." + domainNamespace + "." + clusterName + ".test",
           K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
