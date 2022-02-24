@@ -143,6 +143,9 @@ public class Ingress {
             .annotations(annotations))
         .spec(new V1IngressSpec()
             .rules(ingressRules));
+    if (ingressClassName != null) {
+      ingress.setSpec(ingress.getSpec().ingressClassName(ingressClassName));
+    }
     if (tlsSecret != null) {
       V1IngressSpec spec = ingress.getSpec().tls(tlsList);
       ingress.setSpec(spec);

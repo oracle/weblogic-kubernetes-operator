@@ -597,10 +597,34 @@ public class LoadBalancerUtils {
                                                              boolean setIngressHost,
                                                              boolean enableAdminServerRouting,
                                                              int adminServerPort) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, setIngressHost,
+        null, enableAdminServerRouting, adminServerPort);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @param ingressNginxClass unique name to add in ingress resource
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost,
+                                                             String ingressNginxClass,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
     List<String> ingressHostList =
@@ -634,7 +658,6 @@ public class LoadBalancerUtils {
 
     return ingressHostList;
   }
-
 
   /**
    * Create an ingress for the domain with domainUid in the specified namespace.
