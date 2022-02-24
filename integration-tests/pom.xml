@@ -229,43 +229,6 @@
             </properties>
         </profile>
         <profile>
-            <id>wls-image-cert</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                   **/ItExternalLbTunneling,
-                   **/ItMiiAuxiliaryImage,
-                   **/ItMiiAuxiliaryImageCluster,
-                   **/ItMiiSampleWlsAux,
-                   **/ItMiiCustomSslStore,
-                   **/ItMiiServiceMigration,
-                   **/ItRemoteConsole,
-                   **/ItConfigDistributionStrategy,
-                   **/ItCrossDomainTransaction,
-                   **/ItElasticLogging,
-                   **/ItElasticLoggingFluentd,
-                   **/ItExternalRmiTunneling,
-                   **/ItIntrospectVersion,
-                   **/ItCrossDomainTransaction,
-                   **/ItIstioDomainInPV,
-                   **/ItIstioMiiDomain,
-                   **/ItManagedCoherence,
-                   **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate*,
-                   **/ItMiiSampleWlsMain,
-                   **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter*,
-                   **/ItParameterizedDomain,
-                   **/ItPodsShutdownOption,
-                   **/ItProductionSecureMode,
-                   **/ItWlsSamples,
-                   **/ItSessionMigration,
-                   **/ItStickySession,
-                   **/ItSystemResOverrides
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -451,26 +414,6 @@
                   **/ItPodsShutdownOption,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>fmw-pipeline</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiAuxiliaryImageCluster,
-                    **/ItMiiCustomSslStore,
-                    **/ItExternalRmiTunneling,
-                    **/ItIstioDomainInPV,
-                    **/ItMiiDomain,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItIstioDomainInImage,
-                    **/ItPodsShutdownOption,
-                    **/ItProductionSecureMode,
-                    **/ItSessionMigration,
-                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>
