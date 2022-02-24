@@ -1,3 +1,6 @@
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 import ast
 import os
 import unittest
@@ -279,6 +282,32 @@ class WdtUpdateFilterCase(unittest.TestCase):
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
+  def test_isAdministrationPortEnabledForDomain(self):
+    model = self.getModel()
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForDomain(model['topology']))
+
+  def test_isAdministrationPortEnabledForServer(self):
+    model = self.getModel()
+
+    # disable Administration port for domain
+    model['topology']['AdministrationPortEnabled'] = False
+
+    # enable Administration port for server
+    model['topology']['Server']['admin-server']['AdministrationPortEnabled'] = True
+
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model['topology']))
+
+  def test_isSecureModeEnabledForDomain(self):
+    model = self.getModel()
+
+    # enable secure mode for Domain
+    model['topology']['SecurityConfiguration'] = {}
+    model['topology']['SecurityConfiguration']['SecureMode'] = {}
+    model['topology']['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] = True
+
+    self.assertTrue(model_wdt_mii_filter.isSecureModeEnabledForDomain(model['topology']))
+
+
   def test_istioVersionRequiresLocalHostBindings(self):
     model = self.getModel()
     self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())
@@ -364,6 +393,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       istiorepl_nap = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['istiorepl']
       self.assertIsNotNone(istiorepl_nap, "Expected a NAP named \'istiorepl\' to be defined")
 
+      self.assertEqual(istiorepl_nap['TunnelingEnabled'], 'false')
       nap_listen_address = istiorepl_nap['ListenAddress']
       self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address,
                        "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")

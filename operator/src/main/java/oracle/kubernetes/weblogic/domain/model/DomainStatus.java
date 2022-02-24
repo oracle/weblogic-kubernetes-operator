@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,6 +28,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -158,11 +159,11 @@ public class DomainStatus {
   }
 
   /**
-   * Returns true if there is a condition matching the specified predicate.
+   * Returns true if there is no condition matching the specified predicate.
    * @param predicate a predicate to match against a condition
    */
-  public boolean hasConditionWith(Predicate<DomainCondition> predicate) {
-    return !getConditionsMatching(predicate).isEmpty();
+  public boolean lacksConditionWith(Predicate<DomainCondition> predicate) {
+    return getConditionsMatching(predicate).isEmpty();
   }
 
   /**
@@ -253,6 +254,13 @@ public class DomainStatus {
   public DomainStatus withReason(String reason) {
     this.reason = reason;
     return this;
+  }
+
+  /**
+   * Returns true if the status has a condition indicating that the domain is currently rolling.
+   */
+  public boolean isRolling() {
+    return conditions.stream().anyMatch(c -> c.getType().equals(Rolling));
   }
 
   /**
@@ -548,6 +556,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withBooleanField("rolling", DomainStatus::isRolling)
         .withStringField("failedIntrospectionUid", DomainStatus::getFailedIntrospectionUid)
         .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)

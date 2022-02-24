@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessSideCar;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -240,9 +241,16 @@ class ItMonitoringExporterSideCar {
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));
+      assertTrue(verifyMonExpAppAccessSideCar("webapp_config_open_sessions_high_count",
+          domain3Namespace, domain3Uid + "-managed-server1"));
+      assertTrue(verifyMonExpAppAccessSideCar("webapp_config_open_sessions_high_count",
+          domain3Namespace, domain3Uid + "-managed-server2"));
       logger.info("Testing replace configuration");
       changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain3Uid, domain3Namespace,
           "heapFreeCurrent", "heap_free_current", "managed-server1");
+
+      assertTrue(verifyMonExpAppAccessSideCar("heap_free_current", domain3Namespace, domain3Uid + "-managed-server1"));
+      assertTrue(verifyMonExpAppAccessSideCar("heap_free_current", domain3Namespace, domain3Uid + "-managed-server2"));
 
       logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
       changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
@@ -255,6 +263,11 @@ class ItMonitoringExporterSideCar {
           domain3Uid, domain3Namespace,
           "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
           "sessmigr");
+      assertTrue(verifyMonExpAppAccessSideCar("executionTimeAverage", domain3Namespace,
+          domain3Uid + "-managed-server1"));
+      assertTrue(verifyMonExpAppAccessSideCar("executionTimeAverage", domain3Namespace,
+          domain3Uid + "-managed-server2"));
+
     } finally {
       shutdownDomain(domain3Namespace, domain3Uid);
     }
@@ -371,6 +384,10 @@ class ItMonitoringExporterSideCar {
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
       assertTrue(monexpConfig.contains("openSessionsHighCount"));
+      assertTrue(verifyMonExpAppAccessSideCar("webapp_config_open_sessions_high_count",
+          domain2Namespace, domain2Uid + "-managed-server1"));
+      assertTrue(verifyMonExpAppAccessSideCar("webapp_config_open_sessions_high_count",
+          domain2Namespace, domain2Uid + "-managed-server2"));
     } finally {
       shutdownDomain(domain2Namespace, domain2Uid);
     }

@@ -16,7 +16,6 @@ import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -25,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -73,6 +71,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -98,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCou
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -107,6 +105,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -165,6 +164,12 @@ class ItKubernetesEvents {
   public static ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(10, MINUTES).await();
+
+  public enum ScaleAction {
+    scaleUp,
+    scaleDown,
+    reset
+  }
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -450,8 +455,8 @@ class ItKubernetesEvents {
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
     try {
-      scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
-      scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
+      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true);
+      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true);
     } finally {
       scaleDomain(2);
     }
@@ -600,19 +605,6 @@ class ItKubernetesEvents {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the logHome changed messages is logged");
-    assertTrue(event.getMessage().contains("logHome"));
-
-    event = getOpGeneratedEvent(domainNamespace1,
-        POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the LOG_HOME changed messages is logged");
-    assertTrue(event.getMessage().contains("LOG_HOME"));
-
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
@@ -678,18 +670,6 @@ class ItKubernetesEvents {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
-        DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
-    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
-
-    event = getOpGeneratedEvent(domainNamespace1, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the SERVER_OUT_IN_POD_LOG changed messages is logged");
-    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
-
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
@@ -1082,7 +1062,7 @@ class ItKubernetesEvents {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(cluster1Name)
                 .replicas(replicaCount)
@@ -1205,7 +1185,7 @@ class ItKubernetesEvents {
     }
   }
 
-  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType, boolean verify) {
     OffsetDateTime timestamp = now();
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
     int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal");
@@ -1213,6 +1193,22 @@ class ItKubernetesEvents {
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+    int serverNumber = replicaCount + 1;
+
+    switch (testType) {
+      case scaleUp:
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
+        break;
+      case scaleDown:
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace1);
+        break;
+      case reset:
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace1);
+        break;
+      default:
+    }
+
     if (verify) {
       logger.info("Verify the DomainCompleted event is generated after " + testType);
       checkEventWithCount(
@@ -1221,7 +1217,7 @@ class ItKubernetesEvents {
   }
 
   private void scaleDomain(int replicaCount) {
-    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
+    scaleDomainAndVerifyCompletedEvent(replicaCount, ScaleAction.reset, false);
   }
 
 }

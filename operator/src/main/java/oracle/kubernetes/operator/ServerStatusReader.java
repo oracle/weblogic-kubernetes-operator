@@ -157,7 +157,7 @@ public class ServerStatusReader {
         }
       }
 
-      if (PodHelper.getReadyStatus(pod)) {
+      if (PodHelper.hasReadyStatus(pod)) {
         // set default to UNKNOWN; will be corrected in ReadHealthStep
         serverStateMap.put(serverName, WebLogicConstants.UNKNOWN_STATE);
         return doNext(packet);
@@ -271,7 +271,7 @@ public class ServerStatusReader {
           (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
 
-      if (PodHelper.getReadyStatus(pod)
+      if (PodHelper.hasReadyStatus(pod)
           || WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(STEP_FACTORY.apply(getNext()), packet);

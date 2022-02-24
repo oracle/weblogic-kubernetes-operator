@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotCh
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -476,7 +477,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
    * Second operator should fail to install with following exception
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: existing resource conflict: namespace
    *
    */
@@ -521,7 +522,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with Domain Namespace [domain2Namespace].
    * Install operator2 with same Domain Namespace [domain2Namespace].
    * Second operator should fail to install with following exception.
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: namespace.
    * Test fails when second operator installation does not fail.
    */
@@ -935,7 +936,7 @@ class ItUsabilityOperatorHelmChart {
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .clusters(clusters)
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(280L)

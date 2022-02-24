@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -114,7 +114,7 @@ class PodHelperTest {
 
   @Test
   void whenPodHasNoStatus_isNotReady() {
-    assertThat(PodHelper.getReadyStatus(new V1Pod()), is(false));
+    assertThat(PodHelper.hasReadyStatus(new V1Pod()), is(false));
   }
 
   @Test
@@ -124,7 +124,7 @@ class PodHelperTest {
                 .phase("Pending")
                 .addConditionsItem(new V1PodCondition()));
 
-    assertThat(PodHelper.getReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(pod), is(false));
   }
 
   @Test
@@ -134,7 +134,7 @@ class PodHelperTest {
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Initialized")));
 
-    assertThat(PodHelper.getReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(pod), is(false));
   }
 
   @Test
@@ -144,7 +144,7 @@ class PodHelperTest {
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready")));
 
-    assertThat(PodHelper.getReadyStatus(pod), is(false));
+    assertThat(PodHelper.hasReadyStatus(pod), is(false));
   }
 
   @Test
@@ -154,7 +154,7 @@ class PodHelperTest {
                 .phase("Running")
                 .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
 
-    assertThat(PodHelper.getReadyStatus(pod), is(true));
+    assertThat(PodHelper.hasReadyStatus(pod), is(true));
   }
 
 }

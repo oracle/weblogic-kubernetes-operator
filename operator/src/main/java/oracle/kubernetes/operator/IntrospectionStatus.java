@@ -61,8 +61,6 @@ public class IntrospectionStatus {
       return new FailedPhase(pod).createStatusUpdateSteps();
     } else if (Unschedulable.isUnschedulable(pod)) {
       return new Unschedulable(pod).createStatusUpdateSteps();
-    } else if (isReady(pod)) {
-      return DomainStatusUpdater.createRemoveFailuresStep();
     } else if (terminatedErrorMessage != null) {
       return new SelectedMessage(pod, terminatedErrorMessage, true).createStatusUpdateSteps();
     } else if (waitingMessage != null) {
@@ -70,7 +68,7 @@ public class IntrospectionStatus {
     } else if (initContainerWaitingMessages != null) {
       return new SelectedMessage(pod, initContainerWaitingMessages, false).createStatusUpdateSteps();
     } else {
-      return DomainStatusUpdater.createRemoveFailuresStep();
+      return null;
     }
   }
 
