@@ -426,7 +426,7 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(3)
+  @Order(4)
   @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
   void testErrorPathDomainMismatchMountPath() {
 
@@ -508,7 +508,7 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
 
@@ -592,7 +592,7 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
 
@@ -682,7 +682,7 @@ class ItMiiAuxiliaryImage {
    * Restore the domain by removing the custom mount command.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
   void testErrorPathDomainWithFailCustomMountCommand() {
 
@@ -771,7 +771,7 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
 
@@ -877,7 +877,7 @@ class ItMiiAuxiliaryImage {
    * and verify the domain is running.
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Test to update WDT version using  auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
 
