@@ -192,7 +192,7 @@ class ItPodsShutdownOption {
     shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
-    createVerifyDomain(domain, 2);
+    createVerifyDomain(domain, 0);
 
     // get pod logs each server which contains server.out file logs and verify values set above are present in the log
     verifyServerLog(domainNamespace, adminServerPodName,
