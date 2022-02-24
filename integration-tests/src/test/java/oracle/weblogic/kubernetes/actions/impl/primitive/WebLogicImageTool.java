@@ -205,7 +205,8 @@ public class WebLogicImageTool {
    * @return true if the command succeeds
    */
   public boolean deleteEntry() {
-    if (!params.wdtVersion().equals("NONE")) {
+    String wdtVersion = (params.wdtVersion() != null) ? params.wdtVersion() : "latest";
+    if (!wdtVersion.equals("NONE")) {
       String command = String.format("%s cache deleteEntry --key wdt_%s",
           IMAGE_TOOL,
           params.wdtVersion());
