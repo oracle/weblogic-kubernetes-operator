@@ -431,7 +431,7 @@ class ItMiiAuxiliaryImage {
   void testErrorPathDomainMismatchMountPath() {
 
     OffsetDateTime timestamp = now();
-
+    String domainUid = "domain-mismatch-moutpath";
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/errorpath";
 
@@ -499,7 +499,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -514,6 +514,7 @@ class ItMiiAuxiliaryImage {
 
     OffsetDateTime timestamp = now();
 
+    String domainUid = "domain-missing-wdtbinary";
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
 
@@ -582,7 +583,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -595,6 +596,7 @@ class ItMiiAuxiliaryImage {
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
 
+    String domainUid = "domain-missing-domainconfig";
     OffsetDateTime timestamp = now();
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -668,7 +670,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -773,6 +775,7 @@ class ItMiiAuxiliaryImage {
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
 
+    String domainUid = "domain-errorpath-filepermission";
     OffsetDateTime timestamp = now();
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -862,7 +865,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 

@@ -26,7 +26,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -353,15 +352,35 @@ public class K8sEvents {
                                                          String type,
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
-    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    if (event != null && event.getMessage() != null) {
-      assertTrue(event.getMessage().contains(expectedMsg),
-          String.format("The event message does not contain the expected msg %s", expectedMsg));
-    } else {
-      fail("event is null or event message is null");
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, reason,
+            type, timestamp, expectedMsg));
+  }
+
+  private static Callable<Boolean> domainEventContainsExpectedMsg(String opNamespace,
+                                                                  String domainNamespace,
+                                                                  String domainUid,
+                                                                  String reason,
+                                                                  String type,
+                                                                  OffsetDateTime timestamp,
+                                                                  String expectedMsg) {
+    return () -> {
+      if (domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp)) {
+        CoreV1Event event =
+            getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+        if (event != null && event.getMessage() != null && event.getMessage().contains(expectedMsg)) {
+          return true;
+        }
+      }
+      return false;
+    };
   }
 
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
