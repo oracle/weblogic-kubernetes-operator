@@ -262,7 +262,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
       .orElse("15.2.0");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
-      .orElse("6.21.5");
+      .orElse("6.22.0");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";
