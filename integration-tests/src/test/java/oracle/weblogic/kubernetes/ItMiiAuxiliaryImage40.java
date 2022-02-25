@@ -1172,6 +1172,7 @@ class ItMiiAuxiliaryImage40 {
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    modelList.add(MODEL_DIR + MII_BASIC_WDT_MODEL_FILE);
     WitParams witParams =
         new WitParams()
             .modelImageName(miiAuxiliaryImage9)
@@ -1332,7 +1333,8 @@ class ItMiiAuxiliaryImage40 {
         DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
     // patch the domain with correct image which exists
-    patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, domainUid,
+    patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, domainUid,
         domainNamespace, false);
 
     // verify there is no status condition type Failed
