@@ -212,7 +212,7 @@ class ItMiiAuxiliaryImage40 {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage1)
+            .modelImageName(miiAuxiliaryImage2)
             .modelImageTag(MII_BASIC_IMAGE_TAG)
             .wdtModelOnly(true)
             .modelFiles(modelList)
