@@ -65,7 +65,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithJmsConfigOnly;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -211,7 +210,14 @@ class ItMiiAuxiliaryImage40 {
     // image2 with model files for jms config
     modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
-    createPushAuxiliaryImageWithJmsConfigOnly(miiAuxiliaryImage2, modelList);
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage1)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtModelOnly(true)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage1, witParams);
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
@@ -671,7 +677,7 @@ class ItMiiAuxiliaryImage40 {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
     final String domainUid = "domain5";
-    
+
     WitParams witParams =
         new WitParams()
             .modelImageName(miiAuxiliaryImage8)

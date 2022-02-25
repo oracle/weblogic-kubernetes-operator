@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +14,9 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
@@ -59,6 +53,17 @@ public class AuxiliaryImageUtils {
     return createAuxImage(newWitParams);
   }
 
+  /**
+   * Create a AuxImage and push it to repository.
+   *
+   * @param imageName image name
+   * @param archiveList app archive
+   * @param modelList model list
+   * @param modelOnly true or false for model only
+   * @param wdtHome directory for wdtHome
+   * @param wdtModelHome directory for wdtModelHome
+   * @param wdtVersion wdt version
+   */
   public static void createPushAuxiliaryImage(String imageName, List<String> archiveList,
                                            List<String> modelList,
                                            String wdtVersion, boolean modelOnly, String wdtHome,
@@ -112,7 +117,17 @@ public class AuxiliaryImageUtils {
     return result;
   }
 
-  public static void createPushAuxiliaryImageWithDomainConfig(String imageName, List<String> archiveList, List<String> modelList) {
+  /**
+   * Create a AuxImage and push it to repository.
+   *
+   * @param imageName image name
+   * @param archiveList app archive
+   * @param modelList model list
+   *
+   */
+  public static void createPushAuxiliaryImageWithDomainConfig(String imageName,
+                                                              List<String> archiveList,
+                                                              List<String> modelList) {
 
     // admin/managed server name here should match with model yaml
     WitParams witParams =
@@ -124,18 +139,13 @@ public class AuxiliaryImageUtils {
     createAndPushAuxiliaryImage(imageName, witParams);
   }
 
-  public static void createPushAuxiliaryImageWithJmsConfigOnly(String imageName, List<String> modelList) {
-
-    WitParams witParams =
-        new WitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .wdtModelOnly(true)
-            .modelFiles(modelList)
-            .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(imageName, witParams);
-  }
-
+  /**
+   * Create a AuxImage and push it to repository.
+   *
+   * @param imageName image name
+   * @param wdtVersion wdt version
+   *
+   */
   public static void createPushAuxiliaryImageWithWDTInstallOnly(String imageName, String wdtVersion) {
 
     WitParams witParams =
@@ -147,6 +157,14 @@ public class AuxiliaryImageUtils {
     createAndPushAuxiliaryImage(imageName, witParams);
   }
 
+
+  /**
+   * Create a AuxImage and push it to repository.
+   *
+   * @param imageName image name
+   * @param witParams wit params
+   *
+   */
   public static void createAndPushAuxiliaryImage(String imageName, WitParams witParams) {
     // create auxiliary image using imagetool command if does not exists
     LoggingFacade logger = getLogger();
