@@ -217,7 +217,7 @@ class ItMiiAuxiliaryImage40 {
             .wdtModelOnly(true)
             .modelFiles(modelList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage1, witParams);
+    createAndPushAuxiliaryImage(miiAuxiliaryImage2, witParams);
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
