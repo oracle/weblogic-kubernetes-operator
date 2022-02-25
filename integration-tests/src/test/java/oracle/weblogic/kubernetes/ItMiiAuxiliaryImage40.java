@@ -23,7 +23,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -49,10 +48,8 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -67,12 +64,10 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithJmsConfigOnly;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readFilesInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -86,7 +81,6 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.patchDomainWithAuxiliaryImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -677,40 +671,7 @@ class ItMiiAuxiliaryImage40 {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
     final String domainUid = "domain5";
-  /*
-    // creating image with no model files
-    // create stage dir for auxiliary image
-    Path aiWithNoModel = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "aiwithnomodel");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiWithNoModel.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(aiWithNoModel),
-        "Create directory failed");
-    Path pathToFile =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "aiwithnomodel/test.txt");
-    String content = "1";
-    assertDoesNotThrow(() -> Files.write(pathToFile, content.getBytes()),
-        "Can't write to file " + pathToFile);
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(aiWithNoModel.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(aiWithNoModel.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(aiWithNoModel.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(),
-        miiAuxiliaryImage8, auxiliaryImagePathCustom);
-
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage8, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage8);
-    }
-    */
-
+    
     WitParams witParams =
         new WitParams()
             .modelImageName(miiAuxiliaryImage8)
