@@ -119,18 +119,18 @@ public class FmwUtils {
    * @param opssWalletPasswordSecretName name of opss wallet password secret
    * @param replicaCount count of replicas
    * @param miiImage name of model in image
-   * @param maximumServerPodReadyWaitTime maximum time to wait for a server pod to be ready
+   * @param maxServerPodReadyWaitTime maximum time to wait for a server pod to be ready
    * @return Domain WebLogic domain
    */
   public static Domain createDomainResourceWithMaxServerPodReadyWaitTime(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, int replicaCount, String miiImage, long maximumServerPodReadyWaitTime) {
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage, long maxServerPodReadyWaitTime) {
     // create the domain CR
     Domain domain = createDomainResource(domainUid, domNamespace,
         adminSecretName, repoSecretName, encryptionSecretName,
         rcuAccessSecretName, opssWalletPasswordSecretName, replicaCount, miiImage);
-    domain.getSpec().getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(maximumServerPodReadyWaitTime);
+    domain.getSpec().getServerPod().setMaxReadyWaitTimeSeconds(maxServerPodReadyWaitTime);
 
     return domain;
   }

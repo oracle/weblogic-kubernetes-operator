@@ -149,7 +149,7 @@ abstract class DomainStatusUpdateTestBase {
     final DomainStatusUpdater.DomainStatusFactory domainStatusFactory
           = new DomainStatusUpdater.DomainStatusFactory(getRecordedDomain(), domainConfig, this::isConfiguredToRun);
 
-    domainStatusFactory.setStatusDetails(getRecordedDomain().getOrCreateStatus());
+    domainStatusFactory.setStatusDetails(info.getDomain().getOrCreateStatus());
   }
 
   boolean isConfiguredToRun(String serverName) {
@@ -771,7 +771,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAtLeastOnePodNotReadyInTime_createFailedCondition() {
-    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(0L);
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
     unreadyPod("server2");
 
     updateDomainStatus();
@@ -780,8 +780,20 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenAtLeastOnePodReadyInTime_dontCreateFailedCondition() {
-    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(0L);
+  void whenAtLeastOneReadyPodBecomeUnreadyForSometime_createFailedCondition() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+    updateDomainStatus();
+
+    unreadyPod("server2");
+    SystemClockTestSupport.increment();
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus(TRUE));
+  }
+
+  @Test
+  void whenAllPodsReadyInTime_dontCreateFailedCondition() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
 
     updateDomainStatus();
 
@@ -790,12 +802,57 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAtLeastOnePodWaitingForReady_dontCreateFailedCondition() {
-    getConfiguration().setMaximumServerPodReadyWaitTimeSeconds(2L);
+    domain.getSpec().setMaxReadyWaitTimeSeconds(2L);
     unreadyPod("server2");
 
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), not(hasCondition(Failed).withStatus(TRUE)));
+  }
+
+  @Test
+  void whenAtLeastOnePodNotReadyInTime_serverStatusPodNotReady() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+    unreadyPod("server2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(),
+        hasStatusForServer("server2").withPodReady("False"));
+  }
+
+  @Test
+  void whenAtLeastOneReadyPodBecomeUnreadyForSometime_serverStatusPodNotReady() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+    updateDomainStatus();
+
+    unreadyPod("server2");
+    SystemClockTestSupport.increment();
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(),
+        hasStatusForServer("server2").withPodReady("False"));
+  }
+
+  @Test
+  void whenAllPodsReadyInTime_serverStatusPodReady() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(),
+        hasStatusForServer("server2").withPodReady("True"));
+  }
+
+  @Test
+  void whenAtLeastOnePodWaitingForReady_serverStatusPodNotReady() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(2L);
+    unreadyPod("server2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(),
+        hasStatusForServer("server2").withPodReady("False"));
   }
 
   @Test
@@ -1501,6 +1558,11 @@ abstract class DomainStatusUpdateTestBase {
       return this;
     }
 
+    ServerStatusMatcher withPodReady(String expectedValue) {
+      matcher.addField("pod ready", ServerStatus::getPodReady, expectedValue);
+      return this;
+    }
+
     @SuppressWarnings("SameParameterValue")
     ServerStatusMatcher withNodeName(String expectedValue) {
       matcher.addField("node name", ServerStatus::getNodeName, expectedValue);
@@ -1579,17 +1641,17 @@ abstract class DomainStatusUpdateTestBase {
 
     private ClusterStatus getClusterStatus(Domain domain) {
       return getClusterStatuses(domain).stream()
-            .filter(clusterStatus -> clusterStatus.getClusterName().equals(clusterName))
-            .findFirst()
-            .orElse(null);
+          .filter(clusterStatus -> clusterStatus.getClusterName().equals(clusterName))
+          .findFirst()
+          .orElse(null);
     }
 
     @Nonnull
     private List<ClusterStatus> getClusterStatuses(Domain domain) {
       return Optional.ofNullable(domain)
-            .map(Domain::getStatus)
-            .map(DomainStatus::getClusters)
-            .orElse(Collections.emptyList());
+          .map(Domain::getStatus)
+          .map(DomainStatus::getClusters)
+          .orElse(Collections.emptyList());
     }
 
     @Override

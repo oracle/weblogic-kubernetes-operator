@@ -47,7 +47,6 @@ public interface TuningParameters extends Map<String, String> {
     public final long initialShortDelay;
     public final long eventualLongDelay;
     public final int weblogicCredentialsSecretRereadIntervalSeconds;
-    public final long maximumServerPodReadyWaitTimeSeconds;
 
     /**
      * create main tuning.
@@ -62,7 +61,6 @@ public interface TuningParameters extends Map<String, String> {
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
      * @param weblogicCredentialsSecretRereadIntervalSeconds credentials secret reread interval
-     * @param maximumServerPodReadyWaitTimeSeconds maximum wait time for server startup
      */
     public MainTuning(
         int initializationRetryDelaySeconds,
@@ -75,8 +73,7 @@ public interface TuningParameters extends Map<String, String> {
         int stuckPodRecheckSeconds,
         long initialShortDelay,
         long eventualLongDelay,
-        int weblogicCredentialsSecretRereadIntervalSeconds,
-        long maximumServerPodReadyWaitTimeSeconds) {
+        int weblogicCredentialsSecretRereadIntervalSeconds) {
       this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
@@ -88,7 +85,6 @@ public interface TuningParameters extends Map<String, String> {
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
       this.weblogicCredentialsSecretRereadIntervalSeconds = weblogicCredentialsSecretRereadIntervalSeconds;
-      this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
     }
 
     @Override
@@ -260,6 +256,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int livenessProbeSuccessThreshold;
     public final int livenessProbeFailureThreshold;
     public final long introspectorJobActiveDeadlineSeconds;
+    public final long maxReadyWaitTimeSeconds;
 
     /**
      * create pod tuning.
@@ -274,6 +271,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param livenessProbeSuccessThreshold liveness probe success threshold
      * @param livenessProbeFailureThreshold liveness probe failure threshold
      * @param introspectorJobActiveDeadlineSeconds introspector job active deadline
+     * @param maxReadyWaitTimeSeconds maximum wait time for server pod to get ready
      */
     public PodTuning(
         int readinessProbeInitialDelaySeconds,
@@ -286,7 +284,8 @@ public interface TuningParameters extends Map<String, String> {
         int livenessProbePeriodSeconds,
         int livenessProbeSuccessThreshold,
         int livenessProbeFailureThreshold,
-        long introspectorJobActiveDeadlineSeconds) {
+        long introspectorJobActiveDeadlineSeconds,
+        long maxReadyWaitTimeSeconds) {
       this.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
       this.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
       this.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
@@ -298,6 +297,7 @@ public interface TuningParameters extends Map<String, String> {
       this.livenessProbeSuccessThreshold = livenessProbeSuccessThreshold;
       this.livenessProbeFailureThreshold = livenessProbeFailureThreshold;
       this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
+      this.maxReadyWaitTimeSeconds = maxReadyWaitTimeSeconds;
     }
 
     @Override
@@ -313,6 +313,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("livenessProbePeriodSeconds", livenessProbePeriodSeconds)
           .append("livenessProbeSuccessThreshold", livenessProbeSuccessThreshold)
           .append("livenessProbeFailureThreshold", livenessProbeFailureThreshold)
+          .append("maxReadyWaitTimeSeconds", maxReadyWaitTimeSeconds)
           .toString();
     }
 
@@ -329,6 +330,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(livenessProbePeriodSeconds)
           .append(livenessProbeSuccessThreshold)
           .append(livenessProbeFailureThreshold)
+          .append(maxReadyWaitTimeSeconds)
           .toHashCode();
     }
 
@@ -352,6 +354,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(livenessProbePeriodSeconds, pt.livenessProbePeriodSeconds)
           .append(livenessProbeSuccessThreshold, pt.livenessProbeSuccessThreshold)
           .append(livenessProbeFailureThreshold, pt.livenessProbeFailureThreshold)
+          .append(maxReadyWaitTimeSeconds, pt.maxReadyWaitTimeSeconds)
           .isEquals();
     }
   }

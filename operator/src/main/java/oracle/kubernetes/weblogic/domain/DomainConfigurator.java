@@ -538,10 +538,10 @@ public abstract class DomainConfigurator {
   /**
    * Add the maximum server pod wait time.
    *
-   * @param waitTime the waittime value to be set to this DomainConfigurator
+   * @param waitTime the wait time value to be set to this DomainConfigurator
    * @return this object
    */
-  public abstract DomainConfigurator withMaximumServerPodReadyWaitTimeSeconds(long waitTime);
+  public abstract DomainConfigurator withMaximumReadyWaitTimeSeconds(long waitTime);
 
   /**
    * Add WDT model config map for the domain resource.

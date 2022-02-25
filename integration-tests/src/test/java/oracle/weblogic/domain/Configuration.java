@@ -35,11 +35,6 @@ public class Configuration {
   private Long introspectorJobActiveDeadlineSeconds;
 
   @ApiModelProperty(
-      "The maximum time in seconds that the operator waits for a WebLogic server to get into ready state "
-      + "before it considers the server pod failed. Defaults to 1800 seconds.")
-  private Long maximumServerPodReadyWaitTimeSeconds;
-
-  @ApiModelProperty(
       "Determines how updated configuration overrides are distributed to already running WebLogic servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
       + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
@@ -192,24 +187,6 @@ public class Configuration {
 
   public void setIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
-  }
-
-  public Configuration maximumServerPodReadTimeSeconds(
-      Long maximumServerPodReadyWaitTimeSeconds) {
-    this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
-    return this;
-  }
-
-  public Long maximumServerStartupWaitTimeSeconds() {
-    return this.maximumServerPodReadyWaitTimeSeconds;
-  }
-
-  public Long getMaximumServerPodReadyWaitTimeSeconds() {
-    return this.maximumServerPodReadyWaitTimeSeconds;
-  }
-
-  public void setMaximumServerPodReadyWaitTimeSeconds(Long maximumServerPodReadyWaitTimeSeconds) {
-    this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
   }
 
   public Configuration istio(Istio istio) {

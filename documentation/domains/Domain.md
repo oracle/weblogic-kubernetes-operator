@@ -97,7 +97,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds. |
 | `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
-| `maximumServerPodReadyWaitTimeSeconds` | number | The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state before it considers the server pod failed. Defaults to 1800 seconds. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC. |
@@ -137,6 +136,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `initContainers` | Array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `livenessProbe` | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a WebLogic Server instance. |
+| `maxReadyWaitTimeSeconds` | number | The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state before it considers the server pod failed. Defaults to 1800 seconds. |
 | `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`. |
 | `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`. |
 | `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. |
@@ -191,6 +191,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `desiredState` | string | Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server instance. |
 | `nodeName` | string | Name of Node that is hosting the Pod containing this WebLogic Server instance. |
+| `podReady` | string | Status of server pod's condition type Ready when the pod is in Running phase. Possible values are: True, False or Unknown |
 | `serverName` | string | WebLogic Server instance name. |
 | `state` | string | Current state of this WebLogic Server instance. |
 

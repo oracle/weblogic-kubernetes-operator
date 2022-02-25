@@ -43,6 +43,11 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Expose
   private String nodeName;
 
+  @Description("Status of server pod's condition type Ready when the pod is in Running phase. Possible values are:"
+      + " True, False or Unknown")
+  @Expose
+  private String podReady;
+
   @Description("Current status and health of a specific WebLogic Server instance.")
   @Expose
   @Valid
@@ -65,6 +70,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
     this.isAdminServer = other.isAdminServer;
+    this.podReady = other.podReady;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -229,8 +235,24 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
-  private boolean isAdminServer() {
-    return isAdminServer;
+  /**
+   * PodReady describes the status of a WebLogic server pod Ready condition when the pod is in Running phase.
+   *
+   * @return podReady
+   */
+  public String getPodReady() {
+    return podReady;
+  }
+
+  /**
+   * PodReady describes the status of a WebLogic server pod Ready condition when the pod is in Running phase.
+   *
+   * @param podReady True is the pod has a condition type Ready with a status of True
+   * @return this
+   */
+  public ServerStatus withPodReady(String podReady) {
+    this.podReady = podReady;
+    return this;
   }
 
   /**

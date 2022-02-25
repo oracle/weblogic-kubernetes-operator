@@ -34,10 +34,6 @@ public class Configuration {
           + "Defaults to 120 seconds.")
   private Long introspectorJobActiveDeadlineSeconds;
 
-  @Description("The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state "
-          + "before it considers the server pod failed. Defaults to 1800 seconds.")
-  private Long maximumServerPodReadyWaitTimeSeconds;
-
   @Description(
       "Determines how updated configuration overrides are distributed to already running WebLogic Server instances "
       + "following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides "
@@ -95,14 +91,6 @@ public class Configuration {
 
   public void setIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
-  }
-
-  public Long getMaximumServerPodReadyWaitTimeSeconds() {
-    return this.maximumServerPodReadyWaitTimeSeconds;
-  }
-
-  public void setMaximumServerPodReadyWaitTimeSeconds(Long maximumServerPodReadyWaitTimeSeconds) {
-    this.maximumServerPodReadyWaitTimeSeconds = maximumServerPodReadyWaitTimeSeconds;
   }
 
   public void setOverrideDistributionStrategy(OverrideDistributionStrategy overrideDistributionStrategy) {

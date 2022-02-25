@@ -134,4 +134,6 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown);
 
+  ClusterConfigurator withMaximumReadyWaitTimeSeconds(long maximumReadyWaitTimeSeconds);
+
 }

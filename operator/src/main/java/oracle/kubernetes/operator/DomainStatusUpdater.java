@@ -23,7 +23,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -587,7 +589,7 @@ public class DomainStatusUpdater {
           setStatusDetails(status);
         }
         if (getDomain() != null) {
-          updateStatusDetails(status);
+          updateStatusDetails(status, packet.getSpi(DomainPresenceInfo.class));
           setStatusConditions(status);
         }
       }
@@ -850,15 +852,16 @@ public class DomainStatusUpdater {
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
-      private void updateStatusDetails(DomainStatus status) {
-        new StatusDetailsUpdate(status).updateStatusDetails();
+      private void updateStatusDetails(DomainStatus status, DomainPresenceInfo info) {
+        new StatusDetailsUpdate(status, info).updateStatusDetails();
       }
 
       private class StatusDetailsUpdate {
         private final DomainStatus status;
+        private final DomainPresenceInfo info;
 
-        StatusDetailsUpdate(DomainStatus status) {
-
+        StatusDetailsUpdate(DomainStatus status, DomainPresenceInfo info) {
+          this.info = info;
           this.status = status;
         }
 
@@ -867,6 +870,27 @@ public class DomainStatusUpdater {
           status.withState(getRunningState(serverName));
           status.withHealth(serverHealth == null ? null : serverHealth.get(serverName));
           status.withNodeName(getNodeName(serverName));
+          Optional.ofNullable(info).map(i -> i.getServerPod(serverName))
+              .map(V1Pod::getStatus)
+              .map(s -> status.withPodReady(getReadyStatus(s)));
+        }
+
+        private String getReadyStatus(V1PodStatus podStatus) {
+          return Optional.ofNullable(podStatus)
+              .filter(this::isPhaseRunning)
+              .map(V1PodStatus::getConditions)
+              .orElse(Collections.emptyList())
+              .stream().filter(this::isReadyCondition)
+              .map(V1PodCondition::getStatus)
+              .findFirst().orElse("Unknown");
+        }
+
+        private boolean isReadyCondition(Object condition) {
+          return (condition instanceof V1PodCondition) && "Ready".equals(((V1PodCondition)condition).getType());
+        }
+
+        private boolean isPhaseRunning(V1PodStatus status) {
+          return "Running".equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {
@@ -1064,8 +1088,8 @@ public class DomainStatusUpdater {
 
       private boolean hasCreatedLongEnough(V1Pod pod) {
         LOGGER.info("XX hasCreatedLongEnough creationTime: {0}, max: {1}",
-            getCreationTimestamp(pod), getMaximumServerPodReadyWaitTime());
-        return SystemClock.now().isAfter(getCreationTimestamp(pod).plusSeconds(getMaximumServerPodReadyWaitTime()));
+            getCreationTimestamp(pod), getMaxReadyWaitTime(pod));
+        return SystemClock.now().isAfter(getCreationTimestamp(pod).plusSeconds(getMaxReadyWaitTime(pod)));
       }
 
       private OffsetDateTime getCreationTimestamp(V1Pod pod) {
@@ -1073,9 +1097,14 @@ public class DomainStatusUpdater {
             .orElse(SystemClock.now().minusNanos(100L));
       }
 
-      private long getMaximumServerPodReadyWaitTime() {
-        return Optional.ofNullable(getInfo().getDomain().getMaximumServerPodReadyWaitTimeSeconds())
-            .orElse(TuningParameters.getInstance().getMainTuning().maximumServerPodReadyWaitTimeSeconds);
+      private long getMaxReadyWaitTime(V1Pod pod) {
+        return Optional.ofNullable(getInfo().getDomain())
+            .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
+            .orElse(TuningParameters.getInstance().getPodTuning().maxReadyWaitTimeSeconds);
+      }
+
+      private String getServerName(V1Pod pod) {
+        return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
       }
 
       private String getRunningState(String serverName) {
@@ -1110,7 +1139,11 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterNameFromPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName))
+        return getClusterNameFromPod(getInfo().getServerPod(serverName));
+      }
+
+      private String getClusterNameFromPod(V1Pod pod) {
+        return Optional.ofNullable(pod)
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)
             .map(l -> l.get(CLUSTERNAME_LABEL))
