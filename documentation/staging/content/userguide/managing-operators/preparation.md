@@ -13,7 +13,6 @@ A Kubernetes cluster can host multiple operators, but no more than one per names
 Before installing an operator, ensure that each of these prerequisite requirements is met:
 
 1. [Check environment](#check-environment)
-1. [Download the operator source, if needed](#download-the-operator-source-if-needed)
 1. [Set up the operator Helm chart access](#set-up-the-operator-helm-chart-access)
 1. [Inspect the operator Helm chart](#inspect-the-operator-helm-chart)
 1. [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)
@@ -54,29 +53,6 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 1. Optionally, enable [Istio]({{< relref "/userguide/istio/istio.md" >}}).
 
-#### Download the operator source, if needed
-
-Downloading the operator source is required if:
-
-- You plan to provide local file-based access to the operator Helm chart
-  (see [Set up the operator Helm chart access](#set-up-the-operator-helm-chart-access)).
-- You need to manually install the CRD
-  (see [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)).
-
-Otherwise, you can skip this step.
-
-To download and unpack the operator source into `/tmp/weblogic-kubernetes-operator`:
-
-   ```text
-   $ cd /tmp
-   ```
-   ```text
-   $ git clone \
-     --branch v{{< latestVersion >}} \
-     https://github.com/oracle/weblogic-kubernetes-operator.git
-   ```
-
-**Note:** We use `/tmp` as an example directory; you can use a different location.
 
 #### Set up the operator Helm chart access
 
@@ -86,25 +62,9 @@ The operator Helm chart includes:
 - Helm configuration value settings for fine tuning operator behavior.
 - Commands for deploying (installing) or undeploying the operator.
 
-You can set up access to the operator Helm chart using either a _file-based approach_
-or a _GitHub chart repository approach_:
+You can set up access to the operator Helm chart using the GitHub chart repository.
 
-##### _File-based approach_
-
-- This approach uses the local file-based version of the operator Helm chart
-  that is located in the operator
-  source `kubernetes/charts/weblogic-operator` directory.
-- To set up this option, get the operator source.
-  See [Download the operator source, if needed](#download-the-operator-source-if-needed).
-- To use this option:
-  - `cd /tmp/weblogic-kubernetes-operator`
-    (or `cd` to wherever you have downloaded the operator source).
-  - Use `kubernetes/charts/weblogic-operator` in your Helm
-    commands to specify the chart location.
-
-##### _GitHub chart repository approach_
-
-- This approach uses the GitHub chart repository version of the operator Helm chart
+- Use the GitHub chart repository version of the operator Helm chart
   that is located at `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   or in a custom repository that you control.
 - To set up your Helm installation so that it can access the
@@ -122,7 +82,7 @@ or a _GitHub chart repository approach_:
   NAME                 URL
   weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
   ```
-- To use this option assuming you have named
+- For example, assuming you have named
   your repository `weblogic-operator`, simply
   use `weblogic-operator/weblogic-operator` in your Helm
   commands when specifying the chart location.
@@ -414,10 +374,10 @@ For reference, see [WebLogic domain management]({{<relref "/userguide/managing-o
 
 #### Choose a Helm release name
 
-The operator requires Helm for installation, 
+The operator requires Helm for installation,
 and Helm requires that each installed operator
-be assigned a release name. Helm release names 
-can be the same if they are deployed to 
+be assigned a release name. Helm release names
+can be the same if they are deployed to
 different namespaces, but must
 be unique within a particular namespace.
 
