@@ -21,7 +21,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
@@ -73,7 +71,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResour
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -820,7 +817,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage2);
+        errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
@@ -911,7 +908,7 @@ class ItMiiAuxiliaryImage40 {
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
     WitParams witParams =
         new WitParams()
             .modelImageName(errorPathAuxiliaryImage3)
@@ -927,7 +924,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage3);
+        errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
@@ -1036,7 +1033,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage4);
+        errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
@@ -1315,7 +1312,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
-        aiThatDoesntExist);
+        aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG);
     // createDomainResource util method sets 600 for activeDeadlineSeconds which is too long to verify
     // introspector re-run in this use case
     domainCR.getSpec().configuration().introspectorJobActiveDeadlineSeconds(120L);
@@ -1335,7 +1332,7 @@ class ItMiiAuxiliaryImage40 {
         DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
     // patch the domain with correct image which exists
-    patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist, miiAuxiliaryImage1, domainUid,
+    patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist, miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, domainUid,
         domainNamespace, false);
 
     // verify there is no status condition type Failed
@@ -1449,28 +1446,6 @@ class ItMiiAuxiliaryImage40 {
 
   private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     createAuxiliaryImage(stageDirPath, dockerFileLocation, auxiliaryImage, "/auxiliary");
-  }
-
-  private static void createAuxiliaryImage(String imageName, List<String> archiveList, List<String> modelList) {
-
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          AuxiliaryImageUtils.createAuxiliaryImage(imageName,
-              modelList, archiveList),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
-    }
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
-    }
   }
 
   private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation,
