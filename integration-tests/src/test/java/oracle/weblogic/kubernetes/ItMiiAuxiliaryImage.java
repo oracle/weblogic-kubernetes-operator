@@ -443,6 +443,20 @@ class ItMiiAuxiliaryImage {
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
 
+    // check that admin service/pod exists in the domain namespace
+    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+    }
+
     OffsetDateTime timestamp = now();
 
     // get the creation time of the admin server pod before patching
@@ -494,12 +508,6 @@ class ItMiiAuxiliaryImage {
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // verify the domain is not rolled
-    logger.info("sleep 2 minutes to make sure the domain is not restarted");
-    try {
-      Thread.sleep(120000);
-    } catch (InterruptedException ie) {
-      // ignore
-    }
     verifyPodsNotRolled(domainNamespace, pods);
 
     // restore domain1
