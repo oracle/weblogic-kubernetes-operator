@@ -1172,7 +1172,7 @@ class ItMiiAuxiliaryImage40 {
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
-    modelList.add(MODEL_DIR + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     WitParams witParams =
         new WitParams()
             .modelImageName(miiAuxiliaryImage9)
