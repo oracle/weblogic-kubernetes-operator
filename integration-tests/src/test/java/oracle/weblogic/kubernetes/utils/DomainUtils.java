@@ -275,8 +275,26 @@ public class DomainUtils {
    */
   public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
                                                             String domainUid, String domainNamespace) {
+    patchDomainWithAuxiliaryImageAndVerify(oldImageName, newImageName, domainUid,
+        domainNamespace, true);
+  }
+
+  /**
+   * Patch a domain with auxiliary image and verify pods are rolling restarted.
+   *
+   * @param oldImageName         old auxiliary image name
+   * @param newImageName         new auxiliary image name
+   * @param domainUid            uid of the domain
+   * @param domainNamespace      domain namespace
+   * @param verifyRollingRestart verify if the pods are rolling restarted
+   */
+  public static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
+                                                            String domainUid, String domainNamespace,
+                                                            boolean verifyRollingRestart) {
+
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
+    Map<String, OffsetDateTime> podsWithTimeStamps = null;
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -306,8 +324,10 @@ public class DomainUtils {
     getLogger().info("Auxiliary Image patch string: " + patchStr);
 
     //get current timestamp before domain rolling restart to verify domain roll events
-    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
-        managedServerPrefix, 2);
+    if (verifyRollingRestart) {
+      podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
+          managedServerPrefix, 2);
+    }
     V1Patch patch = new V1Patch((patchStr).toString());
 
     boolean aiPatched = assertDoesNotThrow(() ->
@@ -336,7 +356,9 @@ public class DomainUtils {
     getLogger().info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
 
-    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    if (verifyRollingRestart) {
+      assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+          String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    }
   }
 }
