@@ -80,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -948,8 +949,13 @@ class ItIntrospectVersion {
     cl2podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, cl2managedServerPodNamePrefix,
         replicaCount);
     // get the map with server pods and their original creation timestamps
-    myclusterpodsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
-        myclustermanagedServerPodNamePrefix, 3);
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
+      myclusterpodsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
