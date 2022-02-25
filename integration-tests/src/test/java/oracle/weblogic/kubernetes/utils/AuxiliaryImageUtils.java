@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,18 +15,26 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Paths.get;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
@@ -49,6 +59,40 @@ public class AuxiliaryImageUtils {
     return createAuxImage(newWitParams);
   }
 
+  public static void createPushAuxiliaryImage(String imageName, List<String> archiveList,
+                                           List<String> modelList,
+                                           String wdtVersion, boolean modelOnly, String wdtHome,
+                                           String wdtModelHome) {
+    LoggingFacade logger = getLogger();
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(imageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtModelOnly(modelOnly)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtHome(wdtHome)
+            .wdtModelHome(wdtModelHome)
+            .wdtVersion(wdtVersion);
+    // create auxiliary image using imagetool command if does not exists
+    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
+      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
+      testUntil(
+          withStandardRetryPolicy,
+          createAuxiliaryImage(witParams),
+          logger,
+          "createAuxImage to be successful");
+    } else {
+      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
+    }
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
+      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
+    }
+  }
+
   /**
    * Create a AuxImage using WIT and return result output.
    *
@@ -66,6 +110,62 @@ public class AuxiliaryImageUtils {
     logger.info("result stdout={0}", result.stdout());
     logger.info("result stderr={0}", result.stderr());
     return result;
+  }
+
+  public static void createPushAuxiliaryImageWithDomainConfig(String imageName, List<String> archiveList, List<String> modelList) {
+
+    // admin/managed server name here should match with model yaml
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(imageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList);
+    createAndPushAuxiliaryImage(imageName, witParams);
+  }
+
+  public static void createPushAuxiliaryImageWithJmsConfigOnly(String imageName, List<String> modelList) {
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(imageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtModelOnly(true)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(imageName, witParams);
+  }
+
+  public static void createPushAuxiliaryImageWithWDTInstallOnly(String imageName, String wdtVersion) {
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(imageName)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtModelOnly(true)
+            .wdtVersion(wdtVersion);
+    createAndPushAuxiliaryImage(imageName, witParams);
+  }
+
+  public static void createAndPushAuxiliaryImage(String imageName, WitParams witParams) {
+    // create auxiliary image using imagetool command if does not exists
+    LoggingFacade logger = getLogger();
+    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
+      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
+      testUntil(
+          withStandardRetryPolicy,
+          createAuxiliaryImage(witParams),
+          logger,
+          "createAuxImage to be successful");
+    } else {
+      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
+    }
+
+    // push image to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
+      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
+    }
   }
 
   /**
@@ -201,4 +301,6 @@ public class AuxiliaryImageUtils {
 
     return readAllLines(get(RESULTS_ROOT, className, "/WDTversion.txt")).get(0);
   }
+
+
 }

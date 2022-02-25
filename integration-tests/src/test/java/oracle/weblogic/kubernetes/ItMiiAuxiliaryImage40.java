@@ -65,7 +65,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithJmsConfigOnly;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readFilesInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -127,13 +132,13 @@ class ItMiiAuxiliaryImage40 {
   private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "6";
   private static final String miiAuxiliaryImage7 = MII_AUXILIARY_IMAGE_NAME + "7";
   private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + "8";
-  private static final String miiAuxiliaryImage9 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "9";
-  private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "10";
-  private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "11";
-  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "12";
-  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "13";
-  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "14";
-  private static String errorPathAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "15";
+  private static final String miiAuxiliaryImage9 = MII_AUXILIARY_IMAGE_NAME + "9";
+  private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + "10";
+  private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + "11";
+  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "12";
+  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "13";
+  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "14";
+  private static String errorPathAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "15";
   private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
   private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
   private static final int replicaCount = 2;
@@ -196,13 +201,23 @@ class ItMiiAuxiliaryImage40 {
     logger.info("Create encryption secret");
     createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
         "weblogicenc", "weblogicenc");
+    // build app
+    assertTrue(buildAppArchive(defaultAppParams()
+            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+            .appName(MII_BASIC_APP_NAME)),
+        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
     // image1 with model files for domain config, ds, app and wdt install files
-    createAuxiliaryImageWithDomainConfig(miiAuxiliaryImage1, "/auxiliary");
-    // image2 with model files for jms config
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
     List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage1, archiveList, modelList);
+    // image2 with model files for jms config
+    modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
-    createAuxiliaryImageWithJmsConfig(miiAuxiliaryImage2, modelList);
+    createPushAuxiliaryImageWithJmsConfigOnly(miiAuxiliaryImage2, modelList);
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
@@ -278,7 +293,13 @@ class ItMiiAuxiliaryImage40 {
     modelList.add(modelsPath + "/multi-model-one-ds.20.yaml");
 
     // create image3 with model and wdt installation files
-    createAuxiliaryImage(miiAuxiliaryImage3, archiveList, modelList);
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage3)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList);
+    createAndPushAuxiliaryImage(miiAuxiliaryImage3, witParams);
 
     //create router for admin service on OKD
     if (adminSvcExtHostDomain1 == null) {
@@ -433,9 +454,8 @@ class ItMiiAuxiliaryImage40 {
         dockerLoginAndPushImageToRegistry(miiAuxiliaryImage4);
       }
     */
-    createAuxiliaryImage(miiAuxiliaryImage4, null, null,
-        "1.9.19", true, auxiliaryImagePath,
-        auxiliaryImagePath + "/models");
+
+    createPushAuxiliaryImageWithWDTInstallOnly(miiAuxiliaryImage4, "1.9.19");
 
     // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
     // and other with sourceWDTInstallHome set to none
@@ -444,7 +464,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
-        miiAuxiliaryImage1, miiAuxiliaryImage4);
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -453,13 +473,11 @@ class ItMiiAuxiliaryImage40 {
         adminServerPodName, managedServerPrefix, replicaCount);
 
     // check WDT version in main container in admin pod
-    String wdtVersionFileInsidePod = "/aux/weblogic-deploy/VERSION.txt";
-    ExecResult result = readFilesInPod(domainNamespace, adminServerPodName, wdtVersionFileInsidePod);
+    String wdtVersion =
+        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
+            "/aux", this.getClass().getSimpleName()));
 
-    logger.info("readFilesInPod returned: {0}", result.toString());
-    assertFalse(result.exitValue() != 0, String.format("Failed to read file %s. Error is: %s",
-        wdtVersionFileInsidePod, result.stderr()));
-    assertFalse(result.toString().contains("1.9.19"),
+    assertFalse(wdtVersion.contains("1.9.19"),
         "Old version of WDT is copied");
 
     // create domain custom resource using 2 auxiliary images with default sourceWDTInstallHome for both images
@@ -468,7 +486,8 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR2 = createDomainResource40(domainUid + "1", domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage1, miiAuxiliaryImage4);
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid + "1", domainNamespace);
@@ -500,6 +519,8 @@ class ItMiiAuxiliaryImage40 {
     final String domainUid = "domain3";
 
     // creating image with no WDT install files
+
+    /*
     // create stage dir for auxiliary image
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage9");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
@@ -530,13 +551,29 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage5);
     }
 
+    */
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+
+    // create image5 with model and no wdt installation files
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage5)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage5, witParams);
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, miiAuxiliaryImage5);
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
-        miiAuxiliaryImage5);
+        miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -574,24 +611,38 @@ class ItMiiAuxiliaryImage40 {
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
 
-    createAuxiliaryImage(miiAuxiliaryImage6, archiveList, modelList, null, false, auxiliaryImagePathCustom,
-        auxiliaryImagePathCustom + "/models");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage6)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
 
     modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     // image2 with model files for jms config
-    //DEBUGcreateAuxiliaryImageWithJmsConfig(miiAuxiliaryImage7, modelList, auxiliaryImagePathCustom);
-    createAuxiliaryImage(miiAuxiliaryImage7, null,
-        modelList,
-        null, true, auxiliaryImagePathCustom,
-        auxiliaryImagePathCustom + "/models");
+
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage7)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .wdtModelOnly(true)
+            .wdtVersion("NONE")
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
 
     // create domain custom resource using auxiliary images
     String[] images = {miiAuxiliaryImage6, miiAuxiliaryImage7};
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1",
-        auxiliaryImagePathCustom, miiAuxiliaryImage6, miiAuxiliaryImage7);
+        auxiliaryImagePathCustom, miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
 
     // add the sourceWDTInstallHome and sourceModelHome for both aux images.
     for (String cmImageName : images) {
@@ -626,7 +677,7 @@ class ItMiiAuxiliaryImage40 {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
     final String domainUid = "domain5";
-
+  /*
     // creating image with no model files
     // create stage dir for auxiliary image
     Path aiWithNoModel = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "aiwithnomodel");
@@ -652,11 +703,22 @@ class ItMiiAuxiliaryImage40 {
         Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(),
         miiAuxiliaryImage8, auxiliaryImagePathCustom);
 
+
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage8, DOMAIN_IMAGES_REPO);
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage8);
     }
+    */
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage8)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models")
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage8, witParams);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
@@ -664,7 +726,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
-        miiAuxiliaryImage8);
+        miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -703,7 +765,7 @@ class ItMiiAuxiliaryImage40 {
     Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
-        miiAuxiliaryImage1, miiAuxiliaryImage2);
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -736,6 +798,9 @@ class ItMiiAuxiliaryImage40 {
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
       deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
+    OffsetDateTime timestamp = now();
+
+    /*
 
     OffsetDateTime timestamp = now();
 
@@ -766,6 +831,20 @@ class ItMiiAuxiliaryImage40 {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
       dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage2);
     }
+    */
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage2)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage2, witParams);
 
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
@@ -825,6 +904,9 @@ class ItMiiAuxiliaryImage40 {
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
       deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
+    final String auxiliaryImagePath = "/auxiliary";
+    OffsetDateTime timestamp = now();
+    /*
     OffsetDateTime timestamp = now();
 
     final String auxiliaryImagePath = "/auxiliary";
@@ -858,7 +940,19 @@ class ItMiiAuxiliaryImage40 {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
       dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage3);
     }
+    */
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage3)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage3, witParams);
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid2, errorPathAuxiliaryImage3);
@@ -1042,6 +1136,7 @@ class ItMiiAuxiliaryImage40 {
         "weblogicenc", "weblogicenc");
 
     // create stage dir for first auxiliary image containing domain configuration
+    /*
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
         "Delete directory failed");
@@ -1108,7 +1203,37 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage10);
     }
 
-    // create stage dir for third auxiliary image with latest wdt installation files only
+   */
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage9)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelArchiveFiles(archiveList)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage9, witParams);
+
+    // create second auxiliary image with older wdt installation files only
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage10)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtVersion(WDT_TEST_VERSION);
+    createAndPushAuxiliaryImage(miiAuxiliaryImage10, witParams);
+
+    // create third auxiliary image with newest wdt installation files only
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage11)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage11, witParams);
+
+    /*
     Path multipleAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage3");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()),
         "Delete directory failed");
@@ -1132,13 +1257,16 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage11);
     }
 
+     */
+
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10);
     Domain domainCR = createDomainResource40(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage9, miiAuxiliaryImage10);
+        miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -1166,7 +1294,9 @@ class ItMiiAuxiliaryImage40 {
     logger.info("Found the DataResource configuration");
     //check WDT version in the image equals the  provided WDT_TEST_VERSION
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, "/aux", adminServerPodName);
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace,
+          adminServerPodName, "/aux",
+          this.getClass().getSimpleName());
       assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image does not match the expected");
     }, "Can't retrieve wdt version file or version does match the expected");
@@ -1176,7 +1306,8 @@ class ItMiiAuxiliaryImage40 {
 
     //check that WDT version is changed
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, "/aux", adminServerPodName);
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace, adminServerPodName,
+          "/aux", this.getClass().getSimpleName());
       assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
           " Used WDT in the auxiliary image was not updated");
     }, "Can't retrieve wdt version file "
@@ -1270,18 +1401,18 @@ class ItMiiAuxiliaryImage40 {
    */
   public void tearDownAll() {
     // delete images
-    deleteImage(miiAuxiliaryImage1);
-    deleteImage(miiAuxiliaryImage2);
-    deleteImage(miiAuxiliaryImage3);
-    deleteImage(miiAuxiliaryImage4);
-    deleteImage(miiAuxiliaryImage5);
-    deleteImage(miiAuxiliaryImage6);
-    deleteImage(miiAuxiliaryImage7);
-    deleteImage(miiAuxiliaryImage8);
-    deleteImage(errorPathAuxiliaryImage2);
-    deleteImage(errorPathAuxiliaryImage3);
-    deleteImage(errorPathAuxiliaryImage4);
-    deleteImage(errorPathAuxiliaryImage5);
+    deleteImage(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
   }
 
   private static void checkConfiguredJMSresouce(String domainNamespace, String adminSvcExtHost) {
@@ -1349,67 +1480,6 @@ class ItMiiAuxiliaryImage40 {
     return domainCR;
   }
 
-  private static void createAuxiliaryImageWithDomainConfig(String imageName, String auxiliaryImagePath) {
-    /*
-    // create stage dir for auxiliary image
-    Path aiPath = Paths.get(RESULTS_ROOT,
-        ItMiiAuxiliaryImage40.class.getSimpleName(), "ai"
-            + imageName.substring(imageName.length() - 1));
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiPath.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(aiPath),
-        "Create directory failed");
-    Path aiPathToFile =
-        Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
-            "ai" + imageName.substring(imageName.length() - 1) + "/test.txt");
-    String content = "1";
-    assertDoesNotThrow(() -> Files.write(aiPathToFile, content.getBytes()),
-        "Can't write to file " + aiPathToFile);
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath = Paths.get(aiPath.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
-        Paths.get(modelsPath.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(aiPath.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(aiPath.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), imageName, auxiliaryImagePath);
-
-
-    */
-
-    // admin/managed server name here should match with model yaml
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
-
-    List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
-
-    createAuxiliaryImage(imageName, archiveList, modelList);
-  }
-
   private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     createAuxiliaryImage(stageDirPath, dockerFileLocation, auxiliaryImage, "/auxiliary");
   }
@@ -1446,111 +1516,4 @@ class ItMiiAuxiliaryImage40 {
             .command(cmdToExecute))
         .execute(), String.format("Failed to execute", cmdToExecute));
   }
-
-  private static void createAuxiliaryImage(String imageName, List<String> archiveList,
-                                           List<String> modelList,
-                                           String wdtVersion, boolean modelOnly, String wdtHome,
-                                           String wdtModelHome) {
-
-    WitParams witParams =
-        new WitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .wdtModelOnly(modelOnly)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtHome(wdtHome)
-            .wdtModelHome(wdtModelHome)
-            .wdtVersion(wdtVersion);
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          AuxiliaryImageUtils.createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
-    }
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
-    }
-  }
-
-  private static void createAuxiliaryImageWithJmsConfig(String imageName, List<String> modelList) {
-    /*
-    // create stage dir for second auxiliary image
-    Path aiPath = Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
-        "ai" + imageName.substring(imageName.length() - 1));
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiPath.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(aiPath),
-        "Create directory failed");
-
-    // create models dir and copy model, archive files if any
-    Path modelsPath = Paths.get(aiPath.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath));
-    Path aiPathToFile =
-        Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
-            "ai" + imageName.substring(imageName.length() - 1) + "/test.txt");
-    String content2 = "2";
-    assertDoesNotThrow(() -> Files.write(aiPathToFile, content2.getBytes()),
-        "Can't write to file " + aiPathToFile);
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "/model.jms2.yaml"),
-        Paths.get(modelsPath.toString(), "/model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // create image2 with model and wdt installation files
-    createAuxiliaryImage(aiPath.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), imageName, auxiliaryImagePath);
-
-    */
-
-    WitParams witParams =
-        new WitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .wdtModelOnly(true)
-            .modelFiles(modelList)
-            .wdtVersion("NONE");
-
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          AuxiliaryImageUtils.createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
-    }
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
-    }
-
-  }
-
-  private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath,
-                                 String adminServerPodName) throws Exception {
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
-        " Can't find file in the pod, or failed to copy");
-
-
-    return Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
-  }
-
 }
