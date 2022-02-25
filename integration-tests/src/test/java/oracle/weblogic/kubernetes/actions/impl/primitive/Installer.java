@@ -105,7 +105,6 @@ public class Installer {
    * @return an InstallParams instance
    */
   public static InstallParams defaultInstallWleParams() {
-    System.out.println("=============================WLE_DOWNLOAD_URL: " + WLE_DOWNLOAD_URL);
     return new InstallParams()
         .defaults()
         .type(WLE)
