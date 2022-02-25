@@ -147,7 +147,8 @@ class ItIntrospectVersion {
   private static String adminSvcExtHost = null;
   private static String clusterRouteHost = null;
 
-  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> cl2podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> myclusterpodsWithTimeStamps = null;
 
   private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
@@ -400,7 +401,7 @@ class ItIntrospectVersion {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
-          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort, 
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
                        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
                        targets, clusterViewAppPath, null, "clusterview"));
           return result.stdout().equals("202");
@@ -924,14 +925,16 @@ class ItIntrospectVersion {
     final String domainNamespace = introDomainNamespace;
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "cl2-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final String cl2managedServerNameBase = "cl2-ms-";
+    String cl2managedServerPodNamePrefix = domainUid + "-" + cl2managedServerNameBase;
+    final String myclustermanagedServerNameBase = "mycluster-";
+    String myclustermanagedServerPodNamePrefix = domainUid + "-" + myclustermanagedServerNameBase;
 
     final int replicaCount = 2;
 
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+      managedServerNames.add(cl2managedServerNameBase + i);
     }
 
     // get the original domain resource before update
@@ -942,8 +945,11 @@ class ItIntrospectVersion {
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
     // get the map with server pods and their original creation timestamps
-    podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPodNamePrefix,
+    cl2podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, cl2managedServerPodNamePrefix,
         replicaCount);
+    // get the map with server pods and their original creation timestamps
+    myclusterpodsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
+        myclustermanagedServerPodNamePrefix, 3);
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
@@ -981,15 +987,17 @@ class ItIntrospectVersion {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(verifyRollingRestartOccurred(myclusterpodsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+          cl2managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(cl2managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     //verify admin server accessibility and the health of cluster members
@@ -1039,11 +1047,11 @@ class ItIntrospectVersion {
   /**
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
-   * The usecase update the introspectVersion by passing differnt value to -i 
-   * option (non-numeic, non-numeric with space, no value) and make sure that 
-   * the introspectVersion is updated accrodingly in both domain sepc level 
-   * and server pod level. 
-   * It also verifies the intospector job is started/stoped and none of the 
+   * The usecase update the introspectVersion by passing differnt value to -i
+   * option (non-numeic, non-numeric with space, no value) and make sure that
+   * the introspectVersion is updated accrodingly in both domain sepc level
+   * and server pod level.
+   * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
   @Test
@@ -1097,7 +1105,7 @@ class ItIntrospectVersion {
     String ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals(introspectVersion),
         "introspectVersion must change to  "  + introspectVersion);
 
@@ -1124,13 +1132,13 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals(introspectVersion),
         "introspectVersion must change to  "  + introspectVersion);
 
     // use introspectDomain.sh to initiate introspection
-    // Since the current version is non-numeric the updated version is 
-    // updated to 1 
+    // Since the current version is non-numeric the updated version is
+    // updated to 1
     logger.info("Initiate introspection with no explicit version(1)");
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
@@ -1143,11 +1151,11 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("1"), "introspectVersion must change to 1");
 
     // use introspectDomain.sh to initiate introspection
-    // Since the current version is 1, the updated version must be set to 2 
+    // Since the current version is 1, the updated version must be set to 2
     logger.info("Initiate introspection with no explicit version (2)");
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
@@ -1160,7 +1168,7 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("2"), "introspectVersion must change to 2");
 
     // use introspectDomain.sh to initiate introspection
@@ -1178,7 +1186,7 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("101"), "introspectVersion must change to 101");
 
     //verify the pods are not restarted in any introspectVersion update
