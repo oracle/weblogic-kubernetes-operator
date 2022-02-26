@@ -157,8 +157,8 @@ public interface TestConstants {
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
-  public static final String NGINX_CHART_VERSION = "4.0.16";
-  public static final String NGINX_INGRESS_IMAGE_TAG = "v0.35.0";
+  public static final String NGINX_CHART_VERSION = "4.0.17";
+  public static final String NGINX_INGRESS_IMAGE_TAG = "v1.1.1";
   public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
@@ -262,7 +262,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
       .orElse("15.2.0");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
-      .orElse("6.21.5");
+      .orElse("6.22.0");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";

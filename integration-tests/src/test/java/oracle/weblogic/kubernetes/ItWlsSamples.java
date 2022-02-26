@@ -26,6 +26,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -61,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -579,11 +582,15 @@ class ItWlsSamples {
     int replicaCount = 2;
 
     // verify the admin server service and pod is created
-    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+    checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(10, MINUTES).await(), adminServerPodName, domainName, domainNamespace);
 
     // verify managed server services created and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
   }
 
@@ -638,11 +645,15 @@ class ItWlsSamples {
     int replicaCount = 2;
 
     // verify the admin server service and pod is created
-    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+    checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(10, MINUTES).await(), adminServerPodName, domainName, domainNamespace);
 
     // verify managed server services created and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
   }
 

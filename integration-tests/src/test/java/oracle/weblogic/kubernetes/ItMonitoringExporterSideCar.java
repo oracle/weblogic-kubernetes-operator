@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessSideCar;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -434,7 +433,7 @@ class ItMonitoringExporterSideCar {
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
-      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
+      // installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }

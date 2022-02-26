@@ -366,9 +366,7 @@ class ItPodsShutdownOption {
           .and().with().pollInterval(10, SECONDS)
           .atMost(10, MINUTES).await(), podName, domainUid, domainNamespace);
     }
-
   }
-
 
   // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
   private void verifyServerLog(String namespace, String podName, String[] envVars) {

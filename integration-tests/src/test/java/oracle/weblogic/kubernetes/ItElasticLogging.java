@@ -12,6 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -36,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
@@ -47,7 +50,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FI
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -59,6 +64,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -154,6 +160,31 @@ class ItElasticLogging {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+    // upgrade to latest operator
+    HelmParams upgradeHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // build operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
+    // wait for the operator to be ready
+    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+    testUntil(
+        assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+            "operatorIsReady failed with ApiException"),
+        logger,
+        "operator to be running in namespace {0}",
+        opNamespace);
+
     // install WebLogic Logging Exporter if in non-OKD env
     if (!OKD) {
       installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc);
@@ -178,8 +209,8 @@ class ItElasticLogging {
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, null, LOGSTASH_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, null, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, LOGSTASH_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -276,7 +307,7 @@ class ItElasticLogging {
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
-    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
+    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
     testVarMap.putAll(wlsMap);
 

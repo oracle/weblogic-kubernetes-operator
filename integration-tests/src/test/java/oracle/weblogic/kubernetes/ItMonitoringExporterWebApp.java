@@ -68,7 +68,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
@@ -239,8 +238,10 @@ class ItMonitoringExporterWebApp {
       String adminServerPodName = domain1Uid + "-admin-server";
       String clusterService = domain1Uid + "-cluster-cluster-1";
       if (!OKD) {
-        ingressHost1List =
-            createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+        String ingressClassName = nginxHelmParams.getIngressClassName();
+        ingressHost1List
+            = createIngressForDomainAndVerify(domain1Uid, domain1Namespace, 0, clusterNameMsPortMap,
+                false, ingressClassName, false, 0);
         verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
         // Need to expose the admin server external service to access the console in OKD cluster only
       } else {
@@ -433,7 +434,7 @@ class ItMonitoringExporterWebApp {
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
-      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
+      // installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
