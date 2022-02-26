@@ -2913,7 +2913,6 @@ public class Kubernetes {
       throws ApiException {
     V1Ingress ingress;
     try {
-      getLogger().info("Creating ingress: {0}", Yaml.dump(ingressBody));
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
           namespace, //namespace
@@ -2922,7 +2921,6 @@ public class Kubernetes {
           null, // when present, indicates that modifications should not be persisted
           null // a name associated with the actor or entity that is making these changes
       );
-      getLogger().info("Created ingress: {0}", Yaml.dump(ingress));
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
