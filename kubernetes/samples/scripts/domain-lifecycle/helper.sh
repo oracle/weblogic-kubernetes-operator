@@ -282,6 +282,11 @@ unsetServerStartPolicy() {
     mapCmd=". |= map(if .serverName == \"${serverName}\" then . = ${replacePolicyCmd} else . end)"
   fi
   unsetStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  unsetStartPolicyPatchLen=$(echo "${unsetStartPolicyPatch}" | jq .[] | jq length)
+  if [ ${unsetStartPolicyPatchLen} == 0 ]; then
+    mapCmd=". |= del(.)"
+    unsetStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  fi
   eval $__result="'${unsetStartPolicyPatch}'"
 }
 
