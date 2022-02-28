@@ -255,7 +255,7 @@
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter*,
-                   **/ItParameterizedDomain,
+                   **/ItMultiDomainModels,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
@@ -283,7 +283,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
@@ -363,52 +363,52 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItCrossDomainTransaction,
-                  **/ItCoherenceTests,
-                  **/ItConfigDistributionStrategy,
-                  **/ItDedicatedMode,
-                  **/ItDiagnosticsCompleteAvailableCondition,
-                  **/ItDiagnosticsFailedCondition,
-                  **/ItElasticLogging,
-                  **/ItElasticLoggingFluentd,
-                  **/ItExternalLbTunneling,
-                  **/ItExternalNodePortService,
-                  **/ItInitContainers,
-                  **/ItIntrospectVersion,
-                  **/ItKubernetesEvents,
-                  **/ItLiftAndShiftFromOnPremDomain,
-                  **/ItLivenessProbeCustomization,
-                  **/ItManagedCoherence,
-                  **/ItManageNameSpace,
-                  **/ItMiiAuxiliaryImage,
-                  **/ItMiiAuxiliaryImageCluster,
-                  **/ItMiiCustomSslStore,
-                  **/ItMiiDomain,
-                  **/ItMiiDomainModelInPV,
-                  **/ItMiiDynamicUpdate*,
-                  **/ItMiiMultiModel,
-                  **/ItMiiNewCreateAuxImage,
-                  **/ItMiiSampleWlsAux,
-                  **/ItMiiSampleWlsMain,
-                  **/ItMiiServiceMigration,
-                  **/ItMiiUpdateDomainConfig,
-                  **/ItOperatorRestart,
-                  **/ItParameterizedDomain,
-                  **/ItPodsRestart,
-                  **/ItPodsShutdownOption,
-                  **/ItPodTemplates,
-                  **/ItProductionSecureMode,
-                  **/ItRemoteConsole,
-                  **/ItServerStartPolicy,
-		  **/ItServiceStartPolicyDynamicCluster,
-                  **/ItServerStartPolicyConfigCluster,
-                  **/ItSessionMigration,
-                  **/ItStickySession,
-                  **/ItSystemResOverrides,
-                  **/ItMonitoringExporterWebApp,
-                  **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples,
-                  **/ItUsabilityOperatorHelmChart
+                    **/ItCrossDomainTransaction,
+                    **/ItCoherenceTests,
+                    **/ItConfigDistributionStrategy,
+                    **/ItDedicatedMode,
+                    **/ItDiagnosticsCompleteAvailableCondition,
+                    **/ItDiagnosticsFailedCondition,
+                    **/ItElasticLogging,
+                    **/ItElasticLoggingFluentd,
+                    **/ItExternalLbTunneling,
+                    **/ItExternalNodePortService,
+                    **/ItInitContainers,
+                    **/ItIntrospectVersion,
+                    **/ItKubernetesEvents,
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItLivenessProbeCustomization,
+                    **/ItManagedCoherence,
+                    **/ItManageNameSpace,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiAuxiliaryImageCluster,
+                    **/ItMiiCustomSslStore,
+                    **/ItMiiDomain,
+                    **/ItMiiDomainModelInPV,
+                    **/ItMiiDynamicUpdate*,
+                    **/ItMiiMultiModel,
+                    **/ItMiiNewCreateAuxImage,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiServiceMigration,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItOperatorRestart,
+                    **/ItParameterizedDomain,
+                    **/ItPodsRestart,
+                    **/ItPodsShutdownOption,
+                    **/ItPodTemplates,
+                    **/ItProductionSecureMode,
+                    **/ItRemoteConsole,
+                    **/ItServerStartPolicy,
+                    **/ItServiceStartPolicyDynamicCluster,
+                    **/ItServerStartPolicyConfigCluster,
+                    **/ItSessionMigration,
+                    **/ItStickySession,
+                    **/ItSystemResOverrides,
+                    **/ItMonitoringExporterWebApp,
+                    **/ItMonitoringExporterSideCar,
+                    **/ItMonitoringExporterSamples,
+                    **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
@@ -466,11 +466,24 @@
             </properties>
         </profile>
         <profile>
+            <id>wls-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItKubernetesEvents,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMultiDomainModels,
+                    **/ItPodsRestart,
+                    **/ItTwoDomainsManagedByTwoOperators
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItParameterizedDomain,
+                    **/ItMultiDomainModels,
                     **/ItMiiUpdateDomainConfig,
                     **/ItMiiAuxiliaryImage40,
                     **/ItMiiNewCreateAuxImage40,
