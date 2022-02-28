@@ -957,11 +957,6 @@ class ItIntrospectVersion {
       String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
       logger.info(managedServerPodName);
     }
-    try {
-      Thread.sleep(1000 * 60 * 5);
-    } catch (Exception e) {
-      ;
-    }
     // get the map with server pods and their original creation timestamps
     for (int i = 1; i <= 3; i++) {
       String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
