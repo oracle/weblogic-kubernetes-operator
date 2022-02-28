@@ -229,43 +229,6 @@
             </properties>
         </profile>
         <profile>
-            <id>wls-image-cert</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                   **/ItExternalLbTunneling,
-                   **/ItMiiAuxiliaryImage,
-                   **/ItMiiAuxiliaryImageCluster,
-                   **/ItMiiSampleWlsAux,
-                   **/ItMiiCustomSslStore,
-                   **/ItMiiServiceMigration,
-                   **/ItRemoteConsole,
-                   **/ItConfigDistributionStrategy,
-                   **/ItCrossDomainTransaction,
-                   **/ItElasticLogging,
-                   **/ItElasticLoggingFluentd,
-                   **/ItExternalRmiTunneling,
-                   **/ItIntrospectVersion,
-                   **/ItCrossDomainTransaction,
-                   **/ItIstioDomainInPV,
-                   **/ItIstioMiiDomain,
-                   **/ItManagedCoherence,
-                   **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate*,
-                   **/ItMiiSampleWlsMain,
-                   **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter*,
-                   **/ItMultiDomainModels,
-                   **/ItPodsShutdownOption,
-                   **/ItProductionSecureMode,
-                   **/ItWlsSamples,
-                   **/ItSessionMigration,
-                   **/ItStickySession,
-                   **/ItSystemResOverrides
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -359,56 +322,111 @@
             </properties>
         </profile>
         <profile>
-            <id>wko-okd-wls-cert</id>
+            <id>wko-okd-wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItCrossDomainTransaction,
-                    **/ItCoherenceTests,
-                    **/ItConfigDistributionStrategy,
-                    **/ItDedicatedMode,
-                    **/ItDiagnosticsCompleteAvailableCondition,
-                    **/ItDiagnosticsFailedCondition,
-                    **/ItElasticLogging,
-                    **/ItElasticLoggingFluentd,
-                    **/ItExternalLbTunneling,
-                    **/ItExternalNodePortService,
-                    **/ItInitContainers,
-                    **/ItIntrospectVersion,
-                    **/ItKubernetesEvents,
-                    **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItLivenessProbeCustomization,
-                    **/ItManagedCoherence,
-                    **/ItManageNameSpace,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiAuxiliaryImageCluster,
-                    **/ItMiiCustomSslStore,
-                    **/ItMiiDomain,
-                    **/ItMiiDomainModelInPV,
-                    **/ItMiiDynamicUpdate*,
-                    **/ItMiiMultiModel,
-                    **/ItMiiNewCreateAuxImage,
-                    **/ItMiiSampleWlsAux,
-                    **/ItMiiSampleWlsMain,
-                    **/ItMiiServiceMigration,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItOperatorRestart,
-                    **/ItParameterizedDomain,
-                    **/ItPodsRestart,
-                    **/ItPodsShutdownOption,
-                    **/ItPodTemplates,
-                    **/ItProductionSecureMode,
-                    **/ItRemoteConsole,
-                    **/ItServerStartPolicy,
-                    **/ItServiceStartPolicyDynamicCluster,
-                    **/ItServerStartPolicyConfigCluster,
-                    **/ItSessionMigration,
-                    **/ItStickySession,
-                    **/ItSystemResOverrides,
-                    **/ItMonitoringExporterWebApp,
-                    **/ItMonitoringExporterSideCar,
-                    **/ItMonitoringExporterSamples,
-                    **/ItUsabilityOperatorHelmChart
+                  **/ItCrossDomainTransaction,
+                  **/ItKubernetesEvents,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiMultiModel,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMultiDomainModelsWithLoadBalancer,
+                  **/ItPodsRestart
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-wls-mrg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItDiagnosticsCompleteAvailableCondition,
+                  **/ItDiagnosticsFailedCondition,
+                  **/ItElasticLogging,
+                  **/ItElasticLoggingFluentd,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItManageNameSpace,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples,
+                  **/ItUsabilityOperatorHelmChart
+                  **/ItCrossDomainTransaction,
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItDiagnosticsCompleteAvailableCondition,
+                  **/ItDiagnosticsFailedCondition,
+                  **/ItElasticLogging,
+                  **/ItElasticLoggingFluentd,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItKubernetesEvents,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItManageNameSpace,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiMultiModel,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  */ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples,
+                  **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
@@ -438,30 +456,10 @@
                   **/ItMiiDomain,
                   **/ItMiiDynamicUpdate,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModelsWithLoadBalancer,
                   **/ItPodsShutdownOption,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>fmw-pipeline</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiAuxiliaryImageCluster,
-                    **/ItMiiCustomSslStore,
-                    **/ItExternalRmiTunneling,
-                    **/ItIstioDomainInPV,
-                    **/ItMiiDomain,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItIstioDomainInImage,
-                    **/ItPodsShutdownOption,
-                    **/ItProductionSecureMode,
-                    **/ItSessionMigration,
-                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>

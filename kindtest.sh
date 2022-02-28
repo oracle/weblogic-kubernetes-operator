@@ -59,8 +59,8 @@ usage() {
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
   echo "  -l WLE download URL"
   echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
-  echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
-  echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
+  echo "  -m Run integration-tests or the other maven_profile_name in the pom.xml"
+  echo "      (default: integration-tests) "
   echo "  -h Help"
   exit $1
 }
@@ -308,7 +308,7 @@ if [ "${test_filter}" != "**/It*" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
 else
-  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-pipeline" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ] || [ "${maven_profile_name}" = "wls-srg" ]; then
+  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ]; then
     echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
