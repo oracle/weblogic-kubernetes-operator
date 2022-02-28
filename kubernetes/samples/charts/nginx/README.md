@@ -8,8 +8,7 @@ As a *demonstration*, the following are steps to install the NGINX operator usin
 
 ### 1. Add the ingress-nginx chart repository
 ```shell
-$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-$ helm repo update
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx --force-update
 ```
 Verify that the chart repository has been added.
 

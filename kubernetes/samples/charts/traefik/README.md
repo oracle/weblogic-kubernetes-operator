@@ -9,8 +9,7 @@ For more information about Traefik, see the [Traefik Official Site](https://trae
 
 To install the Traefik operator in the `traefik` namespace with the default settings:
 ```shell
-$ helm repo add traefik https://helm.traefik.io/traefik
-$ helm repo update
+$ helm repo add traefik https://helm.traefik.io/traefik --force-update
 $ kubectl create namespace traefik
 $ helm install traefik-operator traefik/traefik --namespace traefik
 ```

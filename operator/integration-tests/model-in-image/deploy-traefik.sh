@@ -80,7 +80,6 @@ else
 
   # you only need to add the repo once, but we do it every time for simplicity
   helm repo add traefik https://helm.traefik.io/traefik --force-update
-  helm repo update
 
   set -x
 
