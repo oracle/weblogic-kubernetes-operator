@@ -1267,7 +1267,8 @@ class ItMiiAuxiliaryImage40 {
     }, "Can't retrieve wdt version file or version does match the expected");
 
     //updating wdt to latest version by patching the domain with image3
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10, miiAuxiliaryImage11, domainUid, wdtDomainNamespace);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG, domainUid, wdtDomainNamespace);
 
     //check that WDT version is changed
     assertDoesNotThrow(() -> {
