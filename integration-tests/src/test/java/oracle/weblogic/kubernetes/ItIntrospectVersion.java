@@ -928,7 +928,7 @@ class ItIntrospectVersion {
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String cl2managedServerNameBase = "cl2-ms-";
     String cl2managedServerPodNamePrefix = domainUid + "-" + cl2managedServerNameBase;
-    final String myclustermanagedServerNameBase = "mycluster-";
+    final String myclustermanagedServerNameBase = "managed-server";
     String myclustermanagedServerPodNamePrefix = domainUid + "-" + myclustermanagedServerNameBase;
 
     final int replicaCount = 2;
