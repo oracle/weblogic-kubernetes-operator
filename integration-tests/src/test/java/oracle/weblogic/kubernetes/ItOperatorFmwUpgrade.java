@@ -223,12 +223,12 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.7 to latest with a FMW Domain.
+   * Operator upgrade from 3.3.8 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.3.7 to latest")
-  void testOperatorFmwUpgradeFrom337ToLatest() {
-    installAndUpgradeOperator("3.3.7", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 3.3.8 to latest")
+  void testOperatorFmwUpgradeFrom338ToLatest() {
+    installAndUpgradeOperator("3.3.8", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(
