@@ -944,10 +944,24 @@ class ItIntrospectVersion {
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
-
+    logger.info("Getting timestamps for the following pods");
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = cl2managedServerPodNamePrefix + i;
+      logger.info(managedServerPodName);
+    }
     // get the map with server pods and their original creation timestamps
     cl2podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, cl2managedServerPodNamePrefix,
         replicaCount);
+    logger.info("Getting timestamps for the following pods");
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
+      logger.info(managedServerPodName);
+    }
+    try {
+      Thread.sleep(1000 * 60 * 5);
+    } catch (Exception e) {
+      ;
+    }
     // get the map with server pods and their original creation timestamps
     for (int i = 1; i <= 3; i++) {
       String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
