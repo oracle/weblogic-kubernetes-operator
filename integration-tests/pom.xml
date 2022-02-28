@@ -246,7 +246,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
@@ -336,7 +336,7 @@
                   **/ItMiiNewCreateAuxImage,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModelsWithLoadBalancer,
                   **/ItPodsRestart
                 </includes-failsafe>
             </properties>
@@ -381,6 +381,52 @@
                   **/ItMonitoringExporterSideCar,
                   **/ItMonitoringExporterSamples,
                   **/ItUsabilityOperatorHelmChart
+                  **/ItCrossDomainTransaction,
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItDiagnosticsCompleteAvailableCondition,
+                  **/ItDiagnosticsFailedCondition,
+                  **/ItElasticLogging,
+                  **/ItElasticLoggingFluentd,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItKubernetesEvents,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItManageNameSpace,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiMultiModel,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  */ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples,
+                  **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
@@ -410,10 +456,23 @@
                   **/ItMiiDomain,
                   **/ItMiiDynamicUpdate,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItParameterizedDomain,
+                  **/ItMultiDomainModelsWithLoadBalancer,
                   **/ItPodsShutdownOption,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wls-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItKubernetesEvents,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMultiDomainModels,
+                    **/ItPodsRestart,
+                    **/ItTwoDomainsManagedByTwoOperators
                 </includes-failsafe>
             </properties>
         </profile>
@@ -422,7 +481,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItParameterizedDomain,
+                    **/ItMultiDomainModels,
                     **/ItMiiUpdateDomainConfig,
                     **/ItMiiAuxiliaryImage40,
                     **/ItMiiNewCreateAuxImage40,
@@ -432,7 +491,8 @@
                     **/ItMiiSampleFmwAux,
                     **/ItFmwSample,
                     **/ItWlsSamples,
-                    **/ItMiiMultiModel
+                    **/ItMiiMultiModel,
+                    **/ItLiftAndShiftFromOnPremDomain
                 </includes-failsafe>
             </properties>
         </profile>

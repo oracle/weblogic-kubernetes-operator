@@ -86,6 +86,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
@@ -500,7 +501,7 @@ abstract class DomainStatusUpdateTestBase {
   @Test
   void whenAllDesiredServersRunningAndNoClusters_removeRollingStatus() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
-    domain.getOrCreateStatus().setRolling(true);
+    domain.getOrCreateStatus().addCondition(new DomainCondition(Rolling));
 
     updateDomainStatus();
 
@@ -640,7 +641,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenRollInProcessAndSomeServersNotRunning_dontGenerateDomainRollCompletedEvent() {
-    domain.getStatus().setRolling(true);
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -654,7 +655,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenRollInProcessAndAllServersRunning_generateDomainRollCompletedEvent() {
-    domain.getStatus().setRolling(true);
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -666,8 +667,30 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenRollInProcessAndReplicasTooHighAndAllServersRunning_removeRollingCondition() {
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(domain, not(hasCondition(Rolling)));
+  }
+
+  @Test
+  void whenRollInProcessAndReplicasTooHighAndAllServersRunning_generateDomainRollCompletedEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(testSupport, hasEvent(DOMAIN_ROLL_COMPLETED_EVENT).inNamespace(NS).withMessageContaining(UID));
+  }
+
+  @Test
   void whenRollNotInProcessAndAllServersRunning_dontGenerateDomainRollCompletedEvent() {
-    domain.getStatus().setRolling(false);
+    domain.getStatus().removeConditionsWithType(Rolling);
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -1115,7 +1138,7 @@ abstract class DomainStatusUpdateTestBase {
     domain.getStatus()
         .addCondition(new DomainCondition(Available).withStatus(FALSE))
         .addCondition(new DomainCondition(Completed).withStatus(FALSE))
-        .setRolling(true);
+        .addCondition(new DomainCondition(Rolling));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")

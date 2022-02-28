@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -79,12 +80,15 @@ public class SecretUtils {
     secretMap.put("username", username);
     secretMap.put("password", password);
 
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(secretName)
-            .namespace(namespace))
-        .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+    if (!secretExists(secretName, namespace)) {
+      boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+          .metadata(new V1ObjectMeta()
+              .name(secretName)
+              .namespace(namespace))
+          .stringData(secretMap)), "Create secret failed with ApiException");
+
+      assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+    }
   }
 
   /**

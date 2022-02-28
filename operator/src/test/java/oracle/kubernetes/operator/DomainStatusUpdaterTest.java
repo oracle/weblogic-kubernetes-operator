@@ -46,6 +46,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
@@ -105,7 +106,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNeedToReplacePodAndRolling_dontGenerateRollingStartedEvent() {
-    domain.getStatus().setRolling(true);
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
 
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
 
@@ -114,7 +115,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNeedToReplacePodAndRolling_dontLogDomainStarted() {
-    domain.getStatus().setRolling(true);
+    domain.getStatus().addCondition(new DomainCondition(Rolling));
     consoleHandlerMemento.trackMessage(DOMAIN_ROLL_START);
 
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());

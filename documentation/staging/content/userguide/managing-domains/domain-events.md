@@ -61,15 +61,6 @@ The operator generates these event types in a domain namespace, which indicate t
  * `FailureRessolved`: The failure condition that the domain was in has been resolved.
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
-    If the domain roll is due to a change to domain resource fields
-    `image`, `imagePullPolicy`, `livenessProbe`, `readinessProbe`, `restartVersion`,
-    `domainHome`, `includeServerOutInPodLog`, or `logHome`, then
-    the event message reports the field name plus its old and new values.
-    If the domain roll is due to other domain resource changes that cause servers to be restarted
-    (see [full list of fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})),
-    then the event message simply reports that the domain resource has changed.
-    If the domain roll is due to a Model in Image model update,
-    then the event message reports there has been a change in the WebLogic domain configuration without the details.
  * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain.
  * `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
  * `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
@@ -336,14 +327,11 @@ LAST SEEN   TYPE      REASON             OBJECT                                 
 4m31s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed.
 4m28s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 4m28s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 is unavailable: an insufficient number of its servers that are expected to be running are ready.
-4m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-admin-server because: In container 'weblogic-server':
-  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
-4m27s       Normal    RollStarting       domain/sample-domain1                          Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+4m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-admin-server
+4m27s       Normal    RollStarting       domain/sample-domain1                          Rolling restart WebLogic server pods in domain sample-domain1
 3m28s       Normal    Available          domain/sample-domain1                          Domain sample-domain1 became available
-3m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
-  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
-22m         Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server2 because: In container 'weblogic-server':
-  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+3m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server1
+22m         Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server2
 64s         Normal    RollCompleted      domain/sample-domain1                          Rolling restart of domain sample-domain1 completed
 12s         Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 ```
@@ -368,7 +356,7 @@ Involved Object:
   UID:           86e65656-39cc-4cd5-af61-a7cbaef51b83
 Kind:            Event
 Last Timestamp:  2021-12-14T20:11:24Z
-Message:         Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+Message:         Rolling restart WebLogic server pods in domain sample-domain1
 Metadata:
   Creation Timestamp:  2021-12-14T20:11:24Z
 
@@ -405,9 +393,7 @@ Involved Object:
   UID:           5df7dcda-d606-4509-9a06-32f25e16e166
 Kind:            Event
 Last Timestamp:  2021-05-18T02:01:18Z
-Message:         Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
-  'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
+Message:         Replacing pod sample-domain1-managed-server1
 Metadata:
   Creation Timestamp:  2021-05-18T02:01:18Z
   Resource Version:   12842530
