@@ -1,0 +1,12 @@
+[final-build-commands]
+LABEL owner="middleware team"
+USER root
+RUN if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi \
+ && if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi \
+ && if [ -z "$(grep ^tester: /etc/passwd)" ]; then adduser -D -G tester tester || exit 1 ; fi
+COPY --chown=tester:tester ./model-singleclusterdomain-sampleapp-wls.yaml /auxiliary/models
+
+#RUN if [ -z "$(grep ^nobody: /etc/group)" ]; then addgroup nobody || exit 1 ; fi \
+# && if [ -z "$(grep ^nobody: /etc/group)" ]; then addgroup nobody || exit 1 ; fi \
+# && if [ -z "$(grep ^nobody: /etc/passwd)" ]; then adduser -D -G nobody nobody || exit 1 ; fi
+#COPY --chown=nobody:nobody ./model-singleclusterdomain-sampleapp-wls.yaml /auxiliary/models

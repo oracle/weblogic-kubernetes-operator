@@ -965,7 +965,7 @@ class ItMiiAuxiliaryImage40 {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Disabled("Regression bug, test fails")
+  //@Disabled("Regression bug, test fails")
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
     final String domainUid2 = "domain8";
@@ -977,6 +977,8 @@ class ItMiiAuxiliaryImage40 {
     if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
       deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
+
+    /*
     OffsetDateTime timestamp = now();
 
     // create stage dir for auxiliary image
@@ -1027,13 +1029,35 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage4);
     }
 
-    // create domain custom resource using auxiliary images
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+    */
+    OffsetDateTime timestamp = now();
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage4)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelArchiveFiles(archiveList)
+            .modelFiles(modelList)
+            .additionalBuildCommands(RESOURCE_DIR + "/auxiliaryimage/addBuildCommand.txt");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage4, witParams);
+
+    // admin/managed server name here should match with model yaml
+
+
+    // create domain custom resource using 2 auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid2, errorPathAuxiliaryImage4);
-    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
+    Domain domainCR = createDomainResource40(domainUid2, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
@@ -1041,7 +1065,7 @@ class ItMiiAuxiliaryImage40 {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't open '/aux/models/test1.properties': Permission denied";
+    String expectedErrorMsg = "cp: can't open '/aux/models/model-singleclusterdomain-sampleapp-wls.yaml: Permission denied";
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid2, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
@@ -1376,6 +1400,9 @@ class ItMiiAuxiliaryImage40 {
     deleteImage(miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG);
     deleteImage(miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
     deleteImage(miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG);
     deleteImage(errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
     deleteImage(errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
     deleteImage(errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
@@ -1445,20 +1472,5 @@ class ItMiiAuxiliaryImage40 {
       index++;
     }
     return domainCR;
-  }
-
-  private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
-    createAuxiliaryImage(stageDirPath, dockerFileLocation, auxiliaryImage, "/auxiliary");
-  }
-
-  private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation,
-                                           String auxiliaryImage, String auxiliaryImagePath) {
-    String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
-        stageDirPath, dockerFileLocation,
-        "--build-arg AUXILIARY_IMAGE_PATH=" + auxiliaryImagePath, auxiliaryImage);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(cmdToExecute))
-        .execute(), String.format("Failed to execute", cmdToExecute));
   }
 }

@@ -380,6 +380,14 @@ public class WebLogicImageTool {
       command += " --target " + params.target();
     }
 
+    if (params.additionalBuildCommands() != null) {
+      command += " --additionalBuildCommands " + params.additionalBuildCommands();
+    }
+
+    if (params.additionalBuildFiles() != null) {
+      command += " --additionalBuildFiles " + params.additionalBuildFiles();
+    }
+
     logger.info("Build auxiliary image with command: {0}", command);
     return command;
   }
