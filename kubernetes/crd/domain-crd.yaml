@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: cc79860fb121a1ed1a6800daa353654081dbbb1f975e94ae920829b9c8906ba0
+    weblogic.sha256: 5f608e2d5efe50890eb305f719defb587c536ee0f375eb68ed9b5c748e00049b
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11253,13 +11253,17 @@ spec:
                         this WebLogic Server instance.
                       type: string
                     podReady:
-                      description: 'Status of server pod''s condition type Ready when
-                        the pod is in Running phase. Possible values are: True, False
-                        or Unknown'
+                      description: 'Status of server pod''s condition type Ready if
+                        the pod is in Running phase, otherwise Unknown. Possible values
+                        are: True, False or Unknown.'
                       type: string
                     desiredState:
                       description: Desired state of this WebLogic Server instance.
                         Values are RUNNING, ADMIN, or SHUTDOWN.
+                      type: string
+                    podPhase:
+                      description: 'Phase of server pod. Possible values are: Pending,
+                        Succeeded, Failed, Running, or Unknown.'
                       type: string
                     clusterName:
                       description: WebLogic cluster name, if the server is a member

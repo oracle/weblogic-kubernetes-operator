@@ -191,7 +191,8 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `desiredState` | string | Desired state of this WebLogic Server instance. Values are RUNNING, ADMIN, or SHUTDOWN. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server instance. |
 | `nodeName` | string | Name of Node that is hosting the Pod containing this WebLogic Server instance. |
-| `podReady` | string | Status of server pod's condition type Ready when the pod is in Running phase. Possible values are: True, False or Unknown |
+| `podPhase` | string | Phase of server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown. |
+| `podReady` | string | Status of server pod's condition type Ready if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown. |
 | `serverName` | string | WebLogic Server instance name. |
 | `state` | string | Current state of this WebLogic Server instance. |
 

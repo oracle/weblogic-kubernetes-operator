@@ -97,6 +97,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PODS_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -704,7 +706,7 @@ public class DomainStatusUpdater {
             if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
               return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
             } else if (ServerPod.name().equals(newCondition.getReason())) {
-              return new EventData(DOMAIN_FAILED).failureReason(ServerPod);
+              return new EventData(DOMAIN_FAILED).failureReason(ServerPod).message(newCondition.getMessage());
             }
             return null;
           default:
@@ -731,9 +733,16 @@ public class DomainStatusUpdater {
         Conditions newConditions = new Conditions(status);
         newConditions.apply();
 
-        if (isHasFailedPod() || hasPodNotReadyInTime()) {
-          LOGGER.info("XX isHasFailedPod: {0}, hasPodNotReadyInTime: {1}", isHasFailedPod(), hasPodNotReadyInTime());
-          status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
+        if (isHasFailedPod()) {
+          status.addCondition(new DomainCondition(Failed)
+              .withStatus(true)
+              .withReason(ServerPod)
+              .withMessage(forPodFailedMessage()));
+        } else if (hasPodNotReadyInTime()) {
+          status.addCondition(new DomainCondition(Failed)
+              .withStatus(true)
+              .withReason(ServerPod)
+              .withMessage(formatPodNotReadyMessage()));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
@@ -744,6 +753,14 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private String formatPodNotReadyMessage() {
+        return LOGGER.formatMessage(PODS_NOT_READY);
+      }
+
+      private String forPodFailedMessage() {
+        return LOGGER.formatMessage(PODS_FAILED);
       }
 
       private boolean haveServerData() {
@@ -949,7 +966,7 @@ public class DomainStatusUpdater {
           status.withNodeName(getNodeName(serverName));
           Optional.ofNullable(info).map(i -> i.getServerPod(serverName))
               .map(V1Pod::getStatus)
-              .map(s -> status.withPodReady(getReadyStatus(s)));
+              .map(s -> status.withPodReady(getReadyStatus(s)).withPodPhase(s.getPhase()));
         }
 
         private String getReadyStatus(V1PodStatus podStatus) {

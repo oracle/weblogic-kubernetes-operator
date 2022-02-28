@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
@@ -650,14 +651,24 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      testPassed = true;
 
+      for (int i = 1; i <= replicaCount; i++) {
+        String managedServerName = managedServerPrefix + i + "-c1";
+        logger.info("Checking managed server {0} has been shutdown in namespace {1}",
+            managedServerName, domainNamespace);
+        checkServerStatus(domainName, managedServerName, "Running", "False");
+      }
+      testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainName);
     }
+  }
+
+  private void checkServerStatus(String domainName, String serverName, String podPhase, String podReady) {
+    DomainUtils.checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, serverName, podPhase, podReady);
   }
 
   // Create a domain resource with a custom ConfigMap

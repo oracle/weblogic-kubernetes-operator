@@ -41,7 +41,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -181,6 +180,8 @@ abstract class DomainStatusUpdateTestBase {
                 .withDesiredState(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
+                .withPodPhase("Running")
+                .withPodReady("True")
                 .withHealth(overallHealth("health1"))));
     assertThat(
         getServerStatus(getRecordedDomain(), "server2"),
@@ -191,6 +192,8 @@ abstract class DomainStatusUpdateTestBase {
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
+                .withPodPhase("Running")
+                .withPodReady("True")
                 .withHealth(overallHealth("health2"))));
   }
 
@@ -300,15 +303,6 @@ abstract class DomainStatusUpdateTestBase {
 
     assertThat(getRecordedDomain(),
           hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
-  }
-
-  private Configuration getConfiguration() {
-    return Optional.ofNullable(domain.getSpec().getConfiguration()).orElse(this.createNewConfiguration());
-  }
-
-  private Configuration createNewConfiguration() {
-    domain.getSpec().setConfiguration(new Configuration());
-    return domain.getSpec().getConfiguration();
   }
 
   @Test
@@ -812,6 +806,10 @@ abstract class DomainStatusUpdateTestBase {
         new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().type("Ready").status("False")));
   }
 
+  private void markPodRunningPhaseFalse(String serverName) {
+    getPod(serverName).setStatus(new V1PodStatus().phase("Pending"));
+  }
+
   @Nonnull
   private Map<String, String> getServerStateMap() {
     return Optional.ofNullable(testSupport.getPacket())
@@ -871,6 +869,28 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAtLeastOnePodNotReadyInTime_phaseRunningFalse_createFailedCondition() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+    markPodRunningPhaseFalse("server2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus(TRUE));
+  }
+
+  @Test
+  void whenAtLeastOneReadyPodBecomeUnreadyForSometime_phaseRunningFalse_createFailedCondition() {
+    domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
+    updateDomainStatus();
+
+    markPodRunningPhaseFalse("server2");
+    SystemClockTestSupport.increment();
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus(TRUE));
+  }
+
+  @Test
   void whenAllPodsReadyInTime_dontCreateFailedCondition() {
     domain.getSpec().setMaxReadyWaitTimeSeconds(0L);
 
@@ -897,7 +917,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -910,7 +930,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -920,7 +940,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("True"));
+        hasStatusForServer("server2").withPodReady("True").withPodPhase("Running"));
   }
 
   @Test
@@ -931,7 +951,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -1640,6 +1660,11 @@ abstract class DomainStatusUpdateTestBase {
 
     ServerStatusMatcher withClusterName(String expectedValue) {
       matcher.addField("cluster name", ServerStatus::getClusterName, expectedValue);
+      return this;
+    }
+
+    ServerStatusMatcher withPodPhase(String expectedValue) {
+      matcher.addField("pod phase", ServerStatus::getPodPhase, expectedValue);
       return this;
     }
 
