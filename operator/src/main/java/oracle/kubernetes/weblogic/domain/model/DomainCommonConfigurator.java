@@ -274,7 +274,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withMaximumReadyWaitTimeSeconds(long waitTime) {
+  public DomainConfigurator withMaxReadyWaitTimeSeconds(long waitTime) {
     getDomainSpec().setMaxReadyWaitTimeSeconds(waitTime);
     return this;
   }

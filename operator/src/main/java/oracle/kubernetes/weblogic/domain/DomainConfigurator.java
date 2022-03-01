@@ -541,7 +541,7 @@ public abstract class DomainConfigurator {
    * @param waitTime the wait time value to be set to this DomainConfigurator
    * @return this object
    */
-  public abstract DomainConfigurator withMaximumReadyWaitTimeSeconds(long waitTime);
+  public abstract DomainConfigurator withMaxReadyWaitTimeSeconds(long waitTime);
 
   /**
    * Add WDT model config map for the domain resource.
