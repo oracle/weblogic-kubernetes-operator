@@ -236,13 +236,13 @@ public class K8sEvents {
     List<CoreV1Event> events = new ArrayList<>();
 
     try {
-      List<CoreV1Event> allEvents = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> allEvents = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : allEvents) {
         Map<String, String> labels = event.getMetadata().getLabels();
         if (event.getReason().equals(reason)
             && (isEqualOrAfter(timestamp, event))
             && event.getType().equals(type)
-            && labels.containsKey("weblogic.createdByOperator")
+            && labels != null
             && labels.get("weblogic.domainUID").equals(domainUid)) {
 
           events.add(event);
