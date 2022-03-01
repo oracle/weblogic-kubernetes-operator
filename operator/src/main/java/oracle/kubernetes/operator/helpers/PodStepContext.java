@@ -629,7 +629,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     LOGGER.finer("Recipe before conversion is " + Yaml.dump(recipe));
     convertAuxImagesInitContainerVolumeAndMounts(recipe);
     LOGGER.finer("Recipe after conversion is " + Yaml.dump(recipe));
-    return requiredHash.equals(AnnotationHelper.createHash(recipe))  ;
+    return requiredHash.equals(AnnotationHelper.createHash(recipe));
   }
 
   private boolean hasLabel(V1Pod pod, String key) {

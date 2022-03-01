@@ -50,6 +50,7 @@ public class DomainUpgradeUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public static final String DESIRED_API_VERSION = "weblogic.oracle/v9";
+  public static final String API_VERSION_V8 = "weblogic.oracle/v8";
   private volatile int containerIndex = 0;
 
   public ConversionReviewModel readConversionReview(String resourceName) {
@@ -90,8 +91,13 @@ public class DomainUpgradeUtils {
     }
     LOGGER.info("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
 
+    String apiVersion = (String)domain.get("apiVersion");
     Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
-    Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
+    Boolean adminChannelPortForwardingEnabled = (Boolean)Optional.ofNullable(adminServerSpec)
+            .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
+    if ((adminChannelPortForwardingEnabled == null) && (API_VERSION_V8.equals(apiVersion))) {
+      Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
+    }
     List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
     convertAuxiliaryImages(spec, auxiliaryImageVolumes);
     Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
@@ -180,12 +186,6 @@ public class DomainUpgradeUtils {
 
   private void addAuxiliaryImageEnv(List<Object> auxiliaryImages, Map<String, Object> serverPod,
                                     List<Object> auxiliaryImageVolumes) {
-//    List<Object> vars = new ArrayList<>();
-//    Optional.ofNullable(auxiliaryImages).flatMap(ais ->
-//            Optional.ofNullable(getAuxiliaryImagePaths(ais, auxiliaryImageVolumes)))
-//            .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
-//    vars.addAll(Optional.ofNullable((List<Object>)serverPod.get("env")).orElse(new ArrayList<>()));
-//    serverPod.put("env", vars);
     List<Object> vars = Optional.ofNullable((List<Object>)serverPod.get("env")).orElse(new ArrayList<>());
     Optional.ofNullable(auxiliaryImages).flatMap(ais ->
             Optional.ofNullable(getAuxiliaryImagePaths(ais, auxiliaryImageVolumes)))

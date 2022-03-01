@@ -53,7 +53,6 @@ import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -382,7 +381,7 @@ public class JobStepContext extends BasePodStepContext {
 
   protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-      Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
       getEnvironmentVariables(tuningParameters).stream()
               .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
