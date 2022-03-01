@@ -5,6 +5,9 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -31,12 +34,15 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.awaitility.core.EvaluatedCondition;
 import org.awaitility.core.TimeoutEvent;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
@@ -48,6 +54,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -827,11 +834,44 @@ public class CommonTestUtils {
   }
 
   /**
-   * Call the curl command and check the managed server in the cluster can connect to each other.
+   * Generate the model.sessmigr.yaml for a given test class
+   *
+   * @param domainUid unique domain identifier
+   * @param className test class name
+   * @param origModelFile location of original model yaml file
+   *
+   * @return path of generated yaml file for a session migration test
+   */
+  public static String generateNewModelFileWithUpdatedDomainUid(String domainUid,
+                                                                String className,
+                                                                String origModelFile) {
+    final String srcModelYamlFile =  MODEL_DIR + "/" + origModelFile;
+    final String destModelYamlFile = RESULTS_ROOT + "/" + className + "/" + origModelFile;
+    Path srcModelYamlPath = Paths.get(srcModelYamlFile);
+    Path destModelYamlPath = Paths.get(destModelYamlFile);
+
+    // create dest dir
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + className)),
+        String.format("Could not create directory under %s", RESULTS_ROOT + "/" + className + ""));
+
+    // copy model.sessmigr.yamlto results dir
+    assertDoesNotThrow(() -> Files.copy(srcModelYamlPath, destModelYamlPath, REPLACE_EXISTING),
+        "Failed to copy " + srcModelYamlFile + " to " + destModelYamlFile);
+
+    // DOMAIN_NAME in model.sessmigr.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destModelYamlFile.toString(), "DOMAIN_NAME", domainUid),
+        "Could not modify DOMAIN_NAME in " + destModelYamlFile);
+
+    return destModelYamlFile;
+  }
+
+  /**
+   * Call the curl command and check the managed servers connect to each other.
    *
    * @param curlRequest curl command to call the clusterview app
    * @param managedServerNames managed server names part of the cluster
-   * @param manServerName managed server to check
    */
   public static void verifyServerCommunication(String curlRequest, String manServerName,
                                                List<String> managedServerNames) {
