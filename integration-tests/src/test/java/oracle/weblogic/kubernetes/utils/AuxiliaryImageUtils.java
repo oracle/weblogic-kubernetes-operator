@@ -20,20 +20,15 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 public class AuxiliaryImageUtils {
@@ -197,6 +192,9 @@ public class AuxiliaryImageUtils {
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+    if ((witParams.wdtVersion() != null) && witParams.wdtVersion().equals("NONE")) {
+      env.put("DOCKER_BUILDKIT", "1");
+    }
 
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
@@ -243,58 +241,6 @@ public class AuxiliaryImageUtils {
   public static Callable<Boolean> createAuxiliaryImage(WitParams witParams) {
 
     return (() -> createAuxImageUsingWIT(witParams));
-  }
-
-  /**
-   * Check Configured JMS Resource.
-   *
-   * @param domainNamespace domain namespace
-   * @param adminServerPodName  admin server pod name
-   * @param adminSvcExtHost admin server external host
-   */
-  public static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
-                                               String adminSvcExtHost) {
-
-    LoggingFacade logger = getLogger();
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
-            "TestClusterJmsModule2", "200"),
-        logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "TestClusterJmsModule2");
-    logger.info("Found the JMSSystemResource configuration");
-  }
-
-  /**
-   * Check Configured JDBC Resource.
-   *
-   * @param domainNamespace domain namespace
-   * @param adminServerPodName  admin server pod name
-   * @param adminSvcExtHost admin server external host
-   */
-  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
-                                                String adminSvcExtHost) {
-    LoggingFacade logger = getLogger();
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-            "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
-        logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
-    logger.info("Found the DataResource configuration");
   }
 
   /**

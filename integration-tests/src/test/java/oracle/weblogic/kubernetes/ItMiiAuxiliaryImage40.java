@@ -68,6 +68,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResour
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -237,7 +239,7 @@ class ItMiiAuxiliaryImage40 {
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHostDomain1);
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
   }
 
   /**
@@ -395,7 +397,7 @@ class ItMiiAuxiliaryImage40 {
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHostDomain1);
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
     //check configuration for JDBC
     checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
 
@@ -420,33 +422,6 @@ class ItMiiAuxiliaryImage40 {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     // using the first image created in initAll, creating second image with different WDT version here
-    /*
-      // create stage dir for second auxiliary image with image2
-      Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
-      assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
-          "Delete directory failed");
-      assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
-          "Create directory failed");
-
-      // create models dir with no files at default locaiton
-      Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-      assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-
-      // unzip older release WDT installation file into work dir
-      unzipWDTInstallationFile(multipleAIPath2.toString(),
-          "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.19/weblogic-deploy.zip",
-          DOWNLOAD_DIR + "/image2");
-
-      // create image2 with model and wdt installation files
-      createAuxiliaryImage(multipleAIPath2.toString(),
-          Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage4);
-
-      // push image2 to repo for multi node cluster
-      if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-        logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-        dockerLoginAndPushImageToRegistry(miiAuxiliaryImage4);
-      }
-    */
 
     createPushAuxiliaryImageWithWDTInstallOnly(miiAuxiliaryImage4, "1.9.19");
 
@@ -512,39 +487,6 @@ class ItMiiAuxiliaryImage40 {
     final String domainUid = "domain3";
 
     // creating image with no WDT install files
-
-    /*
-    // create stage dir for auxiliary image
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage9");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
-        "Create directory failed");
-    Path multipleAIPathToFile1 =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage9/test.txt");
-    String content = "1";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
-        "Can't write to file " + multipleAIPathToFile1);
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage5);
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage5, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage5);
-    }
-
-    */
 
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
@@ -760,38 +702,6 @@ class ItMiiAuxiliaryImage40 {
     }
     OffsetDateTime timestamp = now();
 
-    /*
-
-    OffsetDateTime timestamp = now();
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2),
-        "Create directory failed");
-
-    // create models dir and copy model for image
-    Path modelsPath2 = Paths.get(errorpathAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2),
-        "Create directory failed");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath2.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING), "Copy files failed");
-
-    // create image with model and no wdt installation files
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(),
-        errorPathAuxiliaryImage2);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage2);
-    }
-    */
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -866,41 +776,7 @@ class ItMiiAuxiliaryImage40 {
     }
     final String auxiliaryImagePath = "/auxiliary";
     OffsetDateTime timestamp = now();
-    /*
-    OffsetDateTime timestamp = now();
 
-    final String auxiliaryImagePath = "/auxiliary";
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3),
-        "Create directory failed");
-
-    // create models dir and copy model for image
-    Path modelsPath3 = Paths.get(errorpathAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
-        "Create directory failed");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "model.jms2.yaml"),
-        Paths.get(modelsPath3.toString(), "model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy files failed");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath3.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath3.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage3);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage3);
-    }
-    */
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -1006,7 +882,7 @@ class ItMiiAuxiliaryImage40 {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't open '/aux/models/model-singleclusterdomain-sampleapp-wls.yaml: "
+    String expectedErrorMsg = "cp: can't open '/aux/models/multi-model-one-ds.20.yaml: "
         + "Permission denied";
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid2, errorpathDomainNamespace, expectedErrorMsg);
 
@@ -1256,37 +1132,16 @@ class ItMiiAuxiliaryImage40 {
     deleteImage(errorPathAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
   }
 
-  private static void checkConfiguredJMSresouce(String domainNamespace, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName("domain1-admin-server"), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "TestClusterJmsModule2");
-    logger.info("Found the JMSSystemResource configuration");
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
+    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JMSSystemResources", "TestClusterJmsModule2", "200");
   }
 
   private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-            "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
-    logger.info("Found the DataResource configuration");
+        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
   }
 
   private Domain createDomainResourceWithAuxiliaryImage40(

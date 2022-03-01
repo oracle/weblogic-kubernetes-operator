@@ -41,13 +41,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkConfiguredJDBCresouce;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkConfiguredJMSresouce;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -476,5 +476,33 @@ class ItMiiNewCreateAuxImage40 {
         deleteImage(miiAuxiliaryImage3);
       }
     }
+  }
+
+  /**
+   * Check Configured JMS Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                               String adminSvcExtHost) {
+    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JMSSystemResources", "TestClusterJmsModule2", "200");
+  }
+
+  /**
+   * Check Configured JDBC Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
+
+    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB");
   }
 }
