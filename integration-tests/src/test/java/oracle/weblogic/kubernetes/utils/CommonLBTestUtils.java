@@ -51,6 +51,8 @@ import oracle.weblogic.domain.ServerPod;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -82,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -177,12 +180,16 @@ public class CommonLBTestUtils {
 
       String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
       // check admin server pod is ready and service exists in domain namespace
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
 
       // check for managed server pods are ready and services exist in domain namespace
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
-        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+        checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(10, MINUTES).await(), managedServerPodName, domainUid, domainNamespace);
       }
 
       int serviceNodePort =
