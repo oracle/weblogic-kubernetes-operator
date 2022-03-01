@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
@@ -70,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodPhaseAndPodReady;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
@@ -656,7 +656,7 @@ class ItDiagnosticsFailedCondition {
         String managedServerName = managedServerPrefix + i + "-c1";
         logger.info("Checking managed server {0} has been shutdown in namespace {1}",
             managedServerName, domainNamespace);
-        checkServerStatus(domainName, managedServerName, "Running", "False");
+        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
       }
       testPassed = true;
     } finally {
@@ -665,10 +665,6 @@ class ItDiagnosticsFailedCondition {
       }
       deleteDomainResource(domainNamespace, domainName);
     }
-  }
-
-  private void checkServerStatus(String domainName, String serverName, String podPhase, String podReady) {
-    DomainUtils.checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, serverName, podPhase, podReady);
   }
 
   // Create a domain resource with a custom ConfigMap

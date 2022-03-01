@@ -940,6 +940,8 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
+        hasStatusForServer("server1").withPodReady("True").withPodPhase("Running"));
+    assertThat(getRecordedDomain(),
         hasStatusForServer("server2").withPodReady("True").withPodPhase("Running"));
   }
 

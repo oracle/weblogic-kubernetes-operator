@@ -158,12 +158,30 @@ public class PodHelper {
           .anyMatch(PodHelper::isReadyCondition);
   }
 
+  /**
+   * Get pod's Ready condition if the pod is in Running phase.
+   * @param pod pod
+   * @return V1PodCondition, if exists, otherwise null.
+   */
+  public static V1PodCondition getReadyCondition(V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus())
+        .filter(PodHelper::isRunning)
+        .map(V1PodStatus::getConditions)
+        .orElse(Collections.emptyList())
+        .stream()
+        .filter(PodHelper::isReadyNotTrueCondition).findFirst().orElse(null);
+  }
+
   private static boolean isRunning(@Nonnull V1PodStatus status) {
     return "Running".equals(status.getPhase());
   }
 
   private static boolean isReadyCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+  }
+
+  private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
+    return "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus());
   }
 
   /**

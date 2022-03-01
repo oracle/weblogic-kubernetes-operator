@@ -1177,18 +1177,28 @@ public class DomainStatusUpdater {
       }
 
       public boolean isNotReadyInTime(V1Pod pod) {
-        return !PodHelper.isReady(pod) && hasCreatedLongEnough(pod);
+        return !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
       }
 
-      private boolean hasCreatedLongEnough(V1Pod pod) {
-        LOGGER.info("XX hasCreatedLongEnough creationTime: {0}, max: {1}",
-            getCreationTimestamp(pod), getMaxReadyWaitTime(pod));
-        return SystemClock.now().isAfter(getCreationTimestamp(pod).plusSeconds(getMaxReadyWaitTime(pod)));
+      private boolean hasBeenUnreadyExceededWaitTime(V1Pod pod) {
+        OffsetDateTime creationTime = getCreationTimestamp(pod);
+        return SystemClock.now()
+            .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
+                .plusSeconds(getMaxReadyWaitTime(pod)));
+      }
+
+      private OffsetDateTime getLater(OffsetDateTime time1, OffsetDateTime time2) {
+        return time1.isAfter(time2) ? time1 : time2;
       }
 
       private OffsetDateTime getCreationTimestamp(V1Pod pod) {
         return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getCreationTimestamp)
-            .orElse(SystemClock.now().minusNanos(100L));
+            .orElse(SystemClock.now().minusNanos(10L));
+      }
+
+      private OffsetDateTime getReadyConditionLastTransitTimestamp(V1Pod pod, OffsetDateTime creationTime) {
+        return Optional.ofNullable(PodHelper.getReadyCondition(pod)).map(V1PodCondition::getLastTransitionTime)
+            .orElse(creationTime);
       }
 
       private long getMaxReadyWaitTime(V1Pod pod) {
