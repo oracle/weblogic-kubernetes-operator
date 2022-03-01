@@ -974,58 +974,6 @@ class ItMiiAuxiliaryImage40 {
       deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
 
-    /*
-    OffsetDateTime timestamp = now();
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
-        "Can't delete directory");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
-        "Can't create directory");
-
-    // create models dir and copy model for image
-    Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1),
-        "Can't create directory");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING),
-        "Can't copy files");
-
-    Path errorpathAIPathToFile =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4/models/test1.properties");
-    String content = "some=text ";
-    assertDoesNotThrow(() -> Files.write(errorpathAIPathToFile, content.getBytes()),
-        "Can't write to file " + errorpathAIPathToFile);
-
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING), "Can't copy files");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath1.toString());
-
-    // create image with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "/negative/Dockerfile").toString(), errorPathAuxiliaryImage4);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage4);
-    }
-
-    */
     OffsetDateTime timestamp = now();
 
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -1043,13 +991,10 @@ class ItMiiAuxiliaryImage40 {
             .additionalBuildCommands(RESOURCE_DIR + "/auxiliaryimage/addBuildCommand.txt");
     createAndPushAuxiliaryImage(errorPathAuxiliaryImage4, witParams);
 
-    // admin/managed server name here should match with model yaml
-
-
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid2, errorPathAuxiliaryImage4);
-    Domain domainCR = createDomainResource40(domainUid2, domainNamespace,
+    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
@@ -1120,75 +1065,6 @@ class ItMiiAuxiliaryImage40 {
     createSecretWithUsernamePassword(encryptionSecretName, wdtDomainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for first auxiliary image containing domain configuration
-    /*
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
-        "Failed to create directory");
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
-        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
-
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
-
-    // create image1 with domain configuration only
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage9);
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage9, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage9);
-    }
-
-    // create stage dir for second auxiliary image
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2), "Create directory failed");
-
-    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2), "Create directory failed");
-
-    // unzip older version WDT installation file into work dir
-    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-"
-        + WDT_TEST_VERSION + "/"
-        + WDT_DOWNLOAD_FILENAME_DEFAULT;
-    unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL,
-        DOWNLOAD_DIR + "/ver" + WDT_TEST_VERSION);
-
-    // create image2 with wdt installation files only
-    createAuxiliaryImage(multipleAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage10);
-
-    // push image2 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage10, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage10);
-    }
-
-   */
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -1218,32 +1094,6 @@ class ItMiiAuxiliaryImage40 {
             .modelImageTag(MII_BASIC_IMAGE_TAG)
             .wdtVersion("latest");
     createAndPushAuxiliaryImage(miiAuxiliaryImage11, witParams);
-
-    /*
-    Path multipleAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3),
-        "Create directory failed");
-
-    Path modelsPath3 = Paths.get(multipleAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
-        "Create directory failed");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(multipleAIPath3.toString());
-
-    // create image3 with newest version of wdt installation files
-    createAuxiliaryImage(multipleAIPath3.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage11);
-
-    // push image3 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage6, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage11);
-    }
-
-     */
 
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
