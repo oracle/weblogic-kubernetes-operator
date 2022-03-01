@@ -499,6 +499,9 @@ Return true if there's an existing webhook deployment and chart version is less 
 {{- define "utils.verifyExistingWebhookDeployment" -}}
 {{- $chartVersion := index . 0 -}}
 {{- range $deployment := (lookup "apps/v1" "Deployment" "" "").items }}
+{{-   if not $deployment.metadata.labels }}
+{{-    $ignore := set $deployment.metadata "labels" (dict) }}
+{{-   end }}
 {{-   if and (eq $deployment.metadata.name "weblogic-operator-webhook") (hasKey $deployment.metadata.labels "weblogic.webhookVersion") }}
 {{      $webhookVersion := get $deployment.metadata.labels "weblogic.webhookVersion" }}
 {{-     if le $chartVersion $webhookVersion }}
