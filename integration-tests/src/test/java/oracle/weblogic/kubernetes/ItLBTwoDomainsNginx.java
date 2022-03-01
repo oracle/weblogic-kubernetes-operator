@@ -225,7 +225,7 @@ class ItLBTwoDomainsNginx {
   private static void createNginxIngressHostRoutingForTwoDomains(String ingressClassName, boolean isTLS) {
     // create an ingress in domain namespace
     String ingressName;
-    
+
     if (isTLS) {
       ingressName = domainNamespace + "-nginx-tls";
     } else {

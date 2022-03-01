@@ -680,7 +680,7 @@ public class LoadBalancerUtils {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressTraefikClass = "traefik";
+    final String ingressTraefikClass = null;
     String ingressName = domainUid + "-" + ingressTraefikClass;
 
     List<String> ingressHostList =
