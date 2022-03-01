@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -218,6 +219,37 @@ public class K8sEvents {
   }
 
   /**
+   * Get matching event object with specific reason and type.
+   * @param domainNamespace namespace in which the event is logged
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
+  public static List<CoreV1Event> getEvents(String domainNamespace,
+                                            String reason,
+                                            String type,
+                                            OffsetDateTime timestamp) {
+
+    List<CoreV1Event> events = new ArrayList<>();
+
+    try {
+      List<CoreV1Event> allEvents = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : allEvents) {
+        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          if (event.getType().equals(type)) {
+            events.add(event);
+          }
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return events;
+  }
+
+  /**
    * Check if a given event is logged by the operator.
    *
    * @param opNamespace namespace in which the operator is running
@@ -337,17 +369,13 @@ public class K8sEvents {
   /**
    * Check the domain event contains the expected error msg.
    *
-   * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
-   * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
    * @param expectedMsg the expected message in the domain event message
    */
-  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
-                                                         String domainNamespace,
-                                                         String domainUid,
+  public static void checkDomainEventContainsExpectedMsg(String domainNamespace,
                                                          String reason,
                                                          String type,
                                                          OffsetDateTime timestamp,
@@ -360,21 +388,16 @@ public class K8sEvents {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, reason,
-            type, timestamp, expectedMsg));
+        .until(domainEventContainsExpectedMsg(domainNamespace, reason, type, timestamp, expectedMsg));
   }
 
-  private static Callable<Boolean> domainEventContainsExpectedMsg(String opNamespace,
-                                                                  String domainNamespace,
-                                                                  String domainUid,
+  private static Callable<Boolean> domainEventContainsExpectedMsg(String domainNamespace,
                                                                   String reason,
                                                                   String type,
                                                                   OffsetDateTime timestamp,
                                                                   String expectedMsg) {
     return () -> {
-      if (domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp)) {
-        CoreV1Event event =
-            getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+      for (CoreV1Event event : getEvents(domainNamespace, reason, type, timestamp)) {
         if (event != null && event.getMessage() != null && event.getMessage().contains(expectedMsg)) {
           return true;
         }
