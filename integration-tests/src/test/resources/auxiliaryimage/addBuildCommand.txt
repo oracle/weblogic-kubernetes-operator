@@ -8,3 +8,4 @@ RUN if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi
  && if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi \
  && if [ -z "$(grep ^tester: /etc/passwd)" ]; then adduser -D -G tester tester || exit 1 ; fi
 COPY --chown=tester:tester ./model-singleclusterdomain-sampleapp-wls.yaml /auxiliary/models
+USER oracle
