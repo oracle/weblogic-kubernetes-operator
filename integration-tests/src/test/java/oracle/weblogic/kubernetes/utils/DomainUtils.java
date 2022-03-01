@@ -981,5 +981,4 @@ public class DomainUtils {
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
     }
   }
->>>>>>> origin/main
 }
