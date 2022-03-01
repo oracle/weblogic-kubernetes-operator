@@ -274,7 +274,6 @@ class ItLBTwoDomainsNginx {
     assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, null,
         ingressClassName, ingressRules, (isTLS ? tlsList : null)));
 
-
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
         .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
