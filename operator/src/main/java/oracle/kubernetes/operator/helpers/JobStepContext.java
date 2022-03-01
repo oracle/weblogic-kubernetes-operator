@@ -370,6 +370,7 @@ public class JobStepContext extends BasePodStepContext {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(cl -> addInitContainers(initContainers, cl));
     initContainers.addAll(getAdditionalInitContainers().stream()
+            .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
             .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
@@ -381,10 +382,11 @@ public class JobStepContext extends BasePodStepContext {
 
   protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    getEnvironmentVariables(tuningParameters).stream()
-            .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
-            .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+      Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+      getEnvironmentVariables(tuningParameters).stream()
+              .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+    }
     return initContainerEnvVars;
   }
 

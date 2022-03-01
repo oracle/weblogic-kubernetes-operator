@@ -22,12 +22,6 @@ else
   DEBUG=""
 fi
 
-# start logstash
-
-# set up a logging.properties file that has a FileHandler in it, and have it
-# write to /logs/operator.log
-LOGGING_CONFIG="/operator/logstash.properties"
-
 # if the java logging level has been customized and is a valid value, update logstash.properties to match
 if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
   SEVERE="SEVERE"
@@ -52,12 +46,6 @@ fi
 
 sed -i -e "s|JAVA_LOGGING_MAXSIZE|${JAVA_LOGGING_MAXSIZE:-20000000}|g" $LOGGING_CONFIG
 sed -i -e "s|JAVA_LOGGING_COUNT|${JAVA_LOGGING_COUNT:-10}|g" $LOGGING_CONFIG
-
-LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
-mkdir -m 777 -p /logs
-cp /operator/logstash.conf /logs/logstash.conf
-# assumption is that we have mounted a volume on /logs which is also visible to
-# the logstash container/pod.
 
 # Container memory optimization flags
 HEAP="-XshowSettings:vm"

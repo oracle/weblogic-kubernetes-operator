@@ -491,3 +491,19 @@ Verify that a Kubernetes resource exists in a given namespace
 {{-   end -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/*
+Return true if there's an existing webhook deployment and chart version is less than or equal to the exsiting webhook version.
+*/}}
+{{- define "utils.verifyExistingWebhookDeployment" -}}
+{{- $chartVersion := index . 0 -}}
+{{- range $deployment := (lookup "apps/v1" "Deployment" "" "").items }}
+{{-   if and (eq $deployment.metadata.name "weblogic-operator-webhook") (hasKey $deployment.metadata.labels "weblogic.webhookVersion") }}
+{{      $webhookVersion := get $deployment.metadata.labels "weblogic.webhookVersion" }}
+{{-     if le $chartVersion $webhookVersion }}
+{{-       print "true" }}
+{{-     end -}}
+{{-   end  -}}
+{{- end -}}
+{{- end -}}

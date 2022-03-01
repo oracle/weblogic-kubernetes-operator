@@ -8,14 +8,13 @@ import java.util.List;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class ConversionResponse {
 
   @Expose
   private String uid;
   @Expose
-  private List<Domain> convertedObjects = new ArrayList<Domain>();
+  private List<Object> convertedObjects = new ArrayList<>();
   @Expose
   private Result result;
 
@@ -36,11 +35,11 @@ public class ConversionResponse {
     return convertedObjects;
   }
 
-  public void setConvertedObjects(List<Domain> convertedObjects) {
+  public void setConvertedObjects(List<Object> convertedObjects) {
     this.convertedObjects = convertedObjects;
   }
 
-  public ConversionResponse convertedObjects(List<Domain> convertedObjects) {
+  public ConversionResponse convertedObjects(List<Object> convertedObjects) {
     this.convertedObjects = convertedObjects;
     return this;
   }

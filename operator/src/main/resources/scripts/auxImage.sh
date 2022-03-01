@@ -34,13 +34,13 @@ checkEnv AUXILIARY_IMAGE_TARGET_PATH AUXILIARY_IMAGE_CONTAINER_NAME || exit 1
 
 echo "DEBUG: First argument is $1"
 
-if [ -z "$1" ]; then
+if [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "operator-aux-container"* ]]; then
   initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
   cat /tmp/auxiliaryImage.out
 
   mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
   cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
-elif [ "$1" == "webhook_generated" ]; then
+elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compatibility-mode-operator-aux-container"* ]]; then
   initContainerAuxiliaryImages > /tmp/initContainerAuxImages.out 2>&1
   cat /tmp/initContainerAuxImages.out
 

@@ -421,11 +421,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
-  public DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    getDomainSpec().setAuxiliaryImageVolumes(auxiliaryImageVolumes);
-    return this;
-  }
-
   private Configuration getOrCreateConfiguration() {
     DomainSpec spec = getDomainSpec();
     if (spec.getConfiguration() == null) {

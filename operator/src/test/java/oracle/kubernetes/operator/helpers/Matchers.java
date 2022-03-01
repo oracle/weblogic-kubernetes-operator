@@ -26,6 +26,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
@@ -141,7 +142,7 @@ public class Matchers {
   private static V1Container createAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
                                                                String sourceWDTInstallHome, String sourceModelHome) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
-        .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
+        .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
         .volumeMounts(Arrays.asList(
             new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                 .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -150,13 +151,15 @@ public class Matchers {
   }
 
   private static V1Container createLegacyAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
-                                                               String command, String volumeName, String serverName) {
+                                                                     String command, String volumeName,
+                                                                     String serverName) {
     List<V1EnvVar> env = PodHelperTestBase.getLegacyAuxiliaryImageEnvVariables(image, name, command);
-    Optional.ofNullable(serverName).ifPresent(s -> env.addAll(PodHelperTestBase.getPredefinedEnvVariables(s)));
-    return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
-            .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT, "webhook_generated")).args(null)
+    //Optional.ofNullable(serverName).ifPresent(s -> env.addAll(PodHelperTestBase.getPredefinedEnvVariables(s)));
+    return new V1Container().name(COMPATIBILITY_MODE + name).image(image).imagePullPolicy(imagePullPolicy)
+            .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
+            .args(null)
             .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
+                    new V1VolumeMount().name(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
             .env(env);

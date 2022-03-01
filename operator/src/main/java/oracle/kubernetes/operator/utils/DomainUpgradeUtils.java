@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
@@ -20,41 +23,34 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Volume;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ConversionRequest;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.GsonOffsetDateTime;
 import oracle.kubernetes.operator.rest.model.Result;
-import oracle.kubernetes.weblogic.domain.model.AdminServer;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
-import oracle.kubernetes.weblogic.domain.model.BaseConfiguration;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import oracle.kubernetes.weblogic.domain.model.ServerPod;
 import org.jetbrains.annotations.NotNull;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 
+@SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
 public class DomainUpgradeUtils {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private Domain domain;
-  private int containerIndex = 0;
+  public static final String DESIRED_API_VERSION = "weblogic.oracle/v9";
+  private volatile int containerIndex = 0;
 
   public ConversionReviewModel readConversionReview(String resourceName) {
     return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
@@ -66,11 +62,11 @@ public class DomainUpgradeUtils {
    * @return ConversionResponse The response to the conversion request.
    */
   public ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
-    List<Domain> convertedDomains = new ArrayList<>();
+    List<Object> convertedDomains = new ArrayList<>();
+
     conversionRequest.getObjects()
             .forEach(domain -> convertedDomains.add(
-                    convertDomain(domain)
-                            .withApiVersion(conversionRequest.getDesiredAPIVersion())));
+                    convertDomain((Map<String,Object>) domain, conversionRequest.getDesiredAPIVersion())));
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())
@@ -87,179 +83,263 @@ public class DomainUpgradeUtils {
    * @param domain Domain to be converted.
    * @return Domain The converted domain.
    */
-  public Domain convertDomain(Domain domain) {
-    this.domain = domain;
-    addAuxiliaryImages(getSpec());
-    addAuxiliaryImages(getAdminServer());
-    getClusters().forEach(this::addAuxiliaryImages);
-    getManagedServers().forEach(this::addAuxiliaryImages);
+  public Object convertDomain(Map<String, Object> domain, String desiredAPIVersion) {
+    Map<String, Object> spec = getSpec(domain);
+    if (spec == null) {
+      return domain;
+    }
+    LOGGER.info("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
 
+    Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
+    Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
+    List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
+    convertAuxiliaryImages(spec, auxiliaryImageVolumes);
+    Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+            convertAuxiliaryImages((Map<String, Object>) cluster, auxiliaryImageVolumes)));
+    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+            convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
+    spec.remove("auxiliaryImageVolumes");
+    domain.put("apiVersion", desiredAPIVersion);
+    LOGGER.info("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
   }
 
-  private void addAuxiliaryImages(BaseConfiguration spec) {
-    Optional.ofNullable(spec).map(BaseConfiguration::getServerPod)
-            .map(ServerPod::getAuxiliaryImages)
-            .ifPresent(ais -> addInitContainersVolumeAndMounts(ais, spec.getServerPod()));
+  /**
+   * Convert the domain to desired API version.
+   * @param domainYaml Domain yaml to be converted.
+   * @return Domain String containing the converted domain yaml.
+   */
+  public String convertDomain(String domainYaml) {
+    return convertDomain(domainYaml, DESIRED_API_VERSION);
   }
 
-  @NotNull
-  DomainSpec getSpec() {
-    return domain.getSpec();
+  /**
+   * Convert the domain to desired API version.
+   * @param domainYaml Domain yaml to be converted.
+   * @param desiredApiVersion Desired API version.
+   * @return Domain String containing the domain yaml.
+   */
+  public String convertDomain(String domainYaml, String desiredApiVersion) {
+    DumperOptions options = new DumperOptions();
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+    options.setPrettyFlow(true);
+    Yaml yaml = new Yaml(options);
+    Object domain = yaml.load(domainYaml);
+    return yaml.dump(convertDomain((Map<String, Object>) domain, desiredApiVersion));
   }
 
-  private AdminServer getAdminServer() {
-    return getSpec().getAdminServer();
+  private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
+    return (List<Object>) spec.get("auxiliaryImageVolumes");
   }
 
-  private List<Cluster> getClusters() {
-    return getSpec().getClusters();
+  private Map<String, Object> getAdminServer(Map<String, Object> spec) {
+    return (Map<String, Object>) spec.get("adminServer");
   }
 
-  private List<ManagedServer> getManagedServers() {
-    return getSpec().getManagedServers();
+  private List<Object> getClusters(Map<String, Object> spec) {
+    return (List<Object>) spec.get("clusters");
   }
 
-  private void addInitContainersVolumeAndMounts(List<AuxiliaryImage> auxiliaryImages, ServerPod serverPod) {
-    addEmptyDirVolume(serverPod, getAuxiliaryImageVolumes());
-    for (int idx = 0; idx < auxiliaryImages.size(); idx++) {
-      serverPod.addInitContainer(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), containerIndex,
-              getAuxiliaryImageVolumes()));
+  private List<Object> getManagedServers(Map<String, Object> spec) {
+    return (List<Object>) spec.get("managedServers");
+  }
+
+  private void convertAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes) {
+    Map<String, Object> serverPod = getServerPod(spec);
+    Optional.ofNullable(serverPod).map(sp -> getAuxiliaryImages(sp)).ifPresent(auxiliaryImages ->
+            addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes));
+    Optional.ofNullable(serverPod).ifPresent(cs -> cs.remove("auxiliaryImages"));
+  }
+
+  private List<Object> getAuxiliaryImages(Map<String, Object> serverPod) {
+    return (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.get("auxiliaryImages"))).orElse(null);
+  }
+
+  private Map<String, Object> getServerPod(Map<String, Object> spec) {
+    return (Map<String, Object>) Optional.ofNullable(spec).map(s -> s.get("serverPod")).orElse(null);
+  }
+
+  Map<String, Object> getSpec(Map<String, Object> domain) {
+    return (Map<String, Object>)domain.get("spec");
+  }
+
+  private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
+                                                                         List<Object> auxiliaryImageVolumes) {
+    addEmptyDirVolume(serverPod, auxiliaryImageVolumes);
+    List<Object> initContainers = new ArrayList<>();
+    for (Object auxiliaryImage : auxiliaryImages) {
+      initContainers.add(createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage, containerIndex,
+              auxiliaryImageVolumes));
       containerIndex++;
     }
-
-    auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, ai, getAuxiliaryImageVolumes()));
-    addAuxiliaryImageEnv(auxiliaryImages, serverPod);
+    serverPod.put("initContainers", initContainers);
+    auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, (Map<String, Object>)ai, auxiliaryImageVolumes));
+    addAuxiliaryImageEnv(auxiliaryImages, serverPod, auxiliaryImageVolumes);
   }
 
-  private List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
-    return getSpec().getAuxiliaryImageVolumes();
-  }
-
-  private void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImages, ServerPod serverPod) {
+  private void addAuxiliaryImageEnv(List<Object> auxiliaryImages, Map<String, Object> serverPod,
+                                    List<Object> auxiliaryImageVolumes) {
+//    List<Object> vars = new ArrayList<>();
+//    Optional.ofNullable(auxiliaryImages).flatMap(ais ->
+//            Optional.ofNullable(getAuxiliaryImagePaths(ais, auxiliaryImageVolumes)))
+//            .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
+//    vars.addAll(Optional.ofNullable((List<Object>)serverPod.get("env")).orElse(new ArrayList<>()));
+//    serverPod.put("env", vars);
+    List<Object> vars = Optional.ofNullable((List<Object>)serverPod.get("env")).orElse(new ArrayList<>());
     Optional.ofNullable(auxiliaryImages).flatMap(ais ->
-            Optional.ofNullable(getAuxiliaryImagePaths(ais, getAuxiliaryImageVolumes())))
-            .ifPresent(c -> addEnvVar(serverPod.getEnv(), AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
+            Optional.ofNullable(getAuxiliaryImagePaths(ais, auxiliaryImageVolumes)))
+            .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
+    serverPod.put("env", vars);
   }
 
-  private String getAuxiliaryImagePaths(List<AuxiliaryImage> auxiliaryImages,
-                                 List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private String getAuxiliaryImagePaths(List<Object> auxiliaryImages,
+                                 List<Object> auxiliaryImageVolumes) {
     return Optional.ofNullable(auxiliaryImages).map(
           aiList -> createauxiliaryImagePathsEnv(aiList, auxiliaryImageVolumes)).orElse(null);
   }
 
-  private String createauxiliaryImagePathsEnv(List<AuxiliaryImage> auxiliaryImages,
-                                     List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private String createauxiliaryImagePathsEnv(List<Object> auxiliaryImages, List<Object> auxiliaryImageVolumes) {
     StringJoiner auxiliaryImagePaths = new StringJoiner(",","","");
     auxiliaryImages.forEach(auxiliaryImage -> auxiliaryImagePaths.add(
-          getMountPath(auxiliaryImage, auxiliaryImageVolumes)));
+          getMountPath((Map<String,Object>)auxiliaryImage, auxiliaryImageVolumes)));
     return Arrays.stream(auxiliaryImagePaths.toString().split(Pattern.quote(","))).distinct()
           .filter(st -> !st.isEmpty()).collect(Collectors.joining(","));
   }
 
-  private void addEmptyDirVolume(ServerPod serverPod, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private void addEmptyDirVolume(Map<String,Object> serverPod, List<Object> auxiliaryImageVolumes) {
     Optional.ofNullable(auxiliaryImageVolumes).ifPresent(volumes -> volumes.forEach(auxiliaryImageVolume ->
-          addVolumeIfMissing(serverPod, auxiliaryImageVolume)));
+          addVolumeIfMissing(serverPod, (Map<String, Object>)auxiliaryImageVolume)));
   }
 
-  private void addVolumeIfMissing(ServerPod serverPod, AuxiliaryImageVolume auxiliaryImageVolume) {
-    if (Optional.ofNullable(serverPod.getVolumes()).map(volumes -> volumes.stream().noneMatch(
-          volume -> podHasMatchingVolumeName(volume, auxiliaryImageVolume))).orElse(true)) {
-      serverPod.setVolumes(Arrays.asList(createEmptyDirVolume(auxiliaryImageVolume)));
+  private void addVolumeIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImageVolume) {
+    List<Object> existingVolumes = Optional.ofNullable((List<Object>)serverPod.get("volumes"))
+            .orElse(new ArrayList<>());
+    if (Optional.of(existingVolumes).map(volumes -> (volumes).stream().noneMatch(
+          volume -> podHasMatchingVolumeName((Map<String, Object>)volume, auxiliaryImageVolume))).orElse(true)) {
+      existingVolumes.addAll(Collections.singletonList(createEmptyDirVolume(auxiliaryImageVolume)));
     }
+    serverPod.put("volumes", existingVolumes);
   }
 
-  private boolean podHasMatchingVolumeName(V1Volume volume, AuxiliaryImageVolume auxiliaryImageVolume) {
-    return volume.getName().equals(auxiliaryImageVolume.getName());
+  private boolean podHasMatchingVolumeName(Map<String, Object> volume, Map<String, Object> auxiliaryImageVolume) {
+    return (volume.get("name")).equals(auxiliaryImageVolume.get("name"));
   }
 
-  private V1Volume createEmptyDirVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
-    V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
-    Optional.ofNullable(auxiliaryImageVolume.getMedium()).ifPresent(emptyDirVolumeSource::medium);
-    Optional.ofNullable(auxiliaryImageVolume.getSizeLimit())
-          .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
-    return new V1Volume()
-          .name(getDNS1123auxiliaryImageVolumeName(auxiliaryImageVolume.getName())).emptyDir(emptyDirVolumeSource);
+  private Map<String,Object> createEmptyDirVolume(Map<String, Object> auxiliaryImageVolume) {
+    Map<String, Object> emptyDirVolumeSource = new LinkedHashMap<>();
+    Optional.ofNullable(auxiliaryImageVolume.get("medium")).ifPresent(m -> emptyDirVolumeSource.put("medium", m));
+    Optional.ofNullable(auxiliaryImageVolume.get("sizeLimit"))
+          .ifPresent(sl -> emptyDirVolumeSource.put("sizeLimit", sl));
+    Map<String, Object> emptyDirVolume = new LinkedHashMap<>();
+    emptyDirVolume.put("name", getDNS1123auxiliaryImageVolumeName(auxiliaryImageVolume.get("name")));
+    emptyDirVolume.put("emptyDir", emptyDirVolumeSource);
+    return emptyDirVolume;
   }
 
-  private void addVolumeMountIfMissing(ServerPod serverPod, AuxiliaryImage auxiliaryImage, String mountPath) {
-    if (Optional.ofNullable(serverPod.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
+  private void addVolumeMountIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
+                                       String mountPath) {
+    if (Optional.ofNullable(serverPod.get("volumeMounts")).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
           volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
-      serverPod.setVolumeMounts(Arrays.asList(new V1VolumeMount().name(
-              getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume())).mountPath(mountPath)));
+      serverPod.put("volumeMounts", Collections.singletonList(getVolumeMount(auxiliaryImage, mountPath)));
     }
   }
 
-  private boolean hasMatchingVolumeMountName(V1VolumeMount volumeMount, AuxiliaryImage auxiliaryImage) {
-    return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()).equals(volumeMount.getName());
+  private Object getVolumeMount(Map auxiliaryImage, String mountPath) {
+    Map<String, String> volumeMount = new LinkedHashMap<>();
+    volumeMount.put("name", getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get("volume")));
+    volumeMount.put("mountPath", mountPath);
+    return volumeMount;
   }
 
-  public static String getDNS1123auxiliaryImageVolumeName(String name) {
-    return toDns1123LegalName(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
+  private Map<String, String> getScriptsVolumeMount() {
+    Map<String, String> volumeMount = new LinkedHashMap<>();
+    volumeMount.put("name", oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME);
+    volumeMount.put("mountPath", oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH);
+    return volumeMount;
   }
 
-  private void addVolumeMount(ServerPod serverPod, AuxiliaryImage auxiliaryImage,
-                           List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private boolean hasMatchingVolumeMountName(Object volumeMount, Map<String, Object> auxiliaryImage) {
+    return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get("volume")).equals(((Map)volumeMount).get("name"));
+  }
+
+  public static String getDNS1123auxiliaryImageVolumeName(Object name) {
+    return toDns1123LegalName(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
+  }
+
+  private void addVolumeMount(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
+                           List<Object> auxiliaryImageVolumes) {
     Optional.ofNullable(getMountPath(auxiliaryImage,
           auxiliaryImageVolumes)).ifPresent(mountPath ->
           addVolumeMountIfMissing(serverPod, auxiliaryImage, mountPath));
   }
 
 
-  private String getMountPath(AuxiliaryImage auxiliaryImage, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private String getMountPath(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes) {
     return auxiliaryImageVolumes.stream().filter(
-          auxiliaryImageVolume -> hasMatchingVolumeName(auxiliaryImageVolume, auxiliaryImage)).findFirst()
-          .map(AuxiliaryImageVolume::getMountPath).orElse(null);
+          auxiliaryImageVolume -> hasMatchingVolumeName((Map)auxiliaryImageVolume, auxiliaryImage)).findFirst()
+          .map(aiv -> (String)((Map<String, Object>) aiv).get("mountPath")).orElse(null);
   }
 
-  private boolean hasMatchingVolumeName(AuxiliaryImageVolume auxiliaryImageVolume,
-                                 AuxiliaryImage auxiliaryImage) {
-    return Optional.ofNullable(auxiliaryImage.getVolume())
-            .map(v -> v.equals(auxiliaryImageVolume.getName())).orElse(false);
+  private boolean hasMatchingVolumeName(Map<String, Object> auxiliaryImageVolume, Map<String, Object> auxiliaryImage) {
+    return Optional.ofNullable(auxiliaryImage.get("volume"))
+            .map(v -> v.equals(auxiliaryImageVolume.get("name"))).orElse(false);
   }
 
-  private V1Container createInitContainerForAuxiliaryImage(AuxiliaryImage auxiliaryImage, int index,
-                                              List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    return new V1Container().name(getName(index))
-          .image(auxiliaryImage.getImage())
-          .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
-          .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT, "webhook_generated"))
-          .env(createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)))
-          .volumeMounts(Arrays.asList(
-                new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
-                    .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
-                new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
+  private Map<String, Object> createInitContainerForAuxiliaryImage(Map<String, Object> auxiliaryImage, int index,
+                                                   List<Object> auxiliaryImageVolumes) {
+    Map<String, Object> container = new LinkedHashMap<>();
+    container.put("name", COMPATIBILITY_MODE + getName(index));
+    container.put("image", auxiliaryImage.get("image"));
+    //container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT, "webhook_generated"));
+    container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
+    container.put("imagePullPolicy", getImagePullPolicy(auxiliaryImage));
+    container.put("env", createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)));
+    container.put("volumeMounts", Arrays.asList(getVolumeMount(auxiliaryImage, AUXILIARY_IMAGE_TARGET_PATH),
+            getScriptsVolumeMount()));
+    return container;
   }
 
-  private List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage,
-                              List<AuxiliaryImageVolume> auxiliaryImageVolumes, String name) {
-    List<V1EnvVar> vars = new ArrayList<>();
+  private Object getImagePullPolicy(Map<String, Object> auxiliaryImage) {
+    return Optional.ofNullable(auxiliaryImage.get("imagePullPolicy")).orElse(
+            KubernetesUtils.getInferredImagePullPolicy((String) auxiliaryImage.get("image")));
+  }
+
+  private List<Object> createEnv(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes, String name) {
+    List<Object> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, getMountPath(auxiliaryImage, auxiliaryImageVolumes));
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, auxiliaryImage.getCommand());
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, auxiliaryImage.getImage());
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name);
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, getCommand(auxiliaryImage));
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, (String)auxiliaryImage.get("image"));
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name);
     return vars;
+  }
+
+  private String getCommand(Map<String, Object> auxiliaryImage) {
+    return Optional.ofNullable((String) auxiliaryImage.get("command"))
+            .orElse(AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
   private String getName(int index) {
     return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  private void addEnvVar(List<V1EnvVar> vars, String name, String value) {
-    vars.add(new V1EnvVar().name(name).value(value));
+  private void addEnvVar(List<Object> vars, String name, String value) {
+    Map<String, String> envVar = new LinkedHashMap<>();
+    envVar.put("name", name);
+    envVar.put("value", value);
+    vars.add(envVar);
   }
 
   @NotNull
   Gson getGsonBuilder() {
     return new GsonBuilder()
             .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            //.registerTypeHierarchyAdapter(byte[].class, new GsonByteArrayToBase64())
             .create();
   }
 
   public Domain readDomain(String resourceName) throws IOException {
-    return readDomain(resourceName, true);
+    return readDomain(resourceName, false);
   }
 
   public Domain readDomain(String resourceName, boolean isFile) throws IOException {
@@ -280,13 +360,17 @@ public class DomainUpgradeUtils {
     return jsonWriter.writeValueAsString(obj);
   }
 
-  public void writeDomain(Domain domain, String resourceName) throws IOException {
-    writeDomain(domain, resourceName, true);
+  public String writeDomain(Domain domain) throws IOException {
+    return writeDomain(domain, null, false);
   }
 
-  public void writeDomain(Domain domain, String resourceName, boolean toFile) throws IOException {
+  public String writeDomain(Domain domain, String resourceName) throws IOException {
+    return writeDomain(domain, resourceName, true);
+  }
+
+  public String writeDomain(Domain domain, String resourceName, boolean toFile) throws IOException {
     String jsonInString = getGsonBuilder().toJson(domain);
-    jsonToYaml(resourceName, jsonInString, toFile);
+    return jsonToYaml(resourceName, jsonInString, toFile);
   }
 
   private String jsonToYaml(String resourceName, String jsonString, boolean toFile) throws IOException {

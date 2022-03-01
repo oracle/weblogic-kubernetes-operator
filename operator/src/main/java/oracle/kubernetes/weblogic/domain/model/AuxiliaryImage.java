@@ -8,7 +8,6 @@ import java.util.Optional;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -19,7 +18,7 @@ public class AuxiliaryImage {
 
   public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";
   public static final String AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME = "aux-image-internal-volume";
-  public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "operator-internal-volume-";
+  public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "aux-image-volume-";
   public static final String AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/auxImage.sh";
   public static final String AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX = "operator-aux-container";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
@@ -55,12 +54,6 @@ public class AuxiliaryImage {
           + "location, then the source directory is ignored. If specifying multiple auxiliary images with model files "
           + "in their respective `sourceModelHome` directories, then model files are merged.")
   private String sourceModelHome;
-
-  @Feature("Disabled")
-  private String volume;
-
-  @Feature("Disabled")
-  private String command;
 
   public String getImage() {
     return image;
@@ -117,33 +110,6 @@ public class AuxiliaryImage {
 
   public AuxiliaryImage sourceModelHome(String sourceModelHome) {
     this.sourceModelHome = sourceModelHome;
-    return this;
-  }
-
-  public String getVolume() {
-    return volume;
-  }
-
-  public void setVolume(String volume) {
-    this.volume = volume;
-  }
-
-  public AuxiliaryImage volume(String volume) {
-    this.volume = volume;
-    return this;
-  }
-
-  public String getCommand() {
-    return Optional.ofNullable(command)
-            .orElse(AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
-  }
-
-  public void setCommand(String command) {
-    this.command = command;
-  }
-
-  public AuxiliaryImage command(String command) {
-    this.command = command;
     return this;
   }
 

@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 public class ConversionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
+  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
 
   /** Construct a ConversionWebhookResource. */
   public ConversionWebhookResource() {

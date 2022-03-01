@@ -159,6 +159,12 @@ javaLoggingFileCount: 10
 # the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 # for more information on node selectors.
 #nodeSelector:
+ 
+# webhookOnly - Only install the webhook and skip deploying the operator.
+webhookOnly: false
+ 
+# preserveWebhook - Preserve the previous deployment of webhook.
+preserveWebhook: false
 
 # affinity specifies a set of matching rules related to the presence of other workloads that the Kubernetes scheduler
 # will use when selecting the node where the operator will run. If the affinity value is specified, then this content
@@ -197,6 +203,8 @@ externalDebugHttpPort: 30999
 # This parameter is required if 'remoteDebugNodePortEnabled' is true.
 # Otherwise, it is ignored.
 internalWebhookDebugHttpPort: 31999
+
+internalDeleteWebhookDebugHttpPort: 32999
 
 # externalDebugHttpPort specifies the node port that should be allocated for the operator's
 # Java remote debug interface.

@@ -35,7 +35,9 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -462,10 +464,10 @@ public class ServerPod extends KubernetesResource {
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
-      addIfMissing(var);
+      addIfMissing(new V1VolumeBuilder(var).build());
     }
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
-      addIfMissing(var);
+      addIfMissing(new V1VolumeMountBuilder(var).build());
     }
     for (V1Container c : serverPod1.getInitContainers()) {
       addInitContainerIfMissing(createWithEnvCopy(c));

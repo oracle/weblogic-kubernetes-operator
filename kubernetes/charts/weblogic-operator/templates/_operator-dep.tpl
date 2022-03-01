@@ -3,6 +3,7 @@
 
 {{- define "operator.operatorDeployment" }}
 ---
+{{- if not .webhookOnly }}
 apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
@@ -158,136 +159,149 @@ spec:
           - key: logstash.conf
             path: logstash.conf
       {{- end }}
+{{- end }}
 ---
-apiVersion: "apps/v1"
-kind: "Deployment"
-metadata:
-  name: "weblogic-operator-webhook"
-  namespace: {{ .Release.Namespace | quote }}
-  labels:
-    weblogic.operatorName: {{ .Release.Namespace | quote }}
-spec:
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      weblogic.operatorName: {{ .Release.Namespace | quote }}
-  replicas: 1
-  template:
+  {{ $chartVersion := .Chart.Version }}
+  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
+  {{- if or (ne $webhookExists "true") (.recreateWebhook) }}
+    # webhook does not exist or chart version is newer, create a new webhook
+    apiVersion: "apps/v1"
+    kind: "Deployment"
     metadata:
-      {{- with .annotations }}
-      annotations:
-      {{- end }}
-      {{- range $key, $value := .annotations }}
-        {{ $key }}: {{ $value | quote }}
-      {{- end }}
+      name: "weblogic-operator-webhook"
+      namespace: {{ .Release.Namespace | quote }}
       labels:
-        weblogic.operatorName: {{ .Release.Namespace | quote }}
-        app: "weblogic-operator-webhook"
-      {{- range $key, $value := .labels }}
-        {{ $key }}: {{ $value | quote }}
+        weblogic.webhookName: {{ .Release.Namespace | quote }}
+        weblogic.webhookVersion: {{ .Chart.Version }}
+      {{- if .preserveWebhook }}
+      annotations:
+        "helm.sh/hook": pre-install
+        "helm.sh/resource-policy": keep
+        "helm.sh/hook-delete-policy": "before-hook-creation"
       {{- end }}
     spec:
-      serviceAccountName: {{ .serviceAccount | quote }}
-      {{- with .nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      containers:
-      - name: "weblogic-operator-webhook"
-        image: {{ .image | quote }}
-        imagePullPolicy: {{ .imagePullPolicy | quote }}
-        command: ["bash"]
-        args: ["/operator/webhook.sh"]
-        env:
-        - name: "OPERATOR_NAMESPACE"
-          valueFrom:
-            fieldRef:
-              fieldPath: "metadata.namespace"
-        - name: "OPERATOR_POD_NAME"
-          valueFrom:
-            fieldRef:
-              fieldPath: "metadata.name"
-        - name: "OPERATOR_POD_UID"
-          valueFrom:
-            fieldRef:
-              fieldPath: "metadata.uid"
-        - name: "OPERATOR_VERBOSE"
-          value: "false"
-        - name: "JAVA_LOGGING_LEVEL"
-          value: {{ .javaLoggingLevel | quote }}
-        - name: "KUBERNETES_PLATFORM"
-          value: {{ .kubernetesPlatform | quote }}
-        - name: "JAVA_LOGGING_MAXSIZE"
-          value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
-        - name: "JAVA_LOGGING_COUNT"
-          value: {{ .javaLoggingFileCount | default 10 | quote }}
-        {{- if .remoteDebugNodePortEnabled }}
-        - name: "REMOTE_DEBUG_PORT"
-          value: {{ .internalWebhookDebugHttpPort | quote }}
-        - name: "DEBUG_SUSPEND"
-          {{- if .suspendOnDebugStartup }}
-          value: "y"
-          {{- else }}
-          value: "n"
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          weblogic.operatorName: {{ .Release.Namespace | quote }}
+      replicas: 1
+      template:
+        metadata:
+          {{- with .annotations }}
+          annotations:
           {{- end }}
-        {{- end }}
-        {{- if .mockWLS }}
-        - name: "MOCK_WLS"
-          value: "true"
-        {{- end }}
-        resources:
-          requests:
-            cpu: {{ .cpuRequests | default "100m" }}
-            memory: {{ .memoryRequests | default "100Mi" }}
-          limits:
-            {{- if .cpuLimits}}
-            cpu: {{ .cpuLimits }}
+          {{- range $key, $value := .annotations }}
+            {{ $key }}: {{ $value | quote }}
+          {{- end }}
+          labels:
+            weblogic.operatorName: {{ .Release.Namespace | quote }}
+            app: "weblogic-operator-webhook"
+          {{- range $key, $value := .labels }}
+            {{ $key }}: {{ $value | quote }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ .serviceAccount | quote }}
+          {{- with .nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+          - name: "weblogic-operator-webhook"
+            image: {{ .image | quote }}
+            imagePullPolicy: {{ .imagePullPolicy | quote }}
+            command: ["bash"]
+            args: ["/operator/webhook.sh"]
+            env:
+            - name: "OPERATOR_NAMESPACE"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.namespace"
+            - name: "OPERATOR_POD_NAME"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.name"
+            - name: "OPERATOR_POD_UID"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.uid"
+            - name: "OPERATOR_VERBOSE"
+              value: "false"
+            - name: "JAVA_LOGGING_LEVEL"
+              value: {{ .javaLoggingLevel | quote }}
+            - name: "KUBERNETES_PLATFORM"
+              value: {{ .kubernetesPlatform | quote }}
+            - name: "JAVA_LOGGING_MAXSIZE"
+              value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
+            - name: "JAVA_LOGGING_COUNT"
+              value: {{ .javaLoggingFileCount | default 10 | quote }}
+            {{- if .remoteDebugNodePortEnabled }}
+            - name: "REMOTE_DEBUG_PORT"
+              value: {{ .internalWebhookDebugHttpPort | quote }}
+            - name: "DEBUG_SUSPEND"
+              {{- if .suspendOnDebugStartup }}
+              value: "y"
+              {{- else }}
+              value: "n"
+              {{- end }}
             {{- end }}
-            {{- if .memoryLimits}}
-            memory: {{ .memoryLimits }}
+            {{- if .mockWLS }}
+            - name: "MOCK_WLS"
+              value: "true"
             {{- end }}
-        volumeMounts:
-        - name: "weblogic-operator-cm-volume"
-          mountPath: "/operator/config"
-        - name: "weblogic-operator-debug-cm-volume"
-          mountPath: "/operator/debug-config"
-        - name: "weblogic-operator-secrets-volume"
-          mountPath: "/operator/secrets"
-          readOnly: true
-        {{- if not .remoteDebugNodePortEnabled }}
-        livenessProbe:
-          exec:
-            command:
-            - "bash"
-            - "/operator/webhookLivenessProbe.sh"
-          initialDelaySeconds: 40
-          periodSeconds: 5
-        readinessProbe:
-          exec:
-            command:
-            - "bash"
-            - "/operator/webhookReadinessProbe.sh"
-          initialDelaySeconds: 2
-          periodSeconds: 10
-        {{- end }}
-      {{- if .imagePullSecrets }}
-      imagePullSecrets:
-      {{ .imagePullSecrets | toYaml }}
-      {{- end }}
-      volumes:
-      - name: "weblogic-operator-cm-volume"
-        configMap:
-          name: "weblogic-operator-cm"
-      - name: "weblogic-operator-debug-cm-volume"
-        configMap:
-          name: "weblogic-operator-debug-cm"
-          optional: true
-      - name: "weblogic-operator-secrets-volume"
-        secret:
-          secretName: "weblogic-operator-secrets"
+            resources:
+              requests:
+                cpu: {{ .cpuRequests | default "100m" }}
+                memory: {{ .memoryRequests | default "100Mi" }}
+              limits:
+                {{- if .cpuLimits}}
+                cpu: {{ .cpuLimits }}
+                {{- end }}
+                {{- if .memoryLimits}}
+                memory: {{ .memoryLimits }}
+                {{- end }}
+            volumeMounts:
+            - name: "weblogic-operator-cm-volume"
+              mountPath: "/operator/config"
+            - name: "weblogic-operator-debug-cm-volume"
+              mountPath: "/operator/debug-config"
+            - name: "weblogic-operator-secrets-volume"
+              mountPath: "/operator/secrets"
+              readOnly: true
+            {{- if not .remoteDebugNodePortEnabled }}
+            livenessProbe:
+              exec:
+                command:
+                - "bash"
+                - "/operator/webhookLivenessProbe.sh"
+              initialDelaySeconds: 40
+              periodSeconds: 5
+            readinessProbe:
+              exec:
+                command:
+                - "bash"
+                - "/operator/webhookReadinessProbe.sh"
+              initialDelaySeconds: 2
+              periodSeconds: 10
+            {{- end }}
+          {{- if .imagePullSecrets }}
+          imagePullSecrets:
+          {{ .imagePullSecrets | toYaml }}
+          {{- end }}
+          volumes:
+          - name: "weblogic-operator-cm-volume"
+            configMap:
+              name: "weblogic-operator-cm"
+          - name: "weblogic-operator-debug-cm-volume"
+            configMap:
+              name: "weblogic-operator-debug-cm"
+              optional: true
+          - name: "weblogic-operator-secrets-volume"
+            secret:
+              secretName: "weblogic-operator-secrets"
+  {{- end }}
 {{- end }}

@@ -4,7 +4,8 @@
 package oracle.kubernetes.operator;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
@@ -28,11 +29,22 @@ public class DomainResourceConverter {
    * @param args The arguments for domain resource converter.
    *
    */
-  public static void main(String[] args) throws IOException, ParseException {
+  public static void main(String[] args) throws Exception {
     final DomainResourceConverter drc = parseCommandLine(args);
 
-    domainUpgradeUtils.writeDomain(domainUpgradeUtils.convertDomain(
-            domainUpgradeUtils.readDomain(drc.inputFileName)), drc.outputDir + "/" + drc.outputFileName);
+    File inputFile = new File(drc.inputFileName);
+    File outputDir = new File(drc.outputDir);
+
+    if (!inputFile.exists()) {
+      throw new Exception("InputFile: " + drc.inputFileName + " does not exist or could not be read.");
+    }
+
+    if (!outputDir.exists()) {
+      throw new Exception("The output dir specified by '-d' does not exist or could not be read.");
+    }
+
+    Files.writeString(Path.of(drc.outputDir + "/" + drc.outputFileName),
+            domainUpgradeUtils.convertDomain(Files.readString(Path.of(drc.inputFileName))));
   }
 
   /**

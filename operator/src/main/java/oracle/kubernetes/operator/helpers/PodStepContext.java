@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -33,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -95,6 +97,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -105,6 +108,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+  public static final int LEGACY_AUXILIARY_IMAGE_OPERATOR_MAJOR_VERSION = 3;
   private static String productVersion;
   protected final ExporterContext exporterContext;
 
@@ -588,7 +592,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean hasCorrectPodHash(V1Pod currentPod) {
-    if (!isLegacyPod(currentPod)) {
+    if (isLegacyAuxImageOperatorVersion(currentPod)) {
+      return canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod));
+    } else if (!isLegacyPod(currentPod)) {
       return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     } else {
       return canAdjustHashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
@@ -599,9 +605,31 @@ public abstract class PodStepContext extends BasePodStepContext {
     return !hasLabel(currentPod, OPERATOR_VERSION);
   }
 
+  private boolean isLegacyAuxImageOperatorVersion(V1Pod currentPod) {
+    boolean result = Optional.ofNullable(currentPod.getMetadata()).map(m -> m.getLabels())
+            .map(l -> l.get(OPERATOR_VERSION)).map(v -> isLegacyAuxImageOperatorVersion(v)).orElse(false);
+    return result;
+  }
+
+  private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
+    try {
+      return new SemanticVersion(operatorVersion).getMajor() == LEGACY_AUXILIARY_IMAGE_OPERATOR_MAJOR_VERSION;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
     return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_0))
           || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1));
+  }
+
+  private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
+    V1Pod recipe = createPodRecipe();
+    LOGGER.finer("Recipe before conversion is " + Yaml.dump(recipe));
+    convertAuxImagesInitContainerVolumeAndMounts(recipe);
+    LOGGER.finer("Recipe after conversion is " + Yaml.dump(recipe));
+    return requiredHash.equals(AnnotationHelper.createHash(recipe))  ;
   }
 
   private boolean hasLabel(V1Pod pod, String key) {
@@ -625,6 +653,43 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private void addLegacyPrometheusAnnotationsFrom_3_1(V1Pod pod) {
     AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
+  }
+
+  private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
+    V1PodSpec podSpec = pod.getSpec();
+    List<V1Container> convertedInitContainers = new ArrayList();
+    podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i));
+    podSpec.initContainers(convertedInitContainers);
+
+    List<V1Container> convertedContainers = new ArrayList();
+    podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
+    podSpec.containers(convertedContainers);
+
+    List<V1Volume> convertedVolumes = new ArrayList();
+    podSpec.getVolumes().forEach(i -> adjustVolumeName(convertedVolumes, i));
+    podSpec.volumes(convertedVolumes);
+    pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
+  }
+
+  private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
+    String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
+    List<V1EnvVar> env = container.getEnv();
+    List<V1EnvVar> newEnv = new ArrayList<>();
+    env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
+            .map(e -> e.getValue()).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
+
+    List<V1VolumeMount> convertedVolumeMounts = new ArrayList();
+    container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
+    convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
+            .volumeMounts(convertedVolumeMounts));
+  }
+
+  private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
+    convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+  }
+
+  private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
+    convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
   }
 
   private Integer getMetricsPort() {
@@ -764,7 +829,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
-    addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(shutdown.getWaitForAllSessions()));
+    if (shutdown.getWaitForAllSessions() != Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) {
+      addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS",
+              String.valueOf(shutdown.getWaitForAllSessions()));
+    }
   }
 
   private Shutdown getShutdownSpec() {
@@ -862,8 +930,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    getEnvironmentVariables(tuningParameters).forEach(envVar ->
-            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+      getEnvironmentVariables(tuningParameters).forEach(envVar ->
+              addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    }
     return initContainerEnvVars;
   }
 
@@ -876,10 +946,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
-    volumes.addAll(getServerSpec().getAdditionalVolumes());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
+    volumes.addAll(getServerSpec().getAdditionalVolumes());
 
     return volumes;
   }
@@ -922,10 +992,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
-    mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
+    mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     return mounts;
   }
 
@@ -962,6 +1032,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
+    String wdtModelHome = getModelHome();
+    if (wdtModelHome != null && !wdtModelHome.isEmpty() && !wdtModelHome.equals(DEFAULT_WDT_MODEL_HOME)) {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, wdtModelHome);
+    }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxiliaryImageEnv(ais, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
@@ -970,8 +1044,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       if (auxiliaryImages.size() > 0) {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
       }

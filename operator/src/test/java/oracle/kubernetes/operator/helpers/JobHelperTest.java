@@ -66,6 +66,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -764,7 +765,21 @@ class JobHelperTest extends DomainValidationBaseTest {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
+        getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithConfiguredAuxImageInitContainers() {
+    configureDomain()
+            .withInitContainer(
+                    createContainer(
+                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                            "echo managed server && sleep 120"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
   }
 
   @Test

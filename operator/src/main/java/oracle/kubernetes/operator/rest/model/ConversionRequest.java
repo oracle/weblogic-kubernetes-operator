@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class ConversionRequest {
 
@@ -17,7 +16,7 @@ public class ConversionRequest {
   @Expose
   private String desiredAPIVersion;
   @Expose
-  private List<Domain> objects = new ArrayList<Domain>();
+  private List<Object> objects = new ArrayList<>();
 
   public String getUid() {
     return uid;
@@ -35,11 +34,11 @@ public class ConversionRequest {
     this.desiredAPIVersion = desiredAPIVersion;
   }
 
-  public List<Domain> getObjects() {
+  public List<Object> getObjects() {
     return objects;
   }
 
-  public void setObjects(List<Domain> objects) {
+  public void setObjects(List<Object> objects) {
     this.objects = objects;
   }
 

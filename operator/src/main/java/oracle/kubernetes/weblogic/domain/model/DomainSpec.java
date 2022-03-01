@@ -18,7 +18,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -306,17 +305,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
       + " A list of names of the Secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
-
-  @Feature("Disabled")
-  private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
-
-  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
-    return auxiliaryImageVolumes;
-  }
-
-  public void setAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    this.auxiliaryImageVolumes = auxiliaryImageVolumes;
-  }
 
   /**
    * The WebLogic Monitoring Exporter configuration.
