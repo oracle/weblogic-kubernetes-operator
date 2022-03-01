@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.util.Streams;
@@ -82,7 +83,8 @@ public class ExecCommand {
         out.start();
       }
 
-      p.waitFor();
+      // TODO - Make the timeout value configurable
+      p.waitFor(30, TimeUnit.MINUTES);
 
       // we need to join the thread before we read the stdout so that the saved stdout is complete
       if (out != null) {
