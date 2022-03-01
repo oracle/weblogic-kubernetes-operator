@@ -136,6 +136,7 @@ class ItMiiAuxiliaryImage40 {
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
   private static String opNamespace = null;
+  private static String operatorPodName = null;
 
   /**
    * Install Operator. Create a domain using multiple auxiliary images.
@@ -167,6 +168,10 @@ class ItMiiAuxiliaryImage40 {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
+
+    operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator's pod name");
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -459,7 +464,7 @@ class ItMiiAuxiliaryImage40 {
 
   /**
    * Negative test. Create a domain using auxiliary image with no installation files at specified sourceWdtInstallHome
-   * location. Verify introspector log contains the expected error message.
+   * location. Verify domain events and operator log contains the expected error message.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceWdtInstallHome")
@@ -499,6 +504,8 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage5);
     }
 
+    OffsetDateTime timestamp = now();
+
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, miiAuxiliaryImage5);
@@ -517,8 +524,11 @@ class ItMiiAuxiliaryImage40 {
 
     String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
               + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, errorMessage);
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
 
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, errorMessage);
   }
 
   /**
@@ -563,14 +573,13 @@ class ItMiiAuxiliaryImage40 {
 
     String errorMessage = "More than one auxiliary image under 'spec.configuration.model.auxiliaryImages' sets a "
             + "'sourceWDTInstallHome' value. The sourceWDTInstallHome value must be set for only one auxiliary image.";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
 
   }
 
   /**
    * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
-   * location. Verify introspector log contains the expected error message.
+   * location. Verify domain events and operator log contains the expected error message.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
@@ -610,6 +619,8 @@ class ItMiiAuxiliaryImage40 {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage8);
     }
 
+    OffsetDateTime timestamp = now();
+
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, miiAuxiliaryImage8);
@@ -628,7 +639,13 @@ class ItMiiAuxiliaryImage40 {
 
     String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
         + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, errorMessage);
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, errorMessage);
 
   }
 
@@ -673,7 +690,7 @@ class ItMiiAuxiliaryImage40 {
 
   /**
    * Negative Test to create domain without WDT binary.
-   * Check the error message is in introspector pod log, domain events and operator pod log.
+   * Check the error message is in domain events and operator pod log.
    */
   @Test
   @DisplayName("Negative Test to create domain without WDT binary")
@@ -738,8 +755,6 @@ class ItMiiAuxiliaryImage40 {
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/aux/weblogic-deploy'";
 
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid2, errorpathDomainNamespace, expectedErrorMsg);
-
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
@@ -753,9 +768,6 @@ class ItMiiAuxiliaryImage40 {
     }
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator pod's name");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid2);
@@ -763,7 +775,7 @@ class ItMiiAuxiliaryImage40 {
 
   /**
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
-   * Check the error message is in introspector pod log, domain events and operator pod log
+   * Check the error message is in domain events and operator pod log
    */
   @Test
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
@@ -827,16 +839,11 @@ class ItMiiAuxiliaryImage40 {
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /aux/models/model.jms2.yaml";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid2, errorpathDomainNamespace, expectedErrorMsg);
-
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Get operator's pod name failed");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services created
@@ -935,16 +942,12 @@ class ItMiiAuxiliaryImage40 {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "cp: can't open '/aux/models/test1.properties': Permission denied";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid2, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator's pod name");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services not created
