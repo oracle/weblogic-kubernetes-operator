@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -60,7 +61,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
@@ -169,14 +169,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.7 to latest.
+   * Operator upgrade from 3.3.8 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.7 to latest")
+  @DisplayName("Upgrade Operator from 3.3.8 to latest")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom337ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom337ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom338ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom338ToLatest with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.3.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -220,17 +220,10 @@ class ItOperatorWlsUpgrade {
     createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
            externalServiceNameSuffix);
 
-    // Make sure AdminPortForwarding is disabled by default
-    logger.info("Checking Port Forwarding before Operator Upgrade");
-    checkAdminPortForwarding(domainNamespace,false);
-
     // upgrade to latest operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
 
-    // Make sure AdminPortForwarding is enabled by default after domain restart
-    logger.info("Checking Port Forwarding after Operator Upgrade to Release 4.x");
-    checkAdminPortForwarding(domainNamespace,true);
   }
 
   private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
@@ -373,11 +366,8 @@ class ItOperatorWlsUpgrade {
         domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
         "Getting admin server node port failed");
     logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-        }, "Access to admin server node port failed"),
-        logger, "Console login validation");
+    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST, 
+           String.valueOf(serviceNodePort), false);
   }
 
   private HelmParams installOperator(String operatorVersion, 

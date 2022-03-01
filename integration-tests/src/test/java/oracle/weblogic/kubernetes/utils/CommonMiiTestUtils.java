@@ -127,7 +127,7 @@ public class CommonMiiTestUtils {
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
    */
-  public static void createMiiDomainAndVerify(
+  public static Domain createMiiDomainAndVerify(
       String domainNamespace,
       String domainUid,
       String imageName,
@@ -198,6 +198,8 @@ public class CommonMiiTestUtils {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
+
+    return domain;
   }
 
   /**
