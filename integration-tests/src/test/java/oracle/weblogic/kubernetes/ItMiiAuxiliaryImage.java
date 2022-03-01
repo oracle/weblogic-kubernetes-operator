@@ -498,7 +498,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(domainNamespace, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -596,7 +596,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -681,7 +681,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -770,7 +770,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -878,7 +878,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message

@@ -221,12 +221,14 @@ public class K8sEvents {
   /**
    * Get matching event object with specific reason and type.
    * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
    * @return CoreV1Event matching event object
    */
   public static List<CoreV1Event> getEvents(String domainNamespace,
+                                            String domainUid,
                                             String reason,
                                             String type,
                                             OffsetDateTime timestamp) {
@@ -236,11 +238,14 @@ public class K8sEvents {
     try {
       List<CoreV1Event> allEvents = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : allEvents) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
-          logger.info(Yaml.dump(event));
-          if (event.getType().equals(type)) {
-            events.add(event);
-          }
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+            && (isEqualOrAfter(timestamp, event))
+            && event.getType().equals(type)
+            && labels.containsKey("weblogic.createdByOperator")
+            && labels.get("weblogic.domainUID").equals(domainUid)) {
+
+          events.add(event);
         }
       }
     } catch (ApiException ex) {
@@ -370,12 +375,14 @@ public class K8sEvents {
    * Check the domain event contains the expected error msg.
    *
    * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
    * @param expectedMsg the expected message in the domain event message
    */
   public static void checkDomainEventContainsExpectedMsg(String domainNamespace,
+                                                         String domainUid,
                                                          String reason,
                                                          String type,
                                                          OffsetDateTime timestamp,
@@ -388,16 +395,17 @@ public class K8sEvents {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainEventContainsExpectedMsg(domainNamespace, reason, type, timestamp, expectedMsg));
+        .until(domainEventContainsExpectedMsg(domainNamespace, domainUid, reason, type, timestamp, expectedMsg));
   }
 
   private static Callable<Boolean> domainEventContainsExpectedMsg(String domainNamespace,
+                                                                  String domainUid,
                                                                   String reason,
                                                                   String type,
                                                                   OffsetDateTime timestamp,
                                                                   String expectedMsg) {
     return () -> {
-      for (CoreV1Event event : getEvents(domainNamespace, reason, type, timestamp)) {
+      for (CoreV1Event event : getEvents(domainNamespace, domainUid, reason, type, timestamp)) {
         if (event != null && event.getMessage() != null && event.getMessage().contains(expectedMsg)) {
           return true;
         }
