@@ -1067,11 +1067,11 @@ class ItIntrospectVersion {
   /**
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
-   * The usecase update the introspectVersion by passing differnt value to -i
-   * option (non-numeic, non-numeric with space, no value) and make sure that
-   * the introspectVersion is updated accrodingly in both domain sepc level
+   * The usecase update the introspectVersion by passing different value to -i
+   * option (non-numeric, non-numeric with space, no value) and make sure that
+   * the introspectVersion is updated accordingly in both domain spec level
    * and server pod level.
-   * It also verifies the intospector job is started/stoped and none of the
+   * It also verifies the introspector job is started/stopped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
   @Test
