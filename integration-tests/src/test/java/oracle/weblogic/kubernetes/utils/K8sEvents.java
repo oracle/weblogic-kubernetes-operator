@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -26,7 +27,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -219,6 +219,43 @@ public class K8sEvents {
   }
 
   /**
+   * Get matching event object with specific reason and type.
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
+  public static List<CoreV1Event> getEvents(String domainNamespace,
+                                            String domainUid,
+                                            String reason,
+                                            String type,
+                                            OffsetDateTime timestamp) {
+
+    List<CoreV1Event> events = new ArrayList<>();
+
+    try {
+      List<CoreV1Event> allEvents = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : allEvents) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+            && (isEqualOrAfter(timestamp, event))
+            && event.getType().equals(type)
+            && (labels != null)
+            && (labels.get("weblogic.domainUID") != null)
+            && labels.get("weblogic.domainUID").equals(domainUid)) {
+
+          events.add(event);
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return events;
+  }
+
+  /**
    * Check if a given event is logged by the operator.
    *
    * @param opNamespace namespace in which the operator is running
@@ -338,7 +375,6 @@ public class K8sEvents {
   /**
    * Check the domain event contains the expected error msg.
    *
-   * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
    * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
@@ -346,22 +382,37 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    * @param expectedMsg the expected message in the domain event message
    */
-  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
-                                                         String domainNamespace,
+  public static void checkDomainEventContainsExpectedMsg(String domainNamespace,
                                                          String domainUid,
                                                          String reason,
                                                          String type,
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
-    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    if (event != null && event.getMessage() != null) {
-      assertTrue(event.getMessage().contains(expectedMsg),
-          String.format("The event message does not contain the expected msg %s", expectedMsg));
-    } else {
-      fail("event is null or event message is null");
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainEventContainsExpectedMsg(domainNamespace, domainUid, reason, type, timestamp, expectedMsg));
+  }
+
+  private static Callable<Boolean> domainEventContainsExpectedMsg(String domainNamespace,
+                                                                  String domainUid,
+                                                                  String reason,
+                                                                  String type,
+                                                                  OffsetDateTime timestamp,
+                                                                  String expectedMsg) {
+    return () -> {
+      for (CoreV1Event event : getEvents(domainNamespace, domainUid, reason, type, timestamp)) {
+        if (event != null && event.getMessage() != null && event.getMessage().contains(expectedMsg)) {
+          return true;
+        }
+      }
+      return false;
+    };
   }
 
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {

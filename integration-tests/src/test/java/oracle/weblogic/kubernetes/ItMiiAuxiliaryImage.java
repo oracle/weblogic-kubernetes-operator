@@ -112,7 +112,6 @@ class ItMiiAuxiliaryImage {
   private static String errorpathDomainNamespace = null;
   private static String wdtDomainNamespace = null;
   private static LoggingFacade logger = null;
-  private String domainUid = "domain1";
   private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
   private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
   private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "3";
@@ -124,8 +123,6 @@ class ItMiiAuxiliaryImage {
   private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
   private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
-  private final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
   private String adminSecretName = "weblogic-credentials";
   private String encryptionSecretName = "encryptionsecret";
@@ -165,7 +162,6 @@ class ItMiiAuxiliaryImage {
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
   }
 
-
   /**
    * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
    * another auxiliary image with JMS system resource, verify the domain is running and JMS resource is added.
@@ -174,6 +170,10 @@ class ItMiiAuxiliaryImage {
   @Order(1)
   @DisplayName("Test to create domain using multiple auxiliary images")
   void testCreateDomainUsingMultipleAuxiliaryImages() {
+
+    String domainUid = "domain1";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -312,9 +312,12 @@ class ItMiiAuxiliaryImage {
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
+
+    String domainUid = "domain1";
+    String adminServerPodName = domainUid + "-admin-server";
+
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-
 
     // create stage dir for auxiliary image with image3
     // replace DataSource URL info in the  model file
@@ -360,6 +363,11 @@ class ItMiiAuxiliaryImage {
   @Order(3)
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageName() {
+
+    String domainUid = "domain1";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -420,17 +428,122 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
+   * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
+   * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
+   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
+   * Check the error message in introspector pod log, domain events and operator pod log.
+   * Restore the domain by removing the custom mount command.
+   */
+  @Test
+  @Order(4)
+  @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
+  void testErrorPathDomainWithFailCustomMountCommand() {
+
+    String domainUid = "domain1";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+
+    // check that admin service/pod exists in the domain namespace
+    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+    }
+
+    OffsetDateTime timestamp = now();
+
+    // get the creation time of the admin server pod before patching
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource ");
+    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
+
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
+
+    // patch the first auxiliary image
+    String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"add\",")
+        .append(" \"path\": " + searchString + ",")
+        .append(" \"value\":  \"exit 1\"")
+        .append(" }]");
+    logger.info("Auxiliary Image patch string: " + patchStr);
+
+    V1Patch patch = new V1Patch((patchStr).toString());
+
+    boolean aiPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(Auxiliary Image)  failed ");
+    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
+
+    // check the introspector pod log contains the expected error message
+    String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator pod log contains the expected error message
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Get operator's pod name failed");
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // verify the domain is not rolled
+    verifyPodsNotRolled(domainNamespace, pods);
+
+    // restore domain1
+    // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"remove\",")
+        .append(" \"path\": " + searchString)
+        .append(" }]");
+    logger.info("Auxiliary Image patch string: " + patchStr);
+
+    V1Patch patch1 = new V1Patch((patchStr).toString());
+
+    aiPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch1, "application/json-patch+json"),
+        "patchDomainCustomResource(Auxiliary Image)  failed ");
+    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
+
+    // check the admin server is up and running
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+  }
+
+  /**
    * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
    * in auxiliaryImageVolumes, set mountPath to "/errorpath"
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(3)
+  @Order(5)
   @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
   void testErrorPathDomainMismatchMountPath() {
 
     OffsetDateTime timestamp = now();
+    String domainUid = "domain-mismatch-moutpath";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/errorpath";
@@ -483,7 +596,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -499,7 +612,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -508,11 +621,14 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(4)
+  @Order(6)
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
 
     OffsetDateTime timestamp = now();
+    String domainUid = "domain-missing-wdtbinary";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
@@ -565,7 +681,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -582,7 +698,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -591,10 +707,13 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log
    */
   @Test
-  @Order(5)
+  @Order(7)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
 
+    String domainUid = "domain-missing-domainconfig";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
     OffsetDateTime timestamp = now();
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -651,7 +770,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -668,98 +787,8 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
-  }
-
-  /**
-   * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
-   * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
-   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
-   * Check the error message in introspector pod log, domain events and operator pod log.
-   * Restore the domain by removing the custom mount command.
-   */
-  @Test
-  @Order(6)
-  @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
-  void testErrorPathDomainWithFailCustomMountCommand() {
-
-    OffsetDateTime timestamp = now();
-
-    // get the creation time of the admin server pod before patching
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource ");
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
-
-    // patch the first auxiliary image
-    String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"add\",")
-        .append(" \"path\": " + searchString + ",")
-        .append(" \"value\":  \"exit 1\"")
-        .append(" }]");
-    logger.info("Auxiliary Image patch string: " + patchStr);
-
-    V1Patch patch = new V1Patch((patchStr).toString());
-
-    boolean aiPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(Auxiliary Image)  failed ");
-    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
-
-    // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Get operator's pod name failed");
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // verify the domain is not rolled
-    logger.info("sleep 2 minutes to make sure the domain is not restarted");
-    try {
-      Thread.sleep(120000);
-    } catch (InterruptedException ie) {
-      // ignore
-    }
-    verifyPodsNotRolled(domainNamespace, pods);
-
-    // restore domain1
-    // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": " + searchString)
-        .append(" }]");
-    logger.info("Auxiliary Image patch string: " + patchStr);
-
-    V1Patch patch1 = new V1Patch((patchStr).toString());
-
-    aiPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch1, "application/json-patch+json"),
-        "patchDomainCustomResource(Auxiliary Image)  failed ");
-    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
-
-    // check the admin server is up and running
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
   }
 
   /**
@@ -769,9 +798,13 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
+
+    String domainUid = "domain-errorpath-filepermission";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
 
     OffsetDateTime timestamp = now();
 
@@ -845,7 +878,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -862,7 +895,7 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
+    // delete domain
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
@@ -874,9 +907,13 @@ class ItMiiAuxiliaryImage {
    * and verify the domain is running.
    */
   @Test
-  @Order(8)
-  @DisplayName("Test to update WDT version using  auxiliary images")
+  @Order(9)
+  @DisplayName("Test to update WDT version using auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
+
+    String domainUid = "domain-multi-auximages";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -1016,7 +1053,7 @@ class ItMiiAuxiliaryImage {
     //check WDT version in the image equals the  provided WDT_TEST_VERSION
 
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      String wdtVersion = checkWDTVersion(domainUid, wdtDomainNamespace, auxiliaryImagePath);
       assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image does not match the expected");
     }, "Can't retrieve wdt version file or version does match the expected");
@@ -1026,7 +1063,7 @@ class ItMiiAuxiliaryImage {
 
     //check that WDT version is changed
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      String wdtVersion = checkWDTVersion(domainUid, wdtDomainNamespace, auxiliaryImagePath);
       assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
           " Used WDT in the auxiliary image was not updated");
     }, "Can't retrieve wdt version file "
@@ -1203,13 +1240,11 @@ class ItMiiAuxiliaryImage {
     logger.info("Found the DataResource configuration");
   }
 
-  private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath) throws Exception {
+  private String checkWDTVersion(String domainUid, String domainNamespace, String auxiliaryImagePath) throws Exception {
     assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace, domainUid + "-admin-server", "weblogic-server",
         auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
         Paths.get(RESULTS_ROOT, "/WDTversion.txt")), " Can't find file in the pod, or failed to copy");
-
 
     return Files.readAllLines(Paths.get(RESULTS_ROOT, "/WDTversion.txt")).get(0);
   }
@@ -1232,7 +1267,7 @@ class ItMiiAuxiliaryImage {
 
     if (introspectorPod != null && introspectorPod.getMetadata() != null) {
       introspectPodName = introspectorPod.getMetadata().getName();
-      logger.info("found introspectore pod {0} in namespace {1}", introspectPodName, namespace);
+      logger.info("found introspector pod {0} in namespace {1}", introspectPodName, namespace);
     } else {
       return false;
     }
@@ -1259,7 +1294,7 @@ class ItMiiAuxiliaryImage {
         .conditionEvaluationListener(
             condition ->
                 logger.info(
-                    "Checking for the log of introspector pod contains the expected error msg {0}. "
+                    "Checking for the log of introspector pod contains the expected error msg - {0}. "
                         + "Elapsed time {1}ms, remaining time {2}ms",
                     expectedErrorMsg,
                     condition.getElapsedTimeInMS(),
