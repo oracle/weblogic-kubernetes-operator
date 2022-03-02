@@ -116,8 +116,8 @@ public class ServerPod {
   private V1SecurityContext containerSecurityContext;
 
   @ApiModelProperty(
-      "The maximum time in seconds that the operator waits for a WebLogic server to get into ready state "
-          + "before it considers the server pod failed. Defaults to 1800 seconds.")
+      "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
+          + "before it considers the pod failed. Defaults to 1800 seconds.")
   private long maxReadyWaitTimeSeconds = 1800L;
 
   @ApiModelProperty("Additional volumes to be created in the server pod.")
