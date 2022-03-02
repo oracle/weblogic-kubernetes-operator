@@ -27,7 +27,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -409,7 +408,6 @@ public class K8sEvents {
   /**
    * Check the domain event contains the expected error msg.
    *
-   * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
    * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
@@ -417,21 +415,21 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    * @param expectedMsg the expected message in the domain event message
    */
-  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
-                                                         String domainNamespace,
+  public static void checkDomainEventContainsExpectedMsg(String domainNamespace,
                                                          String domainUid,
                                                          String reason,
                                                          String type,
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
-    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace, reason, type, timestamp);
-    if (event != null && event.getMessage() != null) {
-      assertTrue(event.getMessage().contains(expectedMsg),
-          String.format("The event message does not contain the expected msg %s", expectedMsg));
-    } else {
-      fail("event is null or event message is null");
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainEventContainsExpectedMsg(domainNamespace, domainUid, reason, type, timestamp, expectedMsg));
   }
 
   private static Callable<Boolean> domainEventContainsExpectedMsg(String domainNamespace,
@@ -491,7 +489,6 @@ public class K8sEvents {
           && labels.get("weblogic.domainUID").equals(domainUid));
     }
   }
-
 
   public static final String DOMAIN_CREATED = "DomainCreated";
   public static final String DOMAIN_DELETED = "DomainDeleted";
