@@ -36,8 +36,10 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -64,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -82,6 +85,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
@@ -170,6 +174,22 @@ class ItElasticLoggingFluentd {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+    // upgrade to latest operator
+    HelmParams upgradeHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // build operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
     // create fluentd configuration
     configFluentd();
 
@@ -180,15 +200,11 @@ class ItElasticLoggingFluentd {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName);
 
-    testVarMap = new HashMap<String, String>();
+    testVarMap = new HashMap<>();
 
-    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
-    StringBuffer elasticsearchUrlBuff =
-        new StringBuffer("curl http://")
-            .append(elasticSearchHost)
-            .append(":")
-            .append(ELASTICSEARCH_HTTP_PORT);
-    k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
+    String elasticsearchUrlBuff =
+        "curl http://" + elasticSearchHost + ":" + ELASTICSEARCH_HTTP_PORT;
+    k8sExecCmdPrefix = elasticsearchUrlBuff;
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
@@ -284,11 +300,9 @@ class ItElasticLoggingFluentd {
         "Failed to copy fluentd.configmap.elk.yaml");
 
     // replace weblogic.domainUID, namespace in fluentd.configmap.elk.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-domain", domainUid),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-domain", domainUid),
         "Could not modify weblogic.domainUID in fluentd.configmap.elk.yaml");;
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-namespace", domainNamespace),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-namespace", domainNamespace),
         "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
