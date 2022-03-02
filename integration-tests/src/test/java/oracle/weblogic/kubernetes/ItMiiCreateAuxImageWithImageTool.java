@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
-class ItMiiNewCreateAuxImage40 {
+class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
