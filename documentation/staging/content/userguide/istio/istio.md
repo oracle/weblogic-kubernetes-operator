@@ -91,11 +91,20 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
+For non-OpenShift service mesh, label the namespace as follows:
+
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
+
+When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
+annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, with the `--set` option, as follows:
+
+`--set "annotations.sidecar\.istio\.io/inject=true"`
+
+
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.
 
@@ -109,11 +118,6 @@ $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yam
 ```
 
 In the second command, change `weblogic-operator-xxx-xxx` to the name of your pod.
-
-When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
-annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, with the `--set` option, as follows:
-
-`--set "annotations.sidecar\.istio\.io/inject=true"`
 
 #### Creating a domain with Istio support
 
