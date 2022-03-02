@@ -242,7 +242,8 @@ public class K8sEvents {
         if (event.getReason().equals(reason)
             && (isEqualOrAfter(timestamp, event))
             && event.getType().equals(type)
-            && labels != null
+            && (labels != null)
+            && (labels.get("weblogic.domainUID") != null)
             && labels.get("weblogic.domainUID").equals(domainUid)) {
 
           events.add(event);
