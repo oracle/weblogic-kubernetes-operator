@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -141,6 +142,7 @@ public class Main {
     private final Engine engine;
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces;
+    private final AtomicReference<V1CustomResourceDefinition> crdRefernce;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
@@ -156,6 +158,8 @@ public class Main {
       domainNamespaces = new DomainNamespaces(productVersion);
 
       PodHelper.setProductVersion(productVersion.toString());
+
+      crdRefernce = new AtomicReference<>();
     }
 
     private static String getBuildVersion(Properties buildProps) {
@@ -256,6 +260,11 @@ public class Main {
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       return engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+
+    @Override
+    public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
+      return crdRefernce;
     }
   }
 
@@ -444,12 +453,63 @@ public class Main {
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
-  private Step createCRDPresenceCheck() {
-    return new CallBuilder().listDomainAsync(getOperatorNamespace(), new CrdPresenceResponseStep());
+  Step createCRDPresenceCheck() {
+    return new CrdPresenceStep();
   }
 
-  // on failure, aborts the processing.
+  class CrdPresenceStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(new CallBuilder().readCustomResourceDefinitionAsync(
+              KubernetesConstants.CRD_NAME, createReadResponseStep(getNext())), packet);
+    }
+  }
+
+  // If CRD read succeeds, wait until the CRD has webhook
+  // if can't read CRD due to missing permissions, list domains to indirectly check if the CRD is installed.
+  ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
+    return new ReadResponseStep(next);
+  }
+
+  class ReadResponseStep extends DefaultResponseStep<V1CustomResourceDefinition> {
+    ReadResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(
+            Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      V1CustomResourceDefinition existingCrd = callResponse.getResult();
+
+      if (!existingCrdContainsConversionWebhook(existingCrd)) {
+        LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
+        return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);
+      } else {
+        return doNext(packet);
+      }
+    }
+
+    private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
+      return Optional.ofNullable(existingCrd).map(crd -> crd.getSpec()).map(spec -> spec.getConversion())
+              .map(c -> c.getStrategy().equalsIgnoreCase("Webhook")).orElse(false);
+    }
+
+    @Override
+    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      return isNotAuthorizedOrForbidden(callResponse)
+              ? doNext(new CallBuilder().listDomainAsync(getOperatorNamespace(),
+                new CrdPresenceResponseStep(getNext())), packet) : super.onFailureNoRetry(packet, callResponse);
+    }
+  }
+
+
+  // on failure, waits for the CRD to be installed.
   private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+
+    CrdPresenceResponseStep(Step next) {
+      super(next);
+    }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {

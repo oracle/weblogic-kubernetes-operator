@@ -949,6 +949,38 @@ public class MonitoringUtils {
     return isFound;
   }
 
+  /**
+   * Verify the monitoring exporter sidecar can be accessed from all managed servers in the domain
+   * through direct access to managed server dashboard.
+   * @param domainNS - domain namespace
+   * @param podName  - managed server pod name
+   * @param searchKey  - search key in response
+   */
+  public static boolean verifyMonExpAppAccessSideCar(String searchKey,
+                                              String domainNS, String podName) {
+
+    // access metrics
+    final String command = String.format(
+        "kubectl exec -n " + domainNS + "  " + podName + " -- curl -X GET -u %s:%s http://localhost:8080/metrics", ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT);
+
+    logger.info("accessing managed server exporter via " + command);
+
+    boolean isFound = false;
+    try {
+      ExecResult result = ExecCommand.exec(command, true);
+      String response = result.stdout().trim();
+      logger.info("Response : exitValue {0}, stdout {1}, stderr {2}",
+          result.exitValue(), response, result.stderr());
+      isFound = response.contains(searchKey);
+      logger.info("isFound value:" + isFound);
+    } catch (Exception ex) {
+      logger.info("Can't execute command " + command + ex.getStackTrace());
+      return false;
+    }
+    return isFound;
+  }
+
   /** To build monitoring exporter sidecar image.
    *
    * @param imageName image nmae
