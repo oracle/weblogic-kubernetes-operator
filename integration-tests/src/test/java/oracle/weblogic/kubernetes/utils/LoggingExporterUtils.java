@@ -65,6 +65,7 @@ public class LoggingExporterUtils {
   /**
    * Install Elasticsearch and wait up to five minutes until Elasticsearch pod is ready.
    *
+   * @param namespace elastic search namespace
    * @return Elasticsearch installation parameters
    */
   public static LoggingExporterParams installAndVerifyElasticsearch(String namespace) {
@@ -78,6 +79,7 @@ public class LoggingExporterUtils {
         .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
         .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
         .loggingExporterNamespace(namespace);
+    logger.info("ES namespace:{0}}", elasticsearchParams.getLoggingExporterNamespace());
 
     // install Elasticsearch
     assertThat(installElasticsearch(elasticsearchParams))
