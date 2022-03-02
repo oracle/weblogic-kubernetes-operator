@@ -187,7 +187,7 @@ class ItElasticLogging {
 
     // install WebLogic Logging Exporter if in non-OKD env
     if (!OKD) {
-      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc);
+      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
     }
 
     // create and verify WebLogic domain image using model in image with model files
