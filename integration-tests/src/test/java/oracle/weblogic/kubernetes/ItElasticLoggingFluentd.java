@@ -160,13 +160,13 @@ class ItElasticLoggingFluentd {
     // install and verify Elasticsearch
     elasticSearchNs = namespaces.get(2);
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(domainNamespace),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(domainNamespace),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
@@ -174,7 +174,7 @@ class ItElasticLoggingFluentd {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+    elasticSearchHost = "elasticsearch." + domainNamespace + ".svc.cluster.local";
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
