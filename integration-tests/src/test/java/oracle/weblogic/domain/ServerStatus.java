@@ -28,12 +28,13 @@ public class ServerStatus {
   @ApiModelProperty("Name of node that is hosting the Pod containing this WebLogic Server.")
   private String nodeName;
 
-  @ApiModelProperty("Phase of server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.")
+  @ApiModelProperty("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, "
+      + "Running, or Unknown.")
   @Expose
   private String podPhase;
 
-  @ApiModelProperty("Status of server pod's condition type Ready if the pod is in Running phase, otherwise Unknown. "
-      + "Possible values are: True, False or Unknown.")
+  @ApiModelProperty("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, "
+      + "otherwise Unknown. Possible values are: True, False or Unknown.")
   @Expose
   private String podReady;
 

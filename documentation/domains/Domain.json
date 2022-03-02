@@ -845,7 +845,7 @@
           "type": "string"
         },
         "maxReadyWaitTimeSeconds": {
-          "description": "The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state before it considers the server pod failed. Defaults to 1800 seconds.",
+          "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds.",
           "type": "number"
         },
         "livenessProbe": {
@@ -936,7 +936,7 @@
           "type": "string"
         },
         "podReady": {
-          "description": "Status of server pod\u0027s condition type Ready if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown.",
+          "description": "Status of the WebLogic Server pod\u0027s Ready condition if the pod is in Running phase, otherwise Unknown. Possible values are: True, False or Unknown.",
           "type": "string"
         },
         "desiredState": {
@@ -944,7 +944,7 @@
           "type": "string"
         },
         "podPhase": {
-          "description": "Phase of server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
+          "description": "Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
           "type": "string"
         },
         "clusterName": {

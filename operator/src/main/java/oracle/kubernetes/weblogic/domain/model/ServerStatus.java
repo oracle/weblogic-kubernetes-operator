@@ -43,12 +43,13 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Expose
   private String nodeName;
 
-  @Description("Phase of server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.")
+  @Description("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, "
+      + "or Unknown.")
   @Expose
   private String podPhase;
 
 
-  @Description("Status of server pod's condition type Ready if the pod is in Running phase, otherwise Unknown. "
+  @Description("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, otherwise Unknown. "
       + "Possible values are: True, False or Unknown.")
   @Expose
   private String podReady;

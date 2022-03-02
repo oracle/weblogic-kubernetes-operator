@@ -271,7 +271,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param livenessProbeSuccessThreshold liveness probe success threshold
      * @param livenessProbeFailureThreshold liveness probe failure threshold
      * @param introspectorJobActiveDeadlineSeconds introspector job active deadline
-     * @param maxReadyWaitTimeSeconds maximum wait time for server pod to get ready
+     * @param maxReadyWaitTimeSeconds maximum wait time for server pod to reach ready state
      */
     public PodTuning(
         int readinessProbeInitialDelaySeconds,

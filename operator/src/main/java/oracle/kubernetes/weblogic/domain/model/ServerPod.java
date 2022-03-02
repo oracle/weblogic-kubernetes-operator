@@ -225,8 +225,8 @@ class ServerPod extends KubernetesResource {
    *
    * @since 4.0
    */
-  @Description("The maximum time in seconds that the operator waits for a WebLogic server pod to get into ready state "
-      + "before it considers the server pod failed. Defaults to 1800 seconds.")
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
+      + "before it considers the pod failed. Defaults to 1800 seconds.")
   private Long maxReadyWaitTimeSeconds = 1800L;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
