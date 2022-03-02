@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import java.util.Optional;
+
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_BASE;
 
 public interface ActionConstants {
@@ -68,13 +70,14 @@ public interface ActionConstants {
   public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
   public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 
+  public static final String WLE_VERSION =
+      Optional.ofNullable(System.getenv("WLE_VERSION")).orElse("latest");
   public static final String WLE_DOWNLOAD_URL_DEFAULT
-      = "https://github.com/oracle/weblogic-logging-exporter/releases/latest";
+      = "https://github.com/oracle/weblogic-logging-exporter/releases/" + WLE_VERSION;
   public static final String WLE_DOWNLOAD_URL
       = System.getProperty("wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
-  public static final String WLE_VERSION    = System.getProperty("wle.version", "latest");
-  public static final String WLE_DOWNLOAD_FILENAME_DEFAULT = "weblogic-logging-exporter.jar";
-
+  public static final String WLE_DOWNLOAD_FILENAME_DEFAULT =
+      Optional.ofNullable(System.getenv("WLE_FILE_NAME")).orElse("weblogic-logging-exporter.jar");
   public static final String SNAKE_VERSION    = System.getProperty("snake.version", "1.27");
   public static final String SNAKE_DOWNLOAD_FILENAME_DEFAULT = "snakeyaml-" + SNAKE_VERSION + ".jar";
   public static final String SNAKE_DOWNLOAD_URL_DEFAULT
