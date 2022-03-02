@@ -324,7 +324,7 @@ public class LoggingExporter {
       Path destPath = Paths.get(WORK_DIR, loggingFile);
       assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
           String.format("Failed to copy %s to %s", srcPath, destPath));
-      assertDoesNotThrow(() -> FileUtils.replaceStringInFile(loggingFile, "default", namespace),
+      assertDoesNotThrow(() -> FileUtils.replaceStringInFile(destPath.toString(), "default", namespace),
           String.format("Failed to replace namespace default to %s", namespace));
       logger.info("Copied {0} to {1}}", srcPath, destPath);
     }
