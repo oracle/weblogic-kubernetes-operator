@@ -103,11 +103,6 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
 You can find out the configuration values that the operator Helm chart supports,
 as well as the default values, using the `helm inspect` command.
 
-- Here's an example of using `helm inspect`
-  with the local file-based operator Helm chart:
-  ```text
-  $ cd /tmp/weblogic-kubernetes-operator
-  ```
   ```text
   $ helm inspect values kubernetes/charts/weblogic-operator
   ```
@@ -116,6 +111,12 @@ as well as the default values, using the `helm inspect` command.
   ```text
   $ helm inspect values weblogic-operator/weblogic-operator
   ```
+- Here's an example of using `helm inspect`
+  with the local file-based operator Helm chart:
+  ```text
+  $ cd /tmp/weblogic-kubernetes-operator
+  ```
+
 
 Alternatively, you can view most of the configuration values
 and their defaults in the operator source in the
@@ -367,8 +368,9 @@ so that then you can run `helm install` to install the operator.
 The steps are:
 1. On a machine with Internet access, to download the chart to the current directory, run `$ helm pull weblogic-operator --repo https://oracle.github.io/weblogic-kubernetes-operator/charts --destination .`
 2. Move the resulting `weblogic-operator-<version>.tgz` file to the machine without Internet access on which you want to install the WebLogic Kubernetes Operator.
-3. Run `$ tar zxf weblogic-operator-<version>.tgz`.
-4. To create the namespace where the operator will be installed, run `$ kubectl create namespace weblogic-operator`.
+3. Run `$ tar zxf weblogic-operator-<version>.tgz`. This puts the Helm chart files in a local directory `./weblogic-operator`.
+4. To create the namespace where the operator will be installed, run `$ kubectl create namespace weblogic-operator`. **NOTE**: Be sure to follow all
+the previously detailed prerequisite steps, starting at [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account).
 5. To install the operator, run `$ helm install weblogic-operator ./weblogic-operator --namespace weblogic-operator`.
 
 For a specified version of the Helm chart, with `helm pull` and `helm install`, use the `--version <value>` option
