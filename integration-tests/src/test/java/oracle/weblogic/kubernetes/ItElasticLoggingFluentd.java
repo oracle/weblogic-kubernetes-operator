@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -249,6 +248,12 @@ class ItElasticLoggingFluentd {
   @Test
   @DisplayName("Use Fluentd to send log information to Elasticsearch and verify")
   void testFluentdQuery() {
+    try {
+      Thread.sleep(60000);
+    } catch (Exception ex) {
+        //ignore
+    }
+
     // Verify that number of logs is not zero and failed if count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
@@ -323,8 +328,7 @@ class ItElasticLoggingFluentd {
   private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
     final String elasticSearchHost = ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
-    //final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
-    final String elasticSearchPort = String.valueOf(ELASTICSEARCH_HTTP_PORT); //"9200";
+    final String elasticSearchPort = String.valueOf(ELASTICSEARCH_HTTP_PORT);
 
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
