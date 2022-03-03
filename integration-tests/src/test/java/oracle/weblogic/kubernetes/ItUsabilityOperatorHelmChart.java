@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -51,12 +55,14 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
@@ -845,6 +851,7 @@ class ItUsabilityOperatorHelmChart {
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain4Namespace),
           " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
+
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain5Uid, domain4Namespace,
                   "/u01/domains/" + domain5Uid, "scaleDown", 1,
@@ -856,6 +863,25 @@ class ItUsabilityOperatorHelmChart {
           " scaling via scalingAction.sh script was not succeeded for domain5");
       logger.info("Domain5 scaled to 2 servers");
     } finally {
+      try {
+        String operatorPodName =
+            assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op2Namespace),
+                "Can't get operator's pod name");
+        Path logDirPath = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName());
+        assertDoesNotThrow(() -> FileUtils.deleteDirectory(logDirPath.toFile()),
+            "Delete directory failed");
+        assertDoesNotThrow(() -> Files.createDirectories(logDirPath),
+            "Create directory failed");
+        String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(operatorPodName, op2Namespace));
+        Path pathToLog =
+            Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+                "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op2Namespace + ".log");
+
+        assertDoesNotThrow(() -> Files.write(pathToLog, podLog.getBytes()),
+            "Can't write to file " + pathToLog);
+      } catch (Exception ex) {
+        logger.info("Failed to collect operator log");
+      }
       uninstallOperator(op1HelmParams);
       deleteSecret(OCIR_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
