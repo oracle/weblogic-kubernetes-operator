@@ -512,6 +512,10 @@ public class Kubernetes {
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
+    // log pod names for debugging
+    for (var pod : pods.getItems()) {
+      getLogger().info("Pod Name {0}", pod.getMetadata().getName());
+    }
     for (var pod : pods.getItems()) {
       if (pod.getMetadata().getName().contains(podName)) {
         return pod;
