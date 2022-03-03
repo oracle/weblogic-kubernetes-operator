@@ -379,9 +379,12 @@ $ helm search repo weblogic-operator/weblogic-operator --versions
 ```
 2. Move the resulting `weblogic-operator-<version>.tgz` file to the machine without Internet access on which you want to install the WebLogic Kubernetes Operator.
 3. Run `$ tar zxf weblogic-operator-<version>.tgz`. This puts the Helm chart files in a local directory `./weblogic-operator`.
-4. To create the namespace where the operator will be installed, run `$ kubectl create namespace weblogic-operator`. **NOTE**: Be sure to follow all
-the previously detailed prerequisite steps, starting at [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account)
-and ending at [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options).
+4. To create the namespace where the operator will be installed, run `$ kubectl create namespace weblogic-operator`.
+{{% notice note %}}
+Creating a dedicated namespace for the operator is the most common approach, but is not always correct or sufficient. For details,
+see the prerequisite steps starting with Step 3. [Inspect the operator Helm chart](#inspect-the-operator-helm-chart).
+Be sure to follow all the previously detailed prerequisite steps, ending at Step 10. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options).
+{{% /notice %}}
 5. To install the operator, run `$ helm install weblogic-operator ./weblogic-operator --namespace weblogic-operator`.
 
 
