@@ -56,7 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
+//import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -124,6 +124,7 @@ class ItElasticLoggingFluentd {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String elkStackNamespace = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -140,7 +141,7 @@ class ItElasticLoggingFluentd {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -153,21 +154,26 @@ class ItElasticLoggingFluentd {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    // get a new unique elkStackNamespace
+    logger.info("Assigning a unique namespace for ELK Stack");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    elkStackNamespace = namespaces.get(2);
+
     // install and verify Elasticsearch
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(ELKSTACK_NAMESPACE),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elkStackNamespace),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(ELKSTACK_NAMESPACE),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elkStackNamespace),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+        false, 0, elkStackNamespace, true, domainNamespace);
 
     // create fluentd configuration
     configFluentd();
@@ -180,18 +186,19 @@ class ItElasticLoggingFluentd {
     createAndVerifyDomain(imageName);
 
     testVarMap = new HashMap<String, String>();
+    String newElkStackSearchHost = ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
 
     StringBuffer elasticsearchUrlBuff =
         new StringBuffer("curl http://")
-            .append(ELASTICSEARCH_HOST)
+            .append(newElkStackSearchHost)
             .append(":")
             .append(ELASTICSEARCH_HTTP_PORT);
     k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, ELKSTACK_NAMESPACE, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, ELKSTACK_NAMESPACE, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, elkStackNamespace, FLUENTD_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elkStackNamespace, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -211,13 +218,13 @@ class ItElasticLoggingFluentd {
           .elasticsearchImage(ELASTICSEARCH_IMAGE)
           .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
           .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+          .loggingExporterNamespace(elkStackNamespace);
 
       kibanaParams = new LoggingExporterParams()
           .kibanaName(KIBANA_NAME)
           .kibanaImage(KIBANA_IMAGE)
           .kibanaType(KIBANA_TYPE)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .loggingExporterNamespace(elkStackNamespace)
           .kibanaContainerPort(KIBANA_PORT);
 
       // uninstall ELK Stack
@@ -315,8 +322,9 @@ class ItElasticLoggingFluentd {
 
   private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
-    final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
-    final String elasticSearchPort = "9200";
+    final String elasticSearchHost = ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
+    //final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
+    final String elasticSearchPort = String.valueOf(ELASTICSEARCH_HTTP_PORT); //"9200";
 
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
@@ -368,6 +376,7 @@ class ItElasticLoggingFluentd {
                                               String miiImage) {
     final String volumeName = "weblogic-domain-storage-volume";
     final String fluentdRootPath = "/scratch";
+
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
