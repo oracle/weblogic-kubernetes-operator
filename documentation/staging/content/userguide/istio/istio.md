@@ -91,11 +91,20 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
+For non-OpenShift service mesh, label the namespace as follows:
+
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
+
+When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
+annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, with the `--set` option, as follows:
+
+`--set "annotations.sidecar\.istio\.io/inject=true"`
+
+
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.
 
@@ -227,6 +236,31 @@ $ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
 ```text
 2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
 app URL path = /weblogic/ready
+```
+
+When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must
+set the annotation for pod-level sidecar injection in the domain resource, as follows:
+
+```yaml
+apiVersion: "weblogic.oracle/v9"
+kind: Domain
+metadata:
+ name: domain2
+ namespace: domain1
+ labels:
+   weblogic.domainUID: domain2
+spec:
+ ... other content ...
+ serverPod:
+    ...
+    annotations:
+      sidecar.istio.io/inject: "true"
+ configuration:
+   istio:
+     enabled: true
+     readinessPort: 8888
+     replicationChannelPort: 4564
+     localhostBindingsEnabled: false
 ```
 
 ##### Applying a Domain YAML file
