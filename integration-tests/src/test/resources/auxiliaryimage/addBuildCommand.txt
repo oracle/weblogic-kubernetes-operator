@@ -1,0 +1,14 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+[final-build-commands]
+LABEL owner="middleware team"
+USER root
+RUN if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi \
+ && if [ -z "$(grep ^tester: /etc/group)" ]; then addgroup tester || exit 1 ; fi \
+ && if [ -z "$(grep ^tester: /etc/passwd)" ]; then adduser -D -u 1001 -G tester tester || exit 1 ; fi
+COPY --chown=tester:tester ./multi-model-one-ds.20.yaml /auxiliary/models
+RUN chgrp tester /auxiliary/models/multi-model-one-ds.20.yaml
+RUN chown -R tester:tester /auxiliary/models/multi-model-one-ds.20.yaml
+RUN chmod -R 640 /auxiliary/models/multi-model-one-ds.20.yaml
+USER oracle
