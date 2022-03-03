@@ -65,6 +65,7 @@ public class LoggingExporterUtils {
   /**
    * Install Elasticsearch and wait up to five minutes until Elasticsearch pod is ready.
    *
+   * @param namespace elastic search namespace
    * @return Elasticsearch installation parameters
    */
   public static LoggingExporterParams installAndVerifyElasticsearch(String namespace) {
@@ -78,6 +79,7 @@ public class LoggingExporterUtils {
         .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
         .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
         .loggingExporterNamespace(namespace);
+    logger.info("ES namespace:{0}}", elasticsearchParams.getLoggingExporterNamespace());
 
     // install Elasticsearch
     assertThat(installElasticsearch(elasticsearchParams))
@@ -135,13 +137,14 @@ public class LoggingExporterUtils {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installAndVerifyWlsLoggingExporter(String filter,
-                                                           String wlsLoggingExporterYamlFileLoc) {
+                                                           String wlsLoggingExporterYamlFileLoc, String namespace) {
     // Install WebLogic Logging Exporter
     assertThat(TestActions.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc))
+        wlsLoggingExporterYamlFileLoc, namespace))
         .as("WebLogic Logging Exporter installation succeeds")
         .withFailMessage("WebLogic Logging Exporter installation failed")
         .isTrue();

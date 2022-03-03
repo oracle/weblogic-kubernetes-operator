@@ -192,7 +192,7 @@ public interface TestConstants {
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION = Optional.ofNullable(System.getenv("FLUENTD_IMAGE_VERSION"))
-      .orElse("v1.3.3-debian-elasticsearch-1.3");
+      .orElse("v1.14.5-debian-elasticsearch7-1.1");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int DEFAULT_LISTEN_PORT = 7100;
