@@ -37,7 +37,6 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXI
 public abstract class BasePodStepContext extends StepContextBase {
 
   public static final String KUBERNETES_PLATFORM_HELM_VARIABLE = "kubernetesPlatform";
-  public static final String COMPATIBILITY_MODE = "compatibility-mode-";
   public static final String USER_MEM_ARGS = "USER_MEM_ARGS";
 
   BasePodStepContext(DomainPresenceInfo info) {

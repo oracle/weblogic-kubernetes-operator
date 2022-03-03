@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -12,7 +12,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.logging.Level;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
@@ -30,7 +29,6 @@ import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 
@@ -39,7 +37,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  *
  */
 public class WebhookRestServer {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   private static final int CORE_POOL_SIZE = 2;
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
@@ -52,9 +50,9 @@ public class WebhookRestServer {
   private HttpServer httpsServer;
 
   /**
-   * Constructs the WebLogic Operator REST server.
+   * Constructs the conversion webhook REST server.
    *
-   * @param config - contains the REST server's configuration, which includes the hostnames and port
+   * @param config - contains the webhook REST server's configuration, which includes the hostnames and port
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
@@ -66,9 +64,9 @@ public class WebhookRestServer {
   }
 
   /**
-   * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
+   * Create singleton instance of the conversion webhook's RestServer. Should only be called once.
    *
-   * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
+   * @param restConfig - the conversion webhook's REST configuration. Throws IllegalStateException if
    *     instance already created.
    */
   public static synchronized void create(WebhookRestConfig restConfig) {
@@ -128,9 +126,7 @@ public class WebhookRestServer {
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
             .packages(ConversionWebhookResource.class.getPackageName());
-    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
-    rc.register(new LoggingFeature(LOGGER.getUnderlyingLogger(),
-            Level.FINEST, LoggingFeature.Verbosity.PAYLOAD_ANY, 10000));
+    rc.setProperties(Map.of(WebhookRestConfig.WEBHOOK_REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }
 

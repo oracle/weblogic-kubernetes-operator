@@ -84,6 +84,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
@@ -578,9 +579,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
     V1Pod recipe = createPodRecipe();
-    LOGGER.finer("Recipe before conversion is " + Yaml.dump(recipe));
     convertAuxImagesInitContainerVolumeAndMounts(recipe);
-    LOGGER.finer("Recipe after conversion is " + Yaml.dump(recipe));
     return requiredHash.equals(AnnotationHelper.createHash(recipe));
   }
 

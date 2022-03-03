@@ -32,7 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE_KEY;
 import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_DIR;
@@ -41,7 +41,7 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCerti
 
 public class InitializeWebhookIdentityStep extends Step {
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   private static final String WEBHOOK_CM = "weblogic-webhook-cm";
   private static final String WEBHOOK_SECRETS = "weblogic-webhook-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
@@ -50,9 +50,6 @@ public class InitializeWebhookIdentityStep extends Step {
   private static final File certFile = new File(WEBHOOK_DIR + "/config/webhookCert");
   private static final File keyFile = new File(WEBHOOK_DIR + "/secrets/webhookKey");
   public static final String INTERNAL_WEBHOOK_KEY = "internalWebhookKey";
-
-  private final String certificate = WEBHOOK_CERTIFICATE;
-  private final String certificateKey = WEBHOOK_CERTIFICATE_KEY;
 
   /**
    * Constructor for the InitializeIdentityStep.
@@ -74,7 +71,7 @@ public class InitializeWebhookIdentityStep extends Step {
         return createIdentity(packet);
       }
     } catch (Exception e) {
-      LOGGER.warning(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
+      LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
       throw new RuntimeException(e);
     }
   }
@@ -82,20 +79,20 @@ public class InitializeWebhookIdentityStep extends Step {
   private void reuseIdentity() throws IOException {
     // copy the certificate and key from the webhook's config map and secret
     // to the locations the webhook runtime expects
-    FileUtils.copyFile(certFile, new File(certificate));
-    FileUtils.copyFile(keyFile, new File(certificateKey));
+    FileUtils.copyFile(certFile, new File(WEBHOOK_CERTIFICATE));
+    FileUtils.copyFile(keyFile, new File(WEBHOOK_CERTIFICATE_KEY));
   }
 
   private NextAction createIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, new File(certificateKey));
-    X509Certificate cert = generateCertificate(certificate, keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+    writeToFile(key, new File(WEBHOOK_CERTIFICATE_KEY));
+    X509Certificate cert = generateCertificate(WEBHOOK_CERTIFICATE, keyPair, SHA_256_WITH_RSA, COMMON_NAME,
             CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), new File(certificate));
+    writeToFile(getBase64Encoded(cert), new File(WEBHOOK_CERTIFICATE));
     // put the new certificate in the webhook's config map so that it will be available
     // the next time the webhook is started
-    return doNext(recordInternalWebhookCert(certificate, cert,
+    return doNext(recordInternalWebhookCert(WEBHOOK_CERTIFICATE, cert,
             recordInternalWebhookKey(key, getNext())), packet);
   }
 

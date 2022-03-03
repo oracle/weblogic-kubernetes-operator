@@ -49,7 +49,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
 
 /** A Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   static final String GIT_BUILD_VERSION_KEY = "git.build.version";
   static final String GIT_BRANCH_KEY = "git.branch";
   static final String GIT_COMMIT_KEY = "git.commit.id.abbrev";

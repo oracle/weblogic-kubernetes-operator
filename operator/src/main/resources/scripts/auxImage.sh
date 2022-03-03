@@ -32,8 +32,6 @@ UNKNOWN_SHELL=true
 
 checkEnv AUXILIARY_IMAGE_TARGET_PATH AUXILIARY_IMAGE_CONTAINER_NAME || exit 1
 
-echo "DEBUG: First argument is $1"
-
 if [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "operator-aux-container"* ]]; then
   initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
   cat /tmp/auxiliaryImage.out

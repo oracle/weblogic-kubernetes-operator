@@ -22,7 +22,7 @@ public class Certificates {
   private static final String EXTERNAL_ID_DIR = OPERATOR_DIR + "external-identity/";
   static final String EXTERNAL_CERTIFICATE_KEY = EXTERNAL_ID_DIR + "externalOperatorKey";
   static final String EXTERNAL_CERTIFICATE = EXTERNAL_ID_DIR + "externalOperatorCert";
-  public static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
+  private static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
   public static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
   public static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
   public static final String WEBHOOK_CERTIFICATE_KEY = INTERNAL_ID_DIR + "webhookKey";

@@ -63,12 +63,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-    getDomainSpec().setLegacyAuxiliaryImages(auxiliaryImages);
-    return this;
-  }
-
-  @Override
   public DomainConfigurator withAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
     getOrCreateModel().withAuxiliaryImageVolumeMountPath(auxiliaryImageVolumeMountPath);
     return this;
@@ -658,12 +652,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       return this;
     }
 
-    @Override
-    public ServerConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList) {
-      server.setLegacyAuxiliaryImages(auxiliaryImageList);
-      return this;
-    }
-
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -850,12 +838,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
       cluster.setMaxConcurrentShutdown(maxConcurrentShutdown);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-      cluster.setLegacyAuxiliaryImages(auxiliaryImages);
       return this;
     }
 

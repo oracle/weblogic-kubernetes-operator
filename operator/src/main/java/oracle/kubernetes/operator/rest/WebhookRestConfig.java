@@ -10,6 +10,12 @@ package oracle.kubernetes.operator.rest;
 public interface WebhookRestConfig {
 
   /**
+   * This constant is used internally to pass the WebhookRestConfig instance from the WebhookRestServer to the
+   * filters and resources so that they can access it.
+   */
+  String WEBHOOK_REST_CONFIG_PROPERTY = "WebhookRestConfig";
+
+  /**
    * Gets the in-pod hostname of the WebLogic operator webhook REST api.
    *
    * @return the in-pod hostname

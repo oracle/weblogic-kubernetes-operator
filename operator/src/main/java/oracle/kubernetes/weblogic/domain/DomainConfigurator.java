@@ -266,11 +266,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withAuxiliaryImages(List<AuxiliaryImage> ai);
 
   /**
-   * Add auxiliary images for the domain resource.
-   */
-  public abstract DomainConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> ai);
-
-  /**
    * Configure auxiliary image volume mount path.
    */
   public abstract DomainConfigurator withAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath);

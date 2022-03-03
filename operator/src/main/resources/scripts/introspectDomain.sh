@@ -62,7 +62,7 @@ traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 checkAuxiliaryImage || exit 1
 
 #
-# if the auxiliary image feature is active, verify the mount, and log mount information
+# if the legacy auxiliary image are defined using init containers, verify the mount, and log mount information
 #
 checkInitContainersWithAuxImages  || exit 1
 

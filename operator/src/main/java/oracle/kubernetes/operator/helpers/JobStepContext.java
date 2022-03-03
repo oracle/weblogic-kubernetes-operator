@@ -52,6 +52,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;

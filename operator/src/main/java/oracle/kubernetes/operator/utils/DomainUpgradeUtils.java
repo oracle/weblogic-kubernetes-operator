@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import static oracle.kubernetes.operator.helpers.BasePodStepContext.COMPATIBILITY_MODE;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
@@ -47,7 +47,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
 public class DomainUpgradeUtils {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   public static final String DESIRED_API_VERSION = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
@@ -291,7 +291,6 @@ public class DomainUpgradeUtils {
     Map<String, Object> container = new LinkedHashMap<>();
     container.put("name", COMPATIBILITY_MODE + getName(index));
     container.put("image", auxiliaryImage.get("image"));
-    //container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT, "webhook_generated"));
     container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
     container.put("imagePullPolicy", getImagePullPolicy(auxiliaryImage));
     container.put("env", createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)));

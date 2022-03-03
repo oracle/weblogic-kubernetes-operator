@@ -3,14 +3,11 @@
 
 package oracle.kubernetes.weblogic.domain;
 
-import java.util.List;
-
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -127,7 +124,5 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withRuntimeClassName(String runtimeClassName);
 
   ServerConfigurator withPriorityClassName(String priorityClassName);
-
-  ServerConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList);
 
 }

@@ -41,7 +41,6 @@ import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.Feature;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -49,7 +48,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static java.util.Collections.emptyList;
 import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
-public class ServerPod extends KubernetesResource {
+class ServerPod extends KubernetesResource {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
       Comparator.comparing(V1EnvVar::getName);
@@ -239,17 +238,6 @@ public class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  @Feature("Disabled")
-  private List<AuxiliaryImage> auxiliaryImages;
-
-  public List<AuxiliaryImage> getAuxiliaryImages() {
-    return this.auxiliaryImages;
-  }
-
-  public void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-    this.auxiliaryImages = auxiliaryImages;
-  }
-
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -415,11 +403,12 @@ public class ServerPod extends KubernetesResource {
     return this.shutdown;
   }
 
-  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions) {
+  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions, Boolean waitForAllSessions) {
     this.shutdown
         .shutdownType(shutdownType)
         .timeoutSeconds(timeoutSeconds)
-        .ignoreSessions(ignoreSessions);
+        .ignoreSessions(ignoreSessions)
+        .waitForAllSessions(waitForAllSessions);
   }
 
   ProbeTuning getReadinessProbeTuning() {
@@ -594,7 +583,7 @@ public class ServerPod extends KubernetesResource {
     return false;
   }
 
-  public List<V1EnvVar> getEnv() {
+  List<V1EnvVar> getEnv() {
     return this.env;
   }
 
@@ -645,7 +634,7 @@ public class ServerPod extends KubernetesResource {
     this.initContainers = initContainers;
   }
 
-  public void addInitContainer(V1Container initContainer) {
+  void addInitContainer(V1Container initContainer) {
     initContainers.add(initContainer);
   }
 

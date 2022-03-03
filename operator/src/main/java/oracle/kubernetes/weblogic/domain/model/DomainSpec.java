@@ -43,11 +43,6 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HO
 @Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
 
-  @Override
-  public ServerPod getServerPod() {
-    return super.serverPod;
-  }
-
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
       "Domain unique identifier. It is recommended that this value be unique to assist in future work to "
@@ -435,7 +430,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @SuppressWarnings("unused")
-  public EffectiveConfigurationFactory getEffectiveConfigurationFactory(
+  EffectiveConfigurationFactory getEffectiveConfigurationFactory(
       String apiVersion) {
     return new CommonEffectiveConfigurationFactory();
   }

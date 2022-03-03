@@ -56,4 +56,8 @@ public interface ProcessingConstants {
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
 
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
+
+  String WEBHOOK = "Webhook";
+
+  String COMPATIBILITY_MODE = "compatibility-mode-";
 }

@@ -36,10 +36,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  public abstract ServerPod getServerPod();
-
   @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
-  protected final ServerPod serverPod = new ServerPod();
+  private final ServerPod serverPod = new ServerPod();
 
   @Description(
       "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.")
@@ -370,14 +368,6 @@ public abstract class BaseConfiguration {
 
   void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
-  }
-
-  List<AuxiliaryImage> getLegacyAuxiliaryImages() {
-    return serverPod.getAuxiliaryImages();
-  }
-
-  void setLegacyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList) {
-    serverPod.setAuxiliaryImages(auxiliaryImageList);
   }
 
   @Override

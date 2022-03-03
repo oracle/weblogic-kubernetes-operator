@@ -55,6 +55,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.rest.WebhookRestConfigImpl.HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
@@ -68,7 +69,6 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
-  public static final String WEBHOOK = "Webhook";
   public static final String VERSION_V1 = "v1";
   public static final String WEBHOOK_PATH = "/webhook";
 

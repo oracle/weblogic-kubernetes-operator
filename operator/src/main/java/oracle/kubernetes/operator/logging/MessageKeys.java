@@ -160,6 +160,7 @@ public class MessageKeys {
   public static final String WAIT_FOR_CRD_INSTALLATION = "WLSKO-0209";
   public static final String WEBHOOK_SHUTTING_DOWN = "WLSKO-0210";
   public static final String STARTING_WEBHOOK_LIVENESS_THREAD = "WLSKO-0211";
+  public static final String WEBHOOK_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0212";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

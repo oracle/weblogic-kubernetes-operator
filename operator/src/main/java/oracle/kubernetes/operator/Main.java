@@ -60,7 +60,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
-import static oracle.kubernetes.operator.helpers.CrdHelper.WEBHOOK;
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Kubernetes Operator for WebLogic. */

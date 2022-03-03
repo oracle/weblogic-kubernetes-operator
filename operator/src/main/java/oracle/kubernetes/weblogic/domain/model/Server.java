@@ -72,11 +72,6 @@ public class Server extends BaseConfiguration {
   }
 
   @Override
-  public ServerPod getServerPod() {
-    return super.serverPod;
-  }
-
-  @Override
   public String getServerStartPolicy() {
     return serverStartPolicy;
   }

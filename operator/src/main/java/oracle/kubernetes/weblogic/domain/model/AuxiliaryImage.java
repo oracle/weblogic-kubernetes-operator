@@ -153,5 +153,4 @@ public class AuxiliaryImage {
             .append(sourceModelHome);
     return builder.toHashCode();
   }
-
 }
