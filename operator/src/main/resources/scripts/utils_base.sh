@@ -358,15 +358,15 @@ checkSourceWDTInstallDirExistsAndNotEmpty() {
 }
 
 #
-# initContainerAuxiliaryImages
-#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
-#            If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message and returns.
-#            If the command execution fails, it logs error message with failure details. Otherwise it
-#            logs a success message with details.
+# initCompatibilityModeInitContainersWithLegacyAuxImages
+#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the compatibility mode init container
+#            with auxiliary image. If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message
+#            and returns. If the command execution fails, it logs error message with failure details.
+#            Otherwise it logs a success message with details.
 #            See also 'auxImage.sh'.
-#            See also checkInitContainersWithAuxImages in 'utils.sh'.
+#            See also checkCompatibilityModeInitContainersWithLegacyAuxImages in 'utils.sh'.
 #
-initContainerAuxiliaryImages() {
+initCompatibilityModeInitContainersWithLegacyAuxImages() {
 
   if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
     trace SEVERE "Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \

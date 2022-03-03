@@ -214,18 +214,18 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook() {
-      return Optional.ofNullable(Certificates.getWebhookCertificateData())
-              .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
-    }
-
-    private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
       return new V1CustomResourceConversion().strategy(WEBHOOK)
               .webhook(new V1WebhookConversion().conversionReviewVersions(
                       Arrays.asList(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
                       .service(new ApiextensionsV1ServiceReference().name(INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC)
                               .namespace(getWebhookNamespace()).port(HTTPS_PORT)
                               .path(WEBHOOK_PATH))
-                      .caBundle(caBundle)));
+                      .caBundle(getCABundle())));
+    }
+
+    private static byte[] getCABundle() {
+      return Optional.ofNullable(Certificates.getWebhookCertificateData())
+              .map(cd -> Base64.decodeBase64(cd)).orElse(null);
     }
 
     static String getVersionFromCrdSchemaFileName(String name) {

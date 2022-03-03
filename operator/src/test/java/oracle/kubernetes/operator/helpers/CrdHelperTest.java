@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
@@ -195,7 +196,7 @@ class CrdHelperTest {
   }
 
   @Test
-  void whenExistingCrdHasFutureVersion_dontReplaceIt() {
+  void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing.getSpec().addVersionsItem(
             new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
@@ -206,7 +207,41 @@ class CrdHelperTest {
   }
 
   @Test
-  void whenExistingCrdHasFutureVersionButNoneConversionStrategy_replaceIt() {
+  void whenExistingCrdHasNoneConversionStrategy_replaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasOldVersionAndNoneConversionStrategy_replaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_OLD);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
             .getSpec()
@@ -220,6 +255,7 @@ class CrdHelperTest {
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+    assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));
   }
 
   @Test

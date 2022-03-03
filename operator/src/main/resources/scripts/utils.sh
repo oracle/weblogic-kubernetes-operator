@@ -737,16 +737,16 @@ checkAuxiliaryImage() {
 }
 
 #
-# checkInitContainersWithAuxImages
+# checkCompatibilityModeInitContainersWithLegacyAuxImages
 #   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
-#            in ${AUXILIARY_IMAGE_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
-#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/initContainerAuxImageLogs dirs.
-#            It also returns 1 if 'successfully' message is not found in the output files
+#            in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs
+#            dirs. It also returns 1 if 'successfully' message is not found in the output files
 #            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
 #            See also 'auxImage.sh'.
-#            See also initContainerAuxiliaryImages in 'utils_base.sh'.
+#            See also initCompatibilityModeInitContainersWithLegacyAuxImages in 'utils_base.sh'.
 #
-checkInitContainersWithAuxImages() {
+checkCompatibilityModeInitContainersWithLegacyAuxImages() {
   # check auxiliary image results (if any)
   if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
     trace FINE "Auxiliary Image: No init containers with auxiliary images configured."
@@ -766,9 +766,9 @@ checkInitContainersWithAuxImages() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/initContainerAuxImageLogs/*.out 2>/dev/null | sort --version-sort)
+    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out 2>/dev/null | sort --version-sort)
     if [ -z "${out_files}" ]; then
-      trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/initContainerAuxImageLogs/*.out'"
+      trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out'"
       return 1
     fi
     severe_found=false
@@ -788,7 +788,7 @@ checkInitContainersWithAuxImages() {
       trace "Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v initContainerAuxImageLogs)" ] \
+    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v compatibilityModeInitContainerLogs)" ] \
       && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
        "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
        "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \

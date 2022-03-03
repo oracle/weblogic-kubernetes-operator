@@ -64,7 +64,7 @@ checkAuxiliaryImage || exit 1
 #
 # if the legacy auxiliary image are defined using init containers, verify the mount, and log mount information
 #
-checkInitContainersWithAuxImages  || exit 1
+checkCompatibilityModeInitContainersWithLegacyAuxImages  || exit 1
 
 #
 # setup MII functions in case this is a MII domain

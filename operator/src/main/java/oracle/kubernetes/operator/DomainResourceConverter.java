@@ -49,6 +49,14 @@ public class DomainResourceConverter {
 
   /**
    * Constructs an instances of Domain resource converter with given arguments.
+   * @param inputFileName Name of the input file.
+   */
+  public DomainResourceConverter(String inputFileName) {
+    this(null, null, inputFileName);
+  }
+
+  /**
+   * Constructs an instances of Domain resource converter with given arguments.
    * @param outputDir Name of the output directory.
    * @param outputFileName Name of the output file.
    * @param inputFileName Name of the input file.
