@@ -165,4 +165,6 @@ public interface ServerSpec {
   String getServerRestartVersion();
 
   boolean alwaysStart();
+
+  long getMaximumReadyWaitTimeSeconds();
 }

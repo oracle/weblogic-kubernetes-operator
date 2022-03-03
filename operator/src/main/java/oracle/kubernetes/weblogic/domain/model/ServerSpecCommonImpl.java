@@ -255,6 +255,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
+  public long getMaximumReadyWaitTimeSeconds() {
+    return server.getMaximumReadyWaitTimeSeconds();
+  }
+
+  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
