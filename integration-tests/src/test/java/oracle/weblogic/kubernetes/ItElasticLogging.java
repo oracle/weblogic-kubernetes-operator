@@ -29,7 +29,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
@@ -39,11 +38,11 @@ import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -54,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.generateNewWlsLoggingExporterYamlFile;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyWlsLoggingExporter;
@@ -93,7 +93,7 @@ class ItElasticLogging {
   private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
 
   // constants for testing WebLogic Logging Exporter
-  private static final String wlsLoggingExporterYamlFileLoc = RESOURCE_DIR + "/loggingexporter";
+  private static final String wlsLoggingExporterYamlFileLoc = RESULTS_ROOT + "/ItElasticLogging";
 
   // constants for Domain
   private static String domainUid = "elk-domain1";
@@ -107,6 +107,7 @@ class ItElasticLogging {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String elkStackNamespace = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -124,7 +125,7 @@ class ItElasticLogging {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -137,24 +138,30 @@ class ItElasticLogging {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    // get a new unique elkStackNamespace
+    logger.info("Assigning a unique namespace for ELK Stack");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    elkStackNamespace = namespaces.get(2);
+
     // install and verify Elasticsearch
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elkStackNamespace),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elkStackNamespace),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-        false, 0, true, domainNamespace);
+        false, 0, elkStackNamespace, true, domainNamespace);
 
     // install WebLogic Logging Exporter if in non-OKD env
     if (!OKD) {
+      generateNewWlsLoggingExporterYamlFile(elkStackNamespace, wlsLoggingExporterYamlFileLoc);
       installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc);
     }
 
@@ -166,18 +173,19 @@ class ItElasticLogging {
     createAndVerifyDomain(imageName);
 
     testVarMap = new HashMap<String, String>();
+    String newElkStackSearchHost = ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
 
     StringBuffer elasticsearchUrlBuff =
         new StringBuffer("curl http://")
-            .append(ELASTICSEARCH_HOST)
+            .append(newElkStackSearchHost)
             .append(":")
             .append(ELASTICSEARCH_HTTP_PORT);
     k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, null, LOGSTASH_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, null, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, elkStackNamespace, LOGSTASH_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elkStackNamespace, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -198,13 +206,13 @@ class ItElasticLogging {
           .elasticsearchImage(ELASTICSEARCH_IMAGE)
           .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
           .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+          .loggingExporterNamespace(elkStackNamespace);
 
       kibanaParams = new LoggingExporterParams()
           .kibanaName(KIBANA_NAME)
           .kibanaImage(KIBANA_IMAGE)
           .kibanaType(KIBANA_TYPE)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .loggingExporterNamespace(elkStackNamespace)
           .kibanaContainerPort(KIBANA_PORT);
 
       logger.info("Uninstall Elasticsearch pod");
@@ -274,7 +282,7 @@ class ItElasticLogging {
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
-    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
+    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elkStackNamespace, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
     testVarMap.putAll(wlsMap);
 

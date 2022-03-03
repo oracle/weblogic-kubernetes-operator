@@ -155,13 +155,13 @@ class ItElasticLoggingFluentd {
 
     // install and verify Elasticsearch
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(ELKSTACK_NAMESPACE),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(ELKSTACK_NAMESPACE),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
@@ -190,8 +190,8 @@ class ItElasticLoggingFluentd {
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, null, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, null, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, ELKSTACK_NAMESPACE, FLUENTD_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, ELKSTACK_NAMESPACE, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);

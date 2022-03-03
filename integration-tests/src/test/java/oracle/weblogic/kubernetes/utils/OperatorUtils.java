@@ -137,6 +137,33 @@ public class OperatorUtils {
                                                         String opServiceAccount,
                                                         boolean withRestAPI,
                                                         int externalRestHttpsPort,
+                                                        String elkStackNamespace,
+                                                        boolean elkIntegrationEnabled,
+                                                        String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, elkStackNamespace,
+        null, null, false,
+        -1, -1, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
                                                         boolean elkIntegrationEnabled,
                                                         String... domainNamespace) {
     HelmParams opHelmParams =
@@ -250,6 +277,44 @@ public class OperatorUtils {
                                                         int domainPresenceFailureRetryMaxCount,
                                                         int domainPresenceFailureRetrySeconds,
                                                         String... domainNamespace) {
+
+    return installAndVerifyOperator(opNamespace, opServiceAccount,
+        withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, "",
+        domainNamespaceSelectionStrategy, null, false, -1, -1, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param elkStackNamespace ELK Stack namespace
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
+                                                        HelmParams opHelmParams,
+                                                        boolean elkIntegrationEnabled,
+                                                        String elkStackNamespace,
+                                                        String domainNamespaceSelectionStrategy,
+                                                        String domainNamespaceSelector,
+                                                        boolean enableClusterRoleBinding,
+                                                        int domainPresenceFailureRetryMaxCount,
+                                                        int domainPresenceFailureRetrySeconds,
+                                                        String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
@@ -292,11 +357,12 @@ public class OperatorUtils {
     }
 
     // enable ELK Stack
+    String newElkStackSearchHost = ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
     if (elkIntegrationEnabled) {
       opParams
           .elkIntegrationEnabled(elkIntegrationEnabled);
       opParams
-          .elasticSearchHost(ELASTICSEARCH_HOST);
+          .elasticSearchHost(newElkStackSearchHost);
       opParams
           .elasticSearchPort(ELASTICSEARCH_HTTP_PORT);
       opParams

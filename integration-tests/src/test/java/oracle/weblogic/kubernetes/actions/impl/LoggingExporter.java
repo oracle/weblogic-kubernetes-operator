@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -11,8 +11,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -37,6 +39,7 @@ import oracle.weblogic.kubernetes.utils.FileUtils;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
@@ -52,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Utility class for ELK Stack and WebLogic Logging Exporter.
@@ -80,11 +84,16 @@ public class LoggingExporter {
 
     // create Elasticsearch deployment
     logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(elasticsearchDeployment),
-        "createDeployment of Elasticsearch failed with ApiException");
-    assertTrue(deploymentCreated,
-        String.format("Failed to create Elasticsearch deployment for %s in namespace %s",
-            elasticsearchName, namespace));
+    try {
+      Kubernetes.createDeployment(elasticsearchDeployment);
+    } catch (ApiException apiex) {
+      if (apiex.getResponseBody().contains("AlreadyExists")) {
+        getLogger().log(Level.WARNING, apiex.getResponseBody());
+      } else {
+        getLogger().log(Level.SEVERE, apiex.getResponseBody());
+        fail("Elastic search deployment failed with unknown reason, see above");
+      }
+    }
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
     testUntil(
@@ -237,16 +246,16 @@ public class LoggingExporter {
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic Logging Exporter)
-   * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
+   * @param elkStackNamespace namespace of ELK Stack pod
    * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
   public static Map<String, String> verifyLoggingExporterReady(String namespace,
-                                                               String labelSelector,
+                                                               String elkStackNamespace,
                                                                String index) {
     // Get index status info
     String statusLine =
-        execLoggingExpStatusCheck(namespace, labelSelector, "*" + index + "*");
+        execLoggingExpStatusCheck(namespace, elkStackNamespace,"*" + index + "*");;
     assertNotNull(statusLine);
 
     String [] parseString = statusLine.split("\\s+");
@@ -475,10 +484,17 @@ public class LoggingExporter {
     return elasticsearchService;
   }
 
-  private static String execLoggingExpStatusCheck(String namespace, String labelSelector, String indexRegex) {
+  private static String execLoggingExpStatusCheck(String opNamespace,
+                                                  String elkStackNamespace,
+                                                  String indexRegex) {
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
+
+    String newElkStackSearchHost =
+        (elkStackNamespace == ELKSTACK_NAMESPACE)
+            ? ELASTICSEARCH_HOST : ELASTICSEARCH_HOST.replace("default", elkStackNamespace);
+
     String cmd = k8sExecCmdPrefixBuff
-        .append(ELASTICSEARCH_HOST)
+        .append(newElkStackSearchHost)
         .append(":")
         .append(ELASTICSEARCH_HTTP_PORT)
         .append("/_cat/indices/")
@@ -487,14 +503,14 @@ public class LoggingExporter {
 
     // get Operator pod name
     String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, namespace));
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
 
     int i = 0;
     ExecResult statusLine = null;
     while (i < maxIterationsPod) {
       statusLine = assertDoesNotThrow(
-          () -> execCommand(namespace, operatorPodName, null, true,
+          () -> execCommand(opNamespace, operatorPodName, null, true,
               "/bin/sh", "-c", cmd));
       assertNotNull(statusLine, "curl command returns null");
 

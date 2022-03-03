@@ -1609,14 +1609,14 @@ public class TestActions {
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
-   * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
+   * @param elkStackNamespace namespace of ELK Stack pod
    * @param index index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
   public static Map<String, String> verifyLoggingExporterReady(String namespace,
-                                                               String labelSelector,
+                                                               String elkStackNamespace,
                                                                String index) {
-    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+    return LoggingExporter.verifyLoggingExporterReady(namespace, elkStackNamespace, index);
   }
 
   // --------------------------- WebLogic Logging Exporter---------------------------------
