@@ -38,7 +38,6 @@ import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -70,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodPhaseAndPodReady;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
@@ -533,7 +533,6 @@ class ItDiagnosticsFailedCondition {
    * type: Completed, status: false
    */
   @Test
-  @Disabled
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
     boolean testPassed = false;
@@ -594,7 +593,7 @@ class ItDiagnosticsFailedCondition {
       dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
-      Domain domain = FmwUtils.createDomainResource(domainName,
+      Domain domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
           domainNamespace,
           adminSecretName,
           OCIR_SECRET_NAME,
@@ -602,7 +601,8 @@ class ItDiagnosticsFailedCondition {
           rcuaccessSecretName,
           opsswalletpassSecretName,
           replicaCount,
-          fmwMiiImage);
+          fmwMiiImage,
+          5L);
 
       createDomainAndVerify(domain, domainNamespace);
 
@@ -628,7 +628,7 @@ class ItDiagnosticsFailedCondition {
 
       for (int i = 1; i <= replicaCount; i++) {
         String managedServerName = managedServerPrefix + i + "-c1";
-        logger.info("Checking managed server service {0} is created in namespace {1}",
+        logger.info("Checking managed server {0} has been shutdown in namespace {1}",
             managedServerName, domainNamespace);
         PodUtils.checkPodDoesNotExist(managedServerName, domainName, domainNamespace);
       }
@@ -651,8 +651,14 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      testPassed = true;
 
+      for (int i = 1; i <= replicaCount; i++) {
+        String managedServerName = managedServerPrefix + i + "-c1";
+        logger.info("Checking managed server {0} has been shutdown in namespace {1}",
+            managedServerName, domainNamespace);
+        checkServerStatusPodPhaseAndPodReady(domainName, domainNamespace, managedServerName, "Running", "False");
+      }
+      testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
@@ -769,25 +775,25 @@ class ItDiagnosticsFailedCondition {
   private void checkStatus(String domainName, String completed, String available, String failed) {
 
     if (failed != null) {
-      // verify the condition type Available exists
+      // verify the condition type Failed exists
       checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-      // verify the condition Available type has status False
+      // verify the condition Failed type has expected status
       checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, failed);
     }
 
     if (available != null) {
-      // verify the condition type Completed exists
+      // verify the condition type Available exists
       checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-      // verify the condition Completed type has status True
+      // verify the condition Available type has expected status
       checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, available);
     }
 
     if (completed != null) {
-      // verify the condition type Failed exists
+      // verify the condition type Completed exists
       checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-      // verify the condition Failed type has status True
+      // verify the condition Completed type has expected status
       checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, completed);
     }

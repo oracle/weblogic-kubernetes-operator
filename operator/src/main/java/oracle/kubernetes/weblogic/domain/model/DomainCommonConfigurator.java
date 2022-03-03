@@ -274,6 +274,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withMaxReadyWaitTimeSeconds(long waitTime) {
+    getDomainSpec().setMaxReadyWaitTimeSeconds(waitTime);
+    return this;
+  }
+
+  @Override
   public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
     return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
   }
@@ -635,6 +641,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withMaximumReadyWaitTimeSeconds(long waitTime) {
+      server.setMaxReadyWaitTimeSeconds(waitTime);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
       return this;
@@ -651,7 +663,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       getDomainSpec().setPriorityClassName(priorityClassName);
       return this;
     }
-
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -838,6 +849,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
       cluster.setMaxConcurrentShutdown(maxConcurrentShutdown);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaximumReadyWaitTimeSeconds(long maximumReadyWaitTimeSeconds) {
+      cluster.setMaxReadyWaitTimeSeconds(maximumReadyWaitTimeSeconds);
       return this;
     }
 

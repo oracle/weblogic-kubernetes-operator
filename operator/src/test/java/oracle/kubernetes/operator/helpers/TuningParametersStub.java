@@ -32,6 +32,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_SUCCESS_THRESHOLD = 1;
   static final int LIVENESS_FAILURE_THRESHOLD = 1;
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
+  static final long MAXIMUM_SERVER_POD_READY_WAIT_TIME_SECONDS = 1800L;
 
   // Call builder tuning
   public static final int CALL_REQUEST_LIMIT = 10;
@@ -63,7 +64,8 @@ public abstract class TuningParametersStub implements TuningParameters {
         LIVENESS_PERIOD,
         LIVENESS_SUCCESS_THRESHOLD,
         LIVENESS_FAILURE_THRESHOLD,
-        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS,
+        MAXIMUM_SERVER_POD_READY_WAIT_TIME_SECONDS);
   }
 
   /**

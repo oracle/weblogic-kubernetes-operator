@@ -754,6 +754,18 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
         .map(Configuration::getIntrospectorJobActiveDeadlineSeconds).orElse(null);
   }
 
+  /**
+   * Returns the value of the maximum server pod ready wait time.
+   *
+   * @param serverName server name
+   * @param clusterName cluster name
+   * @return value of the wait time in seconds.
+   */
+  public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
+    return Optional.ofNullable(getServer(serverName, clusterName))
+        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+  }
+
   public String getWdtConfigMap() {
     return spec.getWdtConfigMap();
   }
