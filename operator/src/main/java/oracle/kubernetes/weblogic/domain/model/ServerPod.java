@@ -220,6 +220,15 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
+  /**
+   * The maximum ready wait time.
+   *
+   * @since 4.0
+   */
+  @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
+      + "before it considers the pod failed. Defaults to 1800 seconds.")
+  private Long maxReadyWaitTimeSeconds = 1800L;
+
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -428,6 +437,14 @@ class ServerPod extends KubernetesResource {
         .failureThreshold(failureThreshold);
   }
 
+  public Long getMaxReadyWaitTimeSeconds() {
+    return this.maxReadyWaitTimeSeconds;
+  }
+
+  public void setMaxReadyWaitTimeSeconds(@Nullable Long maxReadyWaitTimeSeconds) {
+    this.maxReadyWaitTimeSeconds = maxReadyWaitTimeSeconds;
+  }
+
   void fillInFrom(ServerPod serverPod1) {
     for (V1EnvVar var : serverPod1.getV1EnvVars()) {
       addIfMissing(var);
@@ -452,6 +469,7 @@ class ServerPod extends KubernetesResource {
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+    maxReadyWaitTimeSeconds = serverPod1.maxReadyWaitTimeSeconds;
     if (affinity == null) {
       affinity = serverPod1.affinity;
     } else if (serverPod1.affinity != null) {

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,7 +23,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -46,6 +49,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -93,6 +97,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PODS_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -646,7 +652,7 @@ public class DomainStatusUpdater {
           setStatusDetails(status);
         }
         if (getDomain() != null) {
-          updateStatusDetails(status);
+          updateStatusDetails(status, packet.getSpi(DomainPresenceInfo.class));
           setStatusConditions(status);
         }
       }
@@ -700,7 +706,7 @@ public class DomainStatusUpdater {
             if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
               return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
             } else if (ServerPod.name().equals(newCondition.getReason())) {
-              return new EventData(DOMAIN_FAILED).failureReason(ServerPod);
+              return new EventData(DOMAIN_FAILED).failureReason(ServerPod).message(newCondition.getMessage());
             }
             return null;
           default:
@@ -728,7 +734,15 @@ public class DomainStatusUpdater {
         newConditions.apply();
 
         if (isHasFailedPod()) {
-          status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
+          status.addCondition(new DomainCondition(Failed)
+              .withStatus(true)
+              .withReason(ServerPod)
+              .withMessage(forPodFailedMessage()));
+        } else if (hasPodNotReadyInTime()) {
+          status.addCondition(new DomainCondition(Failed)
+              .withStatus(true)
+              .withReason(ServerPod)
+              .withMessage(formatPodNotReadyMessage()));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
@@ -739,6 +753,14 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private String formatPodNotReadyMessage() {
+        return LOGGER.formatMessage(PODS_NOT_READY);
+      }
+
+      private String forPodFailedMessage() {
+        return LOGGER.formatMessage(PODS_FAILED);
       }
 
       private boolean haveServerData() {
@@ -924,15 +946,16 @@ public class DomainStatusUpdater {
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
-      private void updateStatusDetails(DomainStatus status) {
-        new StatusDetailsUpdate(status).updateStatusDetails();
+      private void updateStatusDetails(DomainStatus status, DomainPresenceInfo info) {
+        new StatusDetailsUpdate(status, info).updateStatusDetails();
       }
 
       private class StatusDetailsUpdate {
         private final DomainStatus status;
+        private final DomainPresenceInfo info;
 
-        StatusDetailsUpdate(DomainStatus status) {
-
+        StatusDetailsUpdate(DomainStatus status, DomainPresenceInfo info) {
+          this.info = info;
           this.status = status;
         }
 
@@ -941,6 +964,27 @@ public class DomainStatusUpdater {
           status.withState(getRunningState(serverName));
           status.withHealth(serverHealth == null ? null : serverHealth.get(serverName));
           status.withNodeName(getNodeName(serverName));
+          Optional.ofNullable(info).map(i -> i.getServerPod(serverName))
+              .map(V1Pod::getStatus)
+              .map(s -> status.withPodReady(getReadyStatus(s)).withPodPhase(s.getPhase()));
+        }
+
+        private String getReadyStatus(V1PodStatus podStatus) {
+          return Optional.ofNullable(podStatus)
+              .filter(this::isPhaseRunning)
+              .map(V1PodStatus::getConditions)
+              .orElse(Collections.emptyList())
+              .stream().filter(this::isReadyCondition)
+              .map(V1PodCondition::getStatus)
+              .findFirst().orElse("Unknown");
+        }
+
+        private boolean isReadyCondition(Object condition) {
+          return (condition instanceof V1PodCondition) && "Ready".equals(((V1PodCondition)condition).getType());
+        }
+
+        private boolean isPhaseRunning(V1PodStatus status) {
+          return "Running".equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {
@@ -1128,6 +1172,45 @@ public class DomainStatusUpdater {
         return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
       }
 
+      private boolean hasPodNotReadyInTime() {
+        return getInfo().getServerPods().anyMatch(this::isNotReadyInTime);
+      }
+
+      public boolean isNotReadyInTime(V1Pod pod) {
+        return !PodHelper.isReady(pod) && hasBeenUnreadyExceededWaitTime(pod);
+      }
+
+      private boolean hasBeenUnreadyExceededWaitTime(V1Pod pod) {
+        OffsetDateTime creationTime = getCreationTimestamp(pod);
+        return SystemClock.now()
+            .isAfter(getLater(creationTime, getReadyConditionLastTransitTimestamp(pod, creationTime))
+                .plusSeconds(getMaxReadyWaitTime(pod)));
+      }
+
+      private OffsetDateTime getLater(OffsetDateTime time1, OffsetDateTime time2) {
+        return time1.isAfter(time2) ? time1 : time2;
+      }
+
+      private OffsetDateTime getCreationTimestamp(V1Pod pod) {
+        return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getCreationTimestamp)
+            .orElse(SystemClock.now().minusNanos(10L));
+      }
+
+      private OffsetDateTime getReadyConditionLastTransitTimestamp(V1Pod pod, OffsetDateTime creationTime) {
+        return Optional.ofNullable(PodHelper.getReadyCondition(pod)).map(V1PodCondition::getLastTransitionTime)
+            .orElse(creationTime);
+      }
+
+      private long getMaxReadyWaitTime(V1Pod pod) {
+        return Optional.ofNullable(getInfo().getDomain())
+            .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
+            .orElse(TuningParameters.getInstance().getPodTuning().maxReadyWaitTimeSeconds);
+      }
+
+      private String getServerName(V1Pod pod) {
+        return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+      }
+
       private String getRunningState(String serverName) {
         if (!getInfo().getServerNames().contains(serverName)) {
           return SHUTDOWN_STATE;
@@ -1160,7 +1243,11 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterNameFromPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName))
+        return getClusterNameFromPod(getInfo().getServerPod(serverName));
+      }
+
+      private String getClusterNameFromPod(V1Pod pod) {
+        return Optional.ofNullable(pod)
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)
             .map(l -> l.get(CLUSTERNAME_LABEL))

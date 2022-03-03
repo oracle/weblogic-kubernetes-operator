@@ -189,6 +189,8 @@ public class MessageKeys {
   public static final String MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0037";
   public static final String INVALID_WDT_INSTALL_HOME = "WLSDO-0038";
   public static final String INVALID_MODEL_HOME = "WLSDO-0039";
+  public static final String PODS_FAILED = "WLSDO-0040";
+  public static final String PODS_NOT_READY = "WLSDO-0041";
 
   private MessageKeys() {
   }
