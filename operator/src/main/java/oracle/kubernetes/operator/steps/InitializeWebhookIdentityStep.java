@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -31,51 +31,46 @@ import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE_KEY;
+import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_DIR;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
-public class InitializeIdentityStep extends Step {
+public class InitializeWebhookIdentityStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String OPERATOR_CM = "weblogic-operator-cm";
-  private static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
+  private static final String WEBHOOK_CM = "weblogic-webhook-cm";
+  private static final String WEBHOOK_SECRETS = "weblogic-webhook-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
-  private static final String COMMON_NAME = "weblogic-operator";
+  private static final String COMMON_NAME = "weblogic-webhook";
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
+  private static final File certFile = new File(WEBHOOK_DIR + "/config/webhookCert");
+  private static final File keyFile = new File(WEBHOOK_DIR + "/secrets/webhookKey");
+  public static final String INTERNAL_WEBHOOK_KEY = "internalWebhookKey";
 
-  private final File certFile;
-  private final File keyFile;
-  private final String certificate;
-  private final String certificateKey;
+  private final String certificate = WEBHOOK_CERTIFICATE;
+  private final String certificateKey = WEBHOOK_CERTIFICATE_KEY;
 
   /**
    * Constructor for the InitializeIdentityStep.
    * @param next Next step to be executed.
-   * @param certFile Certificate file.
-   * @param keyFile Key file.
-   * @param certificate certificate file name.
-   * @param certificateKey certificate key file name.
    */
-  public InitializeIdentityStep(Step next, File certFile, File keyFile, String certificate, String certificateKey) {
+  public InitializeWebhookIdentityStep(Step next) {
     super(next);
-    this.certFile = certFile;
-    this.keyFile = keyFile;
-    this.certificate = certificate;
-    this.certificateKey = certificateKey;
   }
 
   @Override
   public NextAction apply(Packet packet) {
     try {
       if (certFile.exists() && keyFile.exists()) {
-        // The operator's internal ssl identity has already been created.
+        // The webhook's internal ssl identity has already been created.
         reuseIdentity();
         return doNext(getNext(), packet);
       } else {
-        // The operator's internal ssl identity hasn't been created yet.
+        // The webhook's internal ssl identity hasn't been created yet.
         return createIdentity(packet);
       }
     } catch (Exception e) {
@@ -85,8 +80,8 @@ public class InitializeIdentityStep extends Step {
   }
 
   private void reuseIdentity() throws IOException {
-    // copy the certificate and key from the operator's config map and secret
-    // to the locations the operator runtime expects
+    // copy the certificate and key from the webhook's config map and secret
+    // to the locations the webhook runtime expects
     FileUtils.copyFile(certFile, new File(certificate));
     FileUtils.copyFile(keyFile, new File(certificateKey));
   }
@@ -98,10 +93,10 @@ public class InitializeIdentityStep extends Step {
     X509Certificate cert = generateCertificate(certificate, keyPair, SHA_256_WITH_RSA, COMMON_NAME,
             CERTIFICATE_VALIDITY_DAYS);
     writeToFile(getBase64Encoded(cert), new File(certificate));
-    // put the new certificate in the operator's config map so that it will be available
-    // the next time the operator is started
-    return doNext(recordInternalOperatorCert(certificate, cert,
-            recordInternalOperatorKey(key, getNext())), packet);
+    // put the new certificate in the webhook's config map so that it will be available
+    // the next time the webhook is started
+    return doNext(recordInternalWebhookCert(certificate, cert,
+            recordInternalWebhookKey(key, getNext())), packet);
   }
 
   private static String convertToPEM(Object object) throws IOException {
@@ -125,76 +120,71 @@ public class InitializeIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
-  private static Step recordInternalOperatorCert(String certName, X509Certificate cert, Step next) throws IOException {
+  private static Step recordInternalWebhookCert(String certName, X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    if (WEBHOOK_CERTIFICATE.equals(certName)) {
-      patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
-    } else {
-      patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
-    }
-
+    patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
     return new CallBuilder()
-            .patchConfigMapAsync(OPERATOR_CM, getOperatorNamespace(),
+            .patchConfigMapAsync(WEBHOOK_CM, getWebhookNamespace(),
                     null,
                     new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
-  private static Step recordInternalOperatorKey(String key, Step next) {
-    return new CallBuilder().readSecretAsync(OPERATOR_SECRETS,
-            getOperatorNamespace(), readSecretResponseStep(next, key));
+  private static Step recordInternalWebhookKey(String key, Step next) {
+    return new CallBuilder().readSecretAsync(WEBHOOK_SECRETS,
+            getWebhookNamespace(), readSecretResponseStep(next, key));
   }
 
-  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalOperatorKey) {
-    return new ReadSecretResponseStep(next, internalOperatorKey);
+  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalWebhookKey) {
+    return new ReadSecretResponseStep(next, internalWebhookKey);
   }
 
   private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
-    final String internalOperatorKey;
+    final String internalWebhookKey;
 
-    ReadSecretResponseStep(Step next, String internalOperatorKey) {
+    ReadSecretResponseStep(Step next, String internalWebhookKey) {
       super(next);
-      this.internalOperatorKey = internalOperatorKey;
+      this.internalWebhookKey = internalWebhookKey;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
       if (existingSecret == null) {
-        return doNext(createSecret(getNext(), internalOperatorKey), packet);
+        return doNext(createSecret(getNext(), internalWebhookKey), packet);
       } else {
-        return doNext(replaceSecret(getNext(), existingSecret, internalOperatorKey), packet);
+        return doNext(replaceSecret(getNext(), existingSecret, internalWebhookKey), packet);
       }
     }
   }
 
-  private static Step createSecret(Step next, String internalOperatorKey) {
+  private static Step createSecret(Step next, String internalWebhookKey) {
     return new CallBuilder()
-            .createSecretAsync(getOperatorNamespace(),
-                    createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
+            .createSecretAsync(getWebhookNamespace(),
+                    createModel(null, internalWebhookKey), new DefaultResponseStep<>(next));
   }
 
-  private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
+  private static Step replaceSecret(Step next, V1Secret secret, String internalWebhookKey) {
     return new CallBuilder()
-            .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
+            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, internalWebhookKey),
                     new DefaultResponseStep<>(next));
   }
 
-  protected static final V1Secret createModel(V1Secret secret, String internalOperatorKey) {
+  protected static final V1Secret createModel(V1Secret secret, String internalWebhookKey) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put("internalOperatorKey", internalOperatorKey.getBytes());
+      data.put(INTERNAL_WEBHOOK_KEY, internalWebhookKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put("internalOperatorKey", internalOperatorKey.getBytes());
+      data.put(INTERNAL_WEBHOOK_KEY, internalWebhookKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }
 
   private static V1ObjectMeta createMetadata() {
     Map labels = new HashMap<>();
-    labels.put("weblogic.operatorName", getOperatorNamespace());
-    return new V1ObjectMeta().name(OPERATOR_SECRETS).namespace(getOperatorNamespace())
+    labels.put("weblogic.webhookName", getWebhookNamespace());
+    return new V1ObjectMeta().name(WEBHOOK_SECRETS).namespace(getWebhookNamespace())
             .labels(labels);
   }
 }

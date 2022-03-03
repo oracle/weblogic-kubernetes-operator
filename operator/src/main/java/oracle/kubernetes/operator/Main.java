@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +45,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.steps.InitializeIdentityStep;
+import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -61,10 +60,8 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.helpers.CrdHelper.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -88,7 +85,7 @@ public class Main {
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
-  /** The interval in sec that the operator will wait to ensure that CRD has been created. */
+  /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
   private static final long CRD_DETECTION_DELAY = 10;
 
   private static String getConfiguredServiceAccount() {
@@ -466,8 +463,8 @@ public class Main {
     }
   }
 
-  // If CRD read succeeds, wait until the CRD has webhook
-  // if can't read CRD due to missing permissions, list domains to indirectly check if the CRD is installed.
+  // If CRD read succeeds, wait until the CRD has webhook.
+  // Otherwise if CRD read fails due to permissions error, list the domains to indirectly check if the CRD is installed.
   ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
     return new ReadResponseStep(next);
   }
@@ -492,7 +489,7 @@ public class Main {
 
     private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
       return Optional.ofNullable(existingCrd).map(crd -> crd.getSpec()).map(spec -> spec.getConversion())
-              .map(c -> c.getStrategy().equalsIgnoreCase("Webhook")).orElse(false);
+              .map(c -> c.getStrategy().equalsIgnoreCase(WEBHOOK)).orElse(false);
     }
 
     @Override
@@ -502,7 +499,6 @@ public class Main {
                 new CrdPresenceResponseStep(getNext())), packet) : super.onFailureNoRetry(packet, callResponse);
     }
   }
-
 
   // on failure, waits for the CRD to be installed.
   private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
@@ -667,14 +663,4 @@ public class Main {
   interface NextStepFactory {
     Step createInternalInitializationStep(Step next);
   }
-
-  private static class InitializeInternalIdentityStep extends InitializeIdentityStep {
-    public static final File internalCertFile = new File(OPERATOR_DIR + "/config/internalOperatorCert");
-    public static final File internalKeyFile = new File(OPERATOR_DIR + "/secrets/internalOperatorKey");
-
-    public InitializeInternalIdentityStep(Step next) {
-      super(next, internalCertFile, internalKeyFile, INTERNAL_CERTIFICATE, INTERNAL_CERTIFICATE_KEY);
-    }
-  }
-
 }

@@ -22,4 +22,21 @@ metadata:
   name: "weblogic-operator-secrets"
   namespace:  {{ .Release.Namespace | quote }}
 type: "Opaque"
+---
+apiVersion: "v1"
+kind: "Secret"
+data:
+  {{- $secret := (lookup "v1" "Secret" .Release.Namespace "weblogic-webhook-secrets") }}
+  {{- if (and $secret $secret.data) }}
+  {{- $webhookKey := index $secret.data "webhookKey" }}
+  {{- if $webhookKey }}
+  webhookKey: {{ $webhookKey }}
+  {{- end }}
+  {{- end }}
+metadata:
+  labels:
+    weblogic.webhookName: {{ .Release.Namespace | quote }}
+  name: "weblogic-webhook-secrets"
+  namespace:  {{ .Release.Namespace | quote }}
+type: "Opaque"
 {{- end }}

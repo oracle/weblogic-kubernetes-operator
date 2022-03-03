@@ -42,6 +42,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
 
 /**
@@ -123,14 +124,16 @@ public final class SelfSignedCertUtils {
   @NotNull
   private static GeneralNames getSAN(String cert) {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
+    String namespace = getOperatorNamespace();
     if (WEBHOOK_CERTIFICATE.equals(cert)) {
       host = INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+      namespace = getWebhookNamespace();
     }
-    return new GeneralNames(new GeneralName[] {
+    return new GeneralNames(new GeneralName[]{
         new GeneralName(GeneralName.dNSName, host),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace()),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc"),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local")});
+        new GeneralName(GeneralName.dNSName, host + "." + namespace),
+        new GeneralName(GeneralName.dNSName, host + "." + namespace + ".svc"),
+        new GeneralName(GeneralName.dNSName, host + "." + namespace + ".svc.cluster.local")});
   }
 
   private static X500NameBuilder createX500NameBuilder(String commonName) {

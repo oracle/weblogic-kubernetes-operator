@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +32,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.WebhookRestConfigImpl;
 import oracle.kubernetes.operator.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.steps.InitializeIdentityStep;
+import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -46,10 +45,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE_KEY;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
 /** A Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain {
@@ -78,7 +74,7 @@ public class ConversionWebhookMain {
 
       ClientPool.initialize(threadFactory);
 
-      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
+      TuningParameters.initializeInstance(wrappedExecutorService, "/webhook/config");
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
@@ -144,7 +140,7 @@ public class ConversionWebhookMain {
     private void logStartup() {
       ConversionWebhookMain.LOGGER.info(MessageKeys.CONVERSION_WEBHOOK_STARTED, buildVersion,
               conversionWebhookImpl, conversionWebhookBuildTime);
-      ConversionWebhookMain.LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getOperatorNamespace());
+      ConversionWebhookMain.LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace());
     }
 
     @Override
@@ -188,10 +184,10 @@ public class ConversionWebhookMain {
       // now we just wait until the pod is terminated
       main.waitForDeath();
 
-      // stop the REST server
+      // stop the webhook REST server
       stopWebhookRestServer();
     } finally {
-      LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
+      LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
   }
 
@@ -240,8 +236,8 @@ public class ConversionWebhookMain {
 
   private void completeBegin() {
     try {
-      // start the REST server
-      startRestWebhookServer();
+      // start the webhook REST server
+      startWebhookRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
@@ -267,7 +263,7 @@ public class ConversionWebhookMain {
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
   private Step createCRDPresenceCheck() {
-    return new CallBuilder().listDomainAsync(getOperatorNamespace(), new CrdPresenceResponseStep());
+    return new CallBuilder().listDomainAsync(getWebhookNamespace(), new CrdPresenceResponseStep());
   }
 
   // on failure, aborts the processing.
@@ -293,7 +289,7 @@ public class ConversionWebhookMain {
     return new NullCompletionCallback(completionAction);
   }
 
-  private void startRestWebhookServer()
+  private void startWebhookRestServer()
           throws Exception {
     WebhookRestServer.create(new WebhookRestConfigImpl());
     WebhookRestServer.getInstance().start(container);
@@ -315,7 +311,7 @@ public class ConversionWebhookMain {
     try {
       WebhookReady.create();
 
-      LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
+      LOGGER.info(MessageKeys.STARTING_WEBHOOK_LIVENESS_THREAD);
       // every five seconds we need to update the last modified time on the liveness file
       wrappedExecutorService.scheduleWithFixedDelay(new WebhookLiveness(), 5, 5, TimeUnit.SECONDS);
     } catch (IOException io) {
@@ -374,15 +370,5 @@ public class ConversionWebhookMain {
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
     Step createInitializationStep(Step next);
-  }
-
-  private static class InitializeWebhookIdentityStep extends InitializeIdentityStep {
-
-    private static final File webhookCertFile = new File(OPERATOR_DIR + "/config/webhookCert");
-    private static final File webhookKeyFile = new File(OPERATOR_DIR + "/secrets/webhookKey");
-
-    public InitializeWebhookIdentityStep(Step next) {
-      super(next, webhookCertFile, webhookKeyFile, WEBHOOK_CERTIFICATE, WEBHOOK_CERTIFICATE_KEY);
-    }
   }
 }

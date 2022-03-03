@@ -22,6 +22,8 @@ import io.kubernetes.client.util.Streams;
  */
 public class ExecCommand {
 
+  public static final int COMMAND_WAIT_TIMEOUT = 1800;
+
   public static ExecResult exec(String command) throws IOException, InterruptedException {
     return exec(command, false, null);
   }
@@ -83,8 +85,8 @@ public class ExecCommand {
         out.start();
       }
 
-      // TODO - Make the timeout value configurable
-      p.waitFor(30, TimeUnit.MINUTES);
+      // TODO - Make the command wait timeout value configurable
+      p.waitFor(COMMAND_WAIT_TIMEOUT, TimeUnit.SECONDS);
 
       // we need to join the thread before we read the stdout so that the saved stdout is complete
       if (out != null) {

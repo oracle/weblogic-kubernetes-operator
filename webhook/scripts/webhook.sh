@@ -22,6 +22,12 @@ else
   DEBUG=""
 fi
 
+# start logstash
+
+# set up a logging.properties file that has a FileHandler in it, and have it
+# write to /logs/operator.log
+LOGGING_CONFIG="/operator/logstash.properties"
+
 # if the java logging level has been customized and is a valid value, update logstash.properties to match
 if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
   SEVERE="SEVERE"

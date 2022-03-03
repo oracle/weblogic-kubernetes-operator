@@ -53,6 +53,7 @@ RUN set -eux; \
 USER oracle
 
 COPY --chown=oracle:root operator/scripts/* /operator/
+COPY --chown=oracle:root webhook/scripts/* /webhook/
 COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
 COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
 

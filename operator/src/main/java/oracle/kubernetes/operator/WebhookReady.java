@@ -9,7 +9,7 @@ import java.io.IOException;
 /** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
 public class WebhookReady {
 
-  private static final File readinessFile = new File("/operator/.webhook_ready");
+  private static final File readinessFile = new File("/webhook/.ready");
 
   /**
    * Create the Operator readiness indicator.

@@ -4,9 +4,9 @@
 
 # if the livenessProbeSuccessOverride file is available, treat failures as success
 #
-RETVAL=$(test -f /operator/debug-config/livenessProbeSuccessOverride ; echo $?)
+RETVAL=$(test -f /webhook/debug-config/livenessProbeSuccessOverride ; echo $?)
 
-FILE=/operator/.webhook_alive
+FILE=/webhook/.alive
 if [ ! -f ${FILE} ]; then
   exit $RETVAL
 fi

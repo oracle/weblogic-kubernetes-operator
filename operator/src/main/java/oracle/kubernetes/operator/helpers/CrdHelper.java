@@ -55,7 +55,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.rest.WebhookRestConfigImpl.HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
@@ -68,6 +68,9 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
+  public static final String WEBHOOK = "Webhook";
+  public static final String VERSION_V1 = "v1";
+  public static final String WEBHOOK_PATH = "/webhook";
 
   private CrdHelper() {
   }
@@ -201,15 +204,13 @@ public class CrdHelper {
     }
 
     static V1CustomResourceDefinitionSpec createSpec() {
-      V1CustomResourceDefinitionSpec customResourceDefinitionSpec = new V1CustomResourceDefinitionSpec()
+      return new V1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .preserveUnknownFields(false)
           .versions(getCrdVersions())
           .scope("Namespaced")
-          .names(getCrdNames());
-      Optional.ofNullable(createConversionWebhook())
-              .ifPresent(customResourceConversion -> customResourceDefinitionSpec.conversion(customResourceConversion));
-      return customResourceDefinitionSpec;
+          .names(getCrdNames())
+          .conversion(createConversionWebhook());
     }
 
     private static V1CustomResourceConversion createConversionWebhook() {
@@ -218,12 +219,12 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
-      return new V1CustomResourceConversion().strategy("Webhook")
+      return new V1CustomResourceConversion().strategy(WEBHOOK)
               .webhook(new V1WebhookConversion().conversionReviewVersions(
-                      Arrays.asList("v1")).clientConfig(new ApiextensionsV1WebhookClientConfig()
+                      Arrays.asList(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
                       .service(new ApiextensionsV1ServiceReference().name(INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC)
-                              .namespace(getOperatorNamespace()).port(HTTPS_PORT)
-                              .path("/webhook"))
+                              .namespace(getWebhookNamespace()).port(HTTPS_PORT)
+                              .path(WEBHOOK_PATH))
                       .caBundle(caBundle)));
     }
 
@@ -344,7 +345,7 @@ public class CrdHelper {
 
     private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
       return existingCrd.getSpec().getConversion() != null
-              && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase("Webhook");
+              && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
     }
 
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
@@ -365,10 +366,7 @@ public class CrdHelper {
     }
 
     Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
-
-      V1CustomResourceConversion customResourceConversion = createConversionWebhook();
-      existingCrd.getSpec().conversion(customResourceConversion);
-
+      existingCrd.getSpec().conversion(createConversionWebhook());
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }

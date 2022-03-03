@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class WebhookLiveness implements Runnable {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private final File livenessFile = new File("/operator/.webhook_alive");
+  private final File livenessFile = new File("/webhook/.alive");
 
   @Override
   public void run() {

@@ -367,7 +367,7 @@ public class JobStepContext extends BasePodStepContext {
 
   protected void addInitContainers(V1PodSpec podSpec, TuningParameters tuningParameters) {
     List<V1Container> initContainers = new ArrayList<>();
-    Optional.ofNullable(getAuxiliaryImages()).ifPresent(cl -> addInitContainers(initContainers, cl));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
             .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));

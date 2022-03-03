@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_UID_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
@@ -34,7 +35,7 @@ public class NamespaceHelper {
   }
 
   public static String getWebhookNamespace() {
-    return Optional.ofNullable(getHelmVariable(OPERATOR_NAMESPACE_ENV)).orElse(DEFAULT_NAMESPACE);
+    return Optional.ofNullable(getHelmVariable(WEBHOOK_NAMESPACE_ENV)).orElse(DEFAULT_NAMESPACE);
   }
 
   /**

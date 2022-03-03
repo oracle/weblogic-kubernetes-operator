@@ -61,6 +61,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: "metadata.uid"
+        - name: "OPERATOR_VERBOSE"
+          value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
         - name: "KUBERNETES_PLATFORM"
@@ -78,6 +80,10 @@ spec:
           {{- else }}
           value: "n"
           {{- end }}
+        {{- end }}
+        {{- if .mockWLS }}
+        - name: "MOCK_WLS"
+          value: "true"
         {{- end }}
         resources:
           requests:
@@ -110,7 +116,8 @@ spec:
             - "bash"
             - "/operator/livenessProbe.sh"
           initialDelaySeconds: 40
-          periodSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           exec:
             command:
@@ -165,6 +172,17 @@ spec:
   {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
   {{- if or (ne $webhookExists "true") (.recreateWebhook) }}
     # webhook does not exist or chart version is newer, create a new webhook
+    apiVersion: "v1"
+    kind: "ConfigMap"
+    metadata:
+      labels:
+        weblogic.webhookName: {{ .Release.Namespace | quote }}
+      name: "weblogic-webhook-cm"
+      namespace: {{ .Release.Namespace | quote }}
+    data:
+      serviceaccount: {{ .serviceAccount | quote }}
+---
+    # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "apps/v1"
     kind: "Deployment"
     metadata:
@@ -184,7 +202,7 @@ spec:
         type: Recreate
       selector:
         matchLabels:
-          weblogic.operatorName: {{ .Release.Namespace | quote }}
+          weblogic.webhookName: {{ .Release.Namespace | quote }}
       replicas: 1
       template:
         metadata:
@@ -195,7 +213,7 @@ spec:
             {{ $key }}: {{ $value | quote }}
           {{- end }}
           labels:
-            weblogic.operatorName: {{ .Release.Namespace | quote }}
+            weblogic.webhookName: {{ .Release.Namespace | quote }}
             app: "weblogic-operator-webhook"
           {{- range $key, $value := .labels }}
             {{ $key }}: {{ $value | quote }}
@@ -215,26 +233,22 @@ spec:
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
             command: ["bash"]
-            args: ["/operator/webhook.sh"]
+            args: ["/webhook/webhook.sh"]
             env:
-            - name: "OPERATOR_NAMESPACE"
+            - name: "WEBHOOK_NAMESPACE"
               valueFrom:
                 fieldRef:
                   fieldPath: "metadata.namespace"
-            - name: "OPERATOR_POD_NAME"
+            - name: "WEBHOOK_POD_NAME"
               valueFrom:
                 fieldRef:
                   fieldPath: "metadata.name"
-            - name: "OPERATOR_POD_UID"
+            - name: "WEBHOOK_POD_UID"
               valueFrom:
                 fieldRef:
                   fieldPath: "metadata.uid"
-            - name: "OPERATOR_VERBOSE"
-              value: "false"
             - name: "JAVA_LOGGING_LEVEL"
               value: {{ .javaLoggingLevel | quote }}
-            - name: "KUBERNETES_PLATFORM"
-              value: {{ .kubernetesPlatform | quote }}
             - name: "JAVA_LOGGING_MAXSIZE"
               value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
             - name: "JAVA_LOGGING_COUNT"
@@ -249,10 +263,6 @@ spec:
               value: "n"
               {{- end }}
             {{- end }}
-            {{- if .mockWLS }}
-            - name: "MOCK_WLS"
-              value: "true"
-            {{- end }}
             resources:
               requests:
                 cpu: {{ .cpuRequests | default "100m" }}
@@ -265,43 +275,62 @@ spec:
                 memory: {{ .memoryLimits }}
                 {{- end }}
             volumeMounts:
-            - name: "weblogic-operator-cm-volume"
-              mountPath: "/operator/config"
-            - name: "weblogic-operator-debug-cm-volume"
-              mountPath: "/operator/debug-config"
-            - name: "weblogic-operator-secrets-volume"
-              mountPath: "/operator/secrets"
+            - name: "weblogic-webhook-cm-volume"
+              mountPath: "/webhook/config"
+            - name: "weblogic-webhook-secrets-volume"
+              mountPath: "/webhook/secrets"
               readOnly: true
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
                 command:
                 - "bash"
-                - "/operator/webhookLivenessProbe.sh"
+                - "/webhook/webhookLivenessProbe.sh"
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
                 command:
                 - "bash"
-                - "/operator/webhookReadinessProbe.sh"
+                - "/webhook/webhookReadinessProbe.sh"
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}
+          {{- if .elkIntegrationEnabled }}
+          - name: "logstash"
+            image: {{ .logStashImage | quote }}
+            volumeMounts:
+            - name: "log-dir"
+              mountPath: "/logs"
+            - name: "logstash-config-cm-volume"
+              mountPath: "/usr/share/logstash/pipeline"
+            env:
+            - name: "ELASTICSEARCH_HOST"
+              value: {{ .elasticSearchHost | quote }}
+            - name: "ELASTICSEARCH_PORT"
+              value: {{ .elasticSearchPort | quote }}
+          {{- end }}
           {{- if .imagePullSecrets }}
           imagePullSecrets:
           {{ .imagePullSecrets | toYaml }}
           {{- end }}
           volumes:
-          - name: "weblogic-operator-cm-volume"
+          - name: "weblogic-webhook-cm-volume"
             configMap:
-              name: "weblogic-operator-cm"
-          - name: "weblogic-operator-debug-cm-volume"
-            configMap:
-              name: "weblogic-operator-debug-cm"
-              optional: true
-          - name: "weblogic-operator-secrets-volume"
+              name: "weblogic-webhook-cm"
+          - name: "weblogic-webhook-secrets-volume"
             secret:
-              secretName: "weblogic-operator-secrets"
+              secretName: "weblogic-webhook-secrets"
+          {{- if .elkIntegrationEnabled }}
+          - name: "log-dir"
+            emptyDir:
+              medium: "Memory"
+          - name: "logstash-config-cm-volume"
+            configMap:
+              name: "weblogic-webhook-logstash-cm"
+              items:
+              - key: logstash.conf
+                path: logstash.conf
+          {{- end }}
   {{- end }}
 {{- end }}

@@ -40,7 +40,6 @@ import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
@@ -141,7 +140,7 @@ class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   }
 
   private void simulateMissingCRD() {
-    testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
+    testSupport.failOnResource(DOMAIN, null, getWebhookNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
   }
 
   private void recheckCRD() {
