@@ -160,13 +160,13 @@ class ItElasticLoggingFluentd {
     // install and verify Elasticsearch
     elasticSearchNs = namespaces.get(2);
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(domainNamespace),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(domainNamespace),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
@@ -174,7 +174,8 @@ class ItElasticLoggingFluentd {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    elasticSearchHost = "elasticsearch." + domainNamespace + ".svc.cluster.local";
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -208,8 +209,8 @@ class ItElasticLoggingFluentd {
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, domainNamespace, null, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, domainNamespace, null, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, FLUENTD_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -331,20 +332,18 @@ class ItElasticLoggingFluentd {
 
   private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
-    final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
-    final String elasticSearchPort = "9200";
 
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, elasticSearchPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     final String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc", elasticSearchHost, elasticSearchPort),
+        "weblogicenc", "weblogicenc", elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
