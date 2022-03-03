@@ -514,7 +514,7 @@ public class Kubernetes {
     V1PodList pods = listPods(namespace, labelSelector);
     // log pod names for debugging
     for (var pod : pods.getItems()) {
-      getLogger().info("Pod Name {0}", pod.getMetadata().getName());
+      getLogger().info("DEBUG: Pod Name returned by listPods call {0}", pod.getMetadata().getName());
     }
     for (var pod : pods.getItems()) {
       if (pod.getMetadata().getName().contains(podName)) {
