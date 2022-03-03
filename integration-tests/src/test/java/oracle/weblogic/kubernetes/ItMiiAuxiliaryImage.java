@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -8,32 +8,29 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
@@ -47,10 +44,8 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -58,28 +53,30 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.patchDomainWithAuxiliaryImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -90,50 +87,60 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
+import static oracle.weblogic.kubernetes.utils.PodUtils.verifyIntrospectorPodLogContainsExpectedErrorMsg;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using auxiliary image")
+@DisplayName("Test to create model in image domain using auxiliary image. "
+    + "Multiple domains are created in the same namespace in this class.")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItMiiAuxiliaryImage {
 
-  private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String errorpathDomainNamespace = null;
   private static String wdtDomainNamespace = null;
+  private static String errorpathDomainNamespace = null;
   private static LoggingFacade logger = null;
-  private String domainUid = "domain1";
-  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "1";
-  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "2";
-  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "3";
-  private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "4";
-  private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "5";
-  private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "6";
-  private static String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage1";
-  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage2";
-  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage3";
-  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage4";
-  private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
-  private final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-managed-server";
-  private final int replicaCount = 2;
-  private String adminSecretName = "weblogic-credentials";
-  private String encryptionSecretName = "encryptionsecret";
+  private static final String domainUid1 = "domain1";
+  private final String domainUid = "";
+  private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "1";
+  private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "2";
+  private static final String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "3";
+  private static final String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "4";
+  private static final String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "5";
+  private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "6";
+  private static final String miiAuxiliaryImage7 = MII_AUXILIARY_IMAGE_NAME + "7";
+  private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + "8";
+  private static final String miiAuxiliaryImage9 = MII_AUXILIARY_IMAGE_NAME + "9";
+  private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + "10";
+  private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + "11";
+  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "12";
+  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "13";
+  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "14";
+  private static String errorPathAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "15";
+  private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
+  private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
+  private static final int replicaCount = 2;
   private String adminSvcExtHost = null;
+  private static String adminSvcExtHostDomain1 = null;
+  private static String adminSecretName = "weblogic-credentials";
+  private static String encryptionSecretName = "encryptionsecret";
+  private static String opNamespace = null;
+  private static String operatorPodName = null;
 
   /**
-   * Install Operator.
+   * Install Operator. Create a domain using multiple auxiliary images.
+   * One auxiliary image containing the domain configuration and another auxiliary image with
+   * JMS system resource, verify the domain is running and JMS resource is added.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -160,208 +167,172 @@ class ItMiiAuxiliaryImage {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
-  }
 
-
-  /**
-   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
-   * another auxiliary image with JMS system resource, verify the domain is running and JMS resource is added.
-   */
-  @Test
-  @Order(1)
-  @DisplayName("Test to create domain using multiple auxiliary images")
-  void testCreateDomainUsingMultipleAuxiliaryImages() {
-
-    // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/auxiliary";
+    operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator's pod name");
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
+    createOcirRepoSecret(errorpathDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for first auxiliary image with image1
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
-        "Create directory failed");
-    Path multipleAIPathToFile1 =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1/test.txt");
-    String content = "1";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
-        "Can't write to file " + multipleAIPathToFile1);
+    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
-        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
+    // create encryption secret
+    logger.info("Create encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
+        "weblogicenc", "weblogicenc");
     // build app
     assertTrue(buildAppArchive(defaultAppParams()
             .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
             .appName(MII_BASIC_APP_NAME)),
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
+    // image1 with model files for domain config, ds, app and wdt install files
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(multipleAIPath1.toString());
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage1, archiveList, modelList);
+    // image2 with model files for jms config
+    modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage2)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtModelOnly(true)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage2, witParams);
 
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
-    }
-
-    // create stage dir for second auxiliary image with image2
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
-        "Create directory failed");
-
-    // create models dir and copy model, archive files if any
-    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-    Path multipleAIPathToFile2 =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2/test.txt");
-    String content2 = "2";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
-        "Can't write to file " + multipleAIPathToFile2);
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "/model.jms2.yaml"),
-        Paths.get(modelsPath2.toString(), "/model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // create image2 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage2);
-
-    // push image2 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2);
-    }
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
-        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    Domain domainCR = createDomainResource(domainUid, domainNamespace,
+        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
+    Domain domainCR = createDomainResource40(domainUid1, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
-        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
-    createDomainAndVerify(domainUid, domainCR, domainNamespace,
-        adminServerPodName, managedServerPrefix, replicaCount);
+        domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
+    createDomainAndVerify(domainUid1, domainCR, domainNamespace,
+        adminServerPodNameDomain1, managedServerPrefixDomain1, replicaCount);
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
-
-    //checking the order of loading for the auxiliary images, expecting file with content =2
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/test.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
-        " Can't find file in the pod, or failed to copy");
-
-    assertDoesNotThrow(() -> {
-      String fileContent =
-          Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
-      assertEquals("2", fileContent, "The content of the file from auxiliary image path "
-          + fileContent + "does not match the expected 2");
-    }, "File from image2 was not loaded in the expected order");
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
   }
 
   /**
    * Reuse created a domain with datasource using auxiliary image containing the DataSource,
    * verify the domain is running and JDBC DataSource resource is added.
    * Patch domain with updated JDBC URL info and verify the update.
+   * Verify domain is rolling restarted.
    */
   @Test
-  @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
+
+    // create stage dir for auxiliary image
+    Path aiPath = Paths.get(RESULTS_ROOT,
+        ItMiiAuxiliaryImage.class.getSimpleName(), "ai"
+            + miiAuxiliaryImage1.substring(miiAuxiliaryImage1.length() - 1));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiPath.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(aiPath),
+        "Create directory failed");
+
+    Path modelsPath = Paths.get(aiPath.toString(), "models");
+    // create models dir and copy model for image
+
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath),
+        "Create directory failed");
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
+        Paths.get(modelsPath.toString(), "multi-model-one-ds.20.yaml"),
+        StandardCopyOption.REPLACE_EXISTING), "Copy files failed");
+
 
     // create stage dir for auxiliary image with image3
     // replace DataSource URL info in the  model file
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath.toString(),
         "/multi-model-one-ds.20.yaml").toString(), "xxx.xxx.x.xxx:1521",
         "localhost:7001"), "Can't replace datasource url in the model file");
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath.toString(),
         "/multi-model-one-ds.20.yaml").toString(), "ORCLCDB",
         "dbsvc"), "Can't replace datasource url in the model file");
 
-    // create image3 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage3);
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    // push image3 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
-    }
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(modelsPath + "/multi-model-one-ds.20.yaml");
+
+    // create image3 with model and wdt installation files
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage3)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList);
+    createAndPushAuxiliaryImage(miiAuxiliaryImage3, witParams);
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for DataSource in the running domain
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodNameDomain1), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHostDomain1, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
         "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         "Can't find expected URL configuration for DataSource");
 
     logger.info("Found the DataResource configuration");
 
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid, domainNamespace);
+    // get the map with server pods and their original creation timestamps
+    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+        managedServerPrefixDomain1, replicaCount);
 
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1
+            + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG,
+        domainUid1, domainNamespace);
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid1, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespace));
+
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
   }
 
   /**
@@ -370,19 +341,18 @@ class ItMiiAuxiliaryImage {
    * Verify configured JMS and JDBC resources.
    */
   @Test
-  @Order(3)
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageName() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
-    podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix,
-        replicaCount);
+    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+        managedServerPrefixDomain1, replicaCount);
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
@@ -396,7 +366,7 @@ class ItMiiAuxiliaryImage {
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
-    StringBuffer patchStr = null;
+    StringBuffer patchStr;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/image\",")
@@ -405,12 +375,12 @@ class ItMiiAuxiliaryImage {
         .append("\"}]");
     logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+    assertTrue(patchDomainResource(domainUid1, domainNamespace, patchStr),
         "patchDomainCustomResource(imageUpdate) failed");
 
-    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid1, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
@@ -419,377 +389,452 @@ class ItMiiAuxiliaryImage {
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
+        domainUid1, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespace));
 
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodNameDomain1, domainUid1, domainNamespace);
 
     //create router for admin service on OKD
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
+    if (adminSvcExtHostDomain1 == null) {
+      adminSvcExtHostDomain1 = createRouteForOKD(getExternalServicePodName(adminServerPodNameDomain1), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHostDomain1);
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
     //check configuration for JDBC
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodNameDomain1, adminSvcExtHostDomain1);
 
   }
 
   /**
-   * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
-   * in auxiliaryImageVolumes, set mountPath to "/errorpath"
-   * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
-   * Check the error message is in introspector pod log, domain events and operator pod log.
+   * Create a domain using multiple auxiliary images using different WDT versions.
+   * Use Case 1: Both the AI's have WDT install files but different versions.
+   * One auxiliary image sourceWDTInstallHome set to default and the other auxiliary image
+   * sourceWDTInstallHome set to None. The WDT install files from the second AI should be ignored.
+   * Default model home location have no files, should be ignored.
+   * Use Case 2: Both the auxiliary images sourceWDTInstallHome set to default.
+   * Introspector should log an error message.
    */
   @Test
-  @Order(4)
-  @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
-  void testErrorPathDomainMismatchMountPath() {
+  @DisplayName("Test to create domain using multiple auxiliary images and different WDT installations")
+  void testWithMultipleAIsHavingWDTInstallers() {
+
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid = "domain2";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+    // using the first image created in initAll, creating second image with different WDT version here
+
+    createPushAuxiliaryImageWithWDTInstallOnly(miiAuxiliaryImage4, "1.9.19");
+
+    // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
+    // and other with sourceWDTInstallHome set to none
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4, domainNamespace);
+    createDomainAndVerify(domainUid, domainCR1, domainNamespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
+
+    // check WDT version in main container in admin pod
+    String wdtVersion =
+        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
+            "/aux", this.getClass().getSimpleName()));
+
+    assertFalse(wdtVersion.contains("1.9.19"),
+        "Old version of WDT is copied");
+
+    // create domain custom resource using 2 auxiliary images with default sourceWDTInstallHome for both images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
+    Domain domainCR2 = createDomainResource40(domainUid + "1", domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid + "1", domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR2),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid + "1", domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid + "1", domainNamespace));
+
+    String errorMessage =
+        "[SEVERE] The target directory for WDT installation files '/tmpAuxiliaryImage/weblogic-deploy' "
+        + "is not empty.  This is usually because multiple auxiliary images are specified, and more than one "
+        + "specified a WDT install,  which is not allowed; if this is the problem, then you can correct the "
+        + "problem by setting the  'domain.spec.configuration.model.auxiliaryImages.sourceWDTInstallHome' to "
+        + "'None' on images that you  don't want to have an install copy";
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid + "1", domainNamespace, errorMessage);
+
+  }
+
+  /**
+   * Negative test. Create a domain using auxiliary image with no installation files at specified sourceWdtInstallHome
+   * location. Verify domain events and operator log contains the expected error message.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with no files at specified sourceWdtInstallHome")
+  void testCreateDomainNoFilesAtSourceWDTInstallHome() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    final String domainUid = "domain3";
+
+    // creating image with no WDT install files
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+
+    // create image5 with model and no wdt installation files
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage5)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage5, witParams);
+    OffsetDateTime timestamp = now();
+
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, miiAuxiliaryImage5);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+        miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
+
+    String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
+              + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, errorMessage);
+  }
+
+  /**
+   * Negative test. Create a domain using multiple auxiliary images with specified(custom) sourceWdtInstallHome.
+   * Verify operator log contains the expected error message and domain status and condition. This is a validation
+   * check.
+   */
+  @Test
+  @DisplayName("Test to create domain using multiple auxiliary images with specified sourceWdtInstallHome")
+  void testSourceWDTInstallHomeSetAtMultipleAIs() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    final String domainUid = "domain4";
+
+    // image1 with model files for domain config, ds, app and wdt install files
+    //createAuxiliaryImageWithDomainConfig(miiAuxiliaryImage6, auxiliaryImagePathCustom);
+
+    // admin/managed server name here should match with model yaml
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage6)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
+
+    modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    // image2 with model files for jms config
+
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage7)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .wdtModelOnly(true)
+            .wdtVersion("NONE")
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
+
+    // create domain custom resource using auxiliary images
+    String[] images = {miiAuxiliaryImage6, miiAuxiliaryImage7};
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1",
+        auxiliaryImagePathCustom, miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
+
+    // add the sourceWDTInstallHome and sourceModelHome for both aux images.
+    for (String cmImageName : images) {
+      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      auxImage.sourceWDTInstallHome(auxiliaryImagePathCustom + "/weblogic-deploy")
+          .sourceModelHome(auxiliaryImagePathCustom + "/models");
+      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
+    }
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
+
+    String errorMessage = "More than one auxiliary image under 'spec.configuration.model.auxiliaryImages' sets a "
+            + "'sourceWDTInstallHome' value. The sourceWDTInstallHome value must be set for only one auxiliary image.";
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+
+  }
+
+  /**
+   * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
+   * location. Verify domain events and operator log contains the expected error message.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
+  void testCreateDomainNoFilesAtSourceModelHome() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    final String domainUid = "domain5";
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage8)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtHome(auxiliaryImagePathCustom)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models")
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage8, witParams);
 
     OffsetDateTime timestamp = now();
 
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/errorpath";
-
-    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
-        "Create directory failed");
-
-    // create models dir and copy model for image
-    Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath1.toString());
-
-    // create image with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage1);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage1);
-    }
-
-    // create domain custom resource using auxiliary images
+    // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage1);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        domainUid, miiAuxiliaryImage8);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+        miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
 
-    // create domain and verify it is failed
-    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
-    assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
 
-    // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't stat '/errorpath/*': No such file or directory";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
+    String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
+        + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
 
-    // check there are no admin server and managed server pods and services created
-    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
-    checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
-      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
-    }
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, errorMessage);
 
-    // delete domain1
-    deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
+  /**
+   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
+   * another auxiliary image with JMS system resource but with sourceModelHome set to none,
+   * verify the domain is running and JMS resource is not added.
+   */
+  @Test
+  @DisplayName("Test to create domain using multiple auxiliary images with model files and one AI having "
+      + "sourceModelHome set to none")
+  void testWithAISourceModelHomeSetToNone() {
+
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid = "domain6";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+    // using the images created in initAll
+    // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
+    // and other with sourceWDTInstallHome set to none
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4, domainNamespace);
+    createDomainAndVerify(domainUid, domainCR1, domainNamespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+
+    assertFalse(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
+        "TestClusterJmsModule2", "200"), "Model files from second AI are not ignored");
   }
 
   /**
    * Negative Test to create domain without WDT binary.
-   * Check the error message is in introspector pod log, domain events and operator pod log.
+   * Check the error message is in domain events and operator pod log.
    */
   @Test
-  @Order(5)
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
 
-    //In case the previous test failed, ensure the created domain in the same namespace is deleted.
-    if (doesDomainExist(domainUid, DOMAIN_VERSION, errorpathDomainNamespace)) {
-      deleteDomainResource(errorpathDomainNamespace, domainUid);
-    }
+    final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid2 = "domain7";
+    final String adminServerPodName = domainUid2 + "-admin-server";
+    final String managedServerPrefix = domainUid2 + "-managed-server";
 
+    //In case the previous test failed, ensure the created domain in the same namespace is deleted.
+    if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
+      deleteDomainResource(errorpathDomainNamespace, domainUid2);
+    }
     OffsetDateTime timestamp = now();
 
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/auxiliary";
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2),
-        "Create directory failed");
-
-    // create models dir and copy model for image
-    Path modelsPath2 = Paths.get(errorpathAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2),
-        "Create directory failed");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath2.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING), "Copy files failed");
-
-    // create image with model and no wdt installation files
-    createAuxiliaryImage(errorpathAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage2);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage2);
-    }
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage2)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage2, witParams);
 
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage2);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        domainUid2, errorPathAuxiliaryImage2);
+
+    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
+        errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
-        + "which is currently set to '/auxiliary/weblogic-deploy'";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+        + "which is currently set to '/aux/weblogic-deploy'";
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator pod's name");
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
     // check there are no admin server and managed server pods and services created
-    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
-      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid2, domainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
 
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
     // delete domain1
-    deleteDomainResource(errorpathDomainNamespace, domainUid);
+    deleteDomainResource(errorpathDomainNamespace, domainUid2);
   }
 
   /**
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
-   * Check the error message is in introspector pod log, domain events and operator pod log
+   * Check the error message is in domain events and operator pod log
    */
   @Test
-  @Order(6)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
+    final String domainUid2 = "domain7";
+    final String adminServerPodName = domainUid2 + "-admin-server";
+    final String managedServerPrefix = domainUid2 + "-managed-server";
 
     //In case the previous test failed, ensure the created domain in the same namespace is deleted.
-    if (doesDomainExist(domainUid, DOMAIN_VERSION, errorpathDomainNamespace)) {
-      deleteDomainResource(errorpathDomainNamespace, domainUid);
+    if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
+      deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
+    final String auxiliaryImagePath = "/auxiliary";
     OffsetDateTime timestamp = now();
 
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/auxiliary";
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3),
-        "Create directory failed");
-
-    // create models dir and copy model for image
-    Path modelsPath3 = Paths.get(errorpathAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
-        "Create directory failed");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "model.jms2.yaml"),
-        Paths.get(modelsPath3.toString(), "model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy files failed");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath3.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath3.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage3);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage3);
-    }
-
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage3)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage3, witParams);
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage3);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        domainUid2, errorPathAuxiliaryImage3);
+
+    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, errorPathAuxiliaryImage3);
+        errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage3, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage3, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
-        "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
-
+        "createDomain did not find the required domainInfo section in the model file /aux/models/model.jms2.yaml";
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Get operator's pod name failed");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services created
-    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid2, errorpathDomainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
-    // delete domain1
-    deleteDomainResource(errorpathDomainNamespace, domainUid);
-  }
-
-  /**
-   * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
-   * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
-   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH"
-   * Check the error message in introspector pod log, domain events and operator pod log.
-   * Restore the domain by removing the custom mount command.
-   */
-  @Test
-  @Order(7)
-  @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
-  void testErrorPathDomainWithFailCustomMountCommand() {
- 
-    OffsetDateTime timestamp = now();
-
-    // get the creation time of the admin server pod before patching
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource ");
-    /* Commented due to auxiliary image 4.0 changes.
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
-     */
-
-    // patch the first auxiliary image
-    String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"add\",")
-        .append(" \"path\": " + searchString + ",")
-        .append(" \"value\":  \"exit 1\"")
-        .append(" }]");
-    logger.info("Auxiliary Image patch string: " + patchStr);
-
-    V1Patch patch = new V1Patch((patchStr).toString());
-
-    boolean aiPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(Auxiliary Image)  failed ");
-    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
-
-    // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-        "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Get operator's pod name failed");
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // verify the domain is not rolled
-    logger.info("sleep 2 minutes to make sure the domain is not restarted");
-    try {
-      Thread.sleep(120000);
-    } catch (InterruptedException ie) {
-      // ignore
-    }
-    verifyPodsNotRolled(domainNamespace, pods);
-
-    // restore domain1
-    // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": " + searchString)
-        .append(" }]");
-    logger.info("Auxiliary Image patch string: " + patchStr);
-
-    V1Patch patch1 = new V1Patch((patchStr).toString());
-
-    aiPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch1, "application/json-patch+json"),
-        "patchDomainCustomResource(Auxiliary Image)  failed ");
-    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
-
-    // check the admin server is up and running
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    // delete domain
+    deleteDomainResource(errorpathDomainNamespace, domainUid2);
   }
 
   /**
@@ -799,106 +844,71 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Order(8)
+  @Disabled("Regression bug, test fails")
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
-
-    //In case the previous test failed, ensure the created domain in the same namespace is deleted.
-    if (doesDomainExist(domainUid, DOMAIN_VERSION, errorpathDomainNamespace)) {
-      deleteDomainResource(errorpathDomainNamespace, domainUid);
-    }
-    OffsetDateTime timestamp = now();
-
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String domainUid2 = "domain8";
+    final String adminServerPodName = domainUid2 + "-admin-server";
+    final String managedServerPrefix = domainUid2 + "-managed-server";
     final String auxiliaryImagePath = "/auxiliary";
 
-    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
-
-    // create stage dir for auxiliary image
-    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
-        "Can't delete directory");
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
-        "Can't create directory");
-
-    Path errorpathAIPathToFile =
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4/test1.txt");
-    String content = "some text ";
-    assertDoesNotThrow(() -> Files.write(errorpathAIPathToFile, content.getBytes()),
-        "Can't write to file " + errorpathAIPathToFile);
-
-    // create models dir and copy model for image
-    Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1),
-        "Can't create directory");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING),
-        "Can't copy files");
-
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING), "Can't copy files");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath1.toString());
-
-    // create image with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "/negative/Dockerfile").toString(), errorPathAuxiliaryImage4);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage4);
+    //In case the previous test failed, ensure the created domain in the same namespace is deleted.
+    if (doesDomainExist(domainUid2, DOMAIN_VERSION, errorpathDomainNamespace)) {
+      deleteDomainResource(errorpathDomainNamespace, domainUid2);
     }
 
-    // create domain custom resource using auxiliary images
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage4);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+    OffsetDateTime timestamp = now();
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(errorPathAuxiliaryImage4)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelArchiveFiles(archiveList)
+            .modelFiles(modelList)
+            .additionalBuildCommands(RESOURCE_DIR + "/auxiliaryimage/addBuildCommand.txt");
+    createAndPushAuxiliaryImage(errorPathAuxiliaryImage4, witParams);
+
+    // create domain custom resource using 2 auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid2, errorPathAuxiliaryImage4);
+    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, errorPathAuxiliaryImage4);
+        errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage4, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage4, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't open '/auxiliary/test1.txt': Permission denied";
-    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+    String expectedErrorMsg = "cp: can't open '/aux/models/multi-model-one-ds.20.yaml: "
+        + "Permission denied";
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid2, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
-            "Can't get operator's pod name");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services not created
-    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid2, errorpathDomainNamespace);
     checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid2, errorpathDomainNamespace);
       checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
     }
 
     // delete domain1
-    deleteDomainResource(errorpathDomainNamespace, domainUid);
+    deleteDomainResource(errorpathDomainNamespace, domainUid2);
   }
 
   /**
@@ -909,13 +919,14 @@ class ItMiiAuxiliaryImage {
    * and verify the domain is running.
    */
   @Test
-  @Order(9)
   @DisplayName("Test to update WDT version using  auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid = "domain7";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -933,111 +944,51 @@ class ItMiiAuxiliaryImage {
     createSecretWithUsernamePassword(encryptionSecretName, wdtDomainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for first auxiliary image containing domain configuration
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
-        "Failed to create directory");
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
-        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage9)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelArchiveFiles(archiveList)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage9, witParams);
 
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-            .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    // create second auxiliary image with older wdt installation files only
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage10)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtVersion(WDT_TEST_VERSION);
+    createAndPushAuxiliaryImage(miiAuxiliaryImage10, witParams);
 
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
-
-    // create image1 with domain configuration only
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage4);
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage4);
-    }
-
-    // create stage dir for second auxiliary image
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2), "Create directory failed");
-
-    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2), "Create directory failed");
-
-    // unzip older version WDT installation file into work dir
-    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-"
-        + WDT_TEST_VERSION + "/"
-        + WDT_DOWNLOAD_FILENAME_DEFAULT;
-    unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL,
-        DOWNLOAD_DIR + "/ver" + WDT_TEST_VERSION);
-
-    // create image2 with wdt installation files only
-    createAuxiliaryImage(multipleAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage5);
-
-    // push image2 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage5, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage5);
-    }
-
-    // create stage dir for third auxiliary image with latest wdt installation files only
-    Path multipleAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3),
-        "Create directory failed");
-
-    Path modelsPath3 = Paths.get(multipleAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
-        "Create directory failed");
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(multipleAIPath3.toString());
-
-    // create image3 with newest version of wdt installation files
-    createAuxiliaryImage(multipleAIPath3.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage6);
-
-    // push image3 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage6, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage6);
-    }
+    // create third auxiliary image with newest wdt installation files only
+    witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage11)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(miiAuxiliaryImage11, witParams);
 
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
-        domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5);
-    Domain domainCR = createDomainResource(domainUid, wdtDomainNamespace,
+        domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10);
+    Domain domainCR = createDomainResource40(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, miiAuxiliaryImage4, miiAuxiliaryImage5);
+        miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
-        domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5, wdtDomainNamespace);
+        domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10, wdtDomainNamespace);
     createDomainAndVerify(domainUid, domainCR, wdtDomainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
-    
+
     //create router for admin service on OKD in wdtDomainNamespace
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), wdtDomainNamespace);
     logger.info("admin svc host = {0}", adminSvcExtHost);
@@ -1048,27 +999,31 @@ class ItMiiAuxiliaryImage {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     testUntil(
         () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
             "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
         adminSvcExtHost,
         adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
     logger.info("Found the DataResource configuration");
     //check WDT version in the image equals the  provided WDT_TEST_VERSION
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace,
+          adminServerPodName, "/aux",
+          this.getClass().getSimpleName());
       assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image does not match the expected");
     }, "Can't retrieve wdt version file or version does match the expected");
 
     //updating wdt to latest version by patching the domain with image3
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage5, miiAuxiliaryImage6, domainUid, wdtDomainNamespace);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG, domainUid, wdtDomainNamespace);
 
     //check that WDT version is changed
     assertDoesNotThrow(() -> {
-      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace, adminServerPodName,
+          "/aux", this.getClass().getSimpleName());
       assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
           " Used WDT in the auxiliary image was not updated");
     }, "Can't retrieve wdt version file "
@@ -1078,10 +1033,10 @@ class ItMiiAuxiliaryImage {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     testUntil(
         () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
             "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
         adminSvcExtHost,
         adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
@@ -1090,171 +1045,137 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
+   * Create a domain using auxiliary image that doesn't exist or have issues to pull and verify the domain status
+   * reports the error. Patch the domain with correct image and verify the introspector job completes successfully.
+   */
+  @Test
+  @DisplayName("Test to create domain using an auxiliary image that doesn't exist and check domain status")
+  void testDomainStatusErrorPullingAI() {
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
+    final String domainUid = "domain9";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+    final String aiThatDoesntExist = miiAuxiliaryImage1 + "100";
+
+    // create domain custom resource using the auxiliary image that doesn't exist
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1}",
+        domainUid, aiThatDoesntExist);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
+        aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG);
+    // createDomainResource util method sets 600 for activeDeadlineSeconds which is too long to verify
+    // introspector re-run in this use case
+    domainCR.getSpec().configuration().introspectorJobActiveDeadlineSeconds(120L);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
+
+    // verify the condition type Failed exists
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    // verify the condition Failed type has status True
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+    // patch the domain with correct image which exists
+    patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG,
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, domainUid,
+        domainNamespace, false);
+
+    // verify there is no status condition type Failed
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+
+    // check that admin service/pod exists in the domain namespace
+    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+    }
+  }
+
+
+  /**
    * Cleanup images.
    */
   public void tearDownAll() {
     // delete images
-    if (miiAuxiliaryImage1 != null) {
-      deleteImage(miiAuxiliaryImage1);
-    }
-
-    if (miiAuxiliaryImage2 != null) {
-      deleteImage(miiAuxiliaryImage2);
-    }
-
-    if (miiAuxiliaryImage3 != null) {
-      deleteImage(miiAuxiliaryImage3);
-    }
-
-    if (miiAuxiliaryImage4 != null) {
-      deleteImage(miiAuxiliaryImage4);
-    }
-
-    if (miiAuxiliaryImage5 != null) {
-      deleteImage(miiAuxiliaryImage5);
-    }
-
-    if (miiAuxiliaryImage6 != null) {
-      deleteImage(miiAuxiliaryImage6);
-    }
-
-    if (errorPathAuxiliaryImage1 != null) {
-      deleteImage(errorPathAuxiliaryImage1);
-    }
-
-    if (errorPathAuxiliaryImage2 != null) {
-      deleteImage(errorPathAuxiliaryImage2);
-    }
-
-    if (errorPathAuxiliaryImage3 != null) {
-      deleteImage(errorPathAuxiliaryImage3);
-    }
-
-    if (errorPathAuxiliaryImage4 != null) {
-      deleteImage(errorPathAuxiliaryImage4);
-    }
+    deleteImage(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(errorPathAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
   }
 
-  private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
-    String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
-        stageDirPath, dockerFileLocation,
-        "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", auxiliaryImage);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(cmdToExecute))
-        .execute(), String.format("Failed to execute", cmdToExecute));
-  }
-
-  private void createSecretsForDomain(String adminSecretName, String encryptionSecretName, String domainNamespace) {
-    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
-      createOcirRepoSecret(domainNamespace);
-    }
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    if (!secretExists(adminSecretName, domainNamespace)) {
-      createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    if (!secretExists(encryptionSecretName, domainNamespace)) {
-      createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-    }
-  }
-
-  private void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "TestClusterJmsModule2");
-    logger.info("Found the JMSSystemResource configuration");
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
+    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JMSSystemResources", "TestClusterJmsModule2", "200");
   }
 
   private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-            "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
-    logger.info("Found the DataResource configuration");
+        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
   }
 
-  private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath) throws Exception {
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
-        " Can't find file in the pod, or failed to copy");
+  private Domain createDomainResourceWithAuxiliaryImage40(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      String auxiliaryImagePath,
+      String... auxiliaryImageName) {
 
-
-    return Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
-  }
-
-  private boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                             String namespace,
-                                                             String errormsg) {
-    String introspectPodName;
-    V1Pod introspectorPod;
-
-    String introspectJobName = getIntrospectJobName(domainUid);
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-
-    try {
-      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
-    } catch (ApiException apiEx) {
-      logger.severe("got ApiException while getting pod: {0}", apiEx);
-      return false;
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterNames);
+    int index = 0;
+    for (String cmImageName: auxiliaryImageName) {
+      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
+      if (index == 0) {
+        auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
+            .sourceModelHome(auxiliaryImagePath + "/models");
+      } else {
+        auxImage.sourceWDTInstallHome("none")
+            .sourceModelHome("none");
+      }
+      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
+      index++;
     }
-
-    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
-      introspectPodName = introspectorPod.getMetadata().getName();
-      logger.info("found introspectore pod {0} in namespace {1}", introspectPodName, namespace);
-    } else {
-      return false;
-    }
-
-    String introspectorLog;
-    try {
-      introspectorLog = getPodLog(introspectPodName, namespace);
-      logger.info("introspector log: {0}", introspectorLog);
-    } catch (ApiException apiEx) {
-      logger.severe("got ApiException while getting pod log: {0}", apiEx);
-      return false;
-    }
-
-    return introspectorLog.contains(errormsg);
-  }
-
-  private void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
-                                                                String namespace,
-                                                                String expectedErrorMsg) {
-
-    // wait and check whether the introspector log contains the expected error message
-    logger.info("verifying that the introspector log contains the expected error message");
-    testUntil(
-        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg),
-        logger,
-        "Checking for the log of introspector pod contains the expected error msg {0}",
-        expectedErrorMsg);
+    return domainCR;
   }
 }

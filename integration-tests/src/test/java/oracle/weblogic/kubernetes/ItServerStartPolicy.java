@@ -22,9 +22,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -502,11 +502,9 @@ class ItServerStartPolicy {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-    logger.info("operator pod log: {0}", operatorPodLog);
-    assertTrue(operatorPodLog.contains("WARNING"));
-    assertTrue(operatorPodLog.contains(
-        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
+    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
   }
 
   /**

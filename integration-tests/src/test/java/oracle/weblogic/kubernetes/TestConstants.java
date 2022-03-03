@@ -335,4 +335,6 @@ public interface TestConstants {
       + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
   public static final String SIDB_YAML_URL = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
       + "config/samples/sidb/singleinstancedatabase.yaml";
+  public static final String ORACLELINUX_TEST_VERSION =
+      Optional.ofNullable(System.getenv("ORACLELINUX_TEST_VERSION")).orElse("7");
 }
