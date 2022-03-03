@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -512,6 +512,10 @@ public class Kubernetes {
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
+    // log pod names for debugging
+    for (var pod : pods.getItems()) {
+      getLogger().info("DEBUG: Pod Name returned by listPods call {0}", pod.getMetadata().getName());
+    }
     for (var pod : pods.getItems()) {
       if (pod.getMetadata().getName().contains(podName)) {
         return pod;
