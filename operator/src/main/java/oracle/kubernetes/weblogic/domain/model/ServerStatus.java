@@ -43,6 +43,17 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Expose
   private String nodeName;
 
+  @Description("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, "
+      + "or Unknown.")
+  @Expose
+  private String podPhase;
+
+
+  @Description("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, otherwise Unknown. "
+      + "Possible values are: True, False or Unknown.")
+  @Expose
+  private String podReady;
+
   @Description("Current status and health of a specific WebLogic Server instance.")
   @Expose
   @Valid
@@ -65,6 +76,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
     this.isAdminServer = other.isAdminServer;
+    this.podReady = other.podReady;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -229,8 +241,46 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
-  private boolean isAdminServer() {
-    return isAdminServer;
+  /**
+   * PodPhase describes the phase of a WebLogic server pod status.
+   *
+   * @return podPhase
+   */
+  public String getPodPhase() {
+    return podPhase;
+  }
+
+  /**
+   * PodPhase describes the phase of a WebLogic server pod status.
+   *
+   * @param podPhase  phase of server pod
+   * @return this
+   */
+  public ServerStatus withPodPhase(String podPhase) {
+    this.podPhase = podPhase;
+    return this;
+  }
+
+  /**
+   * PodReady describes the status of a WebLogic server pod Ready condition if the pod is in Running phase,
+   * otherwise Unknown.
+   *
+   * @return podReady
+   */
+  public String getPodReady() {
+    return podReady;
+  }
+
+  /**
+   * PodReady describes the status of a WebLogic server pod Ready condition when the pod is in Running phase,
+   * otherwise Unknown.
+   *
+   * @param podReady status of server pod's condition type Ready
+   * @return this
+   */
+  public ServerStatus withPodReady(String podReady) {
+    this.podReady = podReady;
+    return this;
   }
 
   /**
@@ -253,6 +303,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append("desiredState", desiredState)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
+        .append("podPhase", podPhase)
+        .append("podReady", podReady)
         .append("health", health)
         .toString();
   }
@@ -266,6 +318,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state)
         .append(desiredState)
         .append(clusterName)
+        .append(podPhase)
+        .append(podReady)
         .toHashCode();
   }
 
@@ -285,6 +339,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state, rhs.state)
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
+        .append(podPhase, rhs.podPhase)
+        .append(podReady, rhs.podReady)
         .isEquals();
   }
 
@@ -314,6 +370,8 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
+        .withStringField("podPhase", ServerStatus::getPodPhase)
+        .withStringField("podReady", ServerStatus::getPodReady)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 
   static ObjectPatch<ServerStatus> getObjectPatch() {

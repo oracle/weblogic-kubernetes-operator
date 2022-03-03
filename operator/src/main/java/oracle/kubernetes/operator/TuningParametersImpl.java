@@ -93,7 +93,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("livenessProbePeriodSeconds", 45),
             (int) readTuningParameter("livenessProbeSuccessThreshold", 1),
             (int) readTuningParameter("livenessProbeFailureThreshold", 1),
-            readTuningParameter("introspectorJobActiveDeadlineSeconds", 120));
+            readTuningParameter("introspectorJobActiveDeadlineSeconds", 120),
+            readTuningParameter("maxReadyWaitTimeSeconds", 1800));
 
     FeatureGates featureGates =
         new FeatureGates(generateFeatureGates(get("featureGates")));

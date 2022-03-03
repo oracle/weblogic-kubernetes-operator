@@ -3,6 +3,7 @@
 
 package oracle.weblogic.domain;
 
+import com.google.gson.annotations.Expose;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -27,8 +28,19 @@ public class ServerStatus {
   @ApiModelProperty("Name of node that is hosting the Pod containing this WebLogic Server.")
   private String nodeName;
 
+  @ApiModelProperty("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, "
+      + "Running, or Unknown.")
+  @Expose
+  private String podPhase;
+
+  @ApiModelProperty("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, "
+      + "otherwise Unknown. Possible values are: True, False or Unknown.")
+  @Expose
+  private String podReady;
+
   @ApiModelProperty("Current status and health of a specific WebLogic Server.")
   private ServerHealth health;
+
 
   public ServerStatus serverName(String serverName) {
     this.serverName = serverName;
@@ -115,6 +127,30 @@ public class ServerStatus {
     this.nodeName = nodeName;
   }
 
+  public String podPhase() {
+    return podPhase;
+  }
+
+  public String getPodPhase() {
+    return podPhase;
+  }
+
+  public void setPodPhase(String podPhase) {
+    this.podPhase = podPhase;
+  }
+
+  public String podReady() {
+    return podReady;
+  }
+
+  public String getPodReady() {
+    return podReady;
+  }
+
+  public void setPodReady(String podReady) {
+    this.podReady = podReady;
+  }
+
   public ServerStatus health(ServerHealth health) {
     this.health = health;
     return this;
@@ -140,6 +176,8 @@ public class ServerStatus {
         .append("desiredState", desiredState)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
+        .append("podPhase", podPhase)
+        .append("podReady", podReady)
         .append("health", health)
         .toString();
   }
@@ -152,6 +190,8 @@ public class ServerStatus {
         .append(desiredState)
         .append(clusterName)
         .append(nodeName)
+        .append(podPhase)
+        .append(podReady)
         .append(health)
         .toHashCode();
   }
@@ -172,6 +212,8 @@ public class ServerStatus {
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
         .append(nodeName, rhs.nodeName)
+        .append(podPhase, rhs.podPhase)
+        .append(podReady, rhs.podReady)
         .append(health, rhs.health)
         .isEquals();
   }
