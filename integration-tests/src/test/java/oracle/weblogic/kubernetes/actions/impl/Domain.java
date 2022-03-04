@@ -942,21 +942,23 @@ public class Domain {
 
     String commandToExecuteInsidePod = scalingCommand.toString();
 
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
-        "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
-
-    //retry
-    if (result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty()) {
+    ExecResult result = null;
+    try {
       result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
           "/bin/sh", "-c", commandToExecuteInsidePod),
           String.format("Could not execute the command %s in pod %s, namespace %s",
               commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
       logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
           commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+    } catch (Error err) {
+      //retry
+      result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
+          "/bin/sh", "-c", commandToExecuteInsidePod),
+          String.format("Could not execute the command %s in pod %s, namespace %s",
+              commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
+      logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+          commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+
     }
     // copy scalingAction.log to local
     testUntil(
