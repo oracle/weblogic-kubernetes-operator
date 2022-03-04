@@ -747,7 +747,7 @@ checkAuxiliaryImage() {
 #            See also initCompatibilityModeInitContainersWithLegacyAuxImages in 'utils_base.sh'.
 #
 checkCompatibilityModeInitContainersWithLegacyAuxImages() {
-  # check auxiliary image results (if any)
+  # check the legacy auxiliary image results (if any)
   if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
     trace FINE "Auxiliary Image: No init containers with auxiliary images configured."
     return

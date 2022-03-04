@@ -133,4 +133,5 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup);
 
   ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown);
+
 }

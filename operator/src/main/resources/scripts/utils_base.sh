@@ -360,8 +360,8 @@ checkSourceWDTInstallDirExistsAndNotEmpty() {
 #
 # initCompatibilityModeInitContainersWithLegacyAuxImages
 #   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the compatibility mode init container
-#            with auxiliary image. If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message
-#            and returns. If the command execution fails, it logs error message with failure details.
+#            with legacy auxiliary image. If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error
+#            message and returns. If the command execution fails, it logs error message with failure details.
 #            Otherwise it logs a success message with details.
 #            See also 'auxImage.sh'.
 #            See also checkCompatibilityModeInitContainersWithLegacyAuxImages in 'utils.sh'.

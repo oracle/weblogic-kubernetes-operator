@@ -8,6 +8,17 @@ metadata:
     weblogic.sha256: 50abf905846c7f7f0bdda043093324ab8f14862ef20532a6d3467bccdcd7d73f
   name: domains.weblogic.oracle
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: internal-weblogic-operator-webhook-svc
+          namespace: default
+          path: /webhook
+          port: 8084.0
+      conversionReviewVersions:
+      - v1
   group: weblogic.oracle
   names:
     kind: Domain
