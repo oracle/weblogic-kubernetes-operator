@@ -175,15 +175,31 @@ public class JobStepContext extends BasePodStepContext {
   // ----------------------- step methods ------------------------------
 
   List<V1Volume> getAdditionalVolumes() {
-    return getDomain().getSpec().getAdditionalVolumes();
+    List<V1Volume> volumes = getDomain().getSpec().getAdditionalVolumes();
+    getServerSpec().getAdditionalVolumes().stream().forEach(volume -> addVolumeIfMissing(volume, volumes));
+    return volumes;
+  }
+
+  private void addVolumeIfMissing(V1Volume volume, List<V1Volume> volumes) {
+    if (!volumes.contains(volume) && volume.getName().startsWith(COMPATIBILITY_MODE)) {
+      volumes.add(volume);
+    }
   }
 
   List<V1VolumeMount> getAdditionalVolumeMounts() {
-    return getDomain().getSpec().getAdditionalVolumeMounts();
+    List<V1VolumeMount> volumeMounts = getDomain().getSpec().getAdditionalVolumeMounts();
+    getServerSpec().getAdditionalVolumeMounts().stream().forEach(mount -> addVolumeMountIfMissing(mount, volumeMounts));
+    return volumeMounts;
+  }
+
+  private void addVolumeMountIfMissing(V1VolumeMount mount, List<V1VolumeMount> volumeMounts) {
+    if (!volumeMounts.contains(mount) && mount.getName().startsWith(COMPATIBILITY_MODE)) {
+      volumeMounts.add(mount);
+    }
   }
 
   private List<V1Container> getAdditionalInitContainers() {
-    return getDomain().getSpec().getInitContainers();
+    return getServerSpec().getInitContainers();
   }
 
   /**

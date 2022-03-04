@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -20,6 +22,7 @@ import org.apache.commons.cli.ParseException;
 public class DomainResourceConverter {
 
   private static final DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
+
   String inputFileName;
   String outputDir;
   String outputFileName;
@@ -29,30 +32,30 @@ public class DomainResourceConverter {
    * @param args The arguments for domain resource converter.
    *
    */
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     final DomainResourceConverter drc = parseCommandLine(args);
 
     File inputFile = new File(drc.inputFileName);
     File outputDir = new File(drc.outputDir);
 
     if (!inputFile.exists()) {
-      throw new Exception("InputFile: " + drc.inputFileName + " does not exist or could not be read.");
+      throw new RuntimeException("InputFile: " + drc.inputFileName + " does not exist or could not be read.");
     }
 
     if (!outputDir.exists()) {
-      throw new Exception("The output dir specified by '-d' does not exist or could not be read.");
+      throw new RuntimeException("The output dir specified by '-d' does not exist or could not be read.");
     }
 
-    Files.writeString(Path.of(drc.outputDir + "/" + drc.outputFileName),
-            domainUpgradeUtils.convertDomain(Files.readString(Path.of(drc.inputFileName))));
+    convertDomain(drc);
+    return;
   }
 
-  /**
-   * Constructs an instances of Domain resource converter with given arguments.
-   * @param inputFileName Name of the input file.
-   */
-  public DomainResourceConverter(String inputFileName) {
-    this(null, null, inputFileName);
+  private static void convertDomain(DomainResourceConverter drc) {
+    try (Writer writer = Files.newBufferedWriter(Path.of(drc.outputDir + "/" + drc.outputFileName))) {
+      writer.write(domainUpgradeUtils.convertDomain(Files.readString(Path.of(drc.inputFileName))));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -71,7 +74,7 @@ public class DomainResourceConverter {
     this.inputFileName = inputFileName;
   }
 
-  private static DomainResourceConverter parseCommandLine(String[] args) throws ParseException {
+  private static DomainResourceConverter parseCommandLine(String[] args) {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
 
@@ -95,7 +98,7 @@ public class DomainResourceConverter {
       return new DomainResourceConverter(cli.getOptionValue("d"), cli.getOptionValue("f"),
               cli.getArgs()[0]);
     } catch (ParseException e) {
-      throw e;
+      throw new RuntimeException(e);
     }
   }
 

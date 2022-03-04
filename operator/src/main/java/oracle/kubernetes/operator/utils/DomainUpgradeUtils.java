@@ -49,7 +49,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 public class DomainUpgradeUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
-  public static final String DESIRED_API_VERSION = "weblogic.oracle/v9";
+  public static final String API_VERSION_V9 = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
   private volatile int containerIndex = 0;
 
@@ -89,7 +89,7 @@ public class DomainUpgradeUtils {
     if (spec == null) {
       return domain;
     }
-    LOGGER.info("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
+    LOGGER.fine("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
 
     String apiVersion = (String)domain.get("apiVersion");
     Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
@@ -107,7 +107,7 @@ public class DomainUpgradeUtils {
             convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
     spec.remove("auxiliaryImageVolumes");
     domain.put("apiVersion", desiredAPIVersion);
-    LOGGER.info("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
+    LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
   }
 
@@ -117,7 +117,7 @@ public class DomainUpgradeUtils {
    * @return Domain String containing the converted domain yaml.
    */
   public String convertDomain(String domainYaml) {
-    return convertDomain(domainYaml, DESIRED_API_VERSION);
+    return convertDomain(domainYaml, API_VERSION_V9);
   }
 
   /**
