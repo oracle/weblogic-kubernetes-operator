@@ -92,20 +92,8 @@ public class DomainUpgradeUtils {
     LOGGER.fine("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
 
     String apiVersion = (String)domain.get("apiVersion");
-    Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
-    Boolean adminChannelPortForwardingEnabled = (Boolean)Optional.ofNullable(adminServerSpec)
-            .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
-    if ((adminChannelPortForwardingEnabled == null) && (API_VERSION_V8.equals(apiVersion))) {
-      Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
-    }
-    List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
-    convertAuxiliaryImages(spec, auxiliaryImageVolumes);
-    Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
-    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
-            convertAuxiliaryImages((Map<String, Object>) cluster, auxiliaryImageVolumes)));
-    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
-            convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
-    spec.remove("auxiliaryImageVolumes");
+    adjustAdminPortForwardingDefault(spec, apiVersion);
+    convertLegacyAuxiliaryImages(spec);
     domain.put("apiVersion", desiredAPIVersion);
     LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -133,6 +121,26 @@ public class DomainUpgradeUtils {
     Yaml yaml = new Yaml(options);
     Object domain = yaml.load(domainYaml);
     return yaml.dump(convertDomain((Map<String, Object>) domain, desiredApiVersion));
+  }
+
+  private void adjustAdminPortForwardingDefault(Map<String, Object> spec, String apiVersion) {
+    Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
+    Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
+            .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
+    if ((adminChannelPortForwardingEnabled == null) && (API_VERSION_V8.equals(apiVersion))) {
+      Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
+    }
+  }
+
+  private void convertLegacyAuxiliaryImages(Map<String, Object> spec) {
+    List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
+    convertAuxiliaryImages(spec, auxiliaryImageVolumes);
+    Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
+    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+            convertAuxiliaryImages((Map<String, Object>) cluster, auxiliaryImageVolumes)));
+    Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
+            convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
+    spec.remove("auxiliaryImageVolumes");
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {

@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
- * Definition of an interface that returns values that the Main class requires.
+ * Definition of an interface that returns values that the Webhook Main class requires.
  */
 interface ConversionWebhookMainDelegate {
 

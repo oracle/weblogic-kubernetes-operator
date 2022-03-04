@@ -295,13 +295,6 @@ public class ConversionWebhookMain {
     WebhookRestServer.getInstance().start(container);
   }
 
-  // -----------------------------------------------------------------------------
-  //
-  // Below this point are methods that are called primarily from watch handlers,
-  // after watch events are received.
-  //
-  // -----------------------------------------------------------------------------
-
   private static void stopWebhookRestServer() {
     WebhookRestServer.getInstance().stop();
     WebhookRestServer.destroy();
