@@ -433,7 +433,6 @@ class ItMonitoringExporterSideCar {
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
-      // installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
