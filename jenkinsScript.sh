@@ -155,7 +155,3 @@ sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${W
 
 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
 journalctl --utc --dmesg --system --since "$start_time" > "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/journalctl-compute.out"
-
-echo "Info: Delay completing tests to allow files to close before Jenkins builds result archive"
-sleep 60
-sudo lsof | egrep "(logdir|diagnosticlogs)"

@@ -320,3 +320,7 @@ fi
 echo "Collect journalctl logs"
 docker exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
 docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
+
+echo "Destroy cluster and registry"
+kind delete cluster --name "${kind_name}"
+docker stop "${reg_name}"
