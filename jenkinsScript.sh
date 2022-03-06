@@ -154,7 +154,10 @@ echo "Info: Run tests.."
 export OUTDIR="${WORKSPACE}/staging"
 mkdir -m777 -p "${OUTDIR}"
 sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME} -o "${OUTDIR}"
-journalctl --utc --dmesg --system --since "$start_time" > "${OUTDIR}/journalctl-compute.out"
+
+mkdir -m777 -p "${OUTDIR}/wl_k8s_test_results"
+journalctl --utc --dmesg --system --since "$start_time" > "${OUTDIR}/wl_k8s_test_results/journalctl-compute.out"
 
 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-tar -cvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar" "${OUTDIR}"
+cd "${OUTDIR}"
+tar -cvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar" *
