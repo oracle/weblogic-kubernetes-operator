@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -113,7 +114,7 @@ class ItExternalLbTunneling {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int replicaCount = 2;
   private static String clusterName = "cluster-1";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -699,7 +700,7 @@ class ItExternalLbTunneling {
       }
       // uninstall NGINX
       if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams))
+        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
             .as("Test uninstallNginx returns true")
             .withFailMessage("uninstallNginx() did not return true")
             .isTrue();

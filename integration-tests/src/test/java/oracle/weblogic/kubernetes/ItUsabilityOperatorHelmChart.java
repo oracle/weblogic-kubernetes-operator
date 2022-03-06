@@ -503,7 +503,7 @@ class ItUsabilityOperatorHelmChart {
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
-          false,expectedError,"failed", 0,
+          false, expectedError,"failed", 0,
           op2HelmParams, domain2Namespace);
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");

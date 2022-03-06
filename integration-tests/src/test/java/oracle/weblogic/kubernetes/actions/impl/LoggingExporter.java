@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -243,18 +242,20 @@ public class LoggingExporter {
   /**
    * Verify that the Logging Exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
-   *                  WebLogic server pod (for WebLogic Logging Exporter)
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
+   *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+                                                               String esNamespace,
                                                                String labelSelector,
                                                                String index) {
     // Get index status info
     String statusLine =
-        execLoggingExpStatusCheck(namespace, labelSelector, "*" + index + "*");
+        execLoggingExpStatusCheck(opNamespace, esNamespace, labelSelector, "*" + index + "*");
     assertNotNull(statusLine);
 
     String [] parseString = statusLine.split("\\s+");
@@ -309,10 +310,11 @@ public class LoggingExporter {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
     // Copy WebLogic Logging Exporter files to WORK_DIR
     String[] loggingExporterFiles =
         {WLS_LOGGING_EXPORTER_YAML_FILE_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME};
@@ -322,6 +324,8 @@ public class LoggingExporter {
       Path destPath = Paths.get(WORK_DIR, loggingFile);
       assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
           String.format("Failed to copy %s to %s", srcPath, destPath));
+      assertDoesNotThrow(() -> FileUtils.replaceStringInFile(destPath.toString(), "default", namespace),
+          String.format("Failed to replace namespace default to %s", namespace));
       logger.info("Copied {0} to {1}}", srcPath, destPath);
     }
 
@@ -381,9 +385,9 @@ public class LoggingExporter {
                             .capabilities(new V1Capabilities()
                                 .add(Arrays.asList("SYS_CHROOT"))))
                         .addPortsItem(new V1ContainerPort()
-                            .containerPort(new Integer(elasticsearchHttpPort)))
+                            .containerPort(Integer.valueOf(elasticsearchHttpPort)))
                         .addPortsItem(new V1ContainerPort()
-                            .containerPort(new Integer(elasticsearchHttpsPort)))
+                            .containerPort(Integer.valueOf(elasticsearchHttpsPort)))
                         .addEnvItem(new V1EnvVar()
                             .name("ES_JAVA_OPTS")
                             .value("-Xms1024m -Xmx1024m"))
@@ -423,7 +427,7 @@ public class LoggingExporter {
                         .name(kibanaName)
                         .image(kibanaImage)
                         .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(new Integer(kibanaContainerPort)))))))));
+                            .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
 
     return kibanaDeployment;
   }
@@ -483,10 +487,12 @@ public class LoggingExporter {
     return elasticsearchService;
   }
 
-  private static String execLoggingExpStatusCheck(String namespace, String labelSelector, String indexRegex) {
+  private static String execLoggingExpStatusCheck(String opNamespace, String esNamespace,
+      String labelSelector, String indexRegex) {
+    String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
-        .append(ELASTICSEARCH_HOST)
+        .append(elasticSearchHost)
         .append(":")
         .append(ELASTICSEARCH_HTTP_PORT)
         .append("/_cat/indices/")
@@ -494,15 +500,13 @@ public class LoggingExporter {
     logger.info("Command to get logging exporter status line {0}", cmd);
 
     // get Operator pod name
-    String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, namespace));
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
 
     int i = 0;
     ExecResult statusLine = null;
     while (i < maxIterationsPod) {
-      statusLine = assertDoesNotThrow(
-          () -> execCommand(namespace, operatorPodName, null, true,
+      statusLine = assertDoesNotThrow(() -> execCommand(opNamespace, operatorPodName, null, true,
               "/bin/sh", "-c", cmd));
       assertNotNull(statusLine, "curl command returns null");
 

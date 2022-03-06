@@ -1,8 +1,9 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
+import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Map;
@@ -15,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
@@ -22,6 +25,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
@@ -41,7 +45,8 @@ public class FiberTestSupport {
   private final CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private final ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
   private final Engine engine = new Engine(schedule);
-  private Packet packet = new Packet();
+  private final MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class);
+  private Packet packet = new Packet().with(mainDelegate);
 
   private Fiber fiber = engine.createFiber();
 
@@ -450,6 +455,17 @@ public class FiberTestSupport {
         throw (Error) throwable;
       }
       throw (Exception) throwable;
+    }
+  }
+
+  abstract static class MainDelegateStub implements MainDelegate {
+    public File getOperatorHome() {
+      return new File("/operator");
+    }
+
+    @Override
+    public void addToPacket(Packet packet) {
+      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
     }
   }
 }
