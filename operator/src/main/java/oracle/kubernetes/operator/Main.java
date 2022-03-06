@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +48,7 @@ import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -80,16 +82,13 @@ public class Main {
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
 
+  private static final File operatorHome;
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
-
-  private static String getConfiguredServiceAccount() {
-    return TuningParameters.getInstance().get("serviceaccount");
-  }
 
   static {
     try {
@@ -100,11 +99,25 @@ public class Main {
 
       ClientPool.initialize(threadFactory);
 
-      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
+      // Simplify debugging the operator by allowing the setting of the operator
+      // top-level directory using either an env variable or a property. In the normal,
+      // container-based use case these values won't be set and the operator will with the
+      // /operator directory.
+      String operatorHomeLoc = System.getenv("OPERATOR_HOME");
+      if (operatorHomeLoc == null) {
+        operatorHomeLoc = System.getProperty("operatorHome", "/operator");
+      }
+      operatorHome = new File(operatorHomeLoc);
+
+      TuningParameters.initializeInstance(wrappedExecutorService, new File(operatorHome, "config"));
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static String getConfiguredServiceAccount() {
+    return TuningParameters.getInstance().get("serviceaccount");
   }
 
   static {
@@ -198,22 +211,17 @@ public class Main {
     }
 
     @Override
+    public File getOperatorHome() {
+      return operatorHome;
+    }
+
+    @Override
     public String getPrincipal() {
       return principal;
     }
 
     @Override
-    public void runSteps(Step firstStep) {
-      runSteps(new Packet(), firstStep, null);
-    }
-
-    @Override
-    public void runSteps(Packet packet, Step firstStep) {
-      runSteps(packet, firstStep, null);
-    }
-
-    @Override
-    public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
+    public void runStepsInternal(Packet packet, Step firstStep, Runnable completionAction) {
       Fiber f = engine.createFiber();
       f.start(firstStep, packet, andThenDo(completionAction));
     }
@@ -325,11 +333,12 @@ public class Main {
 
   private Step createStartupSteps() {
 
-    return NEXT_STEP_FACTORY.createInternalInitializationStep(Namespaces.getSelection(new StartupStepsVisitor()));
+    return NEXT_STEP_FACTORY.createInternalInitializationStep(
+        delegate, Namespaces.getSelection(new StartupStepsVisitor()));
   }
 
-  private static Step createInitializeInternalIdentityStep(Step next) {
-    return new InitializeInternalIdentityStep(next);
+  private static Step createInitializeInternalIdentityStep(MainDelegate delegate, Step next) {
+    return new InitializeInternalIdentityStep(delegate, next);
   }
 
   private Step createOperatorNamespaceEventListStep() {
@@ -502,7 +511,8 @@ public class Main {
 
   private void startRestServer(String principal)
       throws Exception {
-    RestServer.create(new RestConfigImpl(principal, delegate.getDomainNamespaces()::getNamespaces));
+    RestServer.create(
+        new RestConfigImpl(principal, delegate.getDomainNamespaces()::getNamespaces, new Certificates(delegate)));
     RestServer.getInstance().start(container);
   }
 
@@ -518,13 +528,13 @@ public class Main {
     RestServer.destroy();
   }
 
-  private static void markReadyAndStartLivenessThread() {
+  private void markReadyAndStartLivenessThread() {
     try {
-      OperatorReady.create();
+      new OperatorReady(delegate).create();
 
       LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
       // every five seconds we need to update the last modified time on the liveness file
-      wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
+      wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(delegate), 5, 5, TimeUnit.SECONDS);
     } catch (IOException io) {
       LOGGER.severe(MessageKeys.EXCEPTION, io);
     }
@@ -633,7 +643,7 @@ public class Main {
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createInternalInitializationStep(Step next);
+    Step createInternalInitializationStep(MainDelegate delegate, Step next);
   }
 
 }

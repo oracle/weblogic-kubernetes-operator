@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -14,16 +14,19 @@ public class RestConfigImpl implements RestConfig {
 
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
+  private final Certificates certificates;
 
   /**
    * Constructs a RestConfigImpl.
    *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
    *     Kubernetes REST API.
    * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
+   * @param certificates Certificates
    */
-  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces) {
+  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates) {
     this.domainNamespaces = domainNamespaces;
     this.principal = principal;
+    this.certificates = certificates;
   }
 
   @Override
@@ -43,12 +46,12 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public String getOperatorExternalCertificateData() {
-    return Certificates.getOperatorExternalCertificateData();
+    return certificates.getOperatorExternalCertificateData();
   }
 
   @Override
   public String getOperatorInternalCertificateData() {
-    return Certificates.getOperatorInternalCertificateData();
+    return certificates.getOperatorInternalCertificateData();
   }
 
   @Override
@@ -73,12 +76,12 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public String getOperatorExternalKeyFile() {
-    return Certificates.getOperatorExternalKeyFile();
+    return certificates.getOperatorExternalKeyFilePath();
   }
 
   @Override
   public String getOperatorInternalKeyFile() {
-    return Certificates.getOperatorInternalKeyFile();
+    return certificates.getOperatorInternalKeyFilePath();
   }
 
   @Override

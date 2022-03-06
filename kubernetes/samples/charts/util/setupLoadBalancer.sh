@@ -15,12 +15,12 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 
 # https://github.com/containous/traefik/releases
-DefaultTraefikVersion=2.2.1
+DefaultTraefikVersion=2.6.0
 
-#https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-#https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
+# https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+# https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 # https://github.com/kubernetes/ingress-nginx/releases
-DefaultNginxVersion=2.16.0
+DefaultNginxVersion=4.0.16
 
 action=""
 ingressType=""
@@ -176,24 +176,22 @@ createTraefik() {
 
   createNameSpace $ns || true
   if [ "$(helm search repo traefik/traefik | grep traefik |  wc -l)" = 0 ]; then
-    # https://containous.github.io/traefik-helm-chart/
-    # https://docs.traefik.io/getting-started/install-traefik/
+    # https://helm.traefik.io/traefik
+    # https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart
     printInfo "Add Traefik chart repository"
-    helm repo add traefik https://containous.github.io/traefik-helm-chart
-    helm repo update
+    helm repo add traefik https://helm.traefik.io/traefik --force-update
   else
     printInfo "Traefik chart repository is already added."
   fi
 
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
-    # https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
-    purgeDefaultResources || true 
+    purgeDefaultResources || true
     helm install $chart traefik/traefik --namespace ${ns} \
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
     if [ $? != 0 ]; then 
-     printError "Helm istallation of the Traefik ingress controller failed."
+     printError "Helm installation of the Traefik ingress controller failed."
      exit -1;
     fi
   else
@@ -203,7 +201,7 @@ createTraefik() {
   waitForIngressPod traefik ${ns}
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   traefik_image=$(${kubernetesCli} get ${tpod} -n ${ns} -o jsonpath='{.spec.containers[0].image}')
-  printInfo "Traefik image choosen [${traefik_image}]"
+  printInfo "Traefik image chosen [${traefik_image}]"
 }
 
 # Remove ingress related resources from default Namespace ( if any )
@@ -262,8 +260,7 @@ createNginx() {
 
   if [ "$(helm search repo ingress-nginx | grep nginx | wc -l)" = 0 ]; then
     printInfo "Add Nginx chart repository"
-    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    helm repo update
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx --force-update
   else
     printInfo "Nginx chart repository is already added."
   fi
@@ -274,7 +271,7 @@ createNginx() {
          --set "controller.admissionWebhooks.enabled=false" \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
-     printError "Helm istallation of the Nginx ingress controller failed."
+     printError "Helm installation of the Nginx ingress controller failed."
      exit -1;
     fi
   else

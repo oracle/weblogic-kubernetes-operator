@@ -415,9 +415,27 @@ class ItMiiCreateAuxImageWithImageTool {
 
     // create auxiliary image
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
-    // verify the build will attempt to pull a newer version of busybox
-    assertTrue(result.exitValue() == 0
-        && result.stdout().contains("Trying to pull repository docker.io/library/busybox"));
+    assertEquals(0, result.exitValue());
+
+    // verify that busybox and aux image have the same RootFS
+    params = Command
+            .defaultCommandParams()
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' busybox:latest")
+            .saveResults(true)
+            .redirect(true);
+
+    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of busybox:latest");
+    String rootFS = params.stdout();
+
+    params = Command
+            .defaultCommandParams()
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
+            .saveResults(true)
+            .redirect(true);
+
+    assertTrue(Command.withParams(params).execute(),
+            "failed to inspect RootFS of " + auxImageName + ":" + MII_BASIC_IMAGE_TAG);
+    assertEquals(rootFS, params.stdout());
   }
 
   /**

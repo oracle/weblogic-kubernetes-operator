@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -100,6 +100,6 @@ public interface ActionConstants {
       = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 
   // ------------ Ingress constants----------------------------
-  public static final String INGRESS_API_VERSION = "networking.k8s.io/v1beta1";
+  public static final String INGRESS_API_VERSION = "networking.k8s.io/v1";
   public static final String INGRESS_KIND = "Ingress";
 }

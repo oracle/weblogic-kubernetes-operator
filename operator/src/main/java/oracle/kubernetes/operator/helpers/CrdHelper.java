@@ -99,7 +99,7 @@ public class CrdHelper {
   static void writeAsYaml(URI outputFileName, Object model) {
     try (Writer writer = Files.newBufferedWriter(uriToPath.apply(outputFileName))) {
       writer.write(
-            "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
+            "# Copyright (c) 2020, 2022, Oracle and/or its affiliates.\n"
                   + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
       writer.write("\n");
       dumpYaml(writer, model);

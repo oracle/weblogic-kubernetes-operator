@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -179,7 +179,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       this.packet = packet;
       retryStrategy = Optional.ofNullable(retry)
             .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
-      this.cont = Optional.ofNullable(cont).orElse("");
+      this.cont = Optional.ofNullable(cont).orElse(null);
       client = helper.take();
     }
 

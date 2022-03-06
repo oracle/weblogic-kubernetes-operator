@@ -79,8 +79,7 @@ else
   echo "@@ Installing traefik"
 
   # you only need to add the repo once, but we do it every time for simplicity
-  helm repo add traefik https://containous.github.io/traefik-helm-chart
-  helm repo update
+  helm repo add traefik https://helm.traefik.io/traefik --force-update
 
   set -x
 

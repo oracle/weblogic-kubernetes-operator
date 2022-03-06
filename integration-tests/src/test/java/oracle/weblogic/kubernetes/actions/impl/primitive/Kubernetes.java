@@ -31,12 +31,10 @@ import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
+import io.kubernetes.client.openapi.apis.NetworkingV1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
@@ -47,6 +45,8 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -1676,7 +1676,7 @@ public class Kubernetes {
     }
 
     V1Secret secret = coreV1Api.readNamespacedSecret(
-        reference.getName(), namespace, "false", Boolean.TRUE, Boolean.TRUE);
+        reference.getName(), namespace, "false");
 
     return secret;
   }
@@ -2721,13 +2721,13 @@ public class Kubernetes {
    * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace
-   * @return NetworkingV1beta1IngressList list of {@link NetworkingV1beta1Ingress} objects
+   * @return V1IngressList list of {@link V1Ingress} objects
    * @throws ApiException when listing fails
    */
-  public static NetworkingV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
-    NetworkingV1beta1IngressList ingressList;
+  public static V1IngressList listNamespacedIngresses(String namespace) throws ApiException {
+    V1IngressList ingressList;
     try {
-      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
       ingressList = apiInstance.listNamespacedIngress(
           namespace, // namespace
           PRETTY, // String | If 'true', then the output is pretty printed.
@@ -2758,7 +2758,7 @@ public class Kubernetes {
    */
   public static boolean deleteIngress(String name, String namespace) throws ApiException {
     try {
-      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
       apiInstance.deleteNamespacedIngress(
           name, // ingress name
           namespace, // namespace
@@ -2782,13 +2782,13 @@ public class Kubernetes {
    *
    * @param namespace name of the namespace
    * @param name name of the Ingress object
-   * @return NetworkingV1beta1Ingress Ingress object when found, otherwise null
+   * @return V1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
-  public static NetworkingV1beta1Ingress getNamespacedIngress(String namespace, String name)
+  public static V1Ingress getNamespacedIngress(String namespace, String name)
       throws ApiException {
     try {
-      for (NetworkingV1beta1Ingress item
+      for (V1Ingress item
           : listNamespacedIngresses(namespace).getItems()) {
         if (name.equals(item.getMetadata().getName())) {
           return item;
@@ -2909,22 +2909,24 @@ public class Kubernetes {
    * Create an Ingress in the specified namespace.
    *
    * @param namespace the namespace in which the ingress will be created
-   * @param ingressBody NetworkingV1beta1Ingress object, representing the ingress details
+   * @param ingressBody V1Ingress object, representing the ingress details
    * @return the ingress created
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static NetworkingV1beta1Ingress createIngress(String namespace, NetworkingV1beta1Ingress ingressBody)
+  public static V1Ingress createIngress(String namespace, V1Ingress ingressBody)
       throws ApiException {
-    NetworkingV1beta1Ingress ingress;
+    V1Ingress ingress;
     try {
-      NetworkingV1beta1Api apiInstance = new NetworkingV1beta1Api(apiClient);
+      getLogger().info("Creating ingress: {0}", Yaml.dump(ingressBody));
+      NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
           namespace, //namespace
-          ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
+          ingressBody, // V1Ingress object, representing the ingress details
           PRETTY, // pretty print output
           null, // when present, indicates that modifications should not be persisted
           null // a name associated with the actor or entity that is making these changes
       );
+      getLogger().info("Created ingress: {0}", Yaml.dump(ingress));
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
       throw apex;
