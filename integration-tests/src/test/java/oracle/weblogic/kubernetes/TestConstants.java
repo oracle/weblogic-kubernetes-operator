@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -157,13 +157,13 @@ public interface TestConstants {
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
-  public static final String NGINX_CHART_VERSION = "2.16.0";
-  public static final String NGINX_INGRESS_IMAGE_TAG = "v0.35.0";
+  public static final String NGINX_CHART_VERSION = "4.0.17";
+  public static final String NGINX_INGRESS_IMAGE_TAG = "v1.1.1";
   public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
-  public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
+  public static final String TRAEFIK_REPO_URL = "https://helm.traefik.io/traefik";
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_CHART_NAME = "traefik";
@@ -192,7 +192,7 @@ public interface TestConstants {
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION = Optional.ofNullable(System.getenv("FLUENTD_IMAGE_VERSION"))
-      .orElse("v1.3.3-debian-elasticsearch-1.3");
+      .orElse("v1.14.5-debian-elasticsearch7-1.1");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int DEFAULT_LISTEN_PORT = 7100;
@@ -260,13 +260,13 @@ public interface TestConstants {
       "MONITORING_EXPORTER_BRANCH"))
       .orElse("master");
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
-      .orElse("11.1.5");
+      .orElse("15.2.0");
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
-      .orElse("5.0.20");
-  public static final String PROMETHEUS_REPO_NAME = "stable";
-  public static final String PROMETHEUS_REPO_URL = "https://charts.helm.sh/stable/";
-  public static final String GRAFANA_REPO_NAME = "stable";
-  public static final String GRAFANA_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+      .orElse("6.22.0");
+  public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
+  public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
+  public static final String GRAFANA_REPO_NAME = "grafana";
+  public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
 
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
@@ -283,9 +283,9 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // Default ISTIO version is 1.10.4
+  // Default ISTIO version is 1.11.1
   public static final String ISTIO_VERSION =
-        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.10.4");
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.11.1");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";

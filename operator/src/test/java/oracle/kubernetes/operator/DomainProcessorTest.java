@@ -1706,7 +1706,7 @@ class DomainProcessorTest {
 
   /**/
   private V1Pod createServerPod(String serverName, String clusterName) {
-    Packet packet = new Packet();
+    Packet packet = new Packet().with(processorDelegate);
     packet
           .getComponents()
           .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(new DomainPresenceInfo(domain)));

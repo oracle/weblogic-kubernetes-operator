@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -9,14 +9,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -76,7 +77,7 @@ class ItRemoteConsole {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nginxNodePort;
 
   // domain constants
@@ -276,29 +277,31 @@ class ItRemoteConsole {
     // create an ingress in domain namespace
     String ingressName = domainNamespace + "-nginx-path-routing";
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", "nginx");
+    String ingressClassName = nginxHelmParams.getIngressClassName();
 
     // create ingress rules for two domains
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path("/")
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(domainUid + "-admin-server")
-            .servicePort(new IntOrString(ADMIN_SERVER_PORT))
+        .pathType("Prefix")
+        .backend(new V1IngressBackend()
+            .service(new V1IngressServiceBackend()
+                .name(domainUid + "-admin-server")
+                .port(new V1ServiceBackendPort()
+                    .number(ADMIN_SERVER_PORT)))
         );
     httpIngressPaths.add(httpIngressPath);
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+    V1IngressRule ingressRule = new V1IngressRule()
         .host("")
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+        .http(new V1HTTPIngressRuleValue()
             .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
 
-    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, annotations, ingressRules, null);
+    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, null, ingressClassName, ingressRules, null);
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
@@ -309,7 +312,7 @@ class ItRemoteConsole {
     logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
     String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + nginxNodePort

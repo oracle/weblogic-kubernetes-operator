@@ -130,6 +130,7 @@ public class OperatorUtils {
    * @param opServiceAccount the service account name for operator
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param elkIntegrationEnabled boolean value indicating elk enabled or not
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */

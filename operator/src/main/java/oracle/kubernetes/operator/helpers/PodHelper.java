@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -404,7 +405,8 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile() {
-      return Certificates.getOperatorInternalCertificateData();
+      CoreDelegate delegate = packet.getSpi(CoreDelegate.class);
+      return new Certificates(delegate).getOperatorInternalCertificateData();
     }
   }
 

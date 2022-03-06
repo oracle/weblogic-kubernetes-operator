@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 7edf96876d3971993d7e9d87e6ca0516b69b4ba9c1f5d1d8052efb24bca9771b
+    weblogic.sha256: ccba65c72537d8324372ffe85a02867bc7dfcbbfbb93dda11e52a439ac3242da
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -512,6 +512,8 @@ spec:
                                 type: string
                               runAsUserName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               gmsaCredentialSpecName:
                                 type: string
                             type: object
@@ -699,6 +701,8 @@ spec:
                                 type: string
                               runAsUserName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               gmsaCredentialSpecName:
                                 type: string
                             type: object
@@ -812,8 +816,6 @@ spec:
                             ephemeral:
                               type: object
                               properties:
-                                readOnly:
-                                  type: boolean
                                 volumeClaimTemplate:
                                   type: object
                                   properties:
@@ -880,6 +882,8 @@ spec:
                                                 type: object
                                               manager:
                                                 type: string
+                                              subresource:
+                                                type: string
                                               time:
                                                 format: date-time
                                                 type: string
@@ -901,6 +905,18 @@ spec:
                                       properties:
                                         storageClassName:
                                           type: string
+                                        dataSourceRef:
+                                          type: object
+                                          properties:
+                                            apiGroup:
+                                              type: string
+                                            kind:
+                                              type: string
+                                            name:
+                                              type: string
+                                          required:
+                                          - kind
+                                          - name
                                         volumeName:
                                           type: string
                                         resources:
@@ -1613,6 +1629,8 @@ spec:
                             livenessProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -1746,6 +1764,8 @@ spec:
                                       type: string
                                     runAsUserName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -1761,6 +1781,8 @@ spec:
                             startupProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -2074,6 +2096,8 @@ spec:
                             readinessProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -2194,6 +2218,8 @@ spec:
                             livenessProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -2327,6 +2353,8 @@ spec:
                                       type: string
                                     runAsUserName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     gmsaCredentialSpecName:
                                       type: string
                                 procMount:
@@ -2342,6 +2370,8 @@ spec:
                             startupProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -2655,6 +2685,8 @@ spec:
                             readinessProbe:
                               type: object
                               properties:
+                                terminationGracePeriodSeconds:
+                                  type: number
                                 failureThreshold:
                                   type: number
                                 periodSeconds:
@@ -2901,6 +2933,29 @@ spec:
                                           additionalProperties:
                                             type: string
                                           type: object
+                                    namespaceSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
                                     topologyKey:
                                       type: string
                                     namespaces:
@@ -2918,6 +2973,29 @@ spec:
                                       type: object
                                       properties:
                                         labelSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                - key
+                                                - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                        namespaceSelector:
                                           type: object
                                           properties:
                                             matchExpressions:
@@ -2984,6 +3062,29 @@ spec:
                                           additionalProperties:
                                             type: string
                                           type: object
+                                    namespaceSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
                                     topologyKey:
                                       type: string
                                     namespaces:
@@ -3001,6 +3102,29 @@ spec:
                                       type: object
                                       properties:
                                         labelSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                - key
+                                                - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                        namespaceSelector:
                                           type: object
                                           properties:
                                             matchExpressions:
@@ -3273,6 +3397,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             fsGroupChangePolicy:
@@ -3463,6 +3589,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             procMount:
@@ -3577,8 +3705,6 @@ spec:
                               ephemeral:
                                 type: object
                                 properties:
-                                  readOnly:
-                                    type: boolean
                                   volumeClaimTemplate:
                                     type: object
                                     properties:
@@ -3645,6 +3771,8 @@ spec:
                                                   type: object
                                                 manager:
                                                   type: string
+                                                subresource:
+                                                  type: string
                                                 time:
                                                   format: date-time
                                                   type: string
@@ -3666,6 +3794,18 @@ spec:
                                         properties:
                                           storageClassName:
                                             type: string
+                                          dataSourceRef:
+                                            type: object
+                                            properties:
+                                              apiGroup:
+                                                type: string
+                                              kind:
+                                                type: string
+                                              name:
+                                                type: string
+                                            required:
+                                            - kind
+                                            - name
                                           volumeName:
                                             type: string
                                           resources:
@@ -4379,6 +4519,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -4512,6 +4654,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -4527,6 +4671,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -4840,6 +4986,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -4960,6 +5108,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -5093,6 +5243,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -5108,6 +5260,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -5421,6 +5575,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -5669,6 +5825,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -5686,6 +5865,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:
@@ -5752,6 +5954,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -5769,6 +5994,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:
@@ -6049,6 +6297,8 @@ spec:
                             type: string
                           runAsUserName:
                             type: string
+                          hostProcess:
+                            type: boolean
                           gmsaCredentialSpecName:
                             type: string
                         type: object
@@ -6232,6 +6482,8 @@ spec:
                             type: string
                           runAsUserName:
                             type: string
+                          hostProcess:
+                            type: boolean
                           gmsaCredentialSpecName:
                             type: string
                         type: object
@@ -6344,8 +6596,6 @@ spec:
                         ephemeral:
                           type: object
                           properties:
-                            readOnly:
-                              type: boolean
                             volumeClaimTemplate:
                               type: object
                               properties:
@@ -6412,6 +6662,8 @@ spec:
                                             type: object
                                           manager:
                                             type: string
+                                          subresource:
+                                            type: string
                                           time:
                                             format: date-time
                                             type: string
@@ -6433,6 +6685,18 @@ spec:
                                   properties:
                                     storageClassName:
                                       type: string
+                                    dataSourceRef:
+                                      type: object
+                                      properties:
+                                        apiGroup:
+                                          type: string
+                                        kind:
+                                          type: string
+                                        name:
+                                          type: string
+                                      required:
+                                      - kind
+                                      - name
                                     volumeName:
                                       type: string
                                     resources:
@@ -7144,6 +7408,8 @@ spec:
                         livenessProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -7277,6 +7543,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             procMount:
@@ -7292,6 +7560,8 @@ spec:
                         startupProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -7605,6 +7875,8 @@ spec:
                         readinessProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -7725,6 +7997,8 @@ spec:
                         livenessProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -7858,6 +8132,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             procMount:
@@ -7873,6 +8149,8 @@ spec:
                         startupProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -8186,6 +8464,8 @@ spec:
                         readinessProbe:
                           type: object
                           properties:
+                            terminationGracePeriodSeconds:
+                              type: number
                             failureThreshold:
                               type: number
                             periodSeconds:
@@ -8432,6 +8712,29 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
                                 topologyKey:
                                   type: string
                                 namespaces:
@@ -8449,6 +8752,29 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -8515,6 +8841,29 @@ spec:
                                       additionalProperties:
                                         type: string
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                        required:
+                                        - key
+                                        - operator
+                                    matchLabels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
                                 topologyKey:
                                   type: string
                                 namespaces:
@@ -8532,6 +8881,29 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -8684,6 +9056,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             fsGroupChangePolicy:
@@ -8874,6 +9248,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                             procMount:
@@ -8988,8 +9364,6 @@ spec:
                               ephemeral:
                                 type: object
                                 properties:
-                                  readOnly:
-                                    type: boolean
                                   volumeClaimTemplate:
                                     type: object
                                     properties:
@@ -9056,6 +9430,8 @@ spec:
                                                   type: object
                                                 manager:
                                                   type: string
+                                                subresource:
+                                                  type: string
                                                 time:
                                                   format: date-time
                                                   type: string
@@ -9077,6 +9453,18 @@ spec:
                                         properties:
                                           storageClassName:
                                             type: string
+                                          dataSourceRef:
+                                            type: object
+                                            properties:
+                                              apiGroup:
+                                                type: string
+                                              kind:
+                                                type: string
+                                              name:
+                                                type: string
+                                            required:
+                                            - kind
+                                            - name
                                           volumeName:
                                             type: string
                                           resources:
@@ -9790,6 +10178,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -9923,6 +10313,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -9938,6 +10330,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -10251,6 +10645,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -10371,6 +10767,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -10504,6 +10902,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -10519,6 +10919,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -10832,6 +11234,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -11080,6 +11484,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -11097,6 +11524,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:
@@ -11163,6 +11613,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                              - key
+                                              - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -11180,6 +11653,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                  - key
+                                                  - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:

@@ -71,9 +71,9 @@ To see the Istio build version that is installed, use the `istioctl version` com
 
 ```shell script
 $ istioctl version
-client version: 1.10.4
-control plane version: 1.10.4
-data plane version: 1.10.4 (1 proxies)
+client version: 1.11.1
+control plane version: 1.11.1
+data plane version: 1.11.1 (1 proxies)
 ```
 
 #### Setting up an operator with Istio support

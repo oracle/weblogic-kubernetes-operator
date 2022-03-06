@@ -36,8 +36,10 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -51,12 +53,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -84,6 +85,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
@@ -128,6 +130,8 @@ class ItElasticLoggingFluentd {
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
   private static LoggingFacade logger = null;
+  static String elasticSearchHost;
+  static String elasticSearchNs;
 
   private static String k8sExecCmdPrefix;
   private static Map<String, String> testVarMap;
@@ -140,7 +144,7 @@ class ItElasticLoggingFluentd {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -154,20 +158,38 @@ class ItElasticLoggingFluentd {
     domainNamespace = namespaces.get(1);
 
     // install and verify Elasticsearch
+    elasticSearchNs = namespaces.get(2);
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
+
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+
+    // upgrade to latest operator
+    HelmParams upgradeHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // build operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
     configFluentd();
@@ -179,19 +201,16 @@ class ItElasticLoggingFluentd {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName);
 
-    testVarMap = new HashMap<String, String>();
+    testVarMap = new HashMap<>();
 
-    StringBuffer elasticsearchUrlBuff =
-        new StringBuffer("curl http://")
-            .append(ELASTICSEARCH_HOST)
-            .append(":")
-            .append(ELASTICSEARCH_HTTP_PORT);
-    k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
+    String elasticsearchUrlBuff =
+        "curl http://" + elasticSearchHost + ":" + ELASTICSEARCH_HTTP_PORT;
+    k8sExecCmdPrefix = elasticsearchUrlBuff;
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
-    testVarMap = verifyLoggingExporterReady(opNamespace, null, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, null, KIBANA_INDEX_KEY);
+    testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, FLUENTD_INDEX_KEY);
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -211,13 +230,13 @@ class ItElasticLoggingFluentd {
           .elasticsearchImage(ELASTICSEARCH_IMAGE)
           .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
           .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+          .loggingExporterNamespace(elasticSearchNs);
 
       kibanaParams = new LoggingExporterParams()
           .kibanaName(KIBANA_NAME)
           .kibanaImage(KIBANA_IMAGE)
           .kibanaType(KIBANA_TYPE)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .loggingExporterNamespace(elasticSearchNs)
           .kibanaContainerPort(KIBANA_PORT);
 
       // uninstall ELK Stack
@@ -282,11 +301,9 @@ class ItElasticLoggingFluentd {
         "Failed to copy fluentd.configmap.elk.yaml");
 
     // replace weblogic.domainUID, namespace in fluentd.configmap.elk.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-domain", domainUid),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-domain", domainUid),
         "Could not modify weblogic.domainUID in fluentd.configmap.elk.yaml");;
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-namespace", domainNamespace),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-namespace", domainNamespace),
         "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
@@ -315,20 +332,18 @@ class ItElasticLoggingFluentd {
 
   private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
-    final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
-    final String elasticSearchPort = "9200";
 
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, elasticSearchPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     final String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc", elasticSearchHost, elasticSearchPort),
+        "weblogicenc", "weblogicenc", elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify

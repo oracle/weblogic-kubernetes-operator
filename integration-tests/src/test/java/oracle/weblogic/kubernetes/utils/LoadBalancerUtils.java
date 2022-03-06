@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -17,8 +17,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -43,12 +43,10 @@ import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -155,7 +153,7 @@ public class LoadBalancerUtils {
    * @param nodeportshttps the https nodeport of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps) {
     return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
@@ -170,7 +168,7 @@ public class LoadBalancerUtils {
    * @param chartVersion the chart version of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
                                                  int nodeportshttp,
                                                  int nodeportshttps,
                                                  String chartVersion) {
@@ -179,14 +177,6 @@ public class LoadBalancerUtils {
       testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger, "docker login to be successful");
-
-      String localNginxImage = BASE_IMAGES_REPO + "/" 
-              + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
-      testUntil(
-          pullImageFromOcirAndTag(localNginxImage),
-          logger,
-          "pullImageFromOcirAndTag for image {0} to be successful",
-          localNginxImage);
     }
 
     // Helm install parameters
@@ -233,7 +223,7 @@ public class LoadBalancerUtils {
         "NGINX to be ready in namespace {0}",
         nginxNamespace);
 
-    return nginxHelmParams;
+    return nginxParams;
   }
 
   /**
@@ -607,17 +597,39 @@ public class LoadBalancerUtils {
                                                              boolean setIngressHost,
                                                              boolean enableAdminServerRouting,
                                                              int adminServerPort) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, setIngressHost,
+        null, enableAdminServerRouting, adminServerPort);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @param ingressNginxClass unique name to add in ingress resource
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost,
+                                                             String ingressNginxClass,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
-
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, null,
+            ingressNginxClass, setIngressHost,
             null, enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
@@ -647,7 +659,6 @@ public class LoadBalancerUtils {
     return ingressHostList;
   }
 
-
   /**
    * Create an ingress for the domain with domainUid in the specified namespace.
    *
@@ -669,15 +680,12 @@ public class LoadBalancerUtils {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressTraefikClass = "traefik";
+    final String ingressTraefikClass = null;
     String ingressName = domainUid + "-" + ingressTraefikClass;
-
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
 
     List<String> ingressHostList =
         createIngress(ingressName, domainNamespace, domainUid,
-            clusterNameMSPortMap, annotations, setIngressHost, tlsSecret);
+            clusterNameMSPortMap, null, ingressTraefikClass, setIngressHost, tlsSecret);
 
     assertNotNull(ingressHostList,
         String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -713,6 +721,7 @@ public class LoadBalancerUtils {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    */
@@ -721,14 +730,15 @@ public class LoadBalancerUtils {
                                                  String ingressName,
                                                  String namespace,
                                                  Map<String, String> annotations,
-                                                 List<NetworkingV1beta1IngressRule> ingressRules,
-                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+                                                 String ingressClassName,
+                                                 List<V1IngressRule> ingressRules,
+                                                 List<V1IngressTLS> tlsList) {
     for (int i = 0; i < maxRetries; i++) {
       try {
         if (isTLS) {
-          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
         } else {
-          createIngress(ingressName, namespace, annotations, ingressRules, null);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, null);
         }
         break;
       } catch (ApiException apiEx) {
@@ -783,11 +793,11 @@ public class LoadBalancerUtils {
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("ingress.appscode.com/type", ingressType);
     annotations.put("ingress.appscode.com/affinity", ingressAffinity);
-    annotations.put("kubernetes.io/ingress.class", ingressClass);
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations,
+            ingressClass, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
     testUntil(

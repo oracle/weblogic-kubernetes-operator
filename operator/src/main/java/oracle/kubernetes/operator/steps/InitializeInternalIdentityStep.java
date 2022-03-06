@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -20,11 +20,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -33,9 +35,6 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
@@ -46,18 +45,31 @@ public class InitializeInternalIdentityStep extends Step {
   private static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-operator";
-  private static final File internalCertFile = new File(OPERATOR_DIR + "/config/internalOperatorCert");
-  private static final File internalKeyFile = new File(OPERATOR_DIR + "/secrets/internalOperatorKey");
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
 
-  public InitializeInternalIdentityStep(Step next) {
+  private final File internalCertFile;
+  private final File internalKeyFile;
+  private final File configInternalCertFile;
+  private final File secretsInternalKeyFile;
+
+  /**
+   * Initialize step with delegate and next step.
+   * @param delegate Delegate
+   * @param next Next step
+   */
+  public InitializeInternalIdentityStep(MainDelegate delegate, Step next) {
     super(next);
+    Certificates certificates = new Certificates(delegate);
+    this.internalCertFile = certificates.getOperatorInternalCertificateFile();
+    this.internalKeyFile = certificates.getOperatorInternalKeyFile();
+    this.configInternalCertFile = new File(delegate.getOperatorHome(), "/config/internalOperatorCert");
+    this.secretsInternalKeyFile = new File(delegate.getOperatorHome(), "/secrets/internalOperatorKey");
   }
 
   @Override
   public NextAction apply(Packet packet) {
     try {
-      if (internalCertFile.exists() && internalKeyFile.exists()) {
+      if (configInternalCertFile.exists() && secretsInternalKeyFile.exists()) {
         // The operator's internal ssl identity has already been created.
         reuseInternalIdentity();
         return doNext(getNext(), packet);
@@ -74,16 +86,16 @@ public class InitializeInternalIdentityStep extends Step {
   private void reuseInternalIdentity() throws IOException {
     // copy the certificate and key from the operator's config map and secret
     // to the locations the operator runtime expects
-    FileUtils.copyFile(internalCertFile, new File(INTERNAL_CERTIFICATE));
-    FileUtils.copyFile(internalKeyFile, new File(INTERNAL_CERTIFICATE_KEY));
+    FileUtils.copyFile(configInternalCertFile, internalCertFile);
+    FileUtils.copyFile(secretsInternalKeyFile, internalKeyFile);
   }
 
   private NextAction createInternalIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
+    writeToFile(key, internalKeyFile);
     X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
+    writeToFile(getBase64Encoded(cert), internalCertFile);
     // put the new certificate in the operator's config map so that it will be available
     // the next time the operator is started
     return doNext(recordInternalOperatorCert(cert,
