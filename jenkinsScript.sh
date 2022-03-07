@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021,2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
@@ -21,7 +21,7 @@
 set -o errexit
 set -o pipefail
 
-checkEnvVars() {
+function checkEnvVars {
   local has_errors=false
   while [ ! -z "${1}" ]; do
     if [ -z "${!1}" ]; then
@@ -41,8 +41,8 @@ checkEnvVars() {
     exit 1
   fi
 }
-ver() { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
-checkJavaVersion() {
+function ver { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
+function checkJavaVersion {
   java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
   echo "Info: java version ${java_version}"
   if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
@@ -50,7 +50,7 @@ checkJavaVersion() {
     exit 1
   fi
 }
-dockerLogin() {
+function dockerLogin {
   echo "Info: about to do docker login"
   if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
     out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
@@ -150,18 +150,14 @@ dockerLogin
 echo 'Info: Run build...'
 mvn clean install
 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add stable https://charts.helm.sh/stable --force-update
+helm repo update
+
 echo "Info: Run tests.."
-export OUTDIR="${WORKSPACE}/staging"
-mkdir -m777 -p "${OUTDIR}"
-sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME} -o "${OUTDIR}"
-
-mkdir -m777 -p "${OUTDIR}/wl_k8s_test_results"
-journalctl --utc --dmesg --system --since "$start_time" > "${OUTDIR}/wl_k8s_test_results/journalctl-compute.out"
-
-echo "Diagnose Grafana files that are still open..."
-sudo ls -Rl "${OUTDIR}"
-sudo ps -ef
+sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME}
 
 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-cd "${OUTDIR}/wl_k8s_test_results"
-tar -cvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar" *
+journalctl --utc --dmesg --system --since "$start_time" > "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/journalctl-compute.out"
+
+sudo chmod -R a+r "${WORKSPACE}/logdir/${BUILD_TAG}"
