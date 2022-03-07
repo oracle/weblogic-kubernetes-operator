@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -45,7 +45,7 @@ public class LegalNames {
       "ScopeName",          // V1ScopedResourceSelectorRequirement
       "SecretName",         // V1SecretVolumeSource, etc
       "ServiceAccountName", // V1PodSpec
-      "ServiceName",        // NetworkingV1beta1IngressBackend, etc
+      "ServiceName",        // V1IngressBackend, etc
       "SingularName",       // V1APIResource
       "StorageClassName",   // V1PersistentVolumeSpec, V1PersistentVolumeClaimSpec
       "VolumeName"         // V1PersistentVolumeClaimSpec, etc

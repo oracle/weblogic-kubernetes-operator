@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -43,9 +43,9 @@ public class ConfigMapConsumer implements Map<String, String> {
     this.threadPool = executorService;
   }
 
-  protected void scheduleUpdates(String mountPoint, Runnable onUpdate) {
+  protected void scheduleUpdates(File mountPoint, Runnable onUpdate) {
     this.onUpdate = onUpdate;
-    this.mountPointDir = new File(mountPoint);
+    this.mountPointDir = mountPoint;
     if (mountPointDir.exists()) {
       onUpdate.run();
       schedule();

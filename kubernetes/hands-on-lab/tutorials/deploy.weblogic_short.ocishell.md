@@ -73,26 +73,30 @@ As a simple solution, it's best to configure path routing, which will route exte
 Execute the following Ingress resource definition:
 ```shell
 $ cat << EOF | kubectl apply -f -
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: traefik-pathrouting-1
   namespace: sample-domain1-ns
-  annotations:
-    kubernetes.io/ingress.class: traefik
 spec:
+  ingressClassName: traefik
   rules:
   - host:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: sample-domain1-cluster-cluster-1
-          servicePort: 8001
+          service:
+            name: sample-domain1-cluster-cluster-1
+            port:
+              number: 8001
       - path: /console
         backend:
-          serviceName: sample-domain1-admin-server
-          servicePort: 7001          
+          service:
+            name: sample-domain1-admin-server
+            port:
+              number: 7001          
 EOF
 ```
 

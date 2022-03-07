@@ -71,6 +71,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
@@ -455,6 +456,13 @@ public class DomainStatusUpdater {
     public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+      return callResponse.getStatusCode() == HTTP_NOT_FOUND
+          ? doNext(null, packet)
+          : super.onFailure(packet, callResponse);
     }
   }
 

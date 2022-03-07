@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -32,6 +33,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
@@ -206,6 +208,11 @@ class StuckPodTest {
     @Override
     public void runSteps(Packet packet, Step firstStep,  Runnable completionAction) {
       testSupport.runSteps(packet, firstStep);
+    }
+
+    @Override
+    public void addToPacket(Packet packet) {
+      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(MainDelegate.class, this));
     }
 
     @Override

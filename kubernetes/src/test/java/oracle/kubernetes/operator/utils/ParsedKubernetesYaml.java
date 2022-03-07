@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -8,11 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1APIService;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -23,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1beta1APIService;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.codec.binary.Base64;
 
@@ -134,8 +134,8 @@ public class ParsedKubernetesYaml {
     }
   */
 
-  TypeHandler<V1beta1APIService> getApiServices() {
-    return (TypeHandler<V1beta1APIService>) getHandler(KIND_API_SERVICE);
+  TypeHandler<V1APIService> getApiServices() {
+    return (TypeHandler<V1APIService>) getHandler(KIND_API_SERVICE);
   }
 
   TypeHandler<V1ConfigMap> getConfigMaps() {
@@ -158,8 +158,8 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<Domain>) getHandler(KIND_DOMAIN);
   }
 
-  TypeHandler<NetworkingV1beta1Ingress> getIngresses() {
-    return (TypeHandler<NetworkingV1beta1Ingress>) getHandler(KIND_INGRESS);
+  TypeHandler<V1Ingress> getIngresses() {
+    return (TypeHandler<V1Ingress>) getHandler(KIND_INGRESS);
   }
 
   TypeHandler<V1Job> getJobs() {
@@ -304,9 +304,9 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class ApiServiceHandler extends TypeHandler<V1beta1APIService> {
+  private static class ApiServiceHandler extends TypeHandler<V1APIService> {
     private ApiServiceHandler() {
-      super(V1beta1APIService.class);
+      super(V1APIService.class);
     }
 
     /**
@@ -339,7 +339,7 @@ public class ParsedKubernetesYaml {
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(V1beta1APIService instance) {
+    protected V1ObjectMeta getMetadata(V1APIService instance) {
       return instance.getMetadata();
     }
 
@@ -406,13 +406,13 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class IngressHandler extends TypeHandler<NetworkingV1beta1Ingress> {
+  private static class IngressHandler extends TypeHandler<V1Ingress> {
     private IngressHandler() {
-      super(NetworkingV1beta1Ingress.class);
+      super(V1Ingress.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(NetworkingV1beta1Ingress instance) {
+    protected V1ObjectMeta getMetadata(V1Ingress instance) {
       return instance.getMetadata();
     }
   }

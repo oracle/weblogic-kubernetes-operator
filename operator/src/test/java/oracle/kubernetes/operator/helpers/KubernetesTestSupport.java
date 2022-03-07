@@ -54,7 +54,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
@@ -94,7 +93,6 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
-  public static final String BETA_CRD = "BetaCRD";
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String NAMESPACE = "Namespace";
@@ -137,7 +135,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
    * @return a memento which can be used to restore the production factory
    */
   public Memento install() {
-    support(BETA_CRD, V1beta1CustomResourceDefinition.class);
     support(CUSTOM_RESOURCE_DEFINITION, V1CustomResourceDefinition.class);
     support(SELF_SUBJECT_ACCESS_REVIEW, V1SelfSubjectAccessReview.class);
     support(SELF_SUBJECT_RULES_REVIEW, V1SubjectRulesReviewStatus.class);

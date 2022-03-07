@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -7,15 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.appscode.voyager.client.models.V1beta1HTTPIngressBackend;
-import com.appscode.voyager.client.models.V1beta1HTTPIngressPath;
-import com.appscode.voyager.client.models.V1beta1HTTPIngressRuleValue;
-import com.appscode.voyager.client.models.V1beta1Ingress;
-import com.appscode.voyager.client.models.V1beta1IngressRule;
-import com.appscode.voyager.client.models.V1beta1IngressSpec;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.ApiregistrationV1beta1ServiceReference;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -67,8 +60,6 @@ import io.kubernetes.client.openapi.models.V1TCPSocketAction;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.openapi.models.V1beta1APIService;
-import io.kubernetes.client.openapi.models.V1beta1APIServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -84,12 +75,10 @@ public class KubernetesArtifactUtils {
 
   public static final String API_VERSION_APPS_V1 = "apps/v1";
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
-  public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
   public static final String API_VERSION_WEBLOGIC_ORACLE =
       KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
   public static final String API_VERSION_V1 = "v1";
-  public static final String API_VERSION_VOYAGER_V1BETA1 = "voyager.appscode.com/v1beta1";
 
   public static final String KIND_API_SERVICE = "APIService";
   public static final String KIND_CONFIG_MAP = "ConfigMap";
@@ -166,48 +155,6 @@ public class KubernetesArtifactUtils {
 
   public static V1Secret newSecret() {
     return (new V1Secret()).apiVersion(API_VERSION_V1).kind(KIND_SECRET);
-  }
-
-  /**
-   * Create API service.
-   * @return API service
-   */
-  public static V1beta1APIService newApiService() {
-    return (new V1beta1APIService())
-        .apiVersion(API_VERSION_REGISTRATION_V1BETA1)
-        .kind(KIND_API_SERVICE);
-  }
-
-  public static V1beta1APIServiceSpec newApiServiceSpec() {
-    return new V1beta1APIServiceSpec();
-  }
-
-  public static ApiregistrationV1beta1ServiceReference newServiceReference() {
-    return new ApiregistrationV1beta1ServiceReference();
-  }
-
-  public static V1beta1Ingress newIngress() {
-    return (new V1beta1Ingress()).apiVersion(API_VERSION_VOYAGER_V1BETA1).kind(KIND_INGRESS);
-  }
-
-  public static V1beta1HTTPIngressBackend newHttpIngressBackend() {
-    return new V1beta1HTTPIngressBackend();
-  }
-
-  public static V1beta1HTTPIngressPath newHttpIngressPath() {
-    return new V1beta1HTTPIngressPath();
-  }
-
-  public static V1beta1HTTPIngressRuleValue newHttpIngressRuleValue() {
-    return new V1beta1HTTPIngressRuleValue();
-  }
-
-  public static V1beta1IngressRule newIngressRule() {
-    return new V1beta1IngressRule();
-  }
-
-  public static V1beta1IngressSpec newIngressSpec() {
-    return new V1beta1IngressSpec();
   }
 
   public static V1Role newRole() {

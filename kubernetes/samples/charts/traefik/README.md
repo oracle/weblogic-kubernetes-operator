@@ -4,17 +4,16 @@ This sample demonstrates how to install the Traefik ingress controller to provid
 load balancing for WebLogic clusters.
 
 ## Install the Traefik operator with a Helm chart
-This document is based on Traefik version 2.x with the Helm chart at [Traefik Helm Repository](https://github.com/containous/traefik-helm-chart).
+This document is based on Traefik version 2.x with the Helm chart at [Traefik Helm Repository](https://helm.traefik.io/traefik).
 For more information about Traefik, see the [Traefik Official Site](https://traefik.io/).
 
 To install the Traefik operator in the `traefik` namespace with the default settings:
 ```shell
-$ helm repo add traefik https://containous.github.io/traefik-helm-chart
-$ helm repo update
+$ helm repo add traefik https://helm.traefik.io/traefik --force-update
 $ kubectl create namespace traefik
 $ helm install traefik-operator traefik/traefik --namespace traefik
 ```
-You can also install the Traefik operator with a custom `values.yaml` file. For more detailed information, see the [Traefik GitHub Project](https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml).
+You can also install the Traefik operator with a custom `values.yaml` file. For more detailed information, see the [Traefik GitHub Project](https://raw.githubusercontent.com/traefik/traefik-helm-chart/master/traefik/values.yaml).
 ```shell
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```

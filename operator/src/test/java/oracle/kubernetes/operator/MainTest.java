@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -76,6 +77,7 @@ import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
+import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
@@ -1186,6 +1188,11 @@ class MainTest extends ThreadFactoryTestBase {
     }
 
     @Override
+    public void addToPacket(Packet packet) {
+      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
+    }
+
+    @Override
     public DomainProcessor getDomainProcessor() {
       return createNiceStub(DomainProcessor.class);
     }
@@ -1225,7 +1232,7 @@ class MainTest extends ThreadFactoryTestBase {
     }
 
     @Override
-    public Step createInternalInitializationStep(Step next) {
+    public Step createInternalInitializationStep(MainDelegate delegate, Step next) {
       return next;
     }
   }
