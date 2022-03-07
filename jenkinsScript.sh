@@ -160,4 +160,4 @@ sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${W
 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
 journalctl --utc --dmesg --system --since "$start_time" > "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/journalctl-compute.out"
 
-sudo chmod -R a+r "${WORKSPACE}/logdir/${BUILD_TAG}"
+sudo chown -R opc "${WORKSPACE}/logdir/${BUILD_TAG}"
