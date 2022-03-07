@@ -158,6 +158,10 @@ sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${W
 mkdir -m777 -p "${OUTDIR}/wl_k8s_test_results"
 journalctl --utc --dmesg --system --since "$start_time" > "${OUTDIR}/wl_k8s_test_results/journalctl-compute.out"
 
+echo "Diagnose Grafana files that are still open..."
+sudo lsof +D "${OUTDIR}/wl_k8s_test_results"
+sudo ps -a
+
 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
 cd "${OUTDIR}"
 tar -cvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar" *
