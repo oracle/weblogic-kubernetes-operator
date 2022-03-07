@@ -595,7 +595,7 @@ class ItMiiAuxiliaryImage {
             .wdtVersion("NONE")
             .wdtHome(auxiliaryImagePathCustom)
             .wdtModelHome(auxiliaryImagePathCustom + "/models");
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage7, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage7Tag, witParams);
 
     // create domain custom resource using auxiliary images
     String[] images = {miiAuxiliaryImage6, miiAuxiliaryImage7};
