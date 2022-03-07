@@ -246,10 +246,10 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItServerStartPolicy,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItManageNameSpace,
                   **/ItIntrospectVersion,
-                  **/ItUsabilityOperatorHelmChart,
-                  **/ItManageNameSpace
+                  **/ItUsabilityOperatorHelmChart
                </includes-failsafe>
             </properties>
         </profile>
