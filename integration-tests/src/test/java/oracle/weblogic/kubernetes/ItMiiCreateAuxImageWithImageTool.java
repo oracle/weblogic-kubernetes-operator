@@ -148,7 +148,7 @@ class ItMiiCreateAuxImageWithImageTool {
       logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage1);
       testUntil(
           withStandardRetryPolicy,
-          createAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage1Tag, modelList, archiveList),
+          createAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, modelList, archiveList),
           logger,
           "createAuxImage to be successful");
     } else {
@@ -316,7 +316,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // push image1 to repo for multi node cluster
     logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage3,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
 
     // create domain custom resource using auxiliary image
     String domain3Uid = "domain3";
