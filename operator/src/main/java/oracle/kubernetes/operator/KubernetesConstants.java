@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -23,11 +23,6 @@ public interface KubernetesConstants {
   String DOMAIN_VERSION = "v9";
 
   String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
-
-  String DOMAIN_PATH = "/apis/" + DOMAIN_GROUP + "/" + DOMAIN_VERSION + "/namespaces/{namespace}/" + DOMAIN_PLURAL;
-  String DOMAIN_SPECIFIC_PATH = DOMAIN_PATH + "/{name}";
-  String DOMAIN_SCALE_PATH = DOMAIN_SPECIFIC_PATH + "/scale";
-  String DOMAIN_STATUS_PATH = DOMAIN_SPECIFIC_PATH + "/status";
 
   boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;

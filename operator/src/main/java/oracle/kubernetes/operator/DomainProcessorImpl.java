@@ -462,7 +462,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info, DomainProcessorDelegate delegate) {
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
-          .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps));
+          .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
   }
 
 
@@ -909,7 +909,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void internalMakeRightDomainPresence() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
-      Packet packet = new Packet();
+      Packet packet = new Packet().with(delegate);
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
       packet
           .getComponents()

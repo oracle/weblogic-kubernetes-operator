@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -12,11 +12,11 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -537,6 +537,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
@@ -547,13 +548,14 @@ public class TestActions {
       String domainUid,
       Map<String, Integer> clusterNameMsPortMap,
       Map<String, String> annotations,
+      String ingressClassName,
       boolean setIngressHost,
       String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost, tlsSecret, false, 0);
+            annotations, ingressClassName, setIngressHost, tlsSecret, false, 0);
   }
 
   /**
@@ -565,6 +567,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @param enableAdminServerRouting enable the ingress rule to admin server
@@ -576,12 +579,13 @@ public class TestActions {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
+                                           String ingressClassName,
                                            boolean setIngressHost,
                                            String tlsSecret,
                                            boolean enableAdminServerRouting,
                                            int adminServerPort) {
     return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
-        annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
+        annotations, ingressClassName, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -589,6 +593,7 @@ public class TestActions {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    * @throws ApiException if Kubernetes API call fails
@@ -596,9 +601,10 @@ public class TestActions {
   public static void createIngress(String ingressName,
                                    String namespace,
                                    Map<String, String> annotations,
-                                   List<NetworkingV1beta1IngressRule> ingressRules,
-                                   List<NetworkingV1beta1IngressTLS> tlsList) throws ApiException {
-    Ingress.createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+                                   String ingressClassName,
+                                   List<V1IngressRule> ingressRules,
+                                   List<V1IngressTLS> tlsList) throws ApiException {
+    Ingress.createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
   }
 
   /**
@@ -1607,16 +1613,18 @@ public class TestActions {
   /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
-                                                               String labelSelector,
-                                                               String index) {
-    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+      String esNamespace,
+      String labelSelector,
+      String index) {
+    return LoggingExporter.verifyLoggingExporterReady(opNamespace, esNamespace, labelSelector, index);
   }
 
   // --------------------------- WebLogic Logging Exporter---------------------------------
@@ -1625,12 +1633,13 @@ public class TestActions {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
     return LoggingExporter.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc);
+        wlsLoggingExporterYamlFileLoc, namespace);
   }
 
   /**

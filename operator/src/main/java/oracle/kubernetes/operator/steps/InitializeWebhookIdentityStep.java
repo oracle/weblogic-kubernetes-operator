@@ -33,11 +33,11 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_DIR;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
+import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE_KEY;
+import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_DIR;
 
 public class InitializeWebhookIdentityStep extends Step {
 
@@ -49,10 +49,10 @@ public class InitializeWebhookIdentityStep extends Step {
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
   private static final File certFile = new File(WEBHOOK_DIR + "/config/webhookCert");
   private static final File keyFile = new File(WEBHOOK_DIR + "/secrets/webhookKey");
-  public static final String INTERNAL_WEBHOOK_KEY = "internalWebhookKey";
+  public static final String WEBHOOK_KEY = "webhookKey";
 
   /**
-   * Constructor for the InitializeIdentityStep.
+   * Constructor for the InitializeWebhookIdentityStep.
    * @param next Next step to be executed.
    */
   public InitializeWebhookIdentityStep(Step next) {
@@ -63,11 +63,11 @@ public class InitializeWebhookIdentityStep extends Step {
   public NextAction apply(Packet packet) {
     try {
       if (certFile.exists() && keyFile.exists()) {
-        // The webhook's internal ssl identity has already been created.
+        // The webhook's ssl identity has already been created.
         reuseIdentity();
         return doNext(getNext(), packet);
       } else {
-        // The webhook's internal ssl identity hasn't been created yet.
+        // The webhook's ssl identity hasn't been created yet.
         return createIdentity(packet);
       }
     } catch (Exception e) {
@@ -92,8 +92,8 @@ public class InitializeWebhookIdentityStep extends Step {
     writeToFile(getBase64Encoded(cert), new File(WEBHOOK_CERTIFICATE));
     // put the new certificate in the webhook's config map so that it will be available
     // the next time the webhook is started
-    return doNext(recordInternalWebhookCert(WEBHOOK_CERTIFICATE, cert,
-            recordInternalWebhookKey(key, getNext())), packet);
+    return doNext(recordWebhookCert(WEBHOOK_CERTIFICATE, cert,
+            recordWebhookKey(key, getNext())), packet);
   }
 
   private static String convertToPEM(Object object) throws IOException {
@@ -117,7 +117,7 @@ public class InitializeWebhookIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
-  private static Step recordInternalWebhookCert(String certName, X509Certificate cert, Step next) throws IOException {
+  private static Step recordWebhookCert(String certName, X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
     return new CallBuilder()
@@ -126,54 +126,54 @@ public class InitializeWebhookIdentityStep extends Step {
                     new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
-  private static Step recordInternalWebhookKey(String key, Step next) {
+  private static Step recordWebhookKey(String key, Step next) {
     return new CallBuilder().readSecretAsync(WEBHOOK_SECRETS,
             getWebhookNamespace(), readSecretResponseStep(next, key));
   }
 
-  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalWebhookKey) {
-    return new ReadSecretResponseStep(next, internalWebhookKey);
+  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String webhookKey) {
+    return new ReadSecretResponseStep(next, webhookKey);
   }
 
   private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
-    final String internalWebhookKey;
+    final String webhookKey;
 
-    ReadSecretResponseStep(Step next, String internalWebhookKey) {
+    ReadSecretResponseStep(Step next, String webhookKey) {
       super(next);
-      this.internalWebhookKey = internalWebhookKey;
+      this.webhookKey = webhookKey;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
       if (existingSecret == null) {
-        return doNext(createSecret(getNext(), internalWebhookKey), packet);
+        return doNext(createSecret(getNext(), webhookKey), packet);
       } else {
-        return doNext(replaceSecret(getNext(), existingSecret, internalWebhookKey), packet);
+        return doNext(replaceSecret(getNext(), existingSecret, webhookKey), packet);
       }
     }
   }
 
-  private static Step createSecret(Step next, String internalWebhookKey) {
+  private static Step createSecret(Step next, String webhookKey) {
     return new CallBuilder()
             .createSecretAsync(getWebhookNamespace(),
-                    createModel(null, internalWebhookKey), new DefaultResponseStep<>(next));
+                    createModel(null, webhookKey), new DefaultResponseStep<>(next));
   }
 
-  private static Step replaceSecret(Step next, V1Secret secret, String internalWebhookKey) {
+  private static Step replaceSecret(Step next, V1Secret secret, String webhookKey) {
     return new CallBuilder()
-            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, internalWebhookKey),
+            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookKey),
                     new DefaultResponseStep<>(next));
   }
 
-  protected static final V1Secret createModel(V1Secret secret, String internalWebhookKey) {
+  protected static final V1Secret createModel(V1Secret secret, String webhookKey) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put(INTERNAL_WEBHOOK_KEY, internalWebhookKey.getBytes());
+      data.put(WEBHOOK_KEY, webhookKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put(INTERNAL_WEBHOOK_KEY, internalWebhookKey.getBytes());
+      data.put(WEBHOOK_KEY, webhookKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }

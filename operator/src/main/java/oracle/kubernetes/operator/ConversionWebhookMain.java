@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,7 +75,7 @@ public class ConversionWebhookMain {
 
       ClientPool.initialize(threadFactory);
 
-      TuningParameters.initializeInstance(wrappedExecutorService, "/webhook/config");
+      TuningParameters.initializeInstance(wrappedExecutorService, new File("/webhook/config"));
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);

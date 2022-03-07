@@ -43,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE;
 
 /**
  * Utility class for generating key-pair and self-signed certificates.

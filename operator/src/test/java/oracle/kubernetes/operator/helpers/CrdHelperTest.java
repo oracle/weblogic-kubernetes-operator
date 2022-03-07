@@ -26,8 +26,8 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
+import oracle.kubernetes.operator.utils.WebhookCertificates;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -112,7 +112,7 @@ class CrdHelperTest {
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath));
+    mementos.add(StaticStubSupport.install(WebhookCertificates.class, "GET_PATH", getInMemoryPath));
     mementos.add(TuningParametersStub.install());
 
     defaultCrd = defineDefaultCrd();
@@ -245,7 +245,7 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
-    fileSystem.defineFile(Certificates.WEBHOOK_CERTIFICATE, "asdf");
+    fileSystem.defineFile(WebhookCertificates.WEBHOOK_CERTIFICATE, "asdf");
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
             .getSpec()

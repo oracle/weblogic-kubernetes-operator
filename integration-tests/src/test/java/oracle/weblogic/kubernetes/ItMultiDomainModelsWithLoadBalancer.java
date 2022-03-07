@@ -30,7 +30,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -160,7 +160,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
   private static String opNamespace = null;
   private static String opServiceAccount = null;
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
   private static List<Domain> domains = new ArrayList<>();
@@ -223,16 +223,16 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough 
+    // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
-    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace); 
+    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
     if (!OKD) {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
@@ -261,7 +261,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
       String domainUid = domain.getSpec().getDomainUid();
       String domainNamespace = domain.getMetadata().getNamespace();
-  
+
       //create route for external admin service
       createRouteForOKD(domainUid + "-admin-server-ext", domainNamespace);
 
@@ -274,8 +274,8 @@ class ItMultiDomainModelsWithLoadBalancer {
       }
       if (!OKD) {
         logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
-              true, ADMIN_SERVER_PORT);
+        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
+            true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
       }
     }
   }
@@ -347,7 +347,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
 
     stopPortForwardProcess(domainNamespace);
-    
+
   }
 
   /**
@@ -813,7 +813,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // uninstall NGINX release
       if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams))
+        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
             .as("Test uninstallNginx returns true")
             .withFailMessage("uninstallNginx() did not return true")
             .isTrue();
@@ -1008,8 +1008,8 @@ class ItMultiDomainModelsWithLoadBalancer {
       logger.info("routeHost = {0}", routeHost);
       return String.format("curl -v --show-error --noproxy '*' http://%s/%s/index.jsp",
           routeHost, appContextRoot);
-    
-    } else { 
+
+    } else {
       return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
           domainUid + "." + domainNamespace + "." + clusterName + ".test",
           K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);

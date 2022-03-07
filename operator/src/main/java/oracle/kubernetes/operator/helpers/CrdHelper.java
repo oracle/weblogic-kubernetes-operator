@@ -46,7 +46,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.WebhookCertificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -111,7 +111,7 @@ public class CrdHelper {
   static void writeAsYaml(URI outputFileName, Object model) {
     try (Writer writer = Files.newBufferedWriter(uriToPath.apply(outputFileName))) {
       writer.write(
-            "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
+            "# Copyright (c) 2020, 2022, Oracle and/or its affiliates.\n"
                   + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
       writer.write("\n");
       dumpYaml(writer, model);
@@ -214,7 +214,7 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook() {
-      return Optional.ofNullable(Certificates.getWebhookCertificateData())
+      return Optional.ofNullable(WebhookCertificates.getWebhookCertificateData())
               .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
     }
 

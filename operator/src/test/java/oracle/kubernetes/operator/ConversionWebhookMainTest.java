@@ -208,17 +208,17 @@ class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     }
   }
 
-  static class TestStepFactory implements Main.NextStepFactory {
+  static class TestStepFactory implements ConversionWebhookMain.NextStepFactory {
     @SuppressWarnings("FieldCanBeLocal")
     private static TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(Main.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(ConversionWebhookMain.class, "NEXT_STEP_FACTORY", factory);
     }
 
     @Override
-    public Step createInternalInitializationStep(Step next) {
+    public Step createInitializationStep(Step next) {
       return next;
     }
   }

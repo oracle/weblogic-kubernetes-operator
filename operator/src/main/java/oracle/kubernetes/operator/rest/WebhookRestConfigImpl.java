@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator.rest;
 
-import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.WebhookCertificates;
 
 /** RestConfigImpl provides the REST api configuration for Webhook for WebLogic Operator. */
 public class WebhookRestConfigImpl implements WebhookRestConfig {
@@ -28,7 +28,7 @@ public class WebhookRestConfigImpl implements WebhookRestConfig {
 
   @Override
   public String getWebhookCertificateData() {
-    return Certificates.getWebhookCertificateData();
+    return WebhookCertificates.getWebhookCertificateData();
   }
 
   @Override
@@ -43,7 +43,7 @@ public class WebhookRestConfigImpl implements WebhookRestConfig {
 
   @Override
   public String getWebhookKeyFile() {
-    return Certificates.getWebhookKeyFile();
+    return WebhookCertificates.getWebhookKeyFile();
   }
 
 }
