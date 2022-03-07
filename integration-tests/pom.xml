@@ -338,7 +338,6 @@
                   **/ItMiiNewCreateAuxImage,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMultiDomainModelsWithLoadBalancer,
                   **/ItPodsRestart
                 </includes-failsafe>
             </properties>
