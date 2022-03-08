@@ -31,7 +31,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -120,6 +120,16 @@ class ItMultiDomainModels {
 
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+
+    // In OKD cluster, we need to get the routeHost for the external admin service
+    String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+
+
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
@@ -134,7 +144,7 @@ class ItMultiDomainModels {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, null, managedServersBeforeScale);
 
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    /*String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
@@ -142,6 +152,8 @@ class ItMultiDomainModels {
 
     // In OKD cluster, we need to get the routeHost for the external admin service
     String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
+
+     */
 
     logger.info("Validating WebLogic admin server access by login to console");
     testUntil(
