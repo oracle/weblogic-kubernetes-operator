@@ -16,10 +16,6 @@ public class ConvertedObject {
   private String apiVersion;
   @Expose
   private V1ObjectMeta metadata;
-  @Expose
-  private String host;
-  @Expose
-  private String port;
 
   public String getKind() {
     return kind;
@@ -56,14 +52,12 @@ public class ConvertedObject {
     ConvertedObject that = (ConvertedObject) o;
     return Objects.equals(kind, that.kind)
             && Objects.equals(apiVersion, that.apiVersion)
-            && Objects.equals(metadata, that.metadata)
-            && Objects.equals(host, that.host)
-            && Objects.equals(port, that.port);
+            && Objects.equals(metadata, that.metadata);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(kind, apiVersion, metadata, host, port);
+    return Objects.hash(kind, apiVersion, metadata);
   }
 
   @Override
@@ -72,8 +66,6 @@ public class ConvertedObject {
             + "kind='" + kind + '\''
             + ", apiVersion='" + apiVersion + '\''
             + ", metadata=" + metadata
-            + ", host='" + host + '\''
-            + ", port='" + port + '\''
             + '}';
   }
 }

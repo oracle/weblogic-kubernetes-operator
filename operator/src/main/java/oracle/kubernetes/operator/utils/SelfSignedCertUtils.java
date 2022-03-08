@@ -52,7 +52,7 @@ import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTI
 public final class SelfSignedCertUtils {
 
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
-  public static final String INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC = "internal-weblogic-operator-webhook-svc";
+  public static final String WEBLOGIC_OPERATOR_WEBHOOK_SVC = "weblogic-operator-webhook-svc";
 
   /**
    * Generates a key pair using the BouncyCastle lib.
@@ -126,7 +126,7 @@ public final class SelfSignedCertUtils {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
     String namespace = getOperatorNamespace();
     if (WEBHOOK_CERTIFICATE.equals(cert)) {
-      host = INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+      host = WEBLOGIC_OPERATOR_WEBHOOK_SVC;
       namespace = getWebhookNamespace();
     }
     return new GeneralNames(new GeneralName[]{

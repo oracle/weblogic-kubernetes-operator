@@ -108,7 +108,6 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <!-- excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds -->
               <excludeGroupIds>io.prometheus</excludeGroupIds>
               <excludeArtifactIds>kotlin-stdlib-jdk7,kotlin-stdlib-jdk8</excludeArtifactIds>
             </configuration>

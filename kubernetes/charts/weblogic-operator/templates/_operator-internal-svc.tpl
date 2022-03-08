@@ -21,7 +21,7 @@ spec:
 apiVersion: "v1"
 kind: "Service"
 metadata:
-  name: "internal-weblogic-operator-webhook-svc"
+  name: "weblogic-operator-webhook-svc"
   namespace: {{ .Release.Namespace | quote }}
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}

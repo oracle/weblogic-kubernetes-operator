@@ -203,7 +203,7 @@ spec:
       selector:
         matchLabels:
           weblogic.webhookName: {{ .Release.Namespace | quote }}
-      replicas: 1
+      replicas: 2
       template:
         metadata:
           {{- with .annotations }}

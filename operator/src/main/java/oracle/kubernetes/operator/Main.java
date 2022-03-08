@@ -517,11 +517,6 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      return super.onSuccess(packet, callResponse);
-    }
-
-    @Override
     public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
       LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
       return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);

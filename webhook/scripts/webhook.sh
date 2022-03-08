@@ -4,7 +4,7 @@
 
 export PATH=$PATH:/operator
 
-echo "Launching the Webhook for Oracle WebLogic Server Kubernetes Operator..."
+echo "Launching the Domain Custom Resource Conversion Webhook for Oracle WebLogic Server Kubernetes Operator..."
 
 # Relays SIGTERM to all java processes
 relay_SIGTERM() {

@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -19,8 +21,15 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import static oracle.kubernetes.operator.logging.MessageKeys.INPUT_FILE_NON_EXISTENT;
+import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_DIRECTORY;
+import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NAME;
+import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NON_EXISTENT;
+import static oracle.kubernetes.operator.logging.MessageKeys.PRINT_HELP;
+
 public class DomainResourceConverter {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("DomainResourceConverter", "Operator");
   private static final DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
 
   String inputFileName;
@@ -39,15 +48,14 @@ public class DomainResourceConverter {
     File outputDir = new File(drc.outputDir);
 
     if (!inputFile.exists()) {
-      throw new RuntimeException("InputFile: " + drc.inputFileName + " does not exist or could not be read.");
+      throw new RuntimeException(LOGGER.formatMessage(INPUT_FILE_NON_EXISTENT, drc.inputFileName));
     }
 
     if (!outputDir.exists()) {
-      throw new RuntimeException("The output dir specified by '-d' does not exist or could not be read.");
+      throw new RuntimeException(OUTPUT_FILE_NON_EXISTENT);
     }
 
     convertDomain(drc);
-    return;
   }
 
   private static void convertDomain(DomainResourceConverter drc) {
@@ -78,13 +86,13 @@ public class DomainResourceConverter {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
 
-    Option helpOpt = new Option("h", "help", false, "Print help message");
+    Option helpOpt = new Option("h", "help", false, PRINT_HELP);
     options.addOption(helpOpt);
 
-    Option outputDir = new Option("d", "outputDir", true, "Output directory");
+    Option outputDir = new Option("d", "outputDir", true, OUTPUT_DIRECTORY);
     options.addOption(outputDir);
 
-    Option outputFile = new Option("f", "outputFile", true, "Output file name");
+    Option outputFile = new Option("f", "outputFile", true, OUTPUT_FILE_NAME);
     options.addOption(outputFile);
 
     try {

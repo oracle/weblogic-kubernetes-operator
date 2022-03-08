@@ -3,15 +3,21 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
+import java.util.Optional;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.ConversionRequest;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
+import oracle.kubernetes.operator.rest.model.Result;
 import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
+
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -22,6 +28,7 @@ import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 public class ConversionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
+  public static final String FAILED_STATUS = "Failed";
   private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
 
   /** Construct a ConversionWebhookResource. */
@@ -35,17 +42,33 @@ public class ConversionWebhookResource extends BaseResource {
    * @param body - a String representation of JSON document describing the ConversionReview with conversion request.
    *
    * @return a String representation of JSON document describing the ConversionReview with conversion response.
+   *
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
+    ConversionReviewModel conversionReview = null;
+    ConversionResponse conversionResponse;
     LOGGER.entering(href());
-    ConversionReviewModel conversionReview = conversionUtils.readConversionReview(body);
-    ConversionResponse conversionResponse = conversionUtils.createConversionResponse(conversionReview.getRequest());
+
+    try {
+      conversionReview = conversionUtils.readConversionReview(body);
+      conversionResponse = conversionUtils.createConversionResponse(conversionReview.getRequest());
+    } catch (Throwable t) {
+      conversionResponse = new ConversionResponse()
+              .uid(getUid(conversionReview))
+              .result(new Result().status(FAILED_STATUS)
+                      .message(LOGGER.formatMessage(DOMAIN_CONVERSION_FAILED + t.getMessage())));
+    }
     LOGGER.exiting(conversionResponse);
     return conversionUtils.writeConversionReview(new ConversionReviewModel()
-            .apiVersion(conversionReview.getApiVersion())
-            .kind(conversionReview.getKind())
+            .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
+            .kind(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getKind).orElse(null))
             .response(conversionResponse));
+  }
+
+  private String getUid(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview).map(ConversionReviewModel::getRequest)
+            .map(ConversionRequest::getUid).orElse(null);
   }
 }

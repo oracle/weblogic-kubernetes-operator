@@ -6,13 +6,13 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.io.IOException;
 
-/** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
+/** This task creates the "readiness" indicator so that Kubernetes knows the Webhook is ready. */
 public class WebhookReady {
 
   private static final File readinessFile = new File("/webhook/.ready");
 
   /**
-   * Create the Operator readiness indicator.
+   * Create the webhook readiness indicator.
    * @throws IOException if the readiness file does not exist
    */
   public static void create() throws IOException {

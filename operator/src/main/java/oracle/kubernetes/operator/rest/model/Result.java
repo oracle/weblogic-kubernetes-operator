@@ -16,6 +16,9 @@ public class Result {
   @Expose
   private String status;
 
+  @Expose
+  private String message;
+
   public V1ObjectMeta getMetadata() {
     return metadata;
   }
@@ -39,6 +42,19 @@ public class Result {
 
   public Result status(String status) {
     this.status = status;
+    return this;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  public Result message(String message) {
+    this.message = message;
     return this;
   }
 
