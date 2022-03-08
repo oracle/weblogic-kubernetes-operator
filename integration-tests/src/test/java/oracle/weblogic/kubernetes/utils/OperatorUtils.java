@@ -280,6 +280,7 @@ public class OperatorUtils {
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
+        .javaLoggingLevel(("FINE"))
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
