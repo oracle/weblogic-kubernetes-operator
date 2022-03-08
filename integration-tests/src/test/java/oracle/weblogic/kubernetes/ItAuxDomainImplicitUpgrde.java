@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
@@ -42,7 +41,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
@@ -51,7 +50,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -130,6 +128,8 @@ class ItAuxDomainImplicitUpgrde {
   @Test
   @DisplayName("Test to implicit upgrade of v8 version of AuxDomain with webhook")
   void testImplicitAuxV8DomainUpgrade() {
+
+
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -140,16 +140,8 @@ class ItAuxDomainImplicitUpgrde {
 
     // create auxiliary image using imagetool command if does not exists
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(miiAuxiliaryImage, modelList, archiveList),
-          logger,
-          "createAuxImage to be successful");
+    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage, archiveList, modelList);
 
-    // push auxiliary image to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG,
-        DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG);
     String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
