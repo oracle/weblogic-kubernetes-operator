@@ -249,6 +249,8 @@
                   **/ItServerStartPolicyConfigCluster,
                   **/ItManageNameSpace,
                   **/ItIntrospectVersion,
+                  **/ItInitContainers,
+		  **/ItMiiUpdateDomainConfig,
                   **/ItUsabilityOperatorHelmChart
                </includes-failsafe>
             </properties>
