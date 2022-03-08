@@ -444,7 +444,7 @@ class ItMiiAuxiliaryImage {
     final String managedServerPrefix = domainUid + "-managed-server";
     // using the first image created in initAll, creating second image with different WDT version here
 
-    createPushAuxiliaryImageWithWDTInstallOnly(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage4Tag, "1.9.19");
+    createPushAuxiliaryImageWithWDTInstallOnly(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage4Tag, WDT_TEST_VERSION);
 
     // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
     // and other with sourceWDTInstallHome set to none
@@ -466,7 +466,7 @@ class ItMiiAuxiliaryImage {
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
             "/aux", this.getClass().getSimpleName()));
 
-    assertFalse(wdtVersion.contains("1.9.19"),
+    assertFalse(wdtVersion.contains(WDT_TEST_VERSION),
         "Old version of WDT is copied");
 
     // create domain custom resource using 2 auxiliary images with default sourceWDTInstallHome for both images
