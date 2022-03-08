@@ -41,7 +41,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -121,8 +120,9 @@ class ItAuxDomainImplicitUpgrde {
 
   /**
    * Create a domain resource with auxiliary image.
-   * Use an explicit domain.yaml file with API Version set to v8.
-   * Use the v8 auxililiary configuration used in WKO 3.3.x version 
+   * Use an domain.yaml file with API Version expliciltly set to v8.
+   * Use the v8 style auxililiary configuration supported in WKO v3.3.x
+   * Start the Operator with latest version
    * Here the webhook infra started in Operator namespace should implicitly 
    *  upgrade the domain resource to native k8s format with initContainer 
    *  configuration in ServerPod section and start the domain 
@@ -139,16 +139,13 @@ class ItAuxDomainImplicitUpgrde {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-      testUntil(
+    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
+    testUntil(
           withStandardRetryPolicy,
           createAuxiliaryImage(miiAuxiliaryImage, modelList, archiveList),
           logger,
           "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    }
+
     // push auxiliary image to repo for multi node cluster
     logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG,
         DOMAIN_IMAGES_REPO);

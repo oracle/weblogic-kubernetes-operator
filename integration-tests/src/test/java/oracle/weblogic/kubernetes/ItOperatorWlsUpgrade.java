@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
@@ -207,8 +207,11 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator Auxiliary Image Domain upgrade from 3.3.8 to latest.
+   * Auxiliary Image Domain upgrade from Operartor v3.3.8 to latest.
    */
+  // Need to uncomment the following test method 
+  // once the code to upgrade v8 style auximage domain is merged into main branch 
+  @Disabled()
   @Test
   @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to latest")
   void testOperatorWlsAuxDomainUpgradeFrom338ToLatest() {
@@ -223,17 +226,12 @@ class ItOperatorWlsUpgrade {
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-      testUntil(
+    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
+    testUntil(
           withStandardRetryPolicy,
           createAuxiliaryImage(miiAuxiliaryImage, modelList, archiveList),
           logger,
           "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    }
     // push auxiliary image to repo for multi node cluster
     logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG,
         DOMAIN_IMAGES_REPO);
@@ -280,10 +278,8 @@ class ItOperatorWlsUpgrade {
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
 
-    // Need to uncomment the invocation of the function upgradeOperatorToLatest() 
-    // when the code to upgrade v8 style auximage domain is merged into main branch 
 
-    // upgradeOperatorToLatest();
+    upgradeOperatorToLatest();
     verifyPodsNotRolled(domainNamespace, pods);
     reManageCluster();
   }
