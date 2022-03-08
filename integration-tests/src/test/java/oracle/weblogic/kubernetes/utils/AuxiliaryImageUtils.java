@@ -192,9 +192,6 @@ public class AuxiliaryImageUtils {
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-    if ((witParams.wdtVersion() != null) && witParams.wdtVersion().equals("NONE")) {
-      env.put("DOCKER_BUILDKIT", "1");
-    }
 
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
