@@ -401,7 +401,7 @@ function installWebLogicOperator {
   echo $(helm version)
   helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
   helm repo update
-  helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.8"
+  helm install weblogic-operator weblogic-operator/weblogic-operator
 }
 
 function createWebLogicDomain {
