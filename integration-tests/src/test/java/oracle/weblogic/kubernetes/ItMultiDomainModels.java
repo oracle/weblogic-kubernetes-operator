@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -139,10 +140,13 @@ class ItMultiDomainModels {
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    // In OKD cluster, we need to get the routeHost for the external admin service
+    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
+
     logger.info("Validating WebLogic admin server access by login to console");
     testUntil(
         assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
         }, "Access to admin server node port failed"),
         logger,
         "Console login validation");
