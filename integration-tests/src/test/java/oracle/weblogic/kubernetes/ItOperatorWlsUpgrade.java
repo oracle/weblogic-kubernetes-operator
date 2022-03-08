@@ -3,10 +3,16 @@
 
 package oracle.weblogic.kubernetes;
 
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -35,6 +41,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -43,12 +50,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
@@ -57,13 +70,21 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -71,10 +92,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
@@ -113,6 +137,9 @@ class ItOperatorWlsUpgrade {
   private List<String> namespaces;
   private String latestOperatorImageName;
   private String adminSecretName = "weblogic-credentials";
+  private String opNamespace;
+  private String domainNamespace;
+  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + "-oupg";
 
   /**
    * For each test:
@@ -180,6 +207,88 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
+   * Operator Auxiliary Image Domain upgrade from 3.3.8 to latest.
+   */
+  @Test
+  @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to latest")
+  void testOperatorWlsAuxDomainUpgradeFrom338ToLatest() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to latest ");
+
+    installOldOperator("3.3.8");
+    createSecrets();
+   
+    final String auxiliaryImagePath = "/auxiliary";
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+
+    // create auxiliary image using imagetool command if does not exists
+    if (! dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
+      testUntil(
+          withStandardRetryPolicy,
+          createAuxiliaryImage(miiAuxiliaryImage, modelList, archiveList),
+          logger,
+          "createAuxImage to be successful");
+    } else {
+      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
+    }
+    // push auxiliary image to repo for multi node cluster
+    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG,
+        DOMAIN_IMAGES_REPO);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG);
+    String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("AUX_IMAGE", auxImage);
+    templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+    templateMap.put("API_VERSION", "v8");
+    Path srcDomainFile = Paths.get(RESOURCE_DIR,
+        "upgrade", "auxiliary.domain.template.v8.yaml");
+    Path targetDomainFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDomainFile.toString(),
+        "domain.yaml", templateMap));
+    logger.info("Generated Domain Resource file {0}", targetDomainFile);
+
+    // run kubectl to create the domain
+    logger.info("Run kubectl to create the domain");
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    testUntil(
+        domainExists(domainUid, "v8", domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
+    checkDomainStarted(domainUid, domainNamespace);
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before upgrading the operator
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
+    }
+
+    // verify there is no status condition type Completed before upgrading to Latest
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
+
+    // Need to uncomment the invocation of the function upgradeOperatorToLatest() 
+    // when the code to upgrade v8 style auximage domain is merged into main branch 
+
+    // upgradeOperatorToLatest();
+    verifyPodsNotRolled(domainNamespace, pods);
+    reManageCluster();
+  }
+
+  /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test and
    * delete CRD.
    */
@@ -196,6 +305,90 @@ class ItOperatorWlsUpgrade {
     }
   }
 
+  private void installOldOperator(String operatorVersion) {
+    logger.info("Assign a unique namespace for operator");
+    assertNotNull(namespaces.get(0), "Namespace is null");
+    opNamespace = namespaces.get(0);
+    logger.info("Assign a unique namespace for domain");
+    assertNotNull(namespaces.get(1), "Namespace is null");
+    domainNamespace = namespaces.get(1);
+
+    // install operator with older release 
+    HelmParams opHelmParams = installOperator(operatorVersion, 
+                 opNamespace, domainNamespace);
+  }
+
+  // After upgrdae scale up/down the cluster
+  private void reManageCluster() {
+    String opServiceAccount = opNamespace + "-sa";
+    int externalRestHttpsPort = getServiceNodePort(
+        opNamespace, "external-weblogic-operator-svc");
+    assertTrue(externalRestHttpsPort != -1,
+        "Could not get the Operator external service node port");
+    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+
+    // check domain can be managed from the operator by scaling the cluster
+    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
+        managedServerPodNamePrefix, replicaCount, 3,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", null, null);
+
+    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
+        managedServerPodNamePrefix, replicaCount, 2,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", null, null);
+
+  }
+
+  // upgrade to operator to latest version 
+  private void upgradeOperatorToLatest() {
+    HelmParams upgradeHelmParams = new HelmParams()
+            .releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR)
+            .repoUrl(null)
+            .chartVersion(null)
+            .chartName(null);
+
+    // build operator chart values
+    OperatorParams opParams = new OperatorParams()
+            .helmParams(upgradeHelmParams)
+            .image(latestOperatorImageName)
+            .externalRestEnabled(true);
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+            String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
+    // check operator image name after upgrade
+    logger.info("Checking image name in operator container ");
+    testUntil(
+            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace),
+              "Exception while getting the operator image name"),
+            logger,
+            "Checking operator image name in namespace {0} after upgrade",
+            opNamespace);
+
+    // check CRD version is updated
+    logger.info("Checking CRD version");
+    testUntil(
+          checkCrdVersion(),
+          logger,
+          "the CRD version to be updated to latest");
+    // check domain status conditions
+    checkDomainStatus(domainNamespace);
+  }
+
+  private void installDomainResource(
+      String domainType, 
+      String domainVersion, 
+      String externalServiceNameSuffix) {
+
+    latestOperatorImageName = getOperatorImageName();
+    // create WLS domain and verify
+    createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
+           externalServiceNameSuffix);
+  }
+
   // Since Operator version 3.1.0 the service pod prefix has been changed 
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
@@ -203,27 +396,14 @@ class ItOperatorWlsUpgrade {
       String operatorVersion, String domainVersion, 
       String externalServiceNameSuffix) {
 
-    logger.info("Assign a unique namespace for operator");
-    assertNotNull(namespaces.get(0), "Namespace is null");
-    String opNamespace = namespaces.get(0);
-    logger.info("Assign a unique namespace for domain");
-    assertNotNull(namespaces.get(1), "Namespace is null");
-    String domainNamespace = namespaces.get(1);
-
-    latestOperatorImageName = getOperatorImageName();
-
-    // install operator with older release 
-    HelmParams opHelmParams = installOperator(operatorVersion, 
-                 opNamespace, domainNamespace);
+    installOldOperator(operatorVersion);
 
     // create WLS domain and verify
-    createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
-           externalServiceNameSuffix);
+    installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
     // upgrade to latest operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
-
   }
 
   private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
@@ -262,34 +442,9 @@ class ItOperatorWlsUpgrade {
                     replicaCount, "7001", "8001", "testwebapp/index.jsp");
               });
     accountingThread.start();
-
     try {
       // upgrade to latest operator
-      HelmParams upgradeHelmParams = new HelmParams()
-            .releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR)
-            .repoUrl(null)
-            .chartVersion(null)
-            .chartName(null);
-
-      // build operator chart values
-      OperatorParams opParams = new OperatorParams()
-            .helmParams(upgradeHelmParams)
-            .image(latestOperatorImageName)
-            .externalRestEnabled(true);
-
-      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
-            String.format("Failed to upgrade operator in namespace %s", opNamespace));
-
-      // check operator image name after upgrade
-      logger.info("Checking image name in operator container ");
-      testUntil(
-            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace),
-              "Exception while getting the operator image name"),
-            logger,
-            "Checking operator image name in namespace {0} after upgrade",
-            opNamespace);
+      upgradeOperatorToLatest();
       verifyPodsNotRolled(domainNamespace, pods);
     } finally {
       if (accountingThread != null) {
@@ -306,41 +461,11 @@ class ItOperatorWlsUpgrade {
               "Application was not always available when the operator was getting upgraded");
       }
     }
-    
-    // check CRD version is updated
-    logger.info("Checking CRD version");
-    testUntil(
-        checkCrdVersion(),
-        logger,
-        "the CRD version to be updated to latest");
-
-    // check domain status conditions
-    checkDomainStatus(domainNamespace);
-
-    int externalRestHttpsPort = getServiceNodePort(
-        opNamespace, "external-weblogic-operator-svc");
-    assertTrue(externalRestHttpsPort != -1,
-        "Could not get the Operator external service node port");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-
-    // check domain can be managed from the operator by scaling the cluster
-    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 3,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);
-
-    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 2,
-        true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", null, null);
-
+    reManageCluster();
     restartDomain(domainUid, domainNamespace);
   }
 
-  private void createWlsDomainAndVerify(String domainType, 
-        String domainNamespace, String domainVersion, 
-        String externalServiceNameSuffix) {
-
+  private void createSecrets() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
@@ -349,6 +474,18 @@ class ItOperatorWlsUpgrade {
     logger.info("Create secret for admin credentials");
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, 
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+        ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
+  }
+
+  private void createWlsDomainAndVerify(String domainType, 
+        String domainNamespace, String domainVersion, 
+        String externalServiceNameSuffix) {
+
+    createSecrets();
 
     String domainImage = "";
     if (domainType.equalsIgnoreCase("Image")) {
