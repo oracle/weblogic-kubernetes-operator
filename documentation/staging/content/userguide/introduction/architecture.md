@@ -128,7 +128,7 @@ The diagram below shows the components inside the containers running WebLogic Se
 
 {{< img "Inside a container" "images/inside-a-container.png" >}}
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about obtaining the operator image, see [here]({{< relref "/userguide/managing-operators/preparation#prepare-operator-image" >}}).
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).
 {{% notice note %}}
 During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}
@@ -161,7 +161,7 @@ The external state approach allows the operator to treat the images as essential
 
 This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
 
-When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers. **Note**: This applies _only_ to the Domain on PV or Model in Image with Auxiliary Image [use cases]({{< relref "/userguide/managing-domains/choosing-a-model/" >}}).
+When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}) and [Domain life cycle]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
 
 It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 
