@@ -80,7 +80,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -96,11 +95,11 @@ import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FA
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
+import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -919,13 +918,8 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
-            createRetryStatusMessage("Introspection failed on try 1 of 2.", SEVERE_PROBLEM)));
-  }
-
-  @NotNull
-  private String createRetryStatusMessage(String retryStatusMessage, String severeProblem) {
-    return onSeparateLines(retryStatusMessage, INTROSPECTION_ERROR, severeProblem);
+    assertThat(getUpdatedDomain().getStatus().getMessage(),
+          equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM, 1, 2)));
   }
 
   @Test
@@ -934,23 +928,19 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
-
-    assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(LOGGER.formatMessage(DOMAIN_FATAL_ERROR), FATAL_PROBLEM)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(),
+            equalTo(LOGGER.formatMessage(DOMAIN_FATAL_ERROR, FATAL_PROBLEM)));
   }
 
   @Test
-  void whenJobLogContainsSevereErrorAndNumberOfRetriesExceedsMaxLimit_domainStatusHasExpectedMessage() {
+  void whenJobLogContainsSevereErrorAndNumberOfRetriesReachesMaxLimit_domainStatusHasExpectedMessage() {
     createIntrospectionLog(SEVERE_MESSAGE);
-
-    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(2));
+    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(1));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, 2),
-                    SEVERE_PROBLEM)));
+            equalTo(LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, SEVERE_PROBLEM, 2)));
   }
 
   private void createIntrospectionLog(String logMessage) {
