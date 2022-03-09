@@ -221,7 +221,7 @@ Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
-- Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+- Beginning with operator version 3.3.2, specify the `kubernetesPlatform` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 #### WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes
 
@@ -248,8 +248,9 @@ present some extra challenges in areas like:
 * Storage providers that do not always support the features that the operator or WebLogic Server rely on
 * Load balancing implementations that do not always support the features that the operator or WebLogic Server rely on
 
-As such, we *do not* recommend using these distributions to run the operator or WebLogic Server, and we do not
-provide support for WebLogic Server or the operator running in these distributions.
+As such, we *do not* recommend using these distributions to run the operator or WebLogic Server. While we do not
+provide support for WebLogic Server or the operator running in production in these distributions, we do support some (such as,
+kind and Minikube) in a development or test environment.
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
-development/test option.
+development or testing option.
