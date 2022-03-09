@@ -80,98 +80,94 @@ public class CallBuilder {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
-  private String container;
-
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
-          new SynchronousCallDispatcher() {
-            @Override
-            public <T> T execute(
-                    SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
-                    throws ApiException {
-              ApiClient client = pool.take();
-              try {
-                return factory.execute(client, params);
-              } finally {
-                pool.recycle(client);
-              }
-            }
-          };
-
-  private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
+      new SynchronousCallDispatcher() {
+          @Override
+          public <T> T execute(
+              SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
+              throws ApiException {
+          ApiClient client = pool.take();
+          try {
+            return factory.execute(client, params);
+          } finally {
+            pool.recycle(client);
+          }
+        }
+      };
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
+  private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
   private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
-  private ClientPool helper;
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
   private final String pretty = null;
   private final CallFactory<Domain> replaceDomain =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          replaceDomainAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (Domain) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceDomainAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body,
+                  callback));
   private final CallFactory<Domain> patchDomain =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchDomainAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchDomainAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
   private final CallFactory<Domain> replaceDomainStatus =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          replaceDomainStatusAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (Domain) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceDomainStatusAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body,
+                  callback));
   private final CallFactory<V1CustomResourceDefinition> createCrd =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createCustomResourceDefinitionAsync(
-                                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createCustomResourceDefinitionAsync(
+                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
   private final CallFactory<V1CustomResourceDefinition> replaceCrd =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          replaceCustomResourceDefinitionAsync(
-                                  usage,
-                                  requestParams.name,
-                                  (V1CustomResourceDefinition) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceCustomResourceDefinitionAsync(
+                  usage,
+                  requestParams.name,
+                  (V1CustomResourceDefinition) requestParams.body,
+                  callback));
   private final CallFactory<V1ConfigMap> createConfigmap =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createConfigMapAsync(
-                                  usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createConfigMapAsync(
+                  usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
   private final CallFactory<V1Secret> createSecret =
           (requestParams, usage, cont, callback) ->
                   wrap(
                           createSecretAsync(
                                   usage, requestParams.namespace, (V1Secret) requestParams.body, callback));
   private final CallFactory<V1ConfigMap> replaceConfigmap =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          replaceConfigMapAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1ConfigMap) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1ConfigMap) requestParams.body,
+                  callback));
   private final CallFactory<V1ConfigMap> patchConfigMap =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchConfigMapAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
   private final CallFactory<V1Secret> replaceSecret =
           (requestParams, usage, cont, callback) ->
                   wrap(
@@ -182,54 +178,148 @@ public class CallBuilder {
                                   (V1Secret) requestParams.body,
                                   callback));
   private final CallFactory<V1Pod> createPod =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
   private final CallFactory<V1Pod> patchPod =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchPodAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchPodAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
   private final CallFactory<V1Job> createJob =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
   private final CallFactory<V1Service> createService =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createServiceAsync(
-                                  usage, requestParams.namespace, (V1Service) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createServiceAsync(
+                  usage, requestParams.namespace, (V1Service) requestParams.body, callback));
   private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createSubjectAccessReviewAsync(
-                                  usage, (V1SubjectAccessReview) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createSubjectAccessReviewAsync(
+                  usage, (V1SubjectAccessReview) requestParams.body, callback));
   private final CallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreview =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createSelfSubjectRulesReviewAsync(
-                                  usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createSelfSubjectRulesReviewAsync(
+                  usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
   private final CallFactory<CoreV1Event> readEvent =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<CoreV1Event> createEvent =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createEventAsync(
-                                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createEventAsync(
+                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
   private final CallFactory<CoreV1Event> replaceEvent =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          replaceEventAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (CoreV1Event) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceEventAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (CoreV1Event) requestParams.body,
+                  callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
+      (requestParams, usage, cont, callback) ->
+          wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createPodDisruptionBudgetAsync(
+                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
+                      requestParams.body, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchPodDisruptionBudgetAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
+  private final CallParamsImpl callParams = new CallParamsImpl();
+  private final String resourceVersion = "";
+  private final Boolean watch = null;
+  private final CallFactory<Domain> readDomain =
+      (requestParams, usage, cont, callback) ->
+          wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1CustomResourceDefinition> readCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
+  private final CallFactory<V1ConfigMap> readConfigmap =
+      (requestParams, usage, cont, callback) ->
+          wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1Pod> readPod =
+      (requestParams, usage, cont, callback) ->
+          wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1Job> readJob =
+      (requestParams, usage, cont, callback) ->
+          wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1Service> readService =
+      (requestParams, usage, cont, callback) ->
+          wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1Secret> readSecret =
+      (requestParams, usage, cont, callback) ->
+          wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final Boolean orphanDependents = null;
+  private final String propagationPolicy = null;
+  private final SynchronousCallFactory<V1Pod> patchPodCall =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .patchNamespacedPod(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  pretty,
+                  dryRun,
+                  null,
+                  null);
+  private final SynchronousCallFactory<Domain> replaceDomainCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedDomain(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body);
+  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceNamespacedDomainStatus(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body);
+  private final SynchronousCallFactory<Domain> patchDomainCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .patchNamespacedDomain(
+                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
+  private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
+      ((client, requestParams) ->
+          new AuthorizationV1Api(client)
+              .createSubjectAccessReview(
+                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
+  private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
+       (client, requestParams) ->
+                  new AuthorizationV1Api(client)
+                          .createSelfSubjectAccessReview(
+                                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
+  private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
+          (client, requestParams) ->
+                  new AuthorizationV1Api(client)
+                          .createSelfSubjectRulesReview(
+                                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
+  private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
+          (client, requestParams) ->
+                  new AuthenticationV1Api(client)
+                          .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
+  private String container;
   private final CallFactory<String> readPodLog =
           (requestParams, usage, cont, callback) ->
                   wrap(
@@ -247,60 +337,21 @@ public class CallBuilder {
                                   null,
                                   null,
                                   callback));
+  private ClientPool helper;
+  private RetryStrategy retryStrategy;
+  private String fieldSelector;
+  private String labelSelector;
+  private Integer limit = 50;
+  private Integer timeoutSeconds = 5;
   private final CallFactory<V1beta1PodDisruptionBudgetList> listPodDisruptionBudget =
           (requestParams, usage, cont, callback) ->
                   wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createPodDisruptionBudgetAsync(
-                                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
-                                          requestParams.body, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchPodDisruptionBudgetAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
-  private final CallFactory<V1Status> deletePodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          deletePodDisruptionBudgetAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1DeleteOptions) requestParams.body,
-                                  callback));
-
-  private RetryStrategy retryStrategy;
-
-  private String fieldSelector;
-  private String labelSelector;
-
-  private Integer limit = 50;
-  private Integer timeoutSeconds = 5;
-  private final CallParamsImpl callParams = new CallParamsImpl();
-
-  private final String resourceVersion = "";
-
-  private Integer maxRetryCount = 10;
-  private final Boolean watch = null;
   private final CallFactory<DomainList> listDomain =
           (requestParams, usage, cont, callback) ->
                   wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1PodList> listPod =
           (requestParams, usage, cont, callback) ->
                   wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1Status> deletecollectionPod =
-          (requestParams, usage, cont, callback) ->
-                  wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont,
-                          (V1DeleteOptions) requestParams.body, callback));
   private final CallFactory<V1SecretList> listSecrets =
           (requestParams, usage, cont, callback) ->
                   wrap(listSecretsAsync(usage, requestParams.namespace, cont, callback));
@@ -316,31 +367,37 @@ public class CallBuilder {
   private final CallFactory<V1ConfigMapList> listConfigMaps =
           (requestParams, usage, cont, callback) ->
                   wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<Domain> readDomain =
+  private final SynchronousCallFactory<DomainList> listDomainCall =
+          (client, requestParams) ->
+                  new WeblogicApi(client)
+                          .listNamespacedDomain(
+                                  requestParams.namespace,
+                                  pretty,
+                                  null,
+                                  fieldSelector,
+                                  labelSelector,
+                                  limit,
+                                  resourceVersion,
+                                  timeoutSeconds,
+                                  watch);
+  private final CallFactory<V1JobList> listJob =
           (requestParams, usage, cont, callback) ->
-                  wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1CustomResourceDefinition> readCrd =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
-  private final CallFactory<V1ConfigMap> readConfigmap =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1Pod> readPod =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1Job> readJob =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1Service> readService =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1Secret> readSecret =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
+                  wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
+  private Integer maxRetryCount = 10;
   private Integer gracePeriodSeconds = null;
-  private final Boolean orphanDependents = null;
-  private final String propagationPolicy = null;
-
+  private final CallFactory<V1Status> deletePodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deletePodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
+  private final CallFactory<V1Status> deletecollectionPod =
+          (requestParams, usage, cont, callback) ->
+                  wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont,
+                          (V1DeleteOptions) requestParams.body, callback));
   /* Custom Resource Definitions */
   private final CallFactory<V1Status> deleteConfigMap =
           (requestParams, usage, cont, callback) ->
@@ -379,69 +436,6 @@ public class CallBuilder {
                                   requestParams.namespace,
                                   (V1DeleteOptions) requestParams.body,
                                   callback));
-  private final SynchronousCallFactory<V1Pod> patchPodCall =
-          (client, requestParams) ->
-                  new CoreV1Api(client)
-                          .patchNamespacedPod(
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  pretty,
-                                  dryRun,
-                                  null,
-                                  null);
-  private final SynchronousCallFactory<DomainList> listDomainCall =
-          (client, requestParams) ->
-                  new WeblogicApi(client)
-                          .listNamespacedDomain(
-                                  requestParams.namespace,
-                                  pretty,
-                                  null,
-                                  fieldSelector,
-                                  labelSelector,
-                                  limit,
-                                  resourceVersion,
-                                  timeoutSeconds,
-                                  watch);
-  private final SynchronousCallFactory<Domain> replaceDomainCall =
-          (client, requestParams) ->
-                  new WeblogicApi(client)
-                          .replaceNamespacedDomain(
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
-          (client, requestParams) ->
-                  new WeblogicApi(client)
-                          .replaceNamespacedDomainStatus(
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (Domain) requestParams.body);
-  private final SynchronousCallFactory<Domain> patchDomainCall =
-          (client, requestParams) ->
-                  new WeblogicApi(client)
-                          .patchNamespacedDomain(
-                                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
-
-  private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
-          ((client, requestParams) ->
-                  new AuthorizationV1Api(client)
-                          .createSubjectAccessReview(
-                                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
-  private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
-          (client, requestParams) ->
-                  new AuthorizationV1Api(client)
-                          .createSelfSubjectAccessReview(
-                                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
-  private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
-          (client, requestParams) ->
-                  new AuthorizationV1Api(client)
-                          .createSelfSubjectRulesReview(
-                                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
-  private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
-          (client, requestParams) ->
-                  new AuthenticationV1Api(client)
-                          .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
 
   public CallBuilder() {
     this(getCallBuilderTuning(), ClientPool.getInstance());
@@ -458,13 +452,13 @@ public class CallBuilder {
     this(getCallBuilderTuning(), pool);
   }
 
+  /* Pods */
+
   private static CallBuilderTuning getCallBuilderTuning() {
     return Optional.ofNullable(TuningParameters.getInstance())
             .map(TuningParameters::getCallBuilderTuning)
             .orElse(null);
   }
-
-  /* Pods */
 
   static SynchronousCallDispatcher setCallDispatcher(SynchronousCallDispatcher newDispatcher) {
     SynchronousCallDispatcher oldDispatcher = DISPATCHER;
@@ -757,6 +751,8 @@ public class CallBuilder {
             .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
   }
 
+  /* CRD's */
+
   /**
    * Asynchronous step for replacing domain status.
    *
@@ -773,8 +769,6 @@ public class CallBuilder {
             new RequestParams("replaceDomainStatus", namespace, name, body, name),
             replaceDomainStatus);
   }
-
-  /* CRD's */
 
   private Call readCustomResourceDefinitionAsync(
           ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
@@ -1099,14 +1093,14 @@ public class CallBuilder {
             responseStep, new RequestParams("listPod", namespace, null, null, callParams), listPod);
   }
 
+  /* Events */
+
   private Call readPodAsync(
           ApiClient client, String name, String namespace, ApiCallback<V1Pod> callback)
           throws ApiException {
     return new CoreV1Api(client)
             .readNamespacedPodAsync(name, namespace, pretty, callback);
   }
-
-  /* Events */
 
   /**
    * Asynchronous step for reading pod.
@@ -1129,6 +1123,8 @@ public class CallBuilder {
             .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
   }
 
+  /* Persistent Volumes */
+
   /**
    * Asynchronous step for creating pod.
    *
@@ -1143,8 +1139,6 @@ public class CallBuilder {
             new RequestParams("createPod", namespace, null, body, PodHelper.getPodDomainUid(body)),
             createPod);
   }
-
-  /* Persistent Volumes */
 
   private Call deletePodAsync(
           ApiClient client,
@@ -1355,10 +1349,6 @@ public class CallBuilder {
                     watch,
                     callback);
   }
-
-  private final CallFactory<V1JobList> listJob =
-          (requestParams, usage, cont, callback) ->
-                  wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
 
   /**
    * Asynchronous step for listing jobs.

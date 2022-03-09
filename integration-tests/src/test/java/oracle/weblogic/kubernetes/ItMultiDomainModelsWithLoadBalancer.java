@@ -170,9 +170,9 @@ class ItMultiDomainModelsWithLoadBalancer {
   private String curlCmd = null;
 
   private ConditionFactory withStandardRetryPolicy =
-          with().pollDelay(1, SECONDS)
-                  .and().with().pollInterval(5, SECONDS)
-                  .atMost(1, MINUTES).await();
+      with().pollDelay(1, SECONDS)
+          .and().with().pollInterval(5, SECONDS)
+          .atMost(1, MINUTES).await();
 
   /**
    * Install operator and NGINX.
@@ -215,7 +215,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-            miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, miiDomainNegativeNamespace);
+        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, miiDomainNegativeNamespace);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
@@ -234,7 +234,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     appSrcDirList.add(MII_BASIC_APP_NAME);
     appSrcDirList.add(WLDF_OPENSESSION_APP);
     domainInImage = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
-            wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
+        wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
 
     // create domain on pv
     domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
@@ -258,7 +258,7 @@ class ItMultiDomainModelsWithLoadBalancer {
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
-              true, ADMIN_SERVER_PORT);
+          true, ADMIN_SERVER_PORT);
     }
 
   }
@@ -274,8 +274,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName,
-            "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
-                    + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
+        "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
+            + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
   }
 
   /**
@@ -308,18 +308,18 @@ class ItMultiDomainModelsWithLoadBalancer {
       }
 
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-              clusterName, domainUid, domainNamespace, numberOfServers);
+          clusterName, domainUid, domainNamespace, numberOfServers);
       curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-              replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
+          replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
       // then scale cluster back to 2 servers
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-              clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-              numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+          numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
   }
 
@@ -343,20 +343,20 @@ class ItMultiDomainModelsWithLoadBalancer {
     int numberOfServers = 3;
 
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-            clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
+        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-            replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-            false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
 
     // then scale cluster back to 2 servers
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-            clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-            numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-            false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+        numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
   }
 
   /**
@@ -382,25 +382,25 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // scale up the cluster by 1 server
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-            clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
+        clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     String curlCmdForWLDFScript =
-            generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+        generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-            replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
-            true, domainHome, "scaleUp", 1,
-            WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
+        replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
+        true, domainHome, "scaleUp", 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
     // scale down the cluster by 1 server
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-            clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
+        clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
     managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount + 1);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-            replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
-            true, domainHome, "scaleDown", 1,
-            WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
+        replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
+        true, domainHome, "scaleDown", 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
   }
 
   /**
@@ -421,13 +421,13 @@ class ItMultiDomainModelsWithLoadBalancer {
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-                    domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-            "Getting admin server node port failed");
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() ->
-                    adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-            "Access to admin server node port failed");
+            adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
   }
 
@@ -448,9 +448,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     String domainNamespace = domain.getMetadata().getNamespace();
 
     String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
-            + domainUid + "." + domainNamespace + ".adminserver.test"
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
-            + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+        + domainUid + "." + domainNamespace + ".adminserver.test"
+        + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
+        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -477,7 +477,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // create file to kill server process
     File killServerScript = assertDoesNotThrow(() -> createScriptToKillServer(),
-            "Failed to create script to kill server");
+        "Failed to create script to kill server");
     logger.info("File/script created to kill server {0}", killServerScript);
 
     checkPodReady(serverName, domainUid, domainNamespace);
@@ -485,25 +485,25 @@ class ItMultiDomainModelsWithLoadBalancer {
     // copy script to pod
     String destLocation = "/u01/killserver.sh";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace, serverName, "weblogic-server",
-                    killServerScript.toPath(), Paths.get(destLocation)),
-            String.format("Failed to copy file %s to pod %s in namespace %s",
-                    killServerScript, serverName, domainNamespace));
+            killServerScript.toPath(), Paths.get(destLocation)),
+        String.format("Failed to copy file %s to pod %s in namespace %s",
+            killServerScript, serverName, domainNamespace));
     logger.info("File copied to Pod {0} in namespace {1}", serverName, domainNamespace);
 
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
-            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
-                    String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                            serverName, domainNamespace));
+        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                serverName, domainNamespace));
     logger.info("Restart count before liveness probe {0}", beforeRestartCount);
 
     // change file permissions
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
-                    true, "/bin/sh", "-c", "chmod +x " + destLocation),
-            String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
+            true, "/bin/sh", "-c", "chmod +x " + destLocation),
+        String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
     assertTrue(execResult.exitValue() == 0,
-            String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
-                    execResult.stderr(), execResult.stdout()));
+        String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
+            execResult.stderr(), execResult.stdout()));
     logger.info("File permissions changed inside pod");
 
     /* First, kill the managed server process in the container three times to cause the node manager to
@@ -512,11 +512,11 @@ class ItMultiDomainModelsWithLoadBalancer {
      */
     for (int i = 0; i < 3; i++) {
       execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
-                      true, "/bin/sh", "-c", destLocation + " " + serverName),
-              String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
-                      serverName, domainNamespace));
+              true, "/bin/sh", "-c", destLocation + " " + serverName),
+          String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
+              serverName, domainNamespace));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
-              execResult.exitValue(), execResult.stdout(), execResult.stderr());
+          execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
       try {
         Thread.sleep(2 * 1000);
@@ -530,21 +530,21 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
-                    getContainerRestartCount(domainNamespace, null, serverName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                    serverName, domainNamespace));
+            getContainerRestartCount(domainNamespace, null, serverName, null),
+        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            serverName, domainNamespace));
     assertTrue(afterRestartCount - beforeRestartCount == 1,
-            String.format("Liveness probe did not start the container in pod %s in namespace %s",
-                    serverName, domainNamespace));
+        String.format("Liveness probe did not start the container in pod %s in namespace %s",
+            serverName, domainNamespace));
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20))
-            .as("Verify NGINX can access the test web app from all managed servers in the domain")
-            .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-            .isTrue();
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
   }
 
   /**
@@ -567,11 +567,11 @@ class ItMultiDomainModelsWithLoadBalancer {
     String dataFileToCheck = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     assertFalse(assertDoesNotThrow(
-                    () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
-                    String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                            dataFileToCheck, adminServerPodName, domainNamespace)),
-            String.format("%s exists in pod %s in namespace %s, expects not exist",
-                    dataFileToCheck, adminServerPodName, domainNamespace));
+        () -> doesFileExistInPod(domainNamespace, adminServerPodName, dataFileToCheck),
+            String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                dataFileToCheck, adminServerPodName, domainNamespace)),
+        String.format("%s exists in pod %s in namespace %s, expects not exist",
+            dataFileToCheck, adminServerPodName, domainNamespace));
 
     // check in admin server pod, the default admin server data file moved to DATA_HOME_OVERRIDE
     String defaultAdminDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_ADMIN-SERVER000000.DAT";
@@ -613,7 +613,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
-            "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+        "/u01/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
     waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
@@ -622,14 +622,14 @@ class ItMultiDomainModelsWithLoadBalancer {
         String managedServerPodName = domainUid + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i;
         String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
         assertFalse(assertDoesNotThrow(() ->
-                                doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
-                        String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                                customDataFile, managedServerPodName, domainNamespace)),
-                String.format("found file %s in pod %s in namespace %s, expect not exist",
-                        customDataFile, managedServerPodName, domainNamespace));
+                    doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+                String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                    customDataFile, managedServerPodName, domainNamespace)),
+            String.format("found file %s in pod %s in namespace %s, expect not exist",
+                customDataFile, managedServerPodName, domainNamespace));
 
         String defaultMSDataFile = "/u01/domains/" + domainUid + "/servers/cluster-" + j + "-managed-server" + i
-                + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
+            + "/data/store/default/_WLS_CLUSTER-" + j + "-MANAGED-SERVER" + i + "000000.DAT";
         waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
       }
     }
@@ -659,7 +659,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
-            "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+        "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
     waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
@@ -667,14 +667,14 @@ class ItMultiDomainModelsWithLoadBalancer {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
       assertFalse(assertDoesNotThrow(() ->
-                              doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
-                      String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
-                              customDataFile, managedServerPodName, domainNamespace)),
-              String.format("found file %s in pod %s in namespace %s, expect not exist",
-                      customDataFile, managedServerPodName, domainNamespace));
+                  doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
+              String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
+                  customDataFile, managedServerPodName, domainNamespace)),
+          String.format("found file %s in pod %s in namespace %s, expect not exist",
+              customDataFile, managedServerPodName, domainNamespace));
 
       String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
-              + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
+          + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
       waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
   }
@@ -723,64 +723,64 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     //verify domain changed event is logged
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_CHANGED,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_CHANGED, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_CHANGED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_CHANGED, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_PROCESSING_STARTING,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_STARTING,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
 
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_PROCESSING_COMPLETED,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_COMPLETED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
-                miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+            miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
         logger.info("Checking that managed server pod {0} is terminated and restarted once in namespace {1}",
-                managedServerPodName, miiDomainNamespace);
+            managedServerPodName, miiDomainNamespace);
         withStandardRetryPolicy
-                .conditionEvaluationListener(
-                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                                        + "(elapsed time {2}ms, remaining time {3}ms)",
-                                POD_TERMINATED,
-                                managedServerPodName,
-                                condition.getElapsedTimeInMS(),
-                                condition.getRemainingTimeInMS()))
-                .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                        managedServerPodName, POD_TERMINATED, timestamp));
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                        + "(elapsed time {2}ms, remaining time {3}ms)",
+                    POD_TERMINATED,
+                    managedServerPodName,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                managedServerPodName, POD_TERMINATED, timestamp));
         withStandardRetryPolicy
-                .conditionEvaluationListener(
-                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                                        + "(elapsed time {2}ms, remaining time {3}ms)",
-                                POD_STARTED,
-                                managedServerPodName,
-                                condition.getElapsedTimeInMS(),
-                                condition.getRemainingTimeInMS()))
-                .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                        managedServerPodName, POD_STARTED, timestamp));
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                        + "(elapsed time {2}ms, remaining time {3}ms)",
+                    POD_STARTED,
+                    managedServerPodName,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                managedServerPodName, POD_STARTED, timestamp));
       }
     }
   }
@@ -800,14 +800,14 @@ class ItMultiDomainModelsWithLoadBalancer {
   @AfterAll
   public void tearDownAll() {
     if (System.getenv("SKIP_CLEANUP") == null
-            || (System.getenv("SKIP_CLEANUP") != null
-            && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // uninstall NGINX release
       if (nginxHelmParams != null) {
         assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-                .as("Test uninstallNginx returns true")
-                .withFailMessage("uninstallNginx() did not return true")
-                .isTrue();
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
       }
 
       for (Domain domain : domains) {
@@ -817,7 +817,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
         // delete cluster role binding created for WLDF policy
         if (assertDoesNotThrow(
-                () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
+            () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
           assertTrue(deleteClusterRoleBinding(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME));
         }
       }
@@ -825,10 +825,10 @@ class ItMultiDomainModelsWithLoadBalancer {
       // delete cluster role created for WLDF policy
       if (assertDoesNotThrow(() -> clusterRoleExists(WLDF_CLUSTER_ROLE_NAME))) {
         assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
-                "deleteClusterRole failed with ApiException"))
-                .as("Test delete cluster role returns true")
-                .withFailMessage("deleteClusterRole() did not return true")
-                .isTrue();
+            "deleteClusterRole failed with ApiException"))
+            .as("Test delete cluster role returns true")
+            .withFailMessage("deleteClusterRole() did not return true")
+            .isTrue();
       }
     }
   }
@@ -852,86 +852,84 @@ class ItMultiDomainModelsWithLoadBalancer {
     String adminSecretName = "weblogic-credentials";
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-            "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
     for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
       clusterList.add(new Cluster()
-              .clusterName(CLUSTER_NAME_PREFIX + i)
-              .replicas(replicaCount)
-              .serverStartState("RUNNING"));
+          .clusterName(CLUSTER_NAME_PREFIX + i)
+          .replicas(replicaCount)
+          .serverStartState("RUNNING"));
     }
 
     // create the domain CR
     Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(miiDomainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(miiDomainUid)
-                    .domainHome("/u01/domains/" + miiDomainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(miiImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(OCIR_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domainNamespace))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true "
-                                            + "-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminChannelPortForwardingEnabled(true)
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default-secure")
-                                            .nodePort(getNextFreePort()))
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .clusters(clusterList)
-                    .configuration(new Configuration()
-                            .introspectorJobActiveDeadlineSeconds(300L)
-                            .model(new Model()
-                                    .domainType(WLS_DOMAIN_TYPE)
-                                    .runtimeEncryptionSecret(encryptionSecretName))));
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(miiDomainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(miiDomainUid)
+            .domainHome("/u01/domains/" + miiDomainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(OCIR_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true "
+                        + "-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(true)
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(getNextFreePort()))
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .clusters(clusterList)
+            .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-            miiDomainUid, domainNamespace, miiImage);
+        miiDomainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
     // check that admin server pod is ready and service exists in domain namespace
     logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, miiDomainUid, domainNamespace);
 
     // check the readiness for the managed servers in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
-                miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+            miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
         // check managed server pod is ready and service exists in the namespace
         logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
-                managedServerPodName, domainNamespace);
+            managedServerPodName, domainNamespace);
         checkPodReadyAndServiceExists(managedServerPodName, miiDomainUid, domainNamespace);
       }
     }
@@ -951,7 +949,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     Domain domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
-            replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
+        replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
 
     // build application sample-app and opensessionapp
     List<String> appSrcDirList = new ArrayList<>();
@@ -960,14 +958,14 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     for (String appName : appSrcDirList) {
       assertTrue(buildAppArchive(defaultAppParams()
-                      .srcDirList(Collections.singletonList(appName))
-                      .appName(appName)),
-              String.format("Failed to create app archive for %s", appName));
+              .srcDirList(Collections.singletonList(appName))
+              .appName(appName)),
+          String.format("Failed to create app archive for %s", appName));
 
       logger.info("Getting port for default channel");
       int defaultChannelPort = assertDoesNotThrow(()
-                      -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-              "Getting admin server default port failed");
+              -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+          "Getting admin server default port failed");
       logger.info("default channel port: {0}", defaultChannelPort);
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
@@ -975,8 +973,8 @@ class ItMultiDomainModelsWithLoadBalancer {
       Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
       deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
-              domainNamespace);
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
+          domainNamespace);
     }
 
     return domain;
@@ -994,8 +992,8 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
                                         String appContextRoot) {
     return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
-            domainUid + "." + domainNamespace + "." + clusterName + ".test",
-            K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+        domainUid + "." + domainNamespace + "." + clusterName + ".test",
+        K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
   }
 
   /**
@@ -1095,12 +1093,12 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     logger.info("Wait for file {0} existing in pod {1} in namespace {2}", fileName, podName, namespace);
     testUntil(
-            assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName)),
-            logger,
-            "file {0} exists in pod {1} in namespace {2}",
-            fileName,
-            podName,
-            namespace);
+        assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName)),
+        logger,
+        "file {0} exists in pod {1} in namespace {2}",
+        fileName,
+        podName,
+        namespace);
   }
 
   /**
@@ -1125,46 +1123,46 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // create the domain CR without encryption secret created
     Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHome("/u01/domains/" + domainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(miiImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(OCIR_SECRET_NAME))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domainNamespace))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                    .domainType(WLS_DOMAIN_TYPE)
-                                    .runtimeEncryptionSecret(encryptionSecretName))));
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/u01/domains/" + domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(OCIR_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
 
     setPodAntiAffinity(domain);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-            domainUid, domainNamespace, miiImage);
+        domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
   }
 
@@ -1180,8 +1178,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     appSrcDirList.add(MII_BASIC_APP_NAME);
     appSrcDirList.add(WLDF_OPENSESSION_APP);
     miiImage =
-            createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
-                    appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
+        createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
+            appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);

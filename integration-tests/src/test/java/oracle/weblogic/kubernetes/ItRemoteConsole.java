@@ -81,9 +81,9 @@ class ItRemoteConsole {
   private static final int ADMIN_SERVER_PORT = 7001;
 
   private static ConditionFactory withStandardRetryPolicy =
-          with().pollDelay(2, SECONDS)
-                  .and().with().pollInterval(10, SECONDS)
-                  .atMost(5, MINUTES).await();
+      with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -125,12 +125,12 @@ class ItRemoteConsole {
 
     // create a basic model in image domain
     createMiiDomainAndVerify(
-            domainNamespace,
-            domainUid,
-            MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-            adminServerPodName,
-            managedServerPrefix,
-            replicaCount);
+        domainNamespace,
+        domainUid,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        adminServerPodName,
+        managedServerPrefix,
+        replicaCount);
 
     // create ingress rules with path routing for Traefik, and NGINX
     createTraefikIngressRoutingRules(domainNamespace);
@@ -152,7 +152,7 @@ class ItRemoteConsole {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
     assertTrue(traefikNodePort != -1,
-            "Could not get the default external service node port");
+        "Could not get the default external service node port");
     logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
     verifyRemoteConsoleConnectionThroughLB(traefikNodePort);
@@ -180,8 +180,8 @@ class ItRemoteConsole {
   @AfterAll
   public void tearDownAll() {
     if (System.getenv("SKIP_CLEANUP") == null
-            || (System.getenv("SKIP_CLEANUP") != null
-            && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false")))  {
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false")))  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
     }
   }
@@ -194,8 +194,8 @@ class ItRemoteConsole {
       Files.deleteIfExists(dstFile);
       Files.createDirectories(dstFile.getParent());
       Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
-              .replaceAll("@domain1uid@", domainUid)
-              .getBytes(StandardCharsets.UTF_8));
+          .replaceAll("@domain1uid@", domainUid)
+          .getBytes(StandardCharsets.UTF_8));
     });
     String command = "kubectl create -f " + dstFile;
     logger.info("Running {0}", command);
@@ -204,7 +204,7 @@ class ItRemoteConsole {
       result = ExecCommand.exec(command, true);
       String response = result.stdout().trim();
       logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-              result.exitValue(), response, result.stderr());
+          result.exitValue(), response, result.stderr());
       assertEquals(0, result.exitValue(), "Command didn't succeed");
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());
@@ -223,20 +223,20 @@ class ItRemoteConsole {
     List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
-            .path("/")
-            .pathType("Prefix")
-            .backend(new V1IngressBackend()
-                    .service(new V1IngressServiceBackend()
-                            .name(domainUid + "-admin-server")
-                            .port(new V1ServiceBackendPort()
-                                    .number(ADMIN_SERVER_PORT)))
-            );
+        .path("/")
+        .pathType("Prefix")
+        .backend(new V1IngressBackend()
+                .service(new V1IngressServiceBackend()
+                    .name(domainUid + "-admin-server")
+                    .port(new V1ServiceBackendPort()
+                        .number(ADMIN_SERVER_PORT)))
+        );
     httpIngressPaths.add(httpIngressPath);
 
     V1IngressRule ingressRule = new V1IngressRule()
-            .host("")
-            .http(new V1HTTPIngressRuleValue()
-                    .paths(httpIngressPaths));
+        .host("")
+        .http(new V1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
 
@@ -244,18 +244,18 @@ class ItRemoteConsole {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
-            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
-            .contains(ingressName);
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
+        .contains(ingressName);
 
     logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
-            "Getting Nginx loadbalancer service node port failed");
+        "Getting Nginx loadbalancer service node port failed");
     String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + nginxNodePort
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -263,9 +263,9 @@ class ItRemoteConsole {
 
   private static void verifyWlsRemoteConsoleConnection() {
     int nodePort = getServiceNodePort(
-            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
-            "Could not get the default external service node port");
+        "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
@@ -274,14 +274,14 @@ class ItRemoteConsole {
     //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
     //--write-out %{http_code} -o /dev/null
     String curlCmd = "curl -v --show-error --noproxy '*' --user "
-            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-            + " http://localhost:8012/api/providers/AdminServerConnection -H "
-            + "\"" + "Content-Type:application/json" + "\""
-            + " --data "
-            + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
-            + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-            + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\"}" + "\""
-            + " --write-out %{http_code} -o /dev/null";
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\"}" + "\""
+        + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
@@ -296,16 +296,16 @@ class ItRemoteConsole {
     //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
     //--write-out %{http_code} -o /dev/null
     String curlCmd = "curl -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-            + " http://localhost:8012/api/providers/AdminServerConnection -H "
-            + "\"" + "Content-Type:application/json" + "\""
-            + " --data "
-            + "\"{ \\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
-            + "\\" + "\"" + "domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-            + K8S_NODEPORT_HOST + ":" + nodePortOfLB + "\\" + "\" }" + "\""
-            + "  --write-out %{http_code} -o /dev/null";
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{ \\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"" + "domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePortOfLB + "\\" + "\" }" + "\""
+        + "  --write-out %{http_code} -o /dev/null";
     logger.info("Executing LB nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10),
-            "Calling web app failed");
+        "Calling web app failed");
   }
 
 }

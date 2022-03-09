@@ -38,9 +38,9 @@ public class LoggingExporterUtils {
   public static boolean uninstallAndVerifyElasticsearch(LoggingExporterParams params) {
     // uninstall Elasticsearch
     assertThat(uninstallElasticsearch(params))
-            .as("Elasticsearch uninstallation succeeds")
-            .withFailMessage("Elasticsearch uninstallation is failed")
-            .isTrue();
+        .as("Elasticsearch uninstallation succeeds")
+        .withFailMessage("Elasticsearch uninstallation is failed")
+        .isTrue();
 
     return true;
   }
@@ -55,9 +55,9 @@ public class LoggingExporterUtils {
   public static boolean uninstallAndVerifyKibana(LoggingExporterParams params) {
     // uninstall Kibana
     assertThat(uninstallKibana(params))
-            .as("Elasticsearch uninstallation succeeds")
-            .withFailMessage("Elasticsearch uninstallation is failed")
-            .isTrue();
+        .as("Elasticsearch uninstallation succeeds")
+        .withFailMessage("Elasticsearch uninstallation is failed")
+        .isTrue();
 
     return true;
   }
@@ -74,26 +74,26 @@ public class LoggingExporterUtils {
 
     // parameters to install Elasticsearch
     LoggingExporterParams elasticsearchParams = new LoggingExporterParams()
-            .elasticsearchName(ELASTICSEARCH_NAME)
-            .elasticsearchImage(ELASTICSEARCH_IMAGE)
-            .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
-            .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-            .loggingExporterNamespace(namespace);
+        .elasticsearchName(ELASTICSEARCH_NAME)
+        .elasticsearchImage(ELASTICSEARCH_IMAGE)
+        .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+        .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+        .loggingExporterNamespace(namespace);
     logger.info("ES namespace:{0}}", elasticsearchParams.getLoggingExporterNamespace());
 
     // install Elasticsearch
     assertThat(installElasticsearch(elasticsearchParams))
-            .as("Elasticsearch installation succeeds")
-            .withFailMessage("Elasticsearch installation is failed")
-            .isTrue();
+        .as("Elasticsearch installation succeeds")
+        .withFailMessage("Elasticsearch installation is failed")
+        .isTrue();
 
     // wait until the Elasticsearch pod is ready.
     testUntil(
-            assertDoesNotThrow(() -> isElkStackPodReady(namespace, elasticsearchPodNamePrefix),
-                    "isElkStackPodReady failed with ApiException"),
-            logger,
-            "Elasticsearch to be ready in namespace {0}",
-            namespace);
+        assertDoesNotThrow(() -> isElkStackPodReady(namespace, elasticsearchPodNamePrefix),
+            "isElkStackPodReady failed with ApiException"),
+        logger,
+        "Elasticsearch to be ready in namespace {0}",
+        namespace);
 
     return elasticsearchParams;
   }
@@ -109,25 +109,25 @@ public class LoggingExporterUtils {
 
     // parameters to install Kibana
     LoggingExporterParams kibanaParams = new LoggingExporterParams()
-            .kibanaName(KIBANA_NAME)
-            .kibanaImage(KIBANA_IMAGE)
-            .kibanaType(KIBANA_TYPE)
-            .loggingExporterNamespace(namespace)
-            .kibanaContainerPort(KIBANA_PORT);
+        .kibanaName(KIBANA_NAME)
+        .kibanaImage(KIBANA_IMAGE)
+        .kibanaType(KIBANA_TYPE)
+        .loggingExporterNamespace(namespace)
+        .kibanaContainerPort(KIBANA_PORT);
 
     // install Kibana
     assertThat(installKibana(kibanaParams))
-            .as("Kibana installation succeeds")
-            .withFailMessage("Kibana installation is failed")
-            .isTrue();
+        .as("Kibana installation succeeds")
+        .withFailMessage("Kibana installation is failed")
+        .isTrue();
 
     // wait until the Kibana pod is ready.
     testUntil(
-            assertDoesNotThrow(() -> isElkStackPodReady(namespace, kibanaPodNamePrefix),
-                    "isElkStackPodReady failed with ApiException"),
-            logger,
-            "Kibana to be ready in namespace {0}",
-            namespace);
+        assertDoesNotThrow(() -> isElkStackPodReady(namespace, kibanaPodNamePrefix),
+            "isElkStackPodReady failed with ApiException"),
+        logger,
+        "Kibana to be ready in namespace {0}",
+        namespace);
 
     return kibanaParams;
   }
@@ -144,10 +144,10 @@ public class LoggingExporterUtils {
                                                            String wlsLoggingExporterYamlFileLoc, String namespace) {
     // Install WebLogic Logging Exporter
     assertThat(TestActions.installWlsLoggingExporter(filter,
-            wlsLoggingExporterYamlFileLoc, namespace))
-            .as("WebLogic Logging Exporter installation succeeds")
-            .withFailMessage("WebLogic Logging Exporter installation failed")
-            .isTrue();
+        wlsLoggingExporterYamlFileLoc, namespace))
+        .as("WebLogic Logging Exporter installation succeeds")
+        .withFailMessage("WebLogic Logging Exporter installation failed")
+        .isTrue();
 
     return true;
   }

@@ -25,23 +25,23 @@ public class Helm {
 
     // assertions for required parameters
     assertThat(namespace)
-            .as("make sure namespace is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     assertThat(helmParams.getReleaseName())
-            .as("make sure releaseName is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure releaseName is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     assertThat(helmParams.getRepoUrl() != null && helmParams.getChartName() == null)
-            .as("make sure chart name is not empty or null when repo url is provided")
-            .isFalse();
+        .as("make sure chart name is not empty or null when repo url is provided")
+        .isFalse();
 
     assertThat(helmParams.getRepoUrl() == null && helmParams.getChartDir() == null)
-            .as("make sure repo url, chart name and chart dir are not empty or null. "
-                    + "repo url, chart name or chart dir must be provided")
-            .isFalse();
+        .as("make sure repo url, chart name and chart dir are not empty or null. "
+            + "repo url, chart name or chart dir must be provided")
+        .isFalse();
 
     //chart reference to be used in Helm install
     String chartRef = helmParams.getChartDir();
@@ -61,7 +61,7 @@ public class Helm {
 
     // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
-            helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
+        helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
 
     // if we have chart values file
     String chartValuesFile = helmParams.getChartValuesFile();
@@ -94,19 +94,19 @@ public class Helm {
 
     // assertions for required parameters
     assertThat(namespace)
-            .as("make sure namespace is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     assertThat(params.getReleaseName())
-            .as("make sure releaseName is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure releaseName is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     assertThat(params.getChartDir())
-            .as("make sure chart dir is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure chart dir is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     // chart reference to be used in Helm upgrade
     String chartDir = params.getChartDir();
@@ -115,7 +115,7 @@ public class Helm {
 
     // build Helm upgrade command
     String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s --reuse-values",
-            params.getReleaseName(), chartDir, params.getNamespace());
+        params.getReleaseName(), chartDir, params.getNamespace());
 
     // add override chart values
     upgradeCmd = upgradeCmd + valuesToString(chartValues);
@@ -132,19 +132,19 @@ public class Helm {
   public static boolean uninstall(HelmParams params) {
     // assertions for required parameters
     assertThat(params.getNamespace())
-            .as("make sure namespace is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     assertThat(params.getReleaseName())
-            .as("make sure releaseName is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure releaseName is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     getLogger().fine("Uninstalling release {0} in namespace {1}", params.getReleaseName(), params.getNamespace());
 
     String uninstallCmd = String.format("helm uninstall %1s -n %2s", params.getReleaseName(),
-            params.getNamespace());
+        params.getNamespace());
     return exec(uninstallCmd);
   }
 
@@ -156,9 +156,9 @@ public class Helm {
   public static boolean list(HelmParams params) {
     // assertions for required parameters
     assertThat(params.getNamespace())
-            .as("make sure namespace is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
     return exec(String.format("helm list -n %s", params.getNamespace()));
   }
@@ -188,14 +188,14 @@ public class Helm {
         int index = 0;
         for (Map.Entry<String,Object> itemEntry : item.entrySet()) {
           valuesString.append(" --set \"" + entry.getKey() + "[" + index + "]."
-                  + itemEntry.getKey() + "=" + itemEntry.getValue() + "\"");
+              + itemEntry.getKey() + "=" + itemEntry.getValue() + "\"");
           ++index;
         }
       } else {
         valuesString.append(String.format(" --set \"%s=%s\"",
-                entry.getKey(), entry.getValue().toString()
-                        .replaceAll("\\[", "{")
-                        .replaceAll("\\]", "}").replace(" ","")));
+            entry.getKey(), entry.getValue().toString()
+                .replaceAll("\\[", "{")
+                .replaceAll("\\]", "}").replace(" ","")));
       }
     }
     return valuesString.toString();
@@ -211,8 +211,8 @@ public class Helm {
     try {
       ExecResult result = ExecCommand.exec(command, true);
       getLogger().info("The command returned exit value: "
-              + result.exitValue() + " command output: "
-              + result.stderr() + "\n" + result.stdout());
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
       if (result.exitValue() != 0) {
         getLogger().info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
         return false;
