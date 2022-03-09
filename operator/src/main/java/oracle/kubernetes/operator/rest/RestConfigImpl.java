@@ -23,10 +23,22 @@ public class RestConfigImpl implements RestConfig {
   private final Certificates certificates;
   private final RestServerType restServerType;
 
+  /**
+   * Constructs a RestConfigImpl.
+   * @param restServerType is the type of rest server to use when constructing the RestConfigImpl. The type can be
+   *     either Operator or the conversion webhook.
+   */
   public RestConfigImpl(RestServerType restServerType) {
     this(null, null, null, restServerType);
   }
 
+  /**
+   * Constructs a RestConfigImpl.
+   *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
+   *     Kubernetes REST API.
+   * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
+   * @param certificates Certificates
+   */
   public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates) {
     this(principal, domainNamespaces, certificates, Operator);
   }
@@ -37,6 +49,8 @@ public class RestConfigImpl implements RestConfig {
    *     Kubernetes REST API.
    * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
    * @param certificates Certificates
+   * @param restServerType is the type of rest server to use when constructing the RestConfigImpl. The type can be
+   *     either Operator or the conversion webhook.
    */
   public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates,
                         RestServerType restServerType) {
