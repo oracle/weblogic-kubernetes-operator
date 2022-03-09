@@ -190,7 +190,7 @@ public class WebhookRestServer {
   }
 
   /**
-   * Stops WebLogic webhook's REST api.
+   * Stops webhook's REST api.
    *
    * <p>Since it only stops ports that are running, it is safe to call this even if start threw an
    * exception or didn't start any ports because none were configured.

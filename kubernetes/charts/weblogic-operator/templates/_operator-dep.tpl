@@ -255,7 +255,7 @@ spec:
               value: {{ .javaLoggingFileCount | default 10 | quote }}
             {{- if .remoteDebugNodePortEnabled }}
             - name: "REMOTE_DEBUG_PORT"
-              value: {{ .internalWebhookDebugHttpPort | quote }}
+              value: {{ .webhookDebugHttpPort | quote }}
             - name: "DEBUG_SUSPEND"
               {{- if .suspendOnDebugStartup }}
               value: "y"
