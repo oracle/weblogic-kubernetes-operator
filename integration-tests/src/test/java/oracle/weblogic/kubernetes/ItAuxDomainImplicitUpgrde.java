@@ -142,6 +142,8 @@ class ItAuxDomainImplicitUpgrde {
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
     createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage, archiveList, modelList);
 
+    // Generate a v8 version of domain.yaml file from a template file 
+    // replacing domain namespace, domain uid, base image and aux image
     String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);

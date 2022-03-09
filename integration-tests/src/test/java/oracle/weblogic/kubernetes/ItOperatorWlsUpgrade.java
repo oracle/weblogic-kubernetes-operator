@@ -217,6 +217,7 @@ class ItOperatorWlsUpgrade {
     installOldOperator("3.3.8");
     createSecrets();
    
+    // Creating an aux image domain with v8 version
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
     List<String> modelList = new ArrayList<>();
@@ -225,6 +226,8 @@ class ItOperatorWlsUpgrade {
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
     createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage, archiveList, modelList);
 
+    // Generate a v8 version of domain.yaml file from a template file 
+    // by replacing domain namespace, domain uid, base image and aux image
     String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -302,7 +305,7 @@ class ItOperatorWlsUpgrade {
                  opNamespace, domainNamespace);
   }
 
-  // After upgrdae scale up/down the cluster
+  // After upgrade scale up/down the cluster
   private void reManageCluster() {
     String opServiceAccount = opNamespace + "-sa";
     int externalRestHttpsPort = getServiceNodePort(
