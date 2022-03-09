@@ -41,7 +41,6 @@ a Helm "release" name for the operator,
 the Helm chart location,
 the operator namespace and service account,
 the platform (if required),
-the operator image name,
 and name space selection settings.
 
 A typical Helm release name is `weblogic-operator`.
@@ -75,10 +74,9 @@ For example, using Helm 3.x, with the following settings:
 
 |Setting|Value and Notes|
 |-|-|
-|Helm release|`sample-weblogic-operator` (you may choose any name)|
-|Helm chart|`kubernetes/charts/weblogic-operator` in local operator source downloaded to `/tmp/weblogic-kubernetes-operator`|
+|Helm release name|`sample-weblogic-operator` (you may choose any name)|
+|Helm chart repo location|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
 |`namespace`|`sample-weblogic-operator-ns`|
-|`image`|`ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`|
 |`serviceAccount`|`sample-weblogic-operator-sa`|
 |`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
 |`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
@@ -91,13 +89,24 @@ $ kubectl create namespace sample-weblogic-operator-ns
 ```text
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-
+Access the operator Helm chart using this format: `helm repo add <helm-repo-name> <helm-repo-url>`
 ```text
-$ cd /tmp/weblogic-kubernetes-operator
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
+```
+- To list the versions of the operator that you can install from the Helm chart repository:
+
+  ```text
+  $ helm search repo weblogic-operator/weblogic-operator --versions
+  ```
+
+- For a specified version of the Helm chart, use the `--version <value>` option with `helm install`
+  to choose the version that you want, with the `latest` value being the default.
+
+Install the operator using this format: `helm install <helm-release-name> <helm-repo-name>/weblogic-operator ...`
+```text
 $ helm install sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator \
+  weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
@@ -109,7 +118,6 @@ Or, instead of using the previous `helm install` command,
 create a YAML file named `custom-values.yaml` with the following contents:
 
 ```
-image: "ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}"
 serviceAcount: "sample-weblogic-operator-sa"
 enableClusterRoleBinding: true
 domainNamespaceSelectionStrategy: LabelSelector
@@ -119,7 +127,8 @@ domainNamespaceLabelSelector: "weblogic-operator=enabled"
 and call:
 
 ```text
-$ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+$ helm install sample-weblogic-operator \
+  weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --values custom-values.yaml \
   --wait
@@ -141,9 +150,6 @@ see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting.m
   See [Determine the platform setting]({{<relref "/userguide/managing-operators/preparation#determine-the-platform-setting">}}).
 - For more information on specifying the registry credentials when the operator image is stored in a private registry, see
   See [Customizing operator image name, pull secret, and private registry]({{<relref "/userguide/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
-- For information about referencing a operator Helm chart in a remote Helm repository instead
-  of referencing a locally downloaded version in your local file system,
-  see [Set up the operator Helm chart access]({{<relref "/userguide/managing-operators/preparation#set-up-the-operator-helm-chart-access">}}).
 - Do not include a backslash (`\`) before the equals sign (`=`) in a domain namespace label selector
   when specifying the selector in YAML.
   A backslash (`\`) is only required when specifying the selector on the command line using `--set`,
@@ -171,29 +177,7 @@ Example updates:
 
 ### Upgrade the operator
 
-You can upgrade a 2.6 or 3.x operator while the operator's domain resources are deployed and running.
-
-#### Upgrading a 2.6 operator to a 3.x operator
-
-{{% notice note %}}
-Because operator 3.0.0 introduces _non-backward compatible_ changes, you cannot use `helm upgrade` to upgrade
-a 2.6.0 operator to a 3.x operator. Instead, you must delete the 2.6.0 operator and then install the
-3.x operator.
-{{% /notice %}}
-
-The deletion of the 2.6.0 operator will _not affect_ the Domain CustomResourceDefinition (CRD) and will _not stop_ any
-WebLogic Server instances already running.
-
-When the 3.x operator is installed, it will automatically roll any running WebLogic Server instances created by the 2.6.0 operator.
-This rolling restart will preserve WebLogic cluster availability guarantees (for clustered members only) similarly to any other rolling restart.
-
-To delete the 2.6.0 operator:
-
-```text
-$ helm delete weblogic-operator -n weblogic-operator-namespace
-```
-
-Then install the 3.x operator using the [install the operator](#install-the-operator) instructions.
+You can upgrade a 3.x operator while the operator's domain resources are deployed and running.
 
 #### Upgrading a 3.x operator
 
@@ -209,8 +193,8 @@ When upgrading the operator:
 For example:
 
 ```text
-$ cd /tmp/weblogic-kubernetes-operator
-$ helm upgrade \
+$ helm upgrade sample-weblogic-operator \
+  weblogic-operator/weblogic-operator \
   --reuse-values \
   --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
   --namespace sample-weblogic-operator-ns \
