@@ -20,12 +20,21 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
@@ -37,6 +46,8 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
  */
 @Description("The current status of the operation of the WebLogic domain. Updated automatically by the operator.")
 public class DomainStatus {
+
+  public static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   @Description("Current service state of the domain.")
   @Valid
@@ -576,5 +587,69 @@ public class DomainStatus {
   public DomainStatus upgrade() {
     Optional.ofNullable(conditions).ifPresent(x -> x.removeIf(cond -> cond.hasType(Progressing)));
     return this;
+  }
+
+  public String createDomainStatusMessage(String jobUid, String message) {
+    return LOGGER.formatMessage(getMessageKey(jobUid, message),
+          message, getIntrospectJobFailureCount(), getFailureRetryMaxCount());
+  }
+
+  @NotNull
+  private String getMessageKey(String jobUid, String message) {
+    return getFailureLevel(jobUid, message).getMessageKey();
+  }
+
+  @NotNull
+  private FailureLevel getFailureLevel(String jobUid, String message) {
+    if (jobUid == null) {
+      return FailureLevel.NON_INTROSPECTION;
+    } else if (hasReachedMaximumFailureCount()) {
+      return FailureLevel.RETRIES_EXCEEDED;
+    } else if (isFatalError(message)) {
+      return FailureLevel.FATAL;
+    } else {
+      return FailureLevel.WILL_RETRY;
+    }
+  }
+
+  private boolean isFatalError(String message) {
+    return Optional.ofNullable(message).map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
+  }
+
+  /**
+   * Returns true if the failure count in the status is equal to or greater than the configured maximum.
+   */
+  public boolean hasReachedMaximumFailureCount() {
+    return getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
+  }
+
+  private enum FailureLevel {
+    NON_INTROSPECTION,
+    FATAL {
+      @NotNull
+      @Override
+      String getMessageKey() {
+        return DOMAIN_FATAL_ERROR;
+      }
+    },
+    WILL_RETRY {
+      @NotNull
+      @Override
+      String getMessageKey() {
+        return NON_FATAL_INTROSPECTOR_ERROR;
+      }
+    },
+    RETRIES_EXCEEDED {
+      @NotNull
+      @Override
+      String getMessageKey() {
+        return INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+      }
+    };
+
+    @NotNull
+    String getMessageKey() {
+      return NO_FORMATTING;
+    }
   }
 }

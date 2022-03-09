@@ -14,6 +14,7 @@ public class MessageKeys {
   public static final String ENABLED_FEATURES = "WLSKO-0003";
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
+  public static final String NO_FORMATTING = "WLSKO-0007";
   public static final String CREATING_CRD = "WLSKO-0012";
   public static final String SECRET_NOT_FOUND = "WLSKO-0018";
   public static final String RETRIEVING_SECRET = "WLSKO-0019";
