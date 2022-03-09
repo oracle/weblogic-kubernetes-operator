@@ -1927,7 +1927,7 @@ class ItMonitoringExporter {
             "Page does not contain expected WebAppComponentRuntime configuration");
     // check previous config is there
     assertTrue(page.asNormalizedText().contains("JVMRuntime"),
-            "Page does not contain expected JVMRuntime configuration");
+        "Page does not contain expected JVMRuntime configuration");
 
     String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";

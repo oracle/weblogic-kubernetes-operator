@@ -106,7 +106,7 @@ class ItWlsSamples {
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
-          = with().pollDelay(2, SECONDS)
+      = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(10, MINUTES).await();
 
@@ -222,10 +222,10 @@ class ItWlsSamples {
     String secretName = domainName + "-weblogic-credentials";
     if (!secretExists(secretName, domainNamespace)) {
       createSecretWithUsernamePassword(
-              secretName,
-              domainNamespace,
-              ADMIN_USERNAME_DEFAULT,
-              ADMIN_PASSWORD_DEFAULT);
+          secretName,
+          domainNamespace,
+          ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
     createPvPvc(domainName);
@@ -433,11 +433,11 @@ class ItWlsSamples {
   private void copyModelFileForUpdateDomain(Path sampleBase) {
     assertDoesNotThrow(() -> {
       copyFile(Paths.get(MODEL_DIR, UPDATE_MODEL_FILE).toFile(),
-              Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile());
+          Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile());
       // create a properties file that is needed with this model file
       List<String> lines = Arrays.asList("clusterName2=cluster-2", "managedServerNameBaseC2=c2-managed-server");
       Files.write(Paths.get(sampleBase.toString(), UPDATE_MODEL_PROPERTIES), lines, StandardCharsets.UTF_8,
-              StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+          StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     });
   }
 
@@ -448,7 +448,7 @@ class ItWlsSamples {
     String pvcName = domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
-            "scripts/create-weblogic-domain-pv-pvc");
+        "scripts/create-weblogic-domain-pv-pvc");
 
     // create pv and pvc
     assertDoesNotThrow(() -> {
@@ -462,24 +462,24 @@ class ItWlsSamples {
 
       // set the pvHostPath in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-              "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+          "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-              "namespace: default", "namespace: " + domainNamespace);
+          "namespace: default", "namespace: " + domainNamespace);
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-              "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
+          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-              "domainUID:", "domainUID: " + domainName);
+          "domainUID:", "domainUID: " + domainName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
-            + Paths.get(pvpvcBase.toString(), "create-pv-pvc.sh").toString()
-            + " -i " + Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString()
-            + " -o "
-            + Paths.get(pvpvcBase.toString()));
+        + Paths.get(pvpvcBase.toString(), "create-pv-pvc.sh").toString()
+        + " -i " + Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString()
+        + " -o "
+        + Paths.get(pvpvcBase.toString()));
 
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create create-pv-pvc-inputs.yaml");
@@ -487,38 +487,38 @@ class ItWlsSamples {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-            "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pv {0} to be ready, "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            pvName,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> pvExists(pvName, null),
-                    String.format("pvExists failed with ApiException for pv %s",
-                            pvName)));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pv {0} to be ready, "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                pvName,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvExists(pvName, null),
+            String.format("pvExists failed with ApiException for pv %s",
+                pvName)));
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-            "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                            pvcName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
-                    String.format("pvcExists failed with ApiException for pvc %s",
-                            pvcName)));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                pvcName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+            String.format("pvcExists failed with ApiException for pvc %s",
+                pvcName)));
 
   }
 
@@ -535,7 +535,7 @@ class ItWlsSamples {
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
       if (KIND_REPO == null) {
         replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+            "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
       }
     });
   }
@@ -581,8 +581,8 @@ class ItWlsSamples {
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
             .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                        + "(elapsed time {2}ms, remaining time {3}ms)",
                             domainName,
                             domainNamespace,
                             condition.getElapsedTimeInMS(),
@@ -612,16 +612,16 @@ class ItWlsSamples {
     //First copy the update model file to wdt dir and rename it wdt-model_dynamic.yaml
     assertDoesNotThrow(() -> {
       copyFile(Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile(),
-              Paths.get(sampleBase.toString(), "wdt/wdt_model_dynamic.yaml").toFile());
+          Paths.get(sampleBase.toString(), "wdt/wdt_model_dynamic.yaml").toFile());
     });
     // run update-domain.sh to create domain.yaml file
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
-            + Paths.get(sampleBase.toString(), "update-domain.sh").toString()
-            + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
-            + "," + Paths.get(sampleBase.toString(), UPDATE_MODEL_PROPERTIES).toString()
-            + " -o "
-            + Paths.get(sampleBase.toString()));
+        + Paths.get(sampleBase.toString(), "update-domain.sh").toString()
+        + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
+        + "," + Paths.get(sampleBase.toString(), UPDATE_MODEL_PROPERTIES).toString()
+        + " -o "
+        + Paths.get(sampleBase.toString()));
 
     logger.info("Run update-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
@@ -635,9 +635,9 @@ class ItWlsSamples {
       logger.info("Run kubectl to create the domain");
       params = new CommandParams().defaults();
       params.command("kubectl apply -f "
-              + Paths.get(sampleBase.toString(), "weblogic-domains/"
-              + domainName
-              + "/domain.yaml").toString());
+          + Paths.get(sampleBase.toString(), "weblogic-domains/"
+          + domainName
+          + "/domain.yaml").toString());
 
       result = Command.withParams(params).execute();
       assertTrue(result, "Failed to create domain custom resource");
@@ -675,8 +675,8 @@ class ItWlsSamples {
 
     withStandardRetryPolicy
             .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
+                        + "(elapsed time {2}ms, remaining time {3}ms)",
                             domainName,
                             domainNamespace,
                             condition.getElapsedTimeInMS(),
@@ -688,9 +688,9 @@ class ItWlsSamples {
     // run setupLoadBalancer.sh to install/uninstall ingress controller
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
-            + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
-            + " -t " + ingressType
-            + additionalOptions);
+        + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
+        + " -t " + ingressType
+        + additionalOptions);
     logger.info("Run setupLoadBalancer.sh to manage {0} ingress controller", ingressType);
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to manage ingress controller");

@@ -106,13 +106,13 @@ public class Nginx {
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
-              .path(null)
-              .backend(new V1IngressBackend()
-                      .service(new V1IngressServiceBackend()
-                              .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-                              .port(new V1ServiceBackendPort()
-                                      .number(managedServerPort)))
-              );
+          .path(null)
+          .backend(new V1IngressBackend()
+                  .service(new V1IngressServiceBackend()
+                      .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                      .port(new V1ServiceBackendPort()
+                          .number(managedServerPort)))
+          );
       ArrayList<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
@@ -123,9 +123,9 @@ public class Nginx {
         ingressHostList.add("*");
       }
       V1IngressRule ingressRule = new V1IngressRule()
-              .host(ingressHost)
-              .http(new V1HTTPIngressRuleValue()
-                      .paths(httpIngressPaths));
+          .host(ingressHost)
+          .http(new V1HTTPIngressRuleValue()
+              .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
       ingressHostList.add(ingressHost);
@@ -134,14 +134,14 @@ public class Nginx {
 
     // set the ingress
     V1Ingress ingress = new V1Ingress()
-            .apiVersion(INGRESS_API_VERSION)
-            .kind(INGRESS_KIND)
-            .metadata(new V1ObjectMeta()
-                    .name(ingressName)
-                    .namespace(domainNamespace))
-            .spec(new V1IngressSpec()
-                    .rules(ingressRules)
-                    .ingressClassName(ingressClassName));
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(domainNamespace))
+        .spec(new V1IngressSpec()
+            .rules(ingressRules)
+            .ingressClassName(ingressClassName));
 
     // create the ingress
     try {

@@ -77,7 +77,7 @@ public class KubernetesArtifactUtils {
   public static final String API_VERSION_BATCH_V1 = "batch/v1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
   public static final String API_VERSION_WEBLOGIC_ORACLE =
-          KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
+      KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
   public static final String API_VERSION_V1 = "v1";
 
   public static final String KIND_API_SERVICE = "APIService";

@@ -81,17 +81,17 @@ public class CleanupUtil {
       for (var namespace : namespaces) {
         logger.info("Check for artifacts in namespace {0}", namespace);
         testUntil(
-                nothingFoundInNamespace(namespace),
-                logger,
-                "artifacts to be deleted in namespace {0}",
-                namespace);
+            nothingFoundInNamespace(namespace),
+            logger,
+            "artifacts to be deleted in namespace {0}",
+            namespace);
 
         logger.info("Check for namespace {0} existence", namespace);
         testUntil(
-                namespaceNotFound(namespace),
-                logger,
-                "namespace to be deleted {0}",
-                namespace);
+            namespaceNotFound(namespace),
+            logger,
+            "namespace to be deleted {0}",
+            namespace);
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -124,8 +124,8 @@ public class CleanupUtil {
    */
   private static void uninstallWebLogicOperator(String namespace) {
     HelmParams opHelmParams = new HelmParams()
-            .releaseName(TestConstants.OPERATOR_RELEASE_NAME)
-            .namespace(namespace);
+        .releaseName(TestConstants.OPERATOR_RELEASE_NAME)
+        .namespace(namespace);
     TestActions.uninstallOperator(opHelmParams);
   }
 
@@ -140,19 +140,19 @@ public class CleanupUtil {
     return () -> {
       boolean nothingFound = true;
       logger.info("Checking for "
-              + "domains, "
-              + "replica sets, "
-              + "jobs, "
-              + "config maps, "
-              + "secrets, "
-              + "persistent volume claims, "
-              + "persistent volumes, "
-              + "deployments, "
-              + "services, "
-              + "service accounts, "
-              + "ingresses "
-              + "namespaced roles"
-              + "namespaced rolebindings in namespace {0}\n", namespace);
+          + "domains, "
+          + "replica sets, "
+          + "jobs, "
+          + "config maps, "
+          + "secrets, "
+          + "persistent volume claims, "
+          + "persistent volumes, "
+          + "deployments, "
+          + "services, "
+          + "service accounts, "
+          + "ingresses "
+          + "namespaced roles"
+          + "namespaced rolebindings in namespace {0}\n", namespace);
 
       // Check if any domains exist
       try {
@@ -248,17 +248,17 @@ public class CleanupUtil {
       try {
         for (var item : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
           String label = Optional.ofNullable(item)
-                  .map(pvc -> pvc.getMetadata())
-                  .map(metadata -> metadata.getLabels())
-                  .map(labels -> labels.get("weblogic.domainUid")).get();
+              .map(pvc -> pvc.getMetadata())
+              .map(metadata -> metadata.getLabels())
+              .map(labels -> labels.get("weblogic.domainUid")).get();
 
           if (!Kubernetes.listPersistentVolumes(
-                          String.format("weblogic.domainUid = %s", label))
-                  .getItems().isEmpty()) {
+              String.format("weblogic.domainUid = %s", label))
+              .getItems().isEmpty()) {
             logger.info("Persistent Volumes still exists!!!");
             List<V1PersistentVolume> pvs = Kubernetes.listPersistentVolumes(
-                            String.format("weblogic.domainUid = %s", label))
-                    .getItems();
+                String.format("weblogic.domainUid = %s", label))
+                .getItems();
             for (var pv : pvs) {
               logger.info(pv.getMetadata().getName());
             }
@@ -472,7 +472,7 @@ public class CleanupUtil {
       try {
         if (null != label) {
           List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
-                  String.format("weblogic.domainUid = %s", label)).getItems();
+              String.format("weblogic.domainUid = %s", label)).getItems();
           pvs.addAll(items);
         }
         // delete the pvc

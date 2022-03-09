@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -153,37 +153,37 @@ class ItElasticLogging {
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
-            String.format("Failed to install Kibana"));
+        String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-            false, 0, true, domainNamespace);
+        false, 0, true, domainNamespace);
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
-            .releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
 
     // build operator chart values
     OperatorParams opParams = new OperatorParams()
-            .helmParams(upgradeHelmParams)
-            .elkIntegrationEnabled(true)
-            .elasticSearchHost(elasticSearchHost);
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
 
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
-            String.format("Failed to upgrade operator in namespace %s", opNamespace));
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
     testUntil(
-            assertDoesNotThrow(() -> operatorIsReady(opNamespace),
-                    "operatorIsReady failed with ApiException"),
-            logger,
-            "operator to be running in namespace {0}",
-            opNamespace);
+        assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+            "operatorIsReady failed with ApiException"),
+        logger,
+        "operator to be running in namespace {0}",
+        opNamespace);
 
     // install WebLogic Logging Exporter if in non-OKD env
     if (!OKD) {
@@ -201,10 +201,10 @@ class ItElasticLogging {
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     StringBuffer elasticsearchUrlBuff =
-            new StringBuffer("curl http://")
-                    .append(elasticSearchHost)
-                    .append(":")
-                    .append(ELASTICSEARCH_HTTP_PORT);
+        new StringBuffer("curl http://")
+            .append(elasticSearchHost)
+            .append(":")
+            .append(ELASTICSEARCH_HTTP_PORT);
     k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
@@ -222,31 +222,31 @@ class ItElasticLogging {
   @AfterAll
   void tearDown() {
     if (System.getenv("SKIP_CLEANUP") == null
-            || (System.getenv("SKIP_CLEANUP") != null
-            && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
 
       // uninstall ELK Stack
       elasticsearchParams = new LoggingExporterParams()
-              .elasticsearchName(ELASTICSEARCH_NAME)
-              .elasticsearchImage(ELASTICSEARCH_IMAGE)
-              .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
-              .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-              .loggingExporterNamespace(elasticSearchNs);
+          .elasticsearchName(ELASTICSEARCH_NAME)
+          .elasticsearchImage(ELASTICSEARCH_IMAGE)
+          .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+          .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+          .loggingExporterNamespace(elasticSearchNs);
 
       kibanaParams = new LoggingExporterParams()
-              .kibanaName(KIBANA_NAME)
-              .kibanaImage(KIBANA_IMAGE)
-              .kibanaType(KIBANA_TYPE)
-              .loggingExporterNamespace(elasticSearchNs)
-              .kibanaContainerPort(KIBANA_PORT);
+          .kibanaName(KIBANA_NAME)
+          .kibanaImage(KIBANA_IMAGE)
+          .kibanaType(KIBANA_TYPE)
+          .loggingExporterNamespace(elasticSearchNs)
+          .kibanaContainerPort(KIBANA_PORT);
 
       logger.info("Uninstall Elasticsearch pod");
       assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
-              "uninstallAndVerifyElasticsearch failed with ApiException");
+          "uninstallAndVerifyElasticsearch failed with ApiException");
 
       logger.info("Uninstall Kibana pod");
       assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
-              "uninstallAndVerifyKibana failed with ApiException");
+          "uninstallAndVerifyKibana failed with ApiException");
     }
   }
 
@@ -328,10 +328,10 @@ class ItElasticLogging {
     // by checking the count of logs from serverName:managed-server1 is zero and no failures
     regex = "(?m).*\\s*.*count\"\\s*:\\s*(\\d+),.*failed\"\\s*:\\s*(\\d+)";
     StringBuffer queryCriteriaBuff = new StringBuffer("/doc/_count?pretty")
-            .append(" -H 'Content-Type: application/json'")
-            .append(" -d'{\"query\":{\"query_string\":{\"query\":\"")
-            .append(managedServerFilter)
-            .append("\",\"fields\":[\"serverName\"],\"default_operator\": \"AND\"}}}'");
+        .append(" -H 'Content-Type: application/json'")
+        .append(" -d'{\"query\":{\"query_string\":{\"query\":\"")
+        .append(managedServerFilter)
+        .append("\",\"fields\":[\"serverName\"],\"default_operator\": \"AND\"}}}'");
 
     queryCriteria = queryCriteriaBuff.toString();
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
@@ -346,21 +346,21 @@ class ItElasticLogging {
     if (!OKD) {
       String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
       StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
-              .append(WORK_DIR)
-              .append("/")
-              .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
-              .append(",")
-              .append(DOWNLOAD_DIR)
-              .append("/")
-              .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
-              .append(",")
-              .append(DOWNLOAD_DIR)
-              .append("/")
-              .append(SNAKE_DOWNLOADED_FILENAME);
+          .append(WORK_DIR)
+          .append("/")
+          .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(SNAKE_DOWNLOADED_FILENAME);
 
       logger.info("Create image with model file and verify");
       miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
-              MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+          MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
     } else {
       List<String> appList = new ArrayList();
       appList.add(MII_BASIC_APP_NAME);
@@ -387,21 +387,21 @@ class ItElasticLogging {
   private static  void createAndVerifyDomain(String miiImage) {
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     createMiiDomainAndVerify(
-            domainNamespace,
-            domainUid,
-            miiImage,
-            adminServerPodName,
-            managedServerPodPrefix,
-            replicaCount);
+        domainNamespace,
+        domainUid,
+        miiImage,
+        adminServerPodName,
+        managedServerPodPrefix,
+        replicaCount);
   }
 
   private void verifyServerRunningInSearchResults(String serverName) {
     String queryCriteria = "/_search?q=log:" + serverName;
     withStandardRetryPolicy.untilAsserted(
-            () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
-                    String.format("serverName %s is not RUNNING", serverName)));
+        () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
+            String.format("serverName %s is not RUNNING", serverName)));
 
     String queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
     logger.info("query result is {0}", queryResult);
@@ -442,28 +442,28 @@ class ItElasticLogging {
 
   private String execSearchQuery(String queryCriteria, String index) {
     String operatorPodName = assertDoesNotThrow(
-            () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
     String indexName = (String) testVarMap.get(index);
     StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
-            .append(" --max-time " + waittime)
-            .append(" -X GET ");
+        .append(" --max-time " + waittime)
+        .append(" -X GET ");
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String cmd = k8sExecCmdPrefixBuff
-            .append("/")
-            .append(indexName)
-            .append(queryCriteria)
-            .toString();
+        .append("/")
+        .append(indexName)
+        .append(queryCriteria)
+        .toString();
     logger.info("Exec command {0} in Operator pod {1}", cmd, operatorPodName);
 
     ExecResult execResult = assertDoesNotThrow(
-            () -> execCommand(opNamespace, operatorPodName, null, true,
-                    "/bin/sh", "-c", cmd));
+        () -> execCommand(opNamespace, operatorPodName, null, true,
+            "/bin/sh", "-c", cmd));
     assertNotNull(execResult, "curl command returns null");
     logger.info("Search query returns " + execResult.stdout());
 

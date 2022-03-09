@@ -77,7 +77,7 @@ public class LoggingExporter {
 
     // create Elasticsearch deployment CR
     logger.info("Create Elasticsearch deployment CR for {0} in namespace {1}",
-            elasticsearchName, namespace);
+        elasticsearchName, namespace);
     V1Deployment elasticsearchDeployment = createElasticsearchDeploymentCr(params);
 
     // create Elasticsearch deployment
@@ -93,7 +93,7 @@ public class LoggingExporter {
       }
     }
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
-            elasticsearchName, namespace);
+        elasticsearchName, namespace);
     testUntil(
             Deployment.isReady(elasticsearchName, labels, namespace),
             logger,
@@ -103,20 +103,20 @@ public class LoggingExporter {
 
     // create Elasticsearch service CR
     logger.info("Create Elasticsearch service CR for {0} in namespace {1}",
-            elasticsearchName, namespace);
+        elasticsearchName, namespace);
     V1Service elasticsearchService = createElasticsearchServiceCr(params);
 
     // create Elasticsearch service
     logger.info("Create Elasticsearch service {0} in namespace {1}", elasticsearchName, namespace);
     boolean serviceCreated = assertDoesNotThrow(() -> Kubernetes.createService(elasticsearchService),
-            "createService of Elasticsearch failed with ApiException");
+        "createService of Elasticsearch failed with ApiException");
     assertTrue(serviceCreated, String.format(
-            "Failed to create Elasticsearch service for %s in namespace %s",
+        "Failed to create Elasticsearch service for %s in namespace %s",
             elasticsearchName, namespace));
 
     // check that Elasticsearch service exists in its namespace
     logger.info("Check that Elasticsearch service {0} exists in namespace {1}",
-            elasticsearchName, namespace);
+        elasticsearchName, namespace);
     checkServiceExists(elasticsearchName, namespace);
 
     return true;
@@ -141,12 +141,12 @@ public class LoggingExporter {
     // create Kibana deployment
     logger.info("Create Kibana deployment {0} in namespace {1}", kibanaName, namespace);
     boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(kibanaDeployment),
-            "createDeployment of Kibana failed with ApiException");
+        "createDeployment of Kibana failed with ApiException");
     assertTrue(deploymentCreated,
-            String.format("Failed to create Kibana deployment for %s in %s namespace",
-                    kibanaName, namespace));
+        String.format("Failed to create Kibana deployment for %s in %s namespace",
+            kibanaName, namespace));
     logger.info("Checking if Kibana deployment is ready {0} completed in namespace {1}",
-            kibanaName, namespace);
+        kibanaName, namespace);
     testUntil(
             Deployment.isReady(kibanaName, labels, namespace),
             logger,
@@ -161,13 +161,13 @@ public class LoggingExporter {
     // create Kibana service
     logger.info("Create Kibana service for {0} in namespace {1}", kibanaName, namespace);
     boolean serviceCreated = assertDoesNotThrow(() -> Kubernetes.createService(kibanaService),
-            "createService of Kibana failed with ApiException");
+        "createService of Kibana failed with ApiException");
     assertTrue(serviceCreated, String.format(
-            "Failed to create Kibana service %s in namespace %s", kibanaName, namespace));
+        "Failed to create Kibana service %s in namespace %s", kibanaName, namespace));
 
     // check that Kibana service exists in its namespace
     logger.info("Checking that Kibana service {0} exists in namespace {1}",
-            kibanaName, namespace);
+        kibanaName, namespace);
     checkServiceExists(kibanaName, namespace);
 
     return true;
@@ -192,10 +192,10 @@ public class LoggingExporter {
 
     logger.info("Delete Service {0} in namespace {1}", elasticsearchName, namespace);
     boolean serviceDeleted =
-            assertDoesNotThrow(() -> Kubernetes.deleteService(elasticsearchName, namespace),
-                    "deleteService of Elasticsearch failed with ApiException for %s in %s namespace");
+        assertDoesNotThrow(() -> Kubernetes.deleteService(elasticsearchName, namespace),
+            "deleteService of Elasticsearch failed with ApiException for %s in %s namespace");
     assertTrue(serviceDeleted, String.format(
-            "Failed to delete Elasticsearch service %s in %s namespace ", elasticsearchName, namespace));
+        "Failed to delete Elasticsearch service %s in %s namespace ", elasticsearchName, namespace));
 
     return true;
   }
@@ -219,10 +219,10 @@ public class LoggingExporter {
 
     logger.info("Delete Service {0} in namespace {1}", kibanaName, namespace);
     boolean serviceDeleted =
-            assertDoesNotThrow(() -> Kubernetes.deleteService(kibanaName, namespace),
-                    "deleteService of Kibana failed with ApiException");
+        assertDoesNotThrow(() -> Kubernetes.deleteService(kibanaName, namespace),
+            "deleteService of Kibana failed with ApiException");
     assertTrue(serviceDeleted, String.format(
-            "Failed to delete Kibana service %s in %s namespace ", kibanaName, namespace));
+        "Failed to delete Kibana service %s in %s namespace ", kibanaName, namespace));
 
     return true;
   }
@@ -255,7 +255,7 @@ public class LoggingExporter {
                                                                String index) {
     // Get index status info
     String statusLine =
-            execLoggingExpStatusCheck(opNamespace, esNamespace, labelSelector, "*" + index + "*");
+        execLoggingExpStatusCheck(opNamespace, esNamespace, labelSelector, "*" + index + "*");
     assertNotNull(statusLine);
 
     String [] parseString = statusLine.split("\\s+");
@@ -281,7 +281,7 @@ public class LoggingExporter {
       logger.info("Index status of {0} is {1}", indexNameArr[i], indexStatusArr[i]);
       // Verify that the health status of index
       assertTrue(healthStatusArr[i].trim().equalsIgnoreCase("yellow")
-              || healthStatusArr[i].trim().equalsIgnoreCase("green"), index + " is not ready!");
+          || healthStatusArr[i].trim().equalsIgnoreCase("green"), index + " is not ready!");
       // Verify that the index is open for use
       assertTrue(indexStatusArr[i].trim().equalsIgnoreCase("open"), index + " is not open!");
     }
@@ -294,15 +294,15 @@ public class LoggingExporter {
   private static boolean downloadWle() {
     // install WDT if needed
     return Installer.withParams(
-                    defaultInstallWleParams())
-            .download();
+        defaultInstallWleParams())
+        .download();
   }
 
   private static boolean downloadSnake() {
     // install SnakeYAML if needed
     return Installer.withParams(
-                    defaultInstallSnakeParams())
-            .download();
+        defaultInstallSnakeParams())
+        .download();
   }
 
   /**
@@ -323,15 +323,15 @@ public class LoggingExporter {
       Path srcPath = Paths.get(wlsLoggingExporterYamlFileLoc, loggingFile);
       Path destPath = Paths.get(WORK_DIR, loggingFile);
       assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
-              String.format("Failed to copy %s to %s", srcPath, destPath));
+          String.format("Failed to copy %s to %s", srcPath, destPath));
       assertDoesNotThrow(() -> FileUtils.replaceStringInFile(destPath.toString(), "default", namespace),
-              String.format("Failed to replace namespace default to %s", namespace));
+          String.format("Failed to replace namespace default to %s", namespace));
       logger.info("Copied {0} to {1}}", srcPath, destPath);
     }
 
     // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
     assertDoesNotThrow(() -> addFilterToElkFile(filter),
-            "Failed to add WebLogic Logging Exporter filter");
+        "Failed to add WebLogic Logging Exporter filter");
 
     // Download WebLogic Logging Exporter jar file
     if (!downloadWle()) {
@@ -358,42 +358,42 @@ public class LoggingExporter {
 
     // create Elasticsearch deployment CR object
     V1Deployment elasticsearchDeployment = new V1Deployment()
-            .apiVersion("apps/v1")
-            .kind("Deployment")
-            .metadata(new V1ObjectMeta()
-                    .name(elasticsearchName)
-                    .namespace(namespace)
+        .apiVersion("apps/v1")
+        .kind("Deployment")
+        .metadata(new V1ObjectMeta()
+            .name(elasticsearchName)
+            .namespace(namespace)
+            .labels(labels))
+        .spec(new V1DeploymentSpec()
+            .replicas(1)
+            .selector(new V1LabelSelector()
+                .matchLabels(labels))
+            .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
                     .labels(labels))
-            .spec(new V1DeploymentSpec()
-                    .replicas(1)
-                    .selector(new V1LabelSelector()
-                            .matchLabels(labels))
-                    .template(new V1PodTemplateSpec()
-                            .metadata(new V1ObjectMeta()
-                                    .labels(labels))
-                            .spec(new V1PodSpec()
-                                    .initContainers(Arrays.asList(new V1Container()
-                                            .name("set-vm-max-map-count")
-                                            .image("busybox")
-                                            .imagePullPolicy("IfNotPresent")
-                                            .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
-                                            .securityContext(new V1SecurityContext().privileged(true))))
-                                    .containers(Arrays.asList(new V1Container()
-                                            .name(elasticsearchName)
-                                            .image(elasticsearchImage)
-                                            .securityContext(new V1SecurityContext()
-                                                    .capabilities(new V1Capabilities()
-                                                            .add(Arrays.asList("SYS_CHROOT"))))
-                                            .addPortsItem(new V1ContainerPort()
-                                                    .containerPort(Integer.valueOf(elasticsearchHttpPort)))
-                                            .addPortsItem(new V1ContainerPort()
-                                                    .containerPort(Integer.valueOf(elasticsearchHttpsPort)))
-                                            .addEnvItem(new V1EnvVar()
-                                                    .name("ES_JAVA_OPTS")
-                                                    .value("-Xms1024m -Xmx1024m"))
-                                            .addEnvItem(new V1EnvVar()
-                                                    .name("discovery.type")
-                                                    .value("single-node")))))));
+                .spec(new V1PodSpec()
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("set-vm-max-map-count")
+                        .image("busybox")
+                        .imagePullPolicy("IfNotPresent")
+                        .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
+                        .securityContext(new V1SecurityContext().privileged(true))))
+                    .containers(Arrays.asList(new V1Container()
+                        .name(elasticsearchName)
+                        .image(elasticsearchImage)
+                        .securityContext(new V1SecurityContext()
+                            .capabilities(new V1Capabilities()
+                                .add(Arrays.asList("SYS_CHROOT"))))
+                        .addPortsItem(new V1ContainerPort()
+                            .containerPort(Integer.valueOf(elasticsearchHttpPort)))
+                        .addPortsItem(new V1ContainerPort()
+                            .containerPort(Integer.valueOf(elasticsearchHttpsPort)))
+                        .addEnvItem(new V1EnvVar()
+                            .name("ES_JAVA_OPTS")
+                            .value("-Xms1024m -Xmx1024m"))
+                        .addEnvItem(new V1EnvVar()
+                            .name("discovery.type")
+                            .value("single-node")))))));
 
     return elasticsearchDeployment;
   }
@@ -409,25 +409,25 @@ public class LoggingExporter {
 
     // create Kibana deployment CR object
     V1Deployment kibanaDeployment = new V1Deployment()
-            .apiVersion("apps/v1")
-            .kind("Deployment")
-            .metadata(new V1ObjectMeta()
-                    .name(kibanaName)
-                    .namespace(namespace)
+        .apiVersion("apps/v1")
+        .kind("Deployment")
+        .metadata(new V1ObjectMeta()
+            .name(kibanaName)
+            .namespace(namespace)
+            .labels(labels))
+        .spec(new V1DeploymentSpec()
+            .replicas(1)
+            .selector(new V1LabelSelector()
+                .matchLabels(labels))
+            .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
                     .labels(labels))
-            .spec(new V1DeploymentSpec()
-                    .replicas(1)
-                    .selector(new V1LabelSelector()
-                            .matchLabels(labels))
-                    .template(new V1PodTemplateSpec()
-                            .metadata(new V1ObjectMeta()
-                                    .labels(labels))
-                            .spec(new V1PodSpec()
-                                    .containers(Arrays.asList(new V1Container()
-                                            .name(kibanaName)
-                                            .image(kibanaImage)
-                                            .ports(Arrays.asList(new V1ContainerPort()
-                                                    .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
+                .spec(new V1PodSpec()
+                    .containers(Arrays.asList(new V1Container()
+                        .name(kibanaName)
+                        .image(kibanaImage)
+                        .ports(Arrays.asList(new V1ContainerPort()
+                            .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
 
     return kibanaDeployment;
   }
@@ -443,22 +443,22 @@ public class LoggingExporter {
 
     // create Elasticsearch service CR object
     V1Service elasticsearchService = new V1Service()
-            .apiVersion("v1")
-            .metadata(new V1ObjectMeta()
-                    .name(elasticsearchName)
-                    .namespace(namespace))
-            .spec(new V1ServiceSpec()
-                    .addPortsItem(new V1ServicePort()
-                            .name("http")
-                            .protocol("TCP")
-                            .port(elasticsearchHttpPort)
-                            .targetPort(new IntOrString(elasticsearchHttpPort)))
-                    .addPortsItem(new V1ServicePort()
-                            .name("https")
-                            .protocol("TCP")
-                            .port(elasticsearchHttpsPort)
-                            .targetPort(new IntOrString(elasticsearchHttpsPort)))
-                    .selector(labels));
+        .apiVersion("v1")
+        .metadata(new V1ObjectMeta()
+            .name(elasticsearchName)
+            .namespace(namespace))
+        .spec(new V1ServiceSpec()
+            .addPortsItem(new V1ServicePort()
+                .name("http")
+                .protocol("TCP")
+                .port(elasticsearchHttpPort)
+                .targetPort(new IntOrString(elasticsearchHttpPort)))
+            .addPortsItem(new V1ServicePort()
+                .name("https")
+                .protocol("TCP")
+                .port(elasticsearchHttpsPort)
+                .targetPort(new IntOrString(elasticsearchHttpsPort)))
+            .selector(labels));
 
     return elasticsearchService;
   }
@@ -474,15 +474,15 @@ public class LoggingExporter {
 
     // create Kibana service CR object
     V1Service elasticsearchService = new V1Service()
-            .apiVersion("v1")
-            .metadata(new V1ObjectMeta()
-                    .name(kibanaName)
-                    .namespace(namespace))
-            .spec(new V1ServiceSpec()
-                    .type(kibanaType)
-                    .ports(Arrays.asList(new V1ServicePort()
-                            .port(kibanaContainerPort)))
-                    .selector(labels));
+        .apiVersion("v1")
+        .metadata(new V1ObjectMeta()
+            .name(kibanaName)
+            .namespace(namespace))
+        .spec(new V1ServiceSpec()
+            .type(kibanaType)
+            .ports(Arrays.asList(new V1ServicePort()
+                .port(kibanaContainerPort)))
+            .selector(labels));
 
     return elasticsearchService;
   }
@@ -492,11 +492,11 @@ public class LoggingExporter {
     String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
-            .append(elasticSearchHost)
-            .append(":")
-            .append(ELASTICSEARCH_HTTP_PORT)
-            .append("/_cat/indices/")
-            .append(indexRegex).toString();
+        .append(elasticSearchHost)
+        .append(":")
+        .append(ELASTICSEARCH_HTTP_PORT)
+        .append("/_cat/indices/")
+        .append(indexRegex).toString();
     logger.info("Command to get logging exporter status line {0}", cmd);
 
     // get Operator pod name
@@ -516,12 +516,12 @@ public class LoggingExporter {
       }
 
       logger.info("logging exporter is not ready Ite ["
-              + i
-              + "/"
-              + maxIterationsPod
-              + "], sleeping "
-              + maxIterationsPod
-              + " seconds more");
+          + i
+          + "/"
+          + maxIterationsPod
+          + "], sleeping "
+          + maxIterationsPod
+          + " seconds more");
 
       try {
         Thread.sleep(maxIterationsPod * 1000);
@@ -537,16 +537,16 @@ public class LoggingExporter {
 
   private static void addFilterToElkFile(String filter) throws Exception {
     String filterStr = new StringBuffer()
-            .append(System.lineSeparator())
-            .append("weblogicLoggingExporterFilters:")
-            .append(System.lineSeparator())
-            .append("- FilterExpression: NOT(SERVER = '")
-            .append(filter)
-            .append("')")
-            .toString();
+        .append(System.lineSeparator())
+        .append("weblogicLoggingExporterFilters:")
+        .append(System.lineSeparator())
+        .append("- FilterExpression: NOT(SERVER = '")
+        .append(filter)
+        .append("')")
+        .toString();
     logger.info("Command to add filter {0}", filterStr);
 
     Files.write(Paths.get(WORK_DIR, WLS_LOGGING_EXPORTER_YAML_FILE_NAME),
-            filterStr.getBytes(), StandardOpenOption.APPEND);
+        filterStr.getBytes(), StandardOpenOption.APPEND);
   }
 }

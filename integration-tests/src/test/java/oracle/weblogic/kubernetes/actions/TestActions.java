@@ -274,7 +274,7 @@ public class TestActions {
    * @return introspectVersion new introspectVersion of the domain resource
    */
   public static String patchDomainResourceWithNewIntrospectVersion(
-          String domainUid, String namespace) {
+      String domainUid, String namespace) {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
@@ -323,7 +323,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-          throws ApiException {
+      throws ApiException {
     return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
   }
 
@@ -345,7 +345,7 @@ public class TestActions {
                                                 String opNamespace,
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
-            externalRestHttpsPort, opNamespace, opServiceAccount);
+        externalRestHttpsPort, opNamespace, opServiceAccount);
   }
 
   /**
@@ -376,9 +376,9 @@ public class TestActions {
                                              String opServiceAccount,
                                              String myWebAppName,
                                              String curlCommand)
-          throws ApiException {
+      throws ApiException {
     return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
-            scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
+        scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
   }
 
   /**
@@ -404,10 +404,10 @@ public class TestActions {
                                                             int scalingSize,
                                                             String opNamespace,
                                                             String opServiceAccount)
-          throws ApiException, InterruptedException {
+      throws ApiException, InterruptedException {
     return Domain.scaleClusterWithScalingActionScript(clusterName,
-            domainUid, domainNamespace, domainHomeLocation, scalingAction,
-            scalingSize, opNamespace, opServiceAccount);
+        domainUid, domainNamespace, domainHomeLocation, scalingAction,
+        scalingSize, opNamespace, opServiceAccount);
   }
 
   // ------------------------   Ingress Controller ----------------------
@@ -541,14 +541,14 @@ public class TestActions {
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(
-          String ingressName,
-          String domainNamespace,
-          String domainUid,
-          Map<String, Integer> clusterNameMsPortMap,
-          Map<String, String> annotations,
-          String ingressClassName,
-          boolean setIngressHost,
-          String tlsSecret) {
+      String ingressName,
+      String domainNamespace,
+      String domainUid,
+      Map<String, Integer> clusterNameMsPortMap,
+      Map<String, String> annotations,
+      String ingressClassName,
+      boolean setIngressHost,
+      String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
@@ -583,7 +583,7 @@ public class TestActions {
                                            boolean enableAdminServerRouting,
                                            int adminServerPort) {
     return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
-            annotations, ingressClassName, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
+        annotations, ingressClassName, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -649,7 +649,7 @@ public class TestActions {
    * @throws ApiException when adding labels to namespace fails
    */
   public static void addLabelsToNamespace(String name, Map<String, String> labels)
-          throws ApiException {
+      throws ApiException {
     Namespace.addLabelsToNamespace(name, labels);
   }
 
@@ -704,7 +704,7 @@ public class TestActions {
    */
   public static WitParams defaultWitParams() {
     return
-            WebLogicImageTool.defaultWitParams();
+        WebLogicImageTool.defaultWitParams();
   }
 
   /**
@@ -715,9 +715,9 @@ public class TestActions {
    */
   public static boolean createImage(WitParams params) {
     return
-            WebLogicImageTool
-                    .withParams(params)
-                    .updateImage();
+        WebLogicImageTool
+            .withParams(params)
+            .updateImage();
   }
 
   // -------------------------   pv/pvc  ---------------------------------
@@ -771,7 +771,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createPersistentVolumeClaim(V1PersistentVolumeClaim persistentVolumeClaim)
-          throws ApiException {
+      throws ApiException {
     return PersistentVolumeClaim.create(persistentVolumeClaim);
   }
 
@@ -970,7 +970,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
-          throws ApiException {
+      throws ApiException {
     return ClusterRoleBinding.createClusterRoleBinding(clusterRoleBinding);
   }
 
@@ -1028,7 +1028,7 @@ public class TestActions {
    */
   public static AppParams defaultAppParams() {
     return
-            AppBuilder.defaultAppParams();
+        AppBuilder.defaultAppParams();
   }
 
   /**
@@ -1040,9 +1040,9 @@ public class TestActions {
    */
   public static boolean buildAppArchive(AppParams params) {
     return
-            AppBuilder
-                    .withParams(params)
-                    .build();
+        AppBuilder
+            .withParams(params)
+            .build();
   }
 
   /**
@@ -1054,9 +1054,9 @@ public class TestActions {
    */
   public static boolean buildCoherenceArchive(AppParams params) {
     return
-            AppBuilder
-                    .withParams(params)
-                    .buildCoherence();
+        AppBuilder
+            .withParams(params)
+            .buildCoherence();
   }
 
   /**
@@ -1068,8 +1068,8 @@ public class TestActions {
    */
   public static boolean archiveApp(AppParams params) {
     return AppBuilder
-            .withParams(params)
-            .archiveApp();
+        .withParams(params)
+        .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------
@@ -1161,18 +1161,18 @@ public class TestActions {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static synchronized ExecResult execCommand(
-          String namespace,
-          String podName,
-          String containerName,
-          boolean redirectToStdout,
-          String... command
+      String namespace,
+      String podName,
+      String containerName,
+      boolean redirectToStdout,
+      String... command
   ) throws IOException, ApiException, InterruptedException {
     // get the pod given the namespace and name of the pod
     // no label selector is needed (thus null below)
     final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
     if (pod == null) {
       throw new IllegalArgumentException(
-              String.format("The pod %s does not exist in namespace %s!", podName, namespace));
+          String.format("The pod %s does not exist in namespace %s!", podName, namespace));
     }
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
@@ -1237,7 +1237,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    **/
   public static OffsetDateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
-          throws ApiException {
+      throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
 
@@ -1354,7 +1354,7 @@ public class TestActions {
    * @throws ApiException when there is error in querying the cluster
    */
   public static String getPodRestartVersion(String namespace, String labelSelector, String podName)
-          throws ApiException {
+      throws ApiException {
     return Kubernetes.getPodRestartVersion(namespace, labelSelector, podName);
   }
 
@@ -1418,8 +1418,8 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static int getContainerRestartCount(
-          String namespace, String labelSelector, String podName, String containerName)
-          throws ApiException {
+      String namespace, String labelSelector, String podName, String containerName)
+      throws ApiException {
     return Kubernetes.getContainerRestartCount(namespace, labelSelector, podName, containerName);
   }
 
@@ -1576,7 +1576,7 @@ public class TestActions {
   public static boolean installWlsLoggingExporter(String filter,
                                                   String wlsLoggingExporterYamlFileLoc, String namespace) {
     return LoggingExporter.installWlsLoggingExporter(filter,
-            wlsLoggingExporterYamlFileLoc, namespace);
+        wlsLoggingExporterYamlFileLoc, namespace);
   }
 
   /**
@@ -1587,7 +1587,7 @@ public class TestActions {
    * @return restartVersion new restartVersion of the domain resource
    */
   public static String patchDomainResourceWithNewRestartVersion(
-          String domainResourceName, String namespace) {
+      String domainResourceName, String namespace) {
     return Domain.patchDomainResourceWithNewRestartVersion(domainResourceName, namespace);
   }
 
@@ -1599,9 +1599,9 @@ public class TestActions {
    * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
    */
   public static void patchDomainResourceWithModelConfigMap(
-          String domainResourceName, String namespace, String configMapName) {
+      String domainResourceName, String namespace, String configMapName) {
     Domain.patchDomainResourceWithModelConfigMap(domainResourceName,
-            namespace, configMapName);
+        namespace, configMapName);
   }
 
   /**
@@ -1623,7 +1623,7 @@ public class TestActions {
    * @return introspectVersion new introspectVersion of the domain resource
    */
   public static String patchDomainResourceWithOnNonDynamicChanges(
-          String domainUid, String namespace, String onNonDynamicChanges) {
+      String domainUid, String namespace, String onNonDynamicChanges) {
     return Domain.patchDomainResourceWithOnNonDynamicChanges(domainUid, namespace, onNonDynamicChanges);
   }
 
