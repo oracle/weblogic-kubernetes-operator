@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -86,7 +87,7 @@ public class SecretHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
-        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+        if (callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND) {
           LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
           LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WebLogicCredentials);
           return doNext(packet);

@@ -36,10 +36,10 @@ set -o pipefail
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
-function usage {
+usage() {
   echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
+  echo "      (default: 1.21, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
   echo "  -s Skip tests. If this option is specified then the cluster is created, but no tests are run. "
@@ -59,19 +59,19 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
   echo "  -l WLE download URL"
   echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
-  echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
-  echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
+  echo "  -m Run integration-tests or the other maven_profile_name in the pom.xml"
+  echo "      (default: integration-tests) "
   echo "  -h Help"
   exit $1
 }
 
-function captureLogs {
+captureLogs() {
   echo "Capture Kind logs..."
   mkdir "${RESULT_ROOT}/kubelogs"
   kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
 }
 
-k8s_version="1.16"
+k8s_version="1.21"
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
@@ -121,7 +121,7 @@ while getopts "v:n:o:t:c:x:p:d:i:l:m:sh" opt; do
   esac
 done
 
-function versionprop {
+versionprop() {
   grep "${1}_${2}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
@@ -303,19 +303,24 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo "Run tests..."
+
 if [ "${test_filter}" != "**/It*" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
 else
-  if [ "${maven_profile_name}" = "fmw-srg" ] || [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-pipeline" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ] || [ "${maven_profile_name}" = "wls-srg" ]; then
+  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ]; then
     echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
-    echo "Running mvn -Dit.test=!ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters*, !ItMultiDomainModels -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="!ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters*, !ItMultiDomainModels" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+    echo "Running mvn -Dit.test=!ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItMultiDomainModels -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="!ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItResilience, !ItMultiDomainModels" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi
 
 echo "Collect journalctl logs"
 docker exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
 docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
+
+echo "Destroy cluster and registry"
+kind delete cluster --name "${kind_name}"
+docker stop "${reg_name}"

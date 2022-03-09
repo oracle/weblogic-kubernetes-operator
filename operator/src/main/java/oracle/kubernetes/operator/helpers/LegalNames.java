@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -45,7 +45,7 @@ public class LegalNames {
       "ScopeName",          // V1ScopedResourceSelectorRequirement
       "SecretName",         // V1SecretVolumeSource, etc
       "ServiceAccountName", // V1PodSpec
-      "ServiceName",        // NetworkingV1beta1IngressBackend, etc
+      "ServiceName",        // V1IngressBackend, etc
       "SingularName",       // V1APIResource
       "StorageClassName",   // V1PersistentVolumeSpec, V1PersistentVolumeClaimSpec
       "VolumeName"         // V1PersistentVolumeClaimSpec, etc
@@ -90,9 +90,9 @@ public class LegalNames {
    */
   public static String toJobIntrospectorName(String domainUid) {
     return toDns1123LegalName(String.format(
-        DOMAIN_INTROSPECTOR_JOB_PATTERN,
-        domainUid,
-        getIntrospectorJobNameSuffix()));
+            DOMAIN_INTROSPECTOR_JOB_PATTERN,
+            domainUid,
+            getIntrospectorJobNameSuffix()));
   }
 
   /**
@@ -101,8 +101,8 @@ public class LegalNames {
    */
   public static String getIntrospectorJobNameSuffix() {
     return Optional.ofNullable(TuningParameters.getInstance())
-          .map(t -> t.get(INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
-          .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
+            .map(t -> t.get(INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
+            .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
   }
 
   /**
@@ -114,10 +114,10 @@ public class LegalNames {
    */
   public static String toExternalServiceName(String domainUid, String serverName) {
     return toDns1123LegalName(String.format(
-        EXTERNAL_SERVICE_PATTERN,
-        domainUid,
-        serverName,
-        getExternalServiceNameSuffix()));
+            EXTERNAL_SERVICE_PATTERN,
+            domainUid,
+            serverName,
+            getExternalServiceNameSuffix()));
   }
 
   /**
@@ -126,8 +126,8 @@ public class LegalNames {
    */
   private static String getExternalServiceNameSuffix() {
     return Optional.ofNullable(TuningParameters.getInstance())
-        .map(t -> t.get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
-        .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+            .map(t -> t.get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
+            .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -209,4 +209,3 @@ public class LegalNames {
     return false;
   }
 }
-

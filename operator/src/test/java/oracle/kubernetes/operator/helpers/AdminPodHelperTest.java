@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -176,7 +177,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   void whenDeleteReportsNotFound_replaceAdminPod() {
     initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, KubernetesConstants.HTTP_NOT_FOUND);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 

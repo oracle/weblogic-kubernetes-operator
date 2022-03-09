@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -641,7 +642,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
@@ -665,7 +666,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }

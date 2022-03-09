@@ -52,6 +52,7 @@ class AnsiUtils {
     BOLD(1), RED_FG(31), BLUE_FG(34), GREEN_FG(32);
 
     private final String format;
+
     Format(int format) {
       this.format = Integer.toString(format);
     }

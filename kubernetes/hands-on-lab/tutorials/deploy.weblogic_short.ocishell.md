@@ -11,9 +11,10 @@ $ kubectl create namespace sample-domain1-ns
 Create a Kubernetes Secret containing the Administration Server boot credentials:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
-  --from-literal=username=weblogic \
-  --from-literal=password=welcome1
+  --from-literal=username=<a user name> \
+  --from-literal=password=<a password>
 ```
+where the actual username and password should be specified instead of `<a username>` and `<a password>`
 
 Label the domain namespace:
 ```shell
@@ -72,26 +73,30 @@ As a simple solution, it's best to configure path routing, which will route exte
 Execute the following Ingress resource definition:
 ```shell
 $ cat << EOF | kubectl apply -f -
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: traefik-pathrouting-1
   namespace: sample-domain1-ns
-  annotations:
-    kubernetes.io/ingress.class: traefik
 spec:
+  ingressClassName: traefik
   rules:
   - host:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: sample-domain1-cluster-cluster-1
-          servicePort: 8001
+          service:
+            name: sample-domain1-cluster-cluster-1
+            port:
+              number: 8001
       - path: /console
         backend:
-          serviceName: sample-domain1-admin-server
-          servicePort: 7001          
+          service:
+            name: sample-domain1-admin-server
+            port:
+              number: 7001          
 EOF
 ```
 

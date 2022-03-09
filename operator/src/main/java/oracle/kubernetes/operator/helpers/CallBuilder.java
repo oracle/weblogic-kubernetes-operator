@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Pair;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
@@ -47,7 +46,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
@@ -81,26 +79,23 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 public class CallBuilder {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** HTTP status code for "Not Found". */
-  public static final int NOT_FOUND = 404;
-
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private String container;
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
-      new SynchronousCallDispatcher() {
-        @Override
-        public <T> T execute(
-            SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
-            throws ApiException {
-          ApiClient client = pool.take();
-          try {
-            return factory.execute(client, params);
-          } finally {
-            pool.recycle(client);
-          }
-        }
-      };
+          new SynchronousCallDispatcher() {
+            @Override
+            public <T> T execute(
+                    SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
+                    throws ApiException {
+              ApiClient client = pool.take();
+              try {
+                return factory.execute(client, params);
+              } finally {
+                pool.recycle(client);
+              }
+            }
+          };
 
   private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
@@ -108,88 +103,75 @@ public class CallBuilder {
   private ClientPool helper;
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
-  private final String pretty = "false";
+  private final String pretty = null;
   private final CallFactory<Domain> replaceDomain =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceDomainAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (Domain) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceDomainAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (Domain) requestParams.body,
+                                  callback));
   private final CallFactory<Domain> patchDomain =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              patchDomainAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1Patch) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchDomainAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
   private final CallFactory<Domain> replaceDomainStatus =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceDomainStatusAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (Domain) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceDomainStatusAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (Domain) requestParams.body,
+                                  callback));
   private final CallFactory<V1CustomResourceDefinition> createCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createCustomResourceDefinitionAsync(
-                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> createBetaCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createBetaCustomResourceDefinitionAsync(
-                  usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createCustomResourceDefinitionAsync(
+                                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
   private final CallFactory<V1CustomResourceDefinition> replaceCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceCustomResourceDefinitionAsync(
-                  usage,
-                  requestParams.name,
-                  (V1CustomResourceDefinition) requestParams.body,
-                  callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> replaceBetaCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceBetaCustomResourceDefinitionAsync(
-                  usage,
-                  requestParams.name,
-                  (V1beta1CustomResourceDefinition) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceCustomResourceDefinitionAsync(
+                                  usage,
+                                  requestParams.name,
+                                  (V1CustomResourceDefinition) requestParams.body,
+                                  callback));
   private final CallFactory<V1ConfigMap> createConfigmap =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createConfigMapAsync(
-                  usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createConfigMapAsync(
+                                  usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
   private final CallFactory<V1Secret> createSecret =
           (requestParams, usage, cont, callback) ->
                   wrap(
                           createSecretAsync(
                                   usage, requestParams.namespace, (V1Secret) requestParams.body, callback));
   private final CallFactory<V1ConfigMap> replaceConfigmap =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceConfigMapAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1ConfigMap) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceConfigMapAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1ConfigMap) requestParams.body,
+                                  callback));
   private final CallFactory<V1ConfigMap> patchConfigMap =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              patchConfigMapAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1Patch) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchConfigMapAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
   private final CallFactory<V1Secret> replaceSecret =
           (requestParams, usage, cont, callback) ->
                   wrap(
@@ -200,101 +182,101 @@ public class CallBuilder {
                                   (V1Secret) requestParams.body,
                                   callback));
   private final CallFactory<V1Pod> createPod =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
   private final CallFactory<V1Pod> patchPod =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              patchPodAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1Patch) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchPodAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
   private final CallFactory<V1Job> createJob =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
   private final CallFactory<V1Service> createService =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createServiceAsync(
-                  usage, requestParams.namespace, (V1Service) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createServiceAsync(
+                                  usage, requestParams.namespace, (V1Service) requestParams.body, callback));
   private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createSubjectAccessReviewAsync(
-                  usage, (V1SubjectAccessReview) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createSubjectAccessReviewAsync(
+                                  usage, (V1SubjectAccessReview) requestParams.body, callback));
   private final CallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreview =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createSelfSubjectRulesReviewAsync(
-                  usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createSelfSubjectRulesReviewAsync(
+                                  usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
   private final CallFactory<CoreV1Event> readEvent =
-      (requestParams, usage, cont, callback) ->
-          wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<CoreV1Event> createEvent =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createEventAsync(
-                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createEventAsync(
+                                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
   private final CallFactory<CoreV1Event> replaceEvent =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceEventAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (CoreV1Event) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceEventAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (CoreV1Event) requestParams.body,
+                                  callback));
   private final CallFactory<String> readPodLog =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              readPodLogAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  container,
-                  null,
-                  null,
-                  null,
-                  pretty,
-                  null,
-                  null,
-                  null,
-                  null,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          readPodLogAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  container,
+                                  null,
+                                  null,
+                                  null,
+                                  pretty,
+                                  null,
+                                  null,
+                                  null,
+                                  null,
+                                  callback));
   private final CallFactory<V1beta1PodDisruptionBudgetList> listPodDisruptionBudget =
-      (requestParams, usage, cont, callback) ->
-          wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
-      (requestParams, usage, cont, callback) ->
-          wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createPodDisruptionBudgetAsync(
-                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
-                      requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createPodDisruptionBudgetAsync(
+                                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
+                                          requestParams.body, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              patchPodDisruptionBudgetAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1Patch) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchPodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
   private final CallFactory<V1Status> deletePodDisruptionBudget =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deletePodDisruptionBudgetAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deletePodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
 
   private RetryStrategy retryStrategy;
 
@@ -307,154 +289,159 @@ public class CallBuilder {
 
   private final String resourceVersion = "";
 
-  /* Domains */
   private Integer maxRetryCount = 10;
-  private final Boolean watch = Boolean.FALSE;
+  private final Boolean watch = null;
   private final CallFactory<DomainList> listDomain =
-      (requestParams, usage, cont, callback) ->
-          wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1PodList> listPod =
-      (requestParams, usage, cont, callback) ->
-          wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1Status> deletecollectionPod =
-      (requestParams, usage, cont, callback) ->
-          wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont,
-              (V1DeleteOptions) requestParams.body, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont,
+                          (V1DeleteOptions) requestParams.body, callback));
   private final CallFactory<V1SecretList> listSecrets =
-      (requestParams, usage, cont, callback) ->
-          wrap(listSecretsAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listSecretsAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1ServiceList> listService =
-      (requestParams, usage, cont, callback) ->
-          wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<CoreV1EventList> listEvent =
-      (requestParams, usage, cont, callback) ->
-          wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1NamespaceList> listNamespace =
-      (requestParams, usage, cont, callback) ->
-          wrap(listNamespaceAsync(usage, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listNamespaceAsync(usage, cont, callback));
   private final CallFactory<V1ConfigMapList> listConfigMaps =
-      (requestParams, usage, cont, callback) ->
-          wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
-  private final Boolean exact = Boolean.FALSE;
-  private final Boolean export = Boolean.FALSE;
+          (requestParams, usage, cont, callback) ->
+                  wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<Domain> readDomain =
-      (requestParams, usage, cont, callback) ->
-          wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1CustomResourceDefinition> readCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> readBetaCrd =
-      (requestParams, usage, cont, callback) ->
-          wrap(readBetaCustomResourceDefinitionAsync(usage, requestParams.name, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
   private final CallFactory<V1ConfigMap> readConfigmap =
-      (requestParams, usage, cont, callback) ->
-          wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1Pod> readPod =
-      (requestParams, usage, cont, callback) ->
-          wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1Job> readJob =
-      (requestParams, usage, cont, callback) ->
-          wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1Service> readService =
-      (requestParams, usage, cont, callback) ->
-          wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1Secret> readSecret =
-      (requestParams, usage, cont, callback) ->
-          wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
   private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
 
   /* Custom Resource Definitions */
   private final CallFactory<V1Status> deleteConfigMap =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deleteConfigMapAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deleteConfigMapAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
   private final CallFactory<Object> deletePod =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deletePodAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deletePodAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
   private final CallFactory<V1Status> deleteJob =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deleteJobAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  requestParams.domainUid,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deleteJobAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  requestParams.domainUid,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
   private final CallFactory<V1Status> deleteService =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deleteServiceAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deleteServiceAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
+  private final SynchronousCallFactory<V1Pod> patchPodCall =
+          (client, requestParams) ->
+                  new CoreV1Api(client)
+                          .patchNamespacedPod(
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  pretty,
+                                  dryRun,
+                                  null,
+                                  null);
   private final SynchronousCallFactory<DomainList> listDomainCall =
-      (client, requestParams) ->
-          new WeblogicApi(client)
-              .listNamespacedDomain(
-                  requestParams.namespace,
-                  pretty,
-                  null,
-                  fieldSelector,
-                  labelSelector,
-                  limit,
-                  resourceVersion,
-                  timeoutSeconds,
-                  watch);
+          (client, requestParams) ->
+                  new WeblogicApi(client)
+                          .listNamespacedDomain(
+                                  requestParams.namespace,
+                                  pretty,
+                                  null,
+                                  fieldSelector,
+                                  labelSelector,
+                                  limit,
+                                  resourceVersion,
+                                  timeoutSeconds,
+                                  watch);
   private final SynchronousCallFactory<Domain> replaceDomainCall =
-      (client, requestParams) ->
-          new WeblogicApi(client)
-              .replaceNamespacedDomain(
-                  requestParams.name,
-                  requestParams.namespace,
-                  (Domain) requestParams.body);
+          (client, requestParams) ->
+                  new WeblogicApi(client)
+                          .replaceNamespacedDomain(
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (Domain) requestParams.body);
   private final SynchronousCallFactory<Domain> replaceDomainStatusCall =
-      (client, requestParams) ->
-          new WeblogicApi(client)
-              .replaceNamespacedDomainStatus(
-                  requestParams.name,
-                  requestParams.namespace,
-                  (Domain) requestParams.body);
+          (client, requestParams) ->
+                  new WeblogicApi(client)
+                          .replaceNamespacedDomainStatus(
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (Domain) requestParams.body);
   private final SynchronousCallFactory<Domain> patchDomainCall =
-      (client, requestParams) ->
-          new WeblogicApi(client)
-              .patchNamespacedDomain(
-                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
+          (client, requestParams) ->
+                  new WeblogicApi(client)
+                          .patchNamespacedDomain(
+                                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
 
   private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
-      ((client, requestParams) ->
-          new AuthorizationV1Api(client)
-              .createSubjectAccessReview(
-                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
+          ((client, requestParams) ->
+                  new AuthorizationV1Api(client)
+                          .createSubjectAccessReview(
+                                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
   private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
-      (client, requestParams) ->
-          new AuthorizationV1Api(client)
-              .createSelfSubjectAccessReview(
-                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
+          (client, requestParams) ->
+                  new AuthorizationV1Api(client)
+                          .createSelfSubjectAccessReview(
+                                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
   private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
-      (client, requestParams) ->
-          new AuthorizationV1Api(client)
-              .createSelfSubjectRulesReview(
-                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
+          (client, requestParams) ->
+                  new AuthorizationV1Api(client)
+                          .createSelfSubjectRulesReview(
+                                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
   private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
-      (client, requestParams) ->
-          new AuthenticationV1Api(client)
-              .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
+          (client, requestParams) ->
+                  new AuthenticationV1Api(client)
+                          .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
 
   public CallBuilder() {
     this(getCallBuilderTuning(), ClientPool.getInstance());
@@ -473,8 +460,8 @@ public class CallBuilder {
 
   private static CallBuilderTuning getCallBuilderTuning() {
     return Optional.ofNullable(TuningParameters.getInstance())
-        .map(TuningParameters::getCallBuilderTuning)
-        .orElse(null);
+            .map(TuningParameters::getCallBuilderTuning)
+            .orElse(null);
   }
 
   /* Pods */
@@ -557,11 +544,11 @@ public class CallBuilder {
   public VersionInfo readVersionCode() throws ApiException {
     RequestParams requestParams = new RequestParams("getVersion", null, null, null, callParams);
     return executeSynchronousCall(
-        requestParams, ((client, params) -> new VersionApi(client).getCode()));
+            requestParams, ((client, params) -> new VersionApi(client).getCode()));
   }
 
   private <T> T executeSynchronousCall(
-      RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
+          RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
     return DISPATCHER.execute(factory, requestParams, helper);
   }
 
@@ -626,20 +613,20 @@ public class CallBuilder {
   }
 
   private Call listDomainAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<DomainList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<DomainList> callback)
+          throws ApiException {
     return new WeblogicApi(client)
-        .listNamespacedDomainAsync(
-            namespace,
-            pretty,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedDomainAsync(
+                    namespace,
+                    pretty,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -651,14 +638,14 @@ public class CallBuilder {
    */
   public Step listDomainAsync(String namespace, ResponseStep<DomainList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listDomain", namespace, null, null, callParams), listDomain);
+            responseStep, new RequestParams("listDomain", namespace, null, null, callParams), listDomain);
   }
 
   private Call readDomainAsync(
-      ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
+          throws ApiException {
     return new WeblogicApi(client)
-        .getNamespacedDomainAsync(name, namespace, callback);
+            .getNamespacedDomainAsync(name, namespace, callback);
   }
 
   /**
@@ -671,7 +658,7 @@ public class CallBuilder {
    */
   public Step readDomainAsync(String name, String namespace, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
+            responseStep, new RequestParams("readDomain", namespace, name, null, name), readDomain);
   }
 
   /**
@@ -703,10 +690,10 @@ public class CallBuilder {
   }
 
   private Call replaceDomainAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+          throws ApiException {
     return new WeblogicApi(client)
-        .replaceNamespacedDomainAsync(name, namespace, body, callback);
+            .replaceNamespacedDomainAsync(name, namespace, body, callback);
   }
 
   /**
@@ -719,9 +706,9 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+          String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
+            responseStep, new RequestParams("replaceDomain", namespace, name, body, name), replaceDomain);
   }
 
   /**
@@ -735,15 +722,15 @@ public class CallBuilder {
    */
   public Domain patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
-        new RequestParams("patchDomain", namespace, uid, patchBody, uid);
+            new RequestParams("patchDomain", namespace, uid, patchBody, uid);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
   private Call patchDomainAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<Domain> callback)
+          throws ApiException {
     return new WeblogicApi(client)
-        .patchNamespacedDomainAsync(name, namespace, patch, callback);
+            .patchNamespacedDomainAsync(name, namespace, patch, callback);
   }
 
   /**
@@ -756,18 +743,18 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchDomainAsync(
-      String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
+          String name, String namespace, V1Patch patchBody, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("patchDomain", namespace, name, patchBody, name),
-        patchDomain);
+            responseStep,
+            new RequestParams("patchDomain", namespace, name, patchBody, name),
+            patchDomain);
   }
 
   private Call replaceDomainStatusAsync(
-      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+          throws ApiException {
     return new WeblogicApi(client)
-        .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
+            .replaceNamespacedDomainStatusAsync(name, namespace, body, callback);
   }
 
   /**
@@ -780,20 +767,20 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceDomainStatusAsync(
-      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+          String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("replaceDomainStatus", namespace, name, body, name),
-        replaceDomainStatus);
+            responseStep,
+            new RequestParams("replaceDomainStatus", namespace, name, body, name),
+            replaceDomainStatus);
   }
 
   /* CRD's */
 
   private Call readCustomResourceDefinitionAsync(
-      ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
-      throws ApiException {
+          ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
+          throws ApiException {
     return new ApiextensionsV1Api(client)
-        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
+            .readCustomResourceDefinitionAsync(name, pretty, callback);
   }
 
   /**
@@ -804,18 +791,18 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readCustomResourceDefinitionAsync(
-      String name, ResponseStep<V1CustomResourceDefinition> responseStep) {
+          String name, ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readCRD", null, name, null, callParams), readCrd);
+            responseStep, new RequestParams("readCRD", null, name, null, callParams), readCrd);
   }
 
   private Call createCustomResourceDefinitionAsync(
-      ApiClient client,
-      V1CustomResourceDefinition body,
-      ApiCallback<V1CustomResourceDefinition> callback)
-      throws ApiException {
+          ApiClient client,
+          V1CustomResourceDefinition body,
+          ApiCallback<V1CustomResourceDefinition> callback)
+          throws ApiException {
     return new ApiextensionsV1Api(client)
-        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
+            .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
   }
 
   /**
@@ -826,20 +813,20 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createCustomResourceDefinitionAsync(
-      V1CustomResourceDefinition body,
-      ResponseStep<V1CustomResourceDefinition> responseStep) {
+          V1CustomResourceDefinition body,
+          ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createCRD", null, null, body, callParams), createCrd);
+            responseStep, new RequestParams("createCRD", null, null, body, callParams), createCrd);
   }
 
   private Call replaceCustomResourceDefinitionAsync(
-      ApiClient client,
-      String name,
-      V1CustomResourceDefinition body,
-      ApiCallback<V1CustomResourceDefinition> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          V1CustomResourceDefinition body,
+          ApiCallback<V1CustomResourceDefinition> callback)
+          throws ApiException {
     return new ApiextensionsV1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
+            .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
   }
 
   /**
@@ -851,99 +838,30 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceCustomResourceDefinitionAsync(
-      String name,
-      V1CustomResourceDefinition body,
-      ResponseStep<V1CustomResourceDefinition> responseStep) {
+          String name,
+          V1CustomResourceDefinition body,
+          ResponseStep<V1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceCRD", null, name, body, callParams), replaceCrd);
-  }
-
-  private Call readBetaCustomResourceDefinitionAsync(
-      ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
-      throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
-        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
-  }
-
-  /**
-   * Asynchronous step for reading CRD.
-   *
-   * @param name Name
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step readBetaCustomResourceDefinitionAsync(
-      String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("readBetaCRD", null, name, null, callParams), readBetaCrd);
-  }
-
-  private Call createBetaCustomResourceDefinitionAsync(
-      ApiClient client,
-      V1beta1CustomResourceDefinition body,
-      ApiCallback<V1beta1CustomResourceDefinition> callback)
-      throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
-        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
-  }
-
-  /**
-   * Asynchronous step for creating CRD.
-   *
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createBetaCustomResourceDefinitionAsync(
-      V1beta1CustomResourceDefinition body,
-      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("createBetaCRD", null, null, body, callParams), createBetaCrd);
-  }
-
-  private Call replaceBetaCustomResourceDefinitionAsync(
-      ApiClient client,
-      String name,
-      V1beta1CustomResourceDefinition body,
-      ApiCallback<V1beta1CustomResourceDefinition> callback)
-      throws ApiException {
-    return new ApiextensionsV1beta1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
-  }
-
-  /**
-   * Asynchronous step for replacing CRD.
-   *
-   * @param name Name
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step replaceBetaCustomResourceDefinitionAsync(
-      String name,
-      V1beta1CustomResourceDefinition body,
-      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("replaceBetaCRD", null, name, body, callParams), replaceBetaCrd);
+            responseStep, new RequestParams("replaceCRD", null, name, body, callParams), replaceCrd);
   }
 
   private Call listConfigMapsAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespacedConfigMapAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedConfigMapAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -955,16 +873,16 @@ public class CallBuilder {
    */
   public Step listConfigMapsAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("listConfigMap", namespace, null, null, callParams),
-        listConfigMaps);
+            responseStep,
+            new RequestParams("listConfigMap", namespace, null, null, callParams),
+            listConfigMaps);
   }
 
   private Call readConfigMapAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1ConfigMap> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1ConfigMap> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedConfigMapAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedConfigMapAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -977,16 +895,16 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readConfigMapAsync(
-      String name, String namespace, String domainUid, ResponseStep<V1ConfigMap> responseStep) {
+          String name, String namespace, String domainUid, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readConfigMap", namespace, name, null, domainUid), readConfigmap);
+            responseStep, new RequestParams("readConfigMap", namespace, name, null, domainUid), readConfigmap);
   }
 
   private Call createConfigMapAsync(
-      ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
-      throws ApiException {
+          ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -998,10 +916,10 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createConfigMapAsync(
-      String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
+          String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createConfigMap", namespace, null, body, callParams),
-        createConfigmap);
+            responseStep, new RequestParams("createConfigMap", namespace, null, body, callParams),
+            createConfigmap);
   }
 
   private Call createSecretAsync(
@@ -1027,23 +945,23 @@ public class CallBuilder {
   }
 
   private Call deleteConfigMapAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1DeleteOptions body,
-      ApiCallback<V1Status> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          V1DeleteOptions body,
+          ApiCallback<V1Status> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .deleteNamespacedConfigMapAsync(
-            name,
-            namespace,
-            pretty,
-            dryRun,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
-            body,
-            callback);
+            .deleteNamespacedConfigMapAsync(
+                    name,
+                    namespace,
+                    pretty,
+                    dryRun,
+                    gracePeriodSeconds,
+                    orphanDependents,
+                    propagationPolicy,
+                    body,
+                    callback);
   }
 
   /**
@@ -1057,26 +975,26 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deleteConfigMapAsync(
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("deleteConfigMap", namespace, name, deleteOptions, domainUid),
-        deleteConfigMap);
+            responseStep,
+            new RequestParams("deleteConfigMap", namespace, name, deleteOptions, domainUid),
+            deleteConfigMap);
   }
 
   private Call replaceConfigMapAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1ConfigMap body,
-      ApiCallback<V1ConfigMap> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          V1ConfigMap body,
+          ApiCallback<V1ConfigMap> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, dryRun, null, callback);
+            .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, dryRun, null, callback);
   }
 
   /**
@@ -1089,19 +1007,19 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceConfigMapAsync(
-      String name, String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
+          String name, String namespace, V1ConfigMap body, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("replaceConfigMap", namespace, name, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(V1ConfigMap::getMetadata).orElse(null))),
-        replaceConfigmap);
+            responseStep,
+            new RequestParams("replaceConfigMap", namespace, name, body,
+                    getDomainUidLabel(Optional.ofNullable(body).map(V1ConfigMap::getMetadata).orElse(null))),
+            replaceConfigmap);
   }
 
   private Call patchConfigMapAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, callback);
+            .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, callback);
   }
 
   /**
@@ -1115,11 +1033,11 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchConfigMapAsync(
-      String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1ConfigMap> responseStep) {
+          String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1ConfigMap> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("patchConfigMap", namespace, name, patchBody, domainUid),
-        patchConfigMap);
+            responseStep,
+            new RequestParams("patchConfigMap", namespace, name, patchBody, domainUid),
+            patchConfigMap);
   }
 
   /**
@@ -1151,22 +1069,22 @@ public class CallBuilder {
   }
 
   private Call listPodAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1PodList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1PodList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespacedPodAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedPodAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1178,14 +1096,14 @@ public class CallBuilder {
    */
   public Step listPodAsync(String namespace, ResponseStep<V1PodList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listPod", namespace, null, null, callParams), listPod);
+            responseStep, new RequestParams("listPod", namespace, null, null, callParams), listPod);
   }
 
   private Call readPodAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Pod> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1Pod> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedPodAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedPodAsync(name, namespace, pretty, callback);
   }
 
   /* Events */
@@ -1201,14 +1119,14 @@ public class CallBuilder {
    */
   public Step readPodAsync(String name, String namespace, String domainUid, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readPod", namespace, name, null, domainUid), readPod);
+            responseStep, new RequestParams("readPod", namespace, name, null, domainUid), readPod);
   }
 
   private Call createPodAsync(
-      ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
-      throws ApiException {
+          ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1221,31 +1139,31 @@ public class CallBuilder {
    */
   public Step createPodAsync(String namespace, V1Pod body, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("createPod", namespace, null, body, PodHelper.getPodDomainUid(body)),
-        createPod);
+            responseStep,
+            new RequestParams("createPod", namespace, null, body, PodHelper.getPodDomainUid(body)),
+            createPod);
   }
 
   /* Persistent Volumes */
 
   private Call deletePodAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ApiCallback<Object> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          V1DeleteOptions deleteOptions,
+          ApiCallback<Object> callback)
+          throws ApiException {
     return deleteNamespacedPodAsync(
-        client,
-        name,
-        namespace,
-        pretty,
-        dryRun,
-        gracePeriodSeconds,
-        orphanDependents,
-        propagationPolicy,
-        deleteOptions,
-        callback);
+            client,
+            name,
+            namespace,
+            pretty,
+            dryRun,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            deleteOptions,
+            callback);
   }
 
   /**
@@ -1259,21 +1177,21 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deletePodAsync(
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<Object> responseStep) {
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<Object> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
-        deletePod, retryStrategy);
+            responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
+            deletePod, retryStrategy);
   }
 
   private Call deleteNamespacedPodAsync(ApiClient client, String name, String namespace, String pretty, String dryRun,
                                         Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
                                         V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
     Call localVarCall = this.deleteNamespacedPodValidateBeforeCall(client, name, namespace, pretty, dryRun,
-        gracePeriodSeconds, orphanDependents, propagationPolicy, body, callback);
+            gracePeriodSeconds, orphanDependents, propagationPolicy, body, callback);
     Type localVarReturnType = (new TypeToken<>() {
     }).getType();
     client.executeAsync(localVarCall, localVarReturnType, callback);
@@ -1290,7 +1208,7 @@ public class CallBuilder {
       throw new ApiException("Missing the required parameter 'namespace' when calling deleteNamespacedPod(Async)");
     } else {
       Call localVarCall = this.deleteNamespacedPodCall(client, name, namespace, pretty, dryRun, gracePeriodSeconds,
-          orphanDependents, propagationPolicy, body, callback);
+              orphanDependents, propagationPolicy, body, callback);
       return localVarCall;
     }
   }
@@ -1299,8 +1217,8 @@ public class CallBuilder {
                                        Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
                                        V1DeleteOptions body, ApiCallback callback) throws ApiException {
     String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
-        client.escapeString(name)).replaceAll("\\{namespace\\}",
-        client.escapeString(namespace));
+            client.escapeString(name)).replaceAll("\\{namespace\\}",
+            client.escapeString(namespace));
     List<Pair> localVarQueryParams = new ArrayList<>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<>();
     if (pretty != null) {
@@ -1339,14 +1257,29 @@ public class CallBuilder {
     localVarHeaderParams.put("Content-Type", localVarContentType);
     String[] localVarAuthNames = new String[]{"BearerToken"};
     return client.buildCall(localVarPath, "DELETE", localVarQueryParams, localVarCollectionQueryParams, body,
-        localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
+            localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
+  }
+
+  /**
+   * Synchronous step for patching a pod.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
+   * @param patchBody instructions on what to patch
+   * @return the patched pod
+   */
+  public V1Pod patchPod(String name, String namespace, String domainUid, V1Patch patchBody) throws ApiException {
+    RequestParams requestParams =
+            new RequestParams("patchPod", namespace, name, patchBody, domainUid);
+    return executeSynchronousCall(requestParams, patchPodCall);
   }
 
   private Call patchPodAsync(
-      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, null, callback);
+            .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, null, callback);
   }
 
   /**
@@ -1360,33 +1293,34 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchPodAsync(
-      String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1Pod> responseStep) {
+          String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1Pod> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("patchPod", namespace, name,  patchBody, domainUid),
-        patchPod);
+            responseStep,
+            new RequestParams("patchPod", namespace, name,  patchBody, domainUid),
+            patchPod);
   }
 
   private Call deleteCollectionPodAsync(
-      ApiClient client, String namespace, String cont, V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont,
+          V1DeleteOptions deleteOptions, ApiCallback<V1Status> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .deleteCollectionNamespacedPodAsync(
-            namespace,
-            pretty,
-            cont,
-            dryRun,
-            fieldSelector,
-            gracePeriodSeconds,
-            labelSelector,
-            limit,
-            orphanDependents,
-            propagationPolicy,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            deleteOptions,
-            callback);
+            .deleteCollectionNamespacedPodAsync(
+                    namespace,
+                    pretty,
+                    cont,
+                    dryRun,
+                    fieldSelector,
+                    gracePeriodSeconds,
+                    labelSelector,
+                    limit,
+                    orphanDependents,
+                    propagationPolicy,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    deleteOptions,
+                    callback);
   }
 
   /**
@@ -1398,33 +1332,33 @@ public class CallBuilder {
    */
   public Step deleteCollectionPodAsync(String namespace, ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("deletePodCollection", namespace, null, null, callParams),
-        deletecollectionPod);
+            responseStep,
+            new RequestParams("deletePodCollection", namespace, null, null, callParams),
+            deletecollectionPod);
   }
 
   private Call listJobAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1JobList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1JobList> callback)
+          throws ApiException {
     return new BatchV1Api(client)
-        .listNamespacedJobAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedJobAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   private final CallFactory<V1JobList> listJob =
-      (requestParams, usage, cont, callback) ->
-          wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
+          (requestParams, usage, cont, callback) ->
+                  wrap(listJobAsync(usage, requestParams.namespace, cont, callback));
 
   /**
    * Asynchronous step for listing jobs.
@@ -1435,14 +1369,14 @@ public class CallBuilder {
    */
   public Step listJobAsync(String namespace, ResponseStep<V1JobList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listJob", namespace, null, null, callParams), listJob);
+            responseStep, new RequestParams("listJob", namespace, null, null, callParams), listJob);
   }
 
   private Call createJobAsync(
-      ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
-      throws ApiException {
+          ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
+          throws ApiException {
     return new BatchV1Api(client)
-        .createNamespacedJobAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedJobAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1451,19 +1385,19 @@ public class CallBuilder {
    * @param namespace Namespace
    * @param domainUid Identifier of the domain that the job is associated with
    * @param body Body
-   * @param responseStep Response step for when call completes
+   * @param response Response step for when call completes
    * @return Asynchronous step
    */
-  public Step createJobAsync(String namespace, String domainUid, V1Job body, ResponseStep<V1Job> responseStep) {
+  public Step createJobAsync(String namespace, String domainUid, V1Job body, @Nonnull ResponseStep<V1Job> response) {
     return createRequestAsync(
-        responseStep, new RequestParams("createJob", namespace, null, body, domainUid), createJob);
+            response, new RequestParams("createJob", namespace, null, body, domainUid), createJob);
   }
 
   private Call readJobAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
+          throws ApiException {
     return new BatchV1Api(client)
-        .readNamespacedJobAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedJobAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -1477,28 +1411,28 @@ public class CallBuilder {
    */
   public Step readJobAsync(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readJob", namespace, name, null, domainUid), readJob);
+            responseStep, new RequestParams("readJob", namespace, name, null, domainUid), readJob);
   }
 
   private Call deleteJobAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions body,
-      ApiCallback<V1Status> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions body,
+          ApiCallback<V1Status> callback)
+          throws ApiException {
     return new BatchV1Api(client)
-        .deleteNamespacedJobAsync(
-            name,
-            namespace,
-            pretty,
-            dryRun,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
-            body,
-            callback);
+            .deleteNamespacedJobAsync(
+                    name,
+                    namespace,
+                    pretty,
+                    dryRun,
+                    gracePeriodSeconds,
+                    orphanDependents,
+                    propagationPolicy,
+                    body,
+                    callback);
   }
 
   /* Persistent Volume Claims */
@@ -1514,33 +1448,33 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deleteJobAsync(
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid),
-        deleteJob, timeoutSeconds);
+            responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid),
+            deleteJob, timeoutSeconds);
   }
 
   private Call listServiceAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1ServiceList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1ServiceList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespacedServiceAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedServiceAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1552,14 +1486,14 @@ public class CallBuilder {
    */
   public Step listServiceAsync(String namespace, ResponseStep<V1ServiceList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listService", namespace, null, null, callParams), listService);
+            responseStep, new RequestParams("listService", namespace, null, null, callParams), listService);
   }
 
   private Call readServiceAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Service> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1Service> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedServiceAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedServiceAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -1572,16 +1506,16 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readServiceAsync(
-      String name, String namespace, String domainUid, ResponseStep<V1Service> responseStep) {
+          String name, String namespace, String domainUid, ResponseStep<V1Service> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readService", namespace, name, null, domainUid), readService);
+            responseStep, new RequestParams("readService", namespace, name, null, domainUid), readService);
   }
 
   private Call createServiceAsync(
-      ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
-      throws ApiException {
+          ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedServiceAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedServiceAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1593,32 +1527,32 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createServiceAsync(
-      String namespace, V1Service body, ResponseStep<V1Service> responseStep) {
+          String namespace, V1Service body, ResponseStep<V1Service> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("createService", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(V1Service::getMetadata).orElse(null))),
-        createService);
+            responseStep,
+            new RequestParams("createService", namespace, null, body,
+                    getDomainUidLabel(Optional.ofNullable(body).map(V1Service::getMetadata).orElse(null))),
+            createService);
   }
 
   private Call deleteServiceAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          V1DeleteOptions deleteOptions,
+          ApiCallback<V1Status> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .deleteNamespacedServiceAsync(
-            name,
-            namespace,
-            pretty,
-            dryRun,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
-            deleteOptions,
-            callback);
+            .deleteNamespacedServiceAsync(
+                    name,
+                    namespace,
+                    pretty,
+                    dryRun,
+                    gracePeriodSeconds,
+                    orphanDependents,
+                    propagationPolicy,
+                    deleteOptions,
+                    callback);
   }
 
   /**
@@ -1632,34 +1566,34 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deleteServiceAsync(
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("deleteService", namespace, name, deleteOptions, domainUid),
-        deleteService);
+            responseStep,
+            new RequestParams("deleteService", namespace, name, deleteOptions, domainUid),
+            deleteService);
   }
 
   private Call listPodDisruptionBudgetAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
+          throws ApiException {
     return new PolicyV1beta1Api(client)
-        .listNamespacedPodDisruptionBudgetAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedPodDisruptionBudgetAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1671,15 +1605,15 @@ public class CallBuilder {
    */
   public Step listPodDisruptionBudgetAsync(String ns, ResponseStep<V1beta1PodDisruptionBudgetList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
-        listPodDisruptionBudget);
+            responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
+            listPodDisruptionBudget);
   }
 
   private Call readPodDisruptionBudgetAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
     return new PolicyV1beta1Api(client)
-        .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -1691,18 +1625,18 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readPodDisruptionBudgetAsync(
-      String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+          String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
-        readPodDisruptionBudget);
+            responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
+            readPodDisruptionBudget);
   }
 
   private Call createPodDisruptionBudgetAsync(
-      ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
-      ApiCallback<V1beta1PodDisruptionBudget> callback)
-      throws ApiException {
+          ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
+          ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
     return new PolicyV1beta1Api(client)
-        .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1714,22 +1648,22 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createPodDisruptionBudgetAsync(
-      String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+          String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("createPodDisruptionBudget", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body)
-                .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
-        createPodDisruptionBudget);
+            responseStep,
+            new RequestParams("createPodDisruptionBudget", namespace, null, body,
+                    getDomainUidLabel(Optional.ofNullable(body)
+                            .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
+            createPodDisruptionBudget);
   }
 
   private Call patchPodDisruptionBudgetAsync(
-      ApiClient client, String name, String namespace, V1Patch patch,
-      ApiCallback<V1beta1PodDisruptionBudget> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, V1Patch patch,
+          ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
     return new PolicyV1beta1Api(client)
-        .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
-            null, null, callback);
+            .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
+                    null, null, callback);
   }
 
   /**
@@ -1742,32 +1676,32 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchPodDisruptionBudgetAsync(
-      String name, String namespace, V1Patch patchBody,
-      ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+          String name, String namespace, V1Patch patchBody,
+          ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
-        patchPodDisruptionBudget);
+            responseStep,
+            new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
+            patchPodDisruptionBudget);
   }
 
   private Call deletePodDisruptionBudgetAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          V1DeleteOptions deleteOptions,
+          ApiCallback<V1Status> callback)
+          throws ApiException {
     return new PolicyV1beta1Api(client)
-        .deleteNamespacedPodDisruptionBudgetAsync(
-            name,
-            namespace,
-            pretty,
-            dryRun,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
-            deleteOptions,
-            callback);
+            .deleteNamespacedPodDisruptionBudgetAsync(
+                    name,
+                    namespace,
+                    pretty,
+                    dryRun,
+                    gracePeriodSeconds,
+                    orphanDependents,
+                    propagationPolicy,
+                    deleteOptions,
+                    callback);
   }
 
   /**
@@ -1781,36 +1715,36 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deletePodDisruptionBudgetAsync(
-      String name,
-      String namespace,
-      String domainUid,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
-        deletePodDisruptionBudget);
+            responseStep,
+            new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
+            deletePodDisruptionBudget);
   }
 
   /* Secrets */
 
   private Call listEventAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespacedEventAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedEventAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1822,14 +1756,14 @@ public class CallBuilder {
    */
   public Step listEventAsync(String namespace, ResponseStep<CoreV1EventList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
+            responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
   }
 
   private Call readEventAsync(
-      ApiClient client, String name, String namespace, ApiCallback<CoreV1Event> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<CoreV1Event> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedEventAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedEventAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -1841,10 +1775,10 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readEventAsync(
-      String name, String namespace, ResponseStep<CoreV1Event> responseStep) {
+          String name, String namespace, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readEvent", namespace, name, null, callParams),
-        readEvent);
+            responseStep, new RequestParams("readEvent", namespace, name, null, callParams),
+            readEvent);
   }
 
   /**
@@ -1856,19 +1790,19 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createEventAsync(
-      String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
+          String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("createEvent", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(CoreV1Event::getMetadata).orElse(null))),
-        createEvent);
+            responseStep,
+            new RequestParams("createEvent", namespace, null, body,
+                    getDomainUidLabel(Optional.ofNullable(body).map(CoreV1Event::getMetadata).orElse(null))),
+            createEvent);
   }
 
   private Call createEventAsync(
-      ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
-      throws ApiException {
+          ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1880,40 +1814,40 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceEventAsync(
-      String name, String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
+          String name, String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("replaceEvent", namespace, name, body, (String) null),
-        replaceEvent);
+            responseStep,
+            new RequestParams("replaceEvent", namespace, name, body, (String) null),
+            replaceEvent);
   }
 
   private Call replaceEventAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      CoreV1Event body,
-      ApiCallback<CoreV1Event> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          CoreV1Event body,
+          ApiCallback<CoreV1Event> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
+            .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
   }
 
   private Call listNamespaceAsync(
-      ApiClient client, String cont, ApiCallback<V1NamespaceList> callback)
-      throws ApiException {
+          ApiClient client, String cont, ApiCallback<V1NamespaceList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespaceAsync(
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespaceAsync(
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1924,17 +1858,17 @@ public class CallBuilder {
    */
   public Step listNamespaceAsync(ResponseStep<V1NamespaceList> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("listNamespace", null, null, null, callParams),
-        listNamespace);
+            responseStep, new RequestParams("listNamespace", null, null, null, callParams),
+            listNamespace);
   }
 
   /* Self Subject Rules Review */
 
   private Call readSecretAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Secret> callback)
-      throws ApiException {
+          ApiClient client, String name, String namespace, ApiCallback<V1Secret> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedSecretAsync(name, namespace, pretty, exact, export, callback);
+            .readNamespacedSecretAsync(name, namespace, pretty, callback);
   }
 
   /**
@@ -1947,26 +1881,26 @@ public class CallBuilder {
    */
   public Step readSecretAsync(String name, String namespace, ResponseStep<V1Secret> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readSecret", namespace, name, null, callParams), readSecret);
+            responseStep, new RequestParams("readSecret", namespace, name, null, callParams), readSecret);
   }
 
   private Call listSecretsAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1SecretList> callback)
-      throws ApiException {
+          ApiClient client, String namespace, String cont, ApiCallback<V1SecretList> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .listNamespacedSecretAsync(
-            namespace,
-            pretty,
-            allowWatchBookmarks,
-            cont,
-            fieldSelector,
-            labelSelector,
-            limit,
-            resourceVersion,
-            RESOURCE_VERSION_MATCH_UNSET,
-            timeoutSeconds,
-            watch,
-            callback);
+            .listNamespacedSecretAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    RESOURCE_VERSION_MATCH_UNSET,
+                    timeoutSeconds,
+                    watch,
+                    callback);
   }
 
   /**
@@ -1978,9 +1912,9 @@ public class CallBuilder {
    */
   public Step listSecretsAsync(String namespace, ResponseStep<V1SecretList> responseStep) {
     return createRequestAsync(
-        responseStep,
-        new RequestParams("listSecret", namespace, null, null, callParams),
-        listSecrets);
+            responseStep,
+            new RequestParams("listSecret", namespace, null, null, callParams),
+            listSecrets);
   }
 
   /**
@@ -1991,19 +1925,19 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1SubjectAccessReview createSubjectAccessReview(V1SubjectAccessReview body)
-      throws ApiException {
+          throws ApiException {
     RequestParams params =
-        new RequestParams("createSubjectAccessReview", null, null, body, callParams);
+            new RequestParams("createSubjectAccessReview", null, null, body, callParams);
     return executeSynchronousCall(params, createSubjectaccessreviewCall);
   }
 
   /* Token Review */
 
   private Call createSubjectAccessReviewAsync(
-      ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback)
-      throws ApiException {
+          ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback)
+          throws ApiException {
     return new AuthorizationV1Api(client)
-        .createSubjectAccessReviewAsync(body, null, null, pretty, callback);
+            .createSubjectAccessReviewAsync(body, null, null, pretty, callback);
   }
 
   /**
@@ -2014,9 +1948,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1SelfSubjectAccessReview createSelfSubjectAccessReview(V1SelfSubjectAccessReview body)
-      throws ApiException {
+          throws ApiException {
     RequestParams requestParams
-        = new RequestParams("createSelfSubjectAccessReview", null, null, body, callParams);
+            = new RequestParams("createSelfSubjectAccessReview", null, null, body, callParams);
     return executeSynchronousCall(requestParams, createSelfsubjectacessreviewCall);
   }
 
@@ -2028,19 +1962,19 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1SelfSubjectRulesReview createSelfSubjectRulesReview(V1SelfSubjectRulesReview body)
-      throws ApiException {
+          throws ApiException {
     RequestParams params
-        = new RequestParams("createSelfSubjectRulesReview", null, null, body, callParams);
+            = new RequestParams("createSelfSubjectRulesReview", null, null, body, callParams);
     return executeSynchronousCall(params, createSelfsubjectrulesreviewCall);
   }
 
   private Call createSelfSubjectRulesReviewAsync(
-      ApiClient client,
-      V1SelfSubjectRulesReview body,
-      ApiCallback<V1SelfSubjectRulesReview> callback)
-      throws ApiException {
+          ApiClient client,
+          V1SelfSubjectRulesReview body,
+          ApiCallback<V1SelfSubjectRulesReview> callback)
+          throws ApiException {
     return new AuthorizationV1Api(client)
-        .createSelfSubjectRulesReviewAsync(body, null, null, pretty, callback);
+            .createSelfSubjectRulesReviewAsync(body, null, null, pretty, callback);
   }
 
   /**
@@ -2052,92 +1986,92 @@ public class CallBuilder {
    */
   public V1TokenReview createTokenReview(V1TokenReview body) throws ApiException {
     RequestParams requestParams
-        = new RequestParams("createTokenReview", null, null, body, callParams);
+            = new RequestParams("createTokenReview", null, null, body, callParams);
     return executeSynchronousCall(requestParams, createTokenReviewCall);
   }
 
   public Step readPodLogAsync(String name, String namespace, String domainUid, ResponseStep<String> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readPodLog", namespace, name, null, domainUid), readPodLog);
+            responseStep, new RequestParams("readPodLog", namespace, name, null, domainUid), readPodLog);
   }
 
   private Call readPodLogAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      String container,
-      Boolean follow,
-      Boolean insecureSkipTLSVerifyBackend,
-      Integer limitBytes,
-      String pretty,
-      Boolean previous,
-      Integer sinceSeconds,
-      Integer tailLines,
-      Boolean timestamps,
-      ApiCallback<String> callback)
-      throws ApiException {
+          ApiClient client,
+          String name,
+          String namespace,
+          String container,
+          Boolean follow,
+          Boolean insecureSkipTLSVerifyBackend,
+          Integer limitBytes,
+          String pretty,
+          Boolean previous,
+          Integer sinceSeconds,
+          Integer tailLines,
+          Boolean timestamps,
+          ApiCallback<String> callback)
+          throws ApiException {
     return new CoreV1Api(client)
-        .readNamespacedPodLogAsync(
-            name,
-            namespace,
-            container,
-            follow,
-            insecureSkipTLSVerifyBackend,
-            limitBytes,
-            pretty,
-            previous,
-            sinceSeconds,
-            tailLines,
-            timestamps,
-            callback);
+            .readNamespacedPodLogAsync(
+                    name,
+                    namespace,
+                    container,
+                    follow,
+                    insecureSkipTLSVerifyBackend,
+                    limitBytes,
+                    pretty,
+                    previous,
+                    sinceSeconds,
+                    tailLines,
+                    timestamps,
+                    callback);
   }
 
   private <T> Step createRequestAsync(
-      ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
     return STEP_FACTORY.createRequestAsync(
-        next,
-        requestParams,
-        factory,
-        null,
-        helper,
-        timeoutSeconds,
-        maxRetryCount,
-        gracePeriodSeconds,
-        fieldSelector,
-        labelSelector,
-        resourceVersion);
+            next,
+            requestParams,
+            factory,
+            null,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            gracePeriodSeconds,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
   }
 
   private <T> Step createRequestAsync(
-      ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
     return STEP_FACTORY.createRequestAsync(
-        next,
-        requestParams,
-        factory,
-        retryStrategy,
-        helper,
-        timeoutSeconds,
-        maxRetryCount,
-        gracePeriodSeconds,
-        fieldSelector,
-        labelSelector,
-        resourceVersion);
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            gracePeriodSeconds,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
   }
 
   private <T> Step createRequestAsync(
-      ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
+          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
     return STEP_FACTORY.createRequestAsync(
-        next,
-        requestParams,
-        factory,
-        retryStrategy,
-        helper,
-        timeoutSeconds,
-        maxRetryCount,
-        gracePeriodSeconds,
-        fieldSelector,
-        labelSelector,
-        resourceVersion);
+            next,
+            requestParams,
+            factory,
+            retryStrategy,
+            helper,
+            timeoutSeconds,
+            maxRetryCount,
+            gracePeriodSeconds,
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
   }
 
   private CancellableCall wrap(Call call) {
@@ -2165,7 +2099,7 @@ public class CallBuilder {
     try {
       ClientBuilder builder = ClientBuilder.standard();
       return builder.setAuthentication(
-          new AccessTokenAuthentication(accessToken)).build();
+              new AccessTokenAuthentication(accessToken)).build();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

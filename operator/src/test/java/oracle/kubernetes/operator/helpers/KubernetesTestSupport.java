@@ -54,7 +54,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
@@ -116,10 +115,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private static final String OP_PATTERN = "=|==|!=";
   private static final String VALUE_PATTERN = ".*";
   private static final Pattern FIELD_PATTERN
-        = Pattern.compile("(" + PATH_PATTERN + ")(" + OP_PATTERN + ")(" + VALUE_PATTERN + ")");
+          = Pattern.compile("(" + PATH_PATTERN + ")(" + OP_PATTERN + ")(" + VALUE_PATTERN + ")");
 
   private static final RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
+          = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
   public static final String DELETE_POD = "deletePod";
 
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
@@ -135,7 +134,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
    * @return a memento which can be used to restore the production factory
    */
   public Memento install() {
-    support(BETA_CRD, V1beta1CustomResourceDefinition.class);
     support(CUSTOM_RESOURCE_DEFINITION, V1CustomResourceDefinition.class);
     support(SELF_SUBJECT_ACCESS_REVIEW, V1SelfSubjectAccessReview.class);
     support(SELF_SUBJECT_RULES_REVIEW, V1SubjectRulesReviewStatus.class);
@@ -213,7 +211,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   @SuppressWarnings("SameParameterValue")
   private <T> void support(
-      String resourceName, Class<?> resourceClass, Function<List<T>, Object> toList) {
+          String resourceName, Class<?> resourceClass, Function<List<T>, Object> toList) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
@@ -227,7 +225,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   private <T> NamespacedDataRepository<T> supportNamespaced(
-      String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
+          String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
     final NamespacedDataRepository<T> dataRepository = new NamespacedDataRepository<>(resourceClass, toList);
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, dataRepository);
@@ -276,10 +274,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   @SuppressWarnings("unchecked")
   public <T> T getResourceWithName(String resourceType, String name) {
     return (T)
-        getResources(resourceType).stream()
-            .filter(o -> name.equals(KubernetesUtils.getResourceName(o)))
-            .findFirst()
-            .orElse(null);
+            getResources(resourceType).stream()
+                    .filter(o -> name.equals(KubernetesUtils.getResourceName(o)))
+                    .findFirst()
+                    .orElse(null);
   }
 
   /**
@@ -316,8 +314,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public void deleteNamespace(String namespaceName) {
     repositories.get(NAMESPACE).data.remove(namespaceName);
     repositories.values().stream()
-          .filter(r -> r instanceof NamespacedDataRepository)
-          .forEach(r -> ((NamespacedDataRepository<?>) r).deleteNamespace(namespaceName));
+            .filter(r -> r instanceof NamespacedDataRepository)
+            .forEach(r -> ((NamespacedDataRepository<?>) r).deleteNamespace(namespaceName));
   }
 
   @SuppressWarnings("unchecked")
@@ -536,9 +534,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
-          && (this.operation == null || this.operation == operation)
-          && (name == null || Objects.equals(name, operation.getName(requestParams)))
-          && (namespace == null || Objects.equals(namespace, requestParams.namespace));
+              && (this.operation == null || this.operation == operation)
+              && (name == null || Objects.equals(name, operation.getName(requestParams)))
+              && (namespace == null || Objects.equals(namespace, requestParams.namespace));
     }
 
     HttpErrorException getException() {
@@ -581,19 +579,19 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @Override
     public <T> Step createRequestAsync(
-        ResponseStep<T> next,
-        RequestParams requestParams,
-        CallFactory<T> factory,
-        RetryStrategy retryStrategy,
-        ClientPool helper,
-        int timeoutSeconds,
-        int maxRetryCount,
-        Integer gracePeriodSeconds,
-        String fieldSelector,
-        String labelSelector,
-        String resourceVersion) {
+            ResponseStep<T> next,
+            RequestParams requestParams,
+            CallFactory<T> factory,
+            RetryStrategy retryStrategy,
+            ClientPool helper,
+            int timeoutSeconds,
+            int maxRetryCount,
+            Integer gracePeriodSeconds,
+            String fieldSelector,
+            String labelSelector,
+            String resourceVersion) {
       return new KubernetesTestSupport.SimulatedResponseStep(
-          next, requestParams, fieldSelector, labelSelector, gracePeriodSeconds);
+              next, requestParams, fieldSelector, labelSelector, gracePeriodSeconds);
     }
   }
 
@@ -601,8 +599,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T execute(
-        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
-        throws ApiException {
+            SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
+            throws ApiException {
       try {
         return (T) new CallContext(requestParams).execute();
       } catch (HttpErrorException e) {
@@ -749,9 +747,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     List<T> getResources(String fieldSelector, String... labelSelectors) {
       return data.values().stream()
-          .filter(withFields(fieldSelector))
-          .filter(withLabels(labelSelectors))
-          .collect(Collectors.toList());
+              .filter(withFields(fieldSelector))
+              .filter(withLabels(labelSelectors))
+              .collect(Collectors.toList());
     }
 
     List<T> getResources() {
@@ -1085,7 +1083,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     public Integer getLimit() {
       return Optional.ofNullable(requestParams)
-          .map(RequestParams::getCallParams).map(CallParams::getLimit).orElse(null);
+              .map(RequestParams::getCallParams).map(CallParams::getLimit).orElse(null);
     }
 
     private void parseCallName(String callName) {
@@ -1162,7 +1160,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private <T> T patchResource(DataRepository<T> dataRepository) {
       return dataRepository.patchResource(
-          requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
+              requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
     }
 
     private <T> Object listResources(Integer limit, String cont, DataRepository<T> dataRepository) {
@@ -1182,8 +1180,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final CallContext callContext;
 
     SimulatedResponseStep(
-          ResponseStep<?> next, RequestParams requestParams,
-          String fieldSelector, String labelSelector, Integer gracePeriodSeconds) {
+            ResponseStep<?> next, RequestParams requestParams,
+            String fieldSelector, String labelSelector, Integer gracePeriodSeconds) {
       super(next);
       callContext = new CallContext(requestParams, fieldSelector, labelSelector, gracePeriodSeconds);
       if (next != null) {

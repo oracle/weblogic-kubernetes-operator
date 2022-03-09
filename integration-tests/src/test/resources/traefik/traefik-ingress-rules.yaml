@@ -10,14 +10,14 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - web
+    - web
   routes:
-  - kind: Rule
-    match: Host(`@domain1uid@.@NS@.cluster-1.test`)
-    services:
-    - kind: Service
-      name: @domain1uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: Host(`@domain1uid@.@NS@.cluster-1.test`)
+      services:
+        - kind: Service
+          name: @domain1uid@-cluster-cluster-1
+          port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -28,16 +28,16 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - websecure
+    - websecure
   routes:
-  - kind: Rule
-    match: Host(`@domain1uid@.@NS@.cluster-1.test`)
-    services:
-    - kind: Service
-      name: @domain1uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: Host(`@domain1uid@.@NS@.cluster-1.test`)
+      services:
+        - kind: Service
+          name: @domain1uid@-cluster-cluster-1
+          port: 7100
   tls:
-     secretName: @domain1uid@-traefik-tls-secret
+    secretName: @domain1uid@-traefik-tls-secret
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -48,14 +48,14 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - web
+    - web
   routes:
-  - kind: Rule
-    match: Host(`@domain2uid@.@NS@.cluster-1.test`)
-    services:
-    - kind: Service
-      name: @domain2uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: Host(`@domain2uid@.@NS@.cluster-1.test`)
+      services:
+        - kind: Service
+          name: @domain2uid@-cluster-cluster-1
+          port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -66,16 +66,16 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - websecure
+    - websecure
   routes:
-  - kind: Rule
-    match: Host(`@domain2uid@.@NS@.cluster-1.test`)
-    services:
-    - kind: Service
-      name: @domain2uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: Host(`@domain2uid@.@NS@.cluster-1.test`)
+      services:
+        - kind: Service
+          name: @domain2uid@-cluster-cluster-1
+          port: 7100
   tls:
-     secretName: @domain2uid@-tls-secret
+    secretName: @domain2uid@-tls-secret
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -86,14 +86,14 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - web
+    - web
   routes:
-  - kind: Rule
-    match: Host(`@domain1uid@.@NS@.admin-server.test`)
-    services:
-    - kind: Service
-      name: @domain1uid@-admin-server
-      port: 7001
+    - kind: Rule
+      match: Host(`@domain1uid@.@NS@.admin-server.test`)
+      services:
+        - kind: Service
+          name: @domain1uid@-admin-server
+          port: 7001
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -104,14 +104,14 @@ metadata:
   namespace: @NS@
 spec:
   entryPoints:
-   - web
+    - web
   routes:
-  - kind: Rule
-    match: Host(`@domain2uid@.@NS@.admin-server.test`)
-    services:
-    - kind: Service
-      name: @domain2uid@-admin-server
-      port: 7001
+    - kind: Rule
+      match: Host(`@domain2uid@.@NS@.admin-server.test`)
+      services:
+        - kind: Service
+          name: @domain2uid@-admin-server
+          port: 7001
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -122,15 +122,15 @@ metadata:
   namespace: @NS@
 spec:
   routes:
-  - kind: Rule
-    match: PathPrefix(`/domain1`)
-    middlewares:
-    - name: middleware-domain1
-      namespace: @NS@
-    services:
-    - kind: Service
-      name: @domain1uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: PathPrefix(`/domain1`)
+      middlewares:
+        - name: middleware-domain1
+          namespace: @NS@
+      services:
+        - kind: Service
+          name: @domain1uid@-cluster-cluster-1
+          port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -151,15 +151,15 @@ metadata:
   namespace: @NS@
 spec:
   routes:
-  - kind: Rule
-    match: PathPrefix(`/domain2`)
-    middlewares:
-    - name: middleware-domain2
-      namespace: @NS@
-    services:
-    - kind: Service
-      name: @domain2uid@-cluster-cluster-1
-      port: 7100
+    - kind: Rule
+      match: PathPrefix(`/domain2`)
+      middlewares:
+        - name: middleware-domain2
+          namespace: @NS@
+      services:
+        - kind: Service
+          name: @domain2uid@-cluster-cluster-1
+          port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -180,18 +180,18 @@ metadata:
   namespace: default
 spec:
   entryPoints:
-  - websecure
+    - websecure
   routes:
-  - kind: Rule
-    match: PathPrefix(`/console`)
-    middlewares:
-    - name: tls-middleware-console1
-      namespace: default
-    services:
-    - kind: Service
-      name: @domain1uid@-admin-server
-      namespace: default
-      port: 7001
+    - kind: Rule
+      match: PathPrefix(`/console`)
+      middlewares:
+        - name: tls-middleware-console1
+          namespace: default
+      services:
+        - kind: Service
+          name: @domain1uid@-admin-server
+          namespace: default
+          port: 7001
   tls:
     secretName: @domain1uid@-traefik-tls-secret
 ---
@@ -208,7 +208,9 @@ spec:
       WL-Proxy-Client-IP: "" # Removes
       WL-Proxy-SSL: "" # Removes
       WL-Proxy-SSL: "true" # Adds
-    sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -220,18 +222,18 @@ metadata:
   namespace: default
 spec:
   entryPoints:
-  - websecure
+    - websecure
   routes:
-  - kind: Rule
-    match: PathPrefix(`/domain1`)
-    middlewares:
-    - name: tls-middleware-domain1
-      namespace: default
-    services:
-    - kind: Service
-      name: @domain1uid@-cluster-cluster-1
-      namespace: default
-      port: 7100
+    - kind: Rule
+      match: PathPrefix(`/domain1`)
+      middlewares:
+        - name: tls-middleware-domain1
+          namespace: default
+      services:
+        - kind: Service
+          name: @domain1uid@-cluster-cluster-1
+          namespace: default
+          port: 7100
   tls:
     secretName: @domain1uid@-traefik-tls-secret
 ---
@@ -244,7 +246,9 @@ spec:
   replacePathRegex:
     regex: ^/domain1(.*)
     replacement: /$1
-  sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -256,18 +260,18 @@ metadata:
   namespace: default
 spec:
   entryPoints:
-  - websecure
+    - websecure
   routes:
-  - kind: Rule
-    match: PathPrefix(`/domain2`)
-    middlewares:
-    - name: tls-middleware-domain2
-      namespace: default
-    services:
-    - kind: Service
-      name: @domain2uid@-cluster-cluster-1
-      namespace: default
-      port: 7100
+    - kind: Rule
+      match: PathPrefix(`/domain2`)
+      middlewares:
+        - name: tls-middleware-domain2
+          namespace: default
+      services:
+        - kind: Service
+          name: @domain2uid@-cluster-cluster-1
+          namespace: default
+          port: 7100
   tls:
     secretName: @domain2uid@-traefik-tls-secret
 ---
@@ -280,4 +284,6 @@ spec:
   replacePathRegex:
     regex: ^/domain2(.*)
     replacement: /$1
-  sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true

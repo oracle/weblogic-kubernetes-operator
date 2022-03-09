@@ -48,16 +48,16 @@ public interface ProcessingConstants {
 
   /** Field selectors to filter the events the operator will watch. */
   String READINESS_PROBE_FAILURE_EVENT_FILTER =
-      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
+          "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
   String EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
-      + "exceeded configured domainPresenceFailureRetryMaxCount: "
-      + DomainPresence.getDomainPresenceFailureRetryMaxCount()
-      + ". The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
-      + " by adding it to the weblogic-operator-cm configmap."
-      + " To force the introspector to start retrying again, update 'domain.spec.introspectVersion'.";
+          + "exceeded configured domainPresenceFailureRetryMaxCount: "
+          + DomainPresence.getDomainPresenceFailureRetryMaxCount()
+          + ". The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
+          + " by adding it to the weblogic-operator-cm configmap."
+          + " To force the introspector to start retrying again, update 'domain.spec.introspectVersion'.";
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();

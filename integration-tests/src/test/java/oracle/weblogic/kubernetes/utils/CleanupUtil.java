@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -9,9 +9,9 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -27,12 +27,9 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 
 /**
  * CleanupUtil is used for cleaning up all the Kubernetes artifacts left behind by the integration tests.
@@ -81,31 +78,20 @@ public class CleanupUtil {
         //ignore
       }
 
-      // wait for the artifacts to be deleted, waiting for a maximum of 10 minutes
-      ConditionFactory withStandardRetryPolicy = with().pollDelay(0, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
-
       for (var namespace : namespaces) {
         logger.info("Check for artifacts in namespace {0}", namespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for artifacts to be deleted in namespace {0}, "
-                        + "(elapsed time {1} , remaining time {2}",
-                    namespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(nothingFoundInNamespace(namespace));
+        testUntil(
+                nothingFoundInNamespace(namespace),
+                logger,
+                "artifacts to be deleted in namespace {0}",
+                namespace);
 
         logger.info("Check for namespace {0} existence", namespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for namespace to be deleted {0}, "
-                        + "(elapsed time {1} , remaining time {2}",
-                    namespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(namespaceNotFound(namespace));
+        testUntil(
+                namespaceNotFound(namespace),
+                logger,
+                "namespace to be deleted {0}",
+                namespace);
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -138,8 +124,8 @@ public class CleanupUtil {
    */
   private static void uninstallWebLogicOperator(String namespace) {
     HelmParams opHelmParams = new HelmParams()
-        .releaseName(TestConstants.OPERATOR_RELEASE_NAME)
-        .namespace(namespace);
+            .releaseName(TestConstants.OPERATOR_RELEASE_NAME)
+            .namespace(namespace);
     TestActions.uninstallOperator(opHelmParams);
   }
 
@@ -154,19 +140,19 @@ public class CleanupUtil {
     return () -> {
       boolean nothingFound = true;
       logger.info("Checking for "
-          + "domains, "
-          + "replica sets, "
-          + "jobs, "
-          + "config maps, "
-          + "secrets, "
-          + "persistent volume claims, "
-          + "persistent volumes, "
-          + "deployments, "
-          + "services, "
-          + "service accounts, "
-          + "ingresses "
-          + "namespaced roles"
-          + "namespaced rolebindings in namespace {0}\n", namespace);
+              + "domains, "
+              + "replica sets, "
+              + "jobs, "
+              + "config maps, "
+              + "secrets, "
+              + "persistent volume claims, "
+              + "persistent volumes, "
+              + "deployments, "
+              + "services, "
+              + "service accounts, "
+              + "ingresses "
+              + "namespaced roles"
+              + "namespaced rolebindings in namespace {0}\n", namespace);
 
       // Check if any domains exist
       try {
@@ -262,17 +248,17 @@ public class CleanupUtil {
       try {
         for (var item : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
           String label = Optional.ofNullable(item)
-              .map(pvc -> pvc.getMetadata())
-              .map(metadata -> metadata.getLabels())
-              .map(labels -> labels.get("weblogic.domainUid")).get();
+                  .map(pvc -> pvc.getMetadata())
+                  .map(metadata -> metadata.getLabels())
+                  .map(labels -> labels.get("weblogic.domainUid")).get();
 
           if (!Kubernetes.listPersistentVolumes(
-              String.format("weblogic.domainUid = %s", label))
-              .getItems().isEmpty()) {
+                          String.format("weblogic.domainUid = %s", label))
+                  .getItems().isEmpty()) {
             logger.info("Persistent Volumes still exists!!!");
             List<V1PersistentVolume> pvs = Kubernetes.listPersistentVolumes(
-                String.format("weblogic.domainUid = %s", label))
-                .getItems();
+                            String.format("weblogic.domainUid = %s", label))
+                    .getItems();
             for (var pv : pvs) {
               logger.info(pv.getMetadata().getName());
             }
@@ -333,7 +319,7 @@ public class CleanupUtil {
       try {
         if (!Kubernetes.listNamespacedIngresses(namespace).getItems().isEmpty()) {
           logger.info("Ingresses still exists!!!");
-          List<NetworkingV1beta1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
+          List<V1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
           for (var item : items) {
             logger.info(item.getMetadata().getName());
           }
@@ -486,7 +472,7 @@ public class CleanupUtil {
       try {
         if (null != label) {
           List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
-              String.format("weblogic.domainUid = %s", label)).getItems();
+                  String.format("weblogic.domainUid = %s", label)).getItems();
           pvs.addAll(items);
         }
         // delete the pvc
