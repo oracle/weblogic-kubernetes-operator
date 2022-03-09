@@ -120,7 +120,7 @@ public class AuxiliaryImageUtils {
    * @param modelList model list
    *
    */
-  public static void createPushAuxiliaryImageWithDomainConfig(String imageName,
+  public static void createPushAuxiliaryImageWithDomainConfig(String imageName, String imageTag,
                                                               List<String> archiveList,
                                                               List<String> modelList) {
 
@@ -128,10 +128,10 @@ public class AuxiliaryImageUtils {
     WitParams witParams =
         new WitParams()
             .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(imageName, witParams);
+    createAndPushAuxiliaryImage(imageName, imageTag, witParams);
   }
 
   /**
@@ -141,15 +141,16 @@ public class AuxiliaryImageUtils {
    * @param wdtVersion wdt version
    *
    */
-  public static void createPushAuxiliaryImageWithWDTInstallOnly(String imageName, String wdtVersion) {
+  public static void createPushAuxiliaryImageWithWDTInstallOnly(String imageName, String imageTag,
+                                                                String wdtVersion) {
 
     WitParams witParams =
         new WitParams()
             .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageTag(imageTag)
             .wdtModelOnly(true)
             .wdtVersion(wdtVersion);
-    createAndPushAuxiliaryImage(imageName, witParams);
+    createAndPushAuxiliaryImage(imageName, imageTag, witParams);
   }
 
 
@@ -160,24 +161,24 @@ public class AuxiliaryImageUtils {
    * @param witParams wit params
    *
    */
-  public static void createAndPushAuxiliaryImage(String imageName, WitParams witParams) {
+  public static void createAndPushAuxiliaryImage(String imageName,String imageTag, WitParams witParams) {
     // create auxiliary image using imagetool command if does not exists
     LoggingFacade logger = getLogger();
-    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
+    if (! dockerImageExists(imageName, imageTag)) {
+      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, imageTag);
       testUntil(
           withStandardRetryPolicy,
           createAuxiliaryImage(witParams),
           logger,
           "createAuxImage to be successful");
     } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
+      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, imageTag);
     }
 
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
+      dockerLoginAndPushImageToRegistry(imageName + ":" + imageTag);
     }
   }
 
@@ -214,14 +215,14 @@ public class AuxiliaryImageUtils {
    * @param archiveList archive list
    *
    */
-  public static Callable<Boolean> createAuxiliaryImage(String auxImage, List<String> modelList,
+  public static Callable<Boolean> createAuxiliaryImage(String auxImage, String imageTag, List<String> modelList,
                                                        List<String> archiveList) {
 
     return (() -> {
       WitParams witParams =
           new WitParams()
               .modelImageName(auxImage)
-              .modelImageTag(MII_BASIC_IMAGE_TAG)
+              .modelImageTag(imageTag)
               .modelFiles(modelList)
               .modelArchiveFiles(archiveList);
 

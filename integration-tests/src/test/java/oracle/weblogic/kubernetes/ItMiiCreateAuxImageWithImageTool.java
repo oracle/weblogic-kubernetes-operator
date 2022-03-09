@@ -73,9 +73,8 @@ class ItMiiCreateAuxImageWithImageTool {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-new1";
-  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-new2";
-  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-new3";
+  private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
+  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -141,33 +140,33 @@ class ItMiiCreateAuxImageWithImageTool {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(miiAuxiliaryImage1, modelList, archiveList),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, modelList, archiveList),
+        logger,
+        "createAuxImage to be successful");
+   
 
     // push auxiliary image to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {2}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domain1Uid, miiAuxiliaryImage1);
+        domain1Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+        domain1Uid, miiAuxiliaryImage, domainNamespace);
     String adminServerPodName = domain1Uid + "-admin-server";
     String managedServerPrefix = domain1Uid + "-managed-server";
 
@@ -214,8 +213,8 @@ class ItMiiCreateAuxImageWithImageTool {
 
     WitParams witParams =
         new WitParams()
-        .modelImageName(miiAuxiliaryImage2)
-        .modelImageTag(MII_BASIC_IMAGE_TAG)
+        .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+        .modelImageTag(miiAuxiliaryImageTag)
         .baseImageName("oraclelinux")
         .baseImageTag(ORACLELINUX_TEST_VERSION)
         .wdtHome(auxiliaryImagePath2)
@@ -223,37 +222,37 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
+        MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(witParams),
+        logger,
+        "createAuxImage to be successful");
+    
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domain2Uid, miiAuxiliaryImage2);
+        domain2Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
-        miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage);
 
     String adminServerPodName = domain2Uid + "-admin-server";
     String managedServerPrefix = domain2Uid + "-managed-server";
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
-        domain2Uid, miiAuxiliaryImage1, domainNamespace);
+        domain2Uid, miiAuxiliaryImage, domainNamespace);
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
     //create router for admin service on OKD
@@ -290,40 +289,38 @@ class ItMiiCreateAuxImageWithImageTool {
     String customWdtModelHome = "/customwdtmodelhome/models";
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage3)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImageTag)
             .wdtHome(customWdtHome)
             .wdtModelHome(customWdtModelHome)
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(witParams),
+        logger,
+        "createAuxImage to be successful");
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domain3Uid, miiAuxiliaryImage3);
+            domain3Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
-            .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
+            .image(miiAuxiliaryImage)
             .imagePullPolicy("IfNotPresent")
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
@@ -333,7 +330,7 @@ class ItMiiCreateAuxImageWithImageTool {
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
-            domain3Uid, miiAuxiliaryImage1, domainNamespace);
+            domain3Uid, miiAuxiliaryImage, domainNamespace);
     createDomainAndVerify(domain3Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
     //create router for admin service on OKD
@@ -482,16 +479,8 @@ class ItMiiCreateAuxImageWithImageTool {
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // delete images
-      if (miiAuxiliaryImage1 != null) {
-        deleteImage(miiAuxiliaryImage1);
-      }
-
-      if (miiAuxiliaryImage2 != null) {
-        deleteImage(miiAuxiliaryImage2);
-      }
-
-      if (miiAuxiliaryImage3 != null) {
-        deleteImage(miiAuxiliaryImage3);
+      if (miiAuxiliaryImage != null) {
+        deleteImage(miiAuxiliaryImage);
       }
     }
   }

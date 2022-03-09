@@ -112,21 +112,37 @@ class ItMiiAuxiliaryImage {
   private static LoggingFacade logger = null;
   private static final String domainUid1 = "domain1";
   private final String domainUid = "";
-  private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "1";
-  private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "2";
-  private static final String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "3";
-  private static final String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "4";
-  private static final String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "5";
-  private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "6";
-  private static final String miiAuxiliaryImage7 = MII_AUXILIARY_IMAGE_NAME + "7";
-  private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + "8";
-  private static final String miiAuxiliaryImage9 = MII_AUXILIARY_IMAGE_NAME + "9";
-  private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + "10";
-  private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + "11";
-  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "12";
-  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "13";
-  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "14";
-  private static String errorPathAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "15";
+  private static final String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
+  private static final String miiAuxiliaryImage2Tag = "image2" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
+  private static final String miiAuxiliaryImage3Tag = "image3" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage3Tag;
+  private static final String miiAuxiliaryImage4Tag = "image4" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage4Tag;
+  private static final String miiAuxiliaryImage5Tag = "image5" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage5Tag;
+  private static final String miiAuxiliaryImage6Tag = "image6" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage6Tag;
+  private static final String miiAuxiliaryImage7Tag = "image7" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage7 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage7Tag;
+  private static final String miiAuxiliaryImage8Tag = "image8" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage8 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage8Tag;
+  private static final String miiAuxiliaryImage9Tag = "image9" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage9 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage9Tag;
+  private static final String miiAuxiliaryImage10Tag = "image10" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage10Tag;
+  private static final String miiAuxiliaryImage11Tag = "image11" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage11Tag;
+
+  private static final String errorPathAuxiliaryImage1Tag = "errorimage1" + MII_BASIC_IMAGE_TAG;
+  private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage1Tag;
+  private static final String errorPathAuxiliaryImage2Tag = "errorimage2" + MII_BASIC_IMAGE_TAG;
+  private static final String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage2Tag;
+  private static final String errorPathAuxiliaryImage3Tag = "errorimage3" + MII_BASIC_IMAGE_TAG;
+  private static final String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage3Tag;
+  private static final String errorPathAuxiliaryImage4Tag = "errorimage4" + MII_BASIC_IMAGE_TAG;
+  private static final String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage4Tag;
   private static final String adminServerPodNameDomain1 = domainUid1 + "-admin-server";
   private static final String managedServerPrefixDomain1 = domainUid1 + "-managed-server";
   private static final int replicaCount = 2;
@@ -206,18 +222,18 @@ class ItMiiAuxiliaryImage {
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
-    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage1, archiveList, modelList);
+    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, archiveList, modelList);
     // image2 with model files for jms config
     modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage2)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage2Tag)
             .wdtModelOnly(true)
             .modelFiles(modelList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage2, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage2Tag, witParams);
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath = "/auxiliary";
@@ -228,8 +244,8 @@ class ItMiiAuxiliaryImage {
     Domain domainCR = createDomainResource40(domainUid1, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage1,
+        miiAuxiliaryImage2);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -295,11 +311,11 @@ class ItMiiAuxiliaryImage {
     // create image3 with model and wdt installation files
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage3)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage3Tag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(miiAuxiliaryImage3, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage3Tag, witParams);
 
     //create router for admin service on OKD
     if (adminSvcExtHostDomain1 == null) {
@@ -322,8 +338,8 @@ class ItMiiAuxiliaryImage {
     Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1
-            + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG,
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1,
+        miiAuxiliaryImage3,
         domainUid1, domainNamespace);
 
     // verify the server pods are rolling restarted and back to ready state
@@ -428,7 +444,7 @@ class ItMiiAuxiliaryImage {
     final String managedServerPrefix = domainUid + "-managed-server";
     // using the first image created in initAll, creating second image with different WDT version here
 
-    createPushAuxiliaryImageWithWDTInstallOnly(miiAuxiliaryImage4, "1.9.19");
+    createPushAuxiliaryImageWithWDTInstallOnly(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage4Tag, WDT_TEST_VERSION);
 
     // create domain custom resource using 2 auxiliary images, one with default sourceWDTInstallHome
     // and other with sourceWDTInstallHome set to none
@@ -437,7 +453,7 @@ class ItMiiAuxiliaryImage {
     Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage1, miiAuxiliaryImage4);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -450,7 +466,7 @@ class ItMiiAuxiliaryImage {
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
             "/aux", this.getClass().getSimpleName()));
 
-    assertFalse(wdtVersion.contains("1.9.19"),
+    assertFalse(wdtVersion.contains(WDT_TEST_VERSION),
         "Old version of WDT is copied");
 
     // create domain custom resource using 2 auxiliary images with default sourceWDTInstallHome for both images
@@ -459,8 +475,8 @@ class ItMiiAuxiliaryImage {
     Domain domainCR2 = createDomainResource40(domainUid + "1", domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage1,
+        miiAuxiliaryImage4);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid + "1", domainNamespace);
@@ -501,12 +517,12 @@ class ItMiiAuxiliaryImage {
     // create image5 with model and no wdt installation files
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage5)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage5Tag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage5, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage5Tag, witParams);
     OffsetDateTime timestamp = now();
 
     // create domain custom resource using auxiliary image
@@ -515,7 +531,7 @@ class ItMiiAuxiliaryImage {
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
-        miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage5);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -558,13 +574,13 @@ class ItMiiAuxiliaryImage {
 
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage6)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage6Tag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtHome(auxiliaryImagePathCustom)
             .wdtModelHome(auxiliaryImagePathCustom + "/models");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage6Tag, witParams);
 
     modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
@@ -572,22 +588,22 @@ class ItMiiAuxiliaryImage {
 
     witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage7)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage7Tag)
             .modelFiles(modelList)
             .wdtModelOnly(true)
             .wdtVersion("NONE")
             .wdtHome(auxiliaryImagePathCustom)
             .wdtModelHome(auxiliaryImagePathCustom + "/models");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage6, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage7Tag, witParams);
 
     // create domain custom resource using auxiliary images
     String[] images = {miiAuxiliaryImage6, miiAuxiliaryImage7};
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1",
-        auxiliaryImagePathCustom, miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
+        auxiliaryImagePathCustom, miiAuxiliaryImage6,
+        miiAuxiliaryImage7);
 
     // add the sourceWDTInstallHome and sourceModelHome for both aux images.
     for (String cmImageName : images) {
@@ -624,12 +640,12 @@ class ItMiiAuxiliaryImage {
 
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage8)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage8Tag)
             .wdtHome(auxiliaryImagePathCustom)
             .wdtModelHome(auxiliaryImagePathCustom + "/models")
             .wdtVersion("latest");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage8, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage8Tag, witParams);
 
     OffsetDateTime timestamp = now();
 
@@ -639,7 +655,7 @@ class ItMiiAuxiliaryImage {
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
-        miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage8);
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -684,7 +700,7 @@ class ItMiiAuxiliaryImage {
     Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage1, miiAuxiliaryImage2);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -726,25 +742,25 @@ class ItMiiAuxiliaryImage {
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
     WitParams witParams =
         new WitParams()
-            .modelImageName(errorPathAuxiliaryImage2)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(errorPathAuxiliaryImage1Tag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(errorPathAuxiliaryImage2, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, errorPathAuxiliaryImage1Tag, witParams);
 
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid2, errorPathAuxiliaryImage2);
+        domainUid2, errorPathAuxiliaryImage1);
 
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        errorPathAuxiliaryImage1);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid2, errorPathAuxiliaryImage2, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage1, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
@@ -795,24 +811,24 @@ class ItMiiAuxiliaryImage {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     WitParams witParams =
         new WitParams()
-            .modelImageName(errorPathAuxiliaryImage3)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(errorPathAuxiliaryImage2Tag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtVersion("latest");
-    createAndPushAuxiliaryImage(errorPathAuxiliaryImage3, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, errorPathAuxiliaryImage2Tag, witParams);
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid2, errorPathAuxiliaryImage3);
+        domainUid2, errorPathAuxiliaryImage2);
 
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+        errorPathAuxiliaryImage2);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid2, errorPathAuxiliaryImage3, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
@@ -867,25 +883,25 @@ class ItMiiAuxiliaryImage {
 
     WitParams witParams =
         new WitParams()
-            .modelImageName(errorPathAuxiliaryImage4)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(errorPathAuxiliaryImage3Tag)
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList)
             .additionalBuildCommands(RESOURCE_DIR + "/auxiliaryimage/addBuildCommand.txt");
-    createAndPushAuxiliaryImage(errorPathAuxiliaryImage4, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, errorPathAuxiliaryImage3Tag, witParams);
 
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
-        domainUid2, errorPathAuxiliaryImage4);
+        domainUid2, errorPathAuxiliaryImage3);
     Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
+        errorPathAuxiliaryImage3);
 
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid2, errorPathAuxiliaryImage4, errorpathDomainNamespace);
+        domainUid2, errorPathAuxiliaryImage3, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
@@ -951,28 +967,28 @@ class ItMiiAuxiliaryImage {
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage9)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage9Tag)
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList)
             .wdtVersion("NONE");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage9, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage9Tag, witParams);
 
     // create second auxiliary image with older wdt installation files only
     witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage10)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage10Tag)
             .wdtVersion(WDT_TEST_VERSION);
-    createAndPushAuxiliaryImage(miiAuxiliaryImage10, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage10Tag, witParams);
 
     // create third auxiliary image with newest wdt installation files only
     witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage11)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage11Tag)
             .wdtVersion("latest");
-    createAndPushAuxiliaryImage(miiAuxiliaryImage11, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage11Tag, witParams);
 
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
@@ -980,8 +996,8 @@ class ItMiiAuxiliaryImage {
     Domain domainCR = createDomainResource40(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage9,
+        miiAuxiliaryImage10);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
@@ -1017,8 +1033,8 @@ class ItMiiAuxiliaryImage {
     }, "Can't retrieve wdt version file or version does match the expected");
 
     //updating wdt to latest version by patching the domain with image3
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG, domainUid, wdtDomainNamespace);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10,
+        miiAuxiliaryImage11, domainUid, wdtDomainNamespace);
 
     //check that WDT version is changed
     assertDoesNotThrow(() -> {
@@ -1085,7 +1101,7 @@ class ItMiiAuxiliaryImage {
 
     // patch the domain with correct image which exists
     patchDomainWithAuxiliaryImageAndVerify(aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG, domainUid,
+        miiAuxiliaryImage1, domainUid,
         domainNamespace, false);
 
     // verify there is no status condition type Failed
@@ -1118,21 +1134,21 @@ class ItMiiAuxiliaryImage {
    */
   public void tearDownAll() {
     // delete images
-    deleteImage(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage6 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage7 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage8 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage9 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage10 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(miiAuxiliaryImage11 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(errorPathAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(errorPathAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(errorPathAuxiliaryImage4 + ":" + MII_BASIC_IMAGE_TAG);
-    deleteImage(errorPathAuxiliaryImage5 + ":" + MII_BASIC_IMAGE_TAG);
+    deleteImage(miiAuxiliaryImage1);
+    deleteImage(miiAuxiliaryImage2);
+    deleteImage(miiAuxiliaryImage3);
+    deleteImage(miiAuxiliaryImage4);
+    deleteImage(miiAuxiliaryImage5);
+    deleteImage(miiAuxiliaryImage6);
+    deleteImage(miiAuxiliaryImage7);
+    deleteImage(miiAuxiliaryImage8);
+    deleteImage(miiAuxiliaryImage9);
+    deleteImage(miiAuxiliaryImage10);
+    deleteImage(miiAuxiliaryImage11);
+    deleteImage(errorPathAuxiliaryImage1);
+    deleteImage(errorPathAuxiliaryImage2);
+    deleteImage(errorPathAuxiliaryImage3);
+    deleteImage(errorPathAuxiliaryImage4);
   }
 
   private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
