@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,7 +15,11 @@ public class DomainPresence {
         .orElse(DEFAULT_TIMEOUT_SECONDS);
   }
 
-  static int getDomainPresenceFailureRetryMaxCount() {
+  /**
+   * Returns the maximum number of failures permitted before a retryable operation aborts make-right.
+   * This is derived from the "domainPresenceFailureRetryMaxCount" tuning parameter.
+   */
+  public static int getFailureRetryMaxCount() {
     return Optional.ofNullable(TuningParameters.getInstance())
         .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetryMaxCount)
         .orElse(DEFAULT_RETRY_MAX_COUNT);

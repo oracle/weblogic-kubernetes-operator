@@ -24,6 +24,7 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
   private final String expectedReason;
   private List<String> expectedMessageStrings = Collections.emptyList();
   private String expectedNamespace;
+  private Integer expectedCount;
 
   private EventMatcher(@Nonnull String expectedReason) {
     this.expectedReason = expectedReason;
@@ -40,6 +41,11 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
 
   public EventMatcher inNamespace(String namespace) {
     expectedNamespace = namespace;
+    return this;
+  }
+
+  public EventMatcher withCount(int expectedCount) {
+    this.expectedCount = expectedCount;
     return this;
   }
 
@@ -62,12 +68,15 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
 
   private String toEventString(CoreV1Event event) {
     List<String> descriptions = new ArrayList<>();
-    descriptions.add("reason '" + event.getReason() + "'");
+    descriptions.add("reason \"" + event.getReason() + '"');
     if (expectedNamespace != null) {
-      descriptions.add("namespace '" + event.getMetadata().getNamespace() + "'");
+      descriptions.add("namespace \"" + event.getMetadata().getNamespace() + '"');
     }
     if (!expectedMessageStrings.isEmpty()) {
       descriptions.add("message '" + event.getMessage() + "'");
+    }
+    if (expectedCount != null) {
+      descriptions.add("count <" + event.getCount() + '>');
     }
     return "with " + joinListGrammatically(descriptions);
   }
@@ -76,6 +85,8 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     if (!expectedReason.equals(event.getReason())) {
       return false;
     } else if (expectedNamespace != null && !expectedNamespace.equals(event.getMetadata().getNamespace())) {
+      return false;
+    } else if (expectedCount != null && !expectedCount.equals(event.getCount())) {
       return false;
     } else {
       return getMissingMessageStrings(event.getMessage()).isEmpty();
@@ -91,6 +102,9 @@ public class EventMatcher extends TypeSafeDiagnosingMatcher<KubernetesTestSuppor
     description.appendText("Event with reason ").appendValue(expectedReason);
     if (expectedNamespace != null) {
       description.appendText(" in namespace ").appendValue(expectedNamespace);
+    }
+    if (expectedCount != null) {
+      description.appendText(" with count ").appendValue(expectedCount);
     }
     if (!expectedMessageStrings.isEmpty()) {
       description.appendValueList(" and a message containing ", ", ", ".", expectedMessageStrings);

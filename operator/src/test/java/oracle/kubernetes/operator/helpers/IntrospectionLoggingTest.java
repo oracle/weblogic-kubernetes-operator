@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,11 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -20,12 +24,14 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
-import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
@@ -35,6 +41,8 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectionLoggingTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -51,6 +59,7 @@ class IntrospectionLoggingTest {
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, new V1Job().metadata(new V1ObjectMeta().uid("123")));
     testSupport.defineResources(domain);
   }
 
@@ -102,7 +111,7 @@ class IntrospectionLoggingTest {
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
     assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR, SEVERE_PROBLEM_1)));
+            equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
   }
 
   @Test
@@ -118,9 +127,9 @@ class IntrospectionLoggingTest {
         stringContainsInOrder("Domain", UID, "failed due to", INTROSPECTION_ERROR));
   }
 
+  @SuppressWarnings("SameParameterValue")
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    //System.out.println(events);
     return Optional.ofNullable(events)
         .filter(list -> list.size() != 0)
         .map(n -> n.get(0))
@@ -144,7 +153,6 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR,
-                SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
+        equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));
   }
 }
