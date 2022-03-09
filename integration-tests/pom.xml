@@ -329,8 +329,7 @@
                 <includes-failsafe>
                   **/ItCrossDomainTransaction,
                   **/ItKubernetesEvents,
-                  **/ItMiiAuxiliaryImage,
-		  **/ItMiiCreateAuxImageWithImageTool,
+                  **/ItMiiAuxiliaryImage, **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
@@ -338,6 +337,7 @@
                   **/ItMiiNewCreateAuxImage,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMiiNewCreateAuxImage,
+                  **/ItMultiDomainModels,
                   **/ItPodsRestart
                 </includes-failsafe>
             </properties>
