@@ -602,7 +602,7 @@ public class DomainStatus {
   @NotNull
   private FailureLevel getFailureLevel(String jobUid, String message) {
     if (jobUid == null) {
-      return FailureLevel.NON_FATAL;
+      return FailureLevel.NON_INTROSPECTION;
     } else if (hasReachedMaximumFailureCount()) {
       return FailureLevel.RETRIES_EXCEEDED;
     } else if (isFatalError(message)) {
@@ -624,7 +624,7 @@ public class DomainStatus {
   }
 
   private enum FailureLevel {
-    NON_FATAL,
+    NON_INTROSPECTION,
     FATAL {
       @NotNull
       @Override
