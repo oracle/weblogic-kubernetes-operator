@@ -1,11 +1,10 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -14,8 +13,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
-public class Namespace {
-  public static Random random = new Random(System.currentTimeMillis());
+public class Namespace extends UniqueName {
   private String name;
 
   public Namespace name(String name) {
@@ -25,17 +23,12 @@ public class Namespace {
 
   /**
    * Generates a "unique" name by choosing a random name from
-   * 26^4 possible combinations.
+   * 26^6 possible combinations.
    *
    * @return name
    */
   public static String uniqueName() {
-    char[] nsName = new char[4];
-    for (int i = 0; i < nsName.length; i++) {
-      nsName[i] = (char) (random.nextInt(25) + (int) 'a');
-    }
-    String uniqueName = "ns-" + new String(nsName);
-    return uniqueName;
+    return uniqueName("ns-");
   }
 
   public boolean create() throws ApiException {
@@ -85,7 +78,7 @@ public class Namespace {
    * @throws ApiException when adding labels to namespace fails
    */
   public static void addLabelsToNamespace(String name, Map<String, String> labels)
-      throws ApiException {
+          throws ApiException {
     boolean found = false;
     V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
     if (!namespaces.getItems().isEmpty()) {

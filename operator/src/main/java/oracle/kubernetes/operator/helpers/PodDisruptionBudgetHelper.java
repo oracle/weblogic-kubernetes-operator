@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -119,7 +120,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }
@@ -143,7 +144,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }

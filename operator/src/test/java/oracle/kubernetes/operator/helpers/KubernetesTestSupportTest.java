@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -527,7 +528,7 @@ class KubernetesTestSupportTest {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
-    assertThat(endStep.callResponse.getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
+    assertThat(endStep.callResponse.getStatusCode(), equalTo(KubernetesConstants.HTTP_NOT_FOUND));
     assertThat(endStep.callResponse.getE(), notNullValue());
   }
 

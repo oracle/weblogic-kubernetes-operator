@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -12,16 +12,14 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -34,7 +32,6 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,12 +46,8 @@ public class Domain {
     }
   }
 
-  private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(3, SECONDS)
-      .atMost(12, SECONDS).await();
-
   private static final CustomObjectsApi customObjectsApi = new CustomObjectsApi();
-  private static final ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
+  private static final ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
 
   /**
    * Check if the Domain CRD exists.
@@ -64,10 +57,10 @@ public class Domain {
    */
   public static boolean doesCrdExist() throws ApiException {
     try {
-      V1beta1CustomResourceDefinition domainBetaCrd
-          = apiextensionsV1beta1Api.readCustomResourceDefinition(
-          "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainBetaCrd, "Domain CRD is null");
+      V1CustomResourceDefinition domainCrd
+              = apiextensionsV1Api.readCustomResourceDefinition(
+              "domains.weblogic.oracle", null);
+      assertNotNull(domainCrd, "Domain CRD is null");
       return true;
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
@@ -92,8 +85,8 @@ public class Domain {
     Object domainObject = null;
     try {
       domainObject
-          = customObjectsApi.getNamespacedCustomObject(
-          "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
+              = customObjectsApi.getNamespacedCustomObject(
+              "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
     } catch (ApiException apex) {
       getLogger().info(apex.getMessage());
     }
@@ -111,9 +104,9 @@ public class Domain {
    * @return true if domain resource's image matches the expected value
    */
   public static boolean domainResourceImagePatched(
-      String domainUID,
-      String namespace,
-      String image
+          String domainUID,
+          String namespace,
+          String image
   ) {
     oracle.weblogic.domain.Domain domain = null;
     try {
@@ -137,22 +130,22 @@ public class Domain {
    * @return true if domain resource's webLogicCredentialsSecret matches the expected value
    */
   public static boolean domainResourceCredentialsSecretPatched(
-      String domainUID,
-      String namespace,
-      String secretName
+          String domainUID,
+          String namespace,
+          String secretName
   ) {
     oracle.weblogic.domain.Domain domain = null;
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {
       getLogger().severe(String.format("Failed to obtain domain resource %s in namespace %s",
-          domainUID, namespace), apex);
+              domainUID, namespace), apex);
       return false;
     }
 
     boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
     getLogger().info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
-        domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
+            domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
     return domainPatched;
   }
 
@@ -171,28 +164,28 @@ public class Domain {
    * @throws IOException when connection to console fails
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
-      throws IOException {
+          throws IOException {
 
     LoggingFacade logger = getLogger();
 
     String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(nodePort)
-        .append("/console/login/LoginForm.jsp").toString();
+            .append("http://")
+            .append(K8S_NODEPORT_HOST)
+            .append(":")
+            .append(nodePort)
+            .append("/console/login/LoginForm.jsp").toString();
 
     getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
-        "connection to the WebLogic admin console failed");
+            "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
     form.getInputByName("j_username").type(userName);
     form.getInputByName("j_password").type(password);
     HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
     getLogger().info("Clicking login button");
     HtmlPage home = submit.click();
-    assertTrue(home.asText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
+    assertTrue(home.asNormalizedText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
     getLogger().info("Console login passed");
     return true;
   }
@@ -212,8 +205,8 @@ public class Domain {
 
     // if pod does not exist, return false
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),
-        String.format("podExists failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace))) {
+            String.format("podExists failed with ApiException for pod %s in namespace %s",
+                    podName, domainNamespace))) {
       getLogger().info("pod {0} does not exist in namespace {1}", podName, domainNamespace);
       return false;
     }
@@ -229,9 +222,9 @@ public class Domain {
     // if the pod was restarted, return false
     getLogger().info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
     if (assertDoesNotThrow(() ->
-        isPodRestarted(podName, domainNamespace, podOriginalCreationTimestamp),
-        String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace))) {
+                    isPodRestarted(podName, domainNamespace, podOriginalCreationTimestamp),
+            String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
+                    podName, domainNamespace))) {
       getLogger().info("pod {0} is restarted in namespace {1}", podName, domainNamespace);
       return false;
     }
@@ -251,12 +244,12 @@ public class Domain {
    * @return true if the RESTful Management Services command succeeded
    **/
   public static boolean credentialsValid(
-      String host,
-      String podName,
-      String namespace,
-      String username,
-      String password,
-      String... args) {
+          String host,
+          String podName,
+          String namespace,
+          String username,
+          String password,
+          String... args) {
     CommandParams params = createCommandParams(host, podName, namespace, username, password, args);
     return Command.withParams(params).executeAndVerify("200");
   }
@@ -273,25 +266,25 @@ public class Domain {
    * @return true if the RESTful Management Services command failed with exitCode 401
    **/
   public static boolean credentialsNotValid(
-      String host,
-      String podName,
-      String namespace,
-      String username,
-      String password,
-      String... args) {
+          String host,
+          String podName,
+          String namespace,
+          String username,
+          String password,
+          String... args) {
     CommandParams params = createCommandParams(host, podName, namespace, username, password, args);
     return Command.withParams(params).executeAndVerify("401");
   }
 
   private static CommandParams createCommandParams(
-      String host,
-      String podName,
-      String namespace,
-      String username,
-      String password,
-      String... args) {
+          String host,
+          String podName,
+          String namespace,
+          String username,
+          String password,
+          String... args) {
     int adminServiceNodePort
-        = getServiceNodePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
+            = getServiceNodePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
 
     if (username == null) {
       username = ADMIN_USERNAME_DEFAULT;
@@ -305,14 +298,14 @@ public class Domain {
     // information about a managed server
     String managedServer1 = (args.length == 0) ? "managed-server1" : "managed-server1-c1";
     StringBuffer cmdString = new StringBuffer()
-        .append("status=$(curl --user " + username + ":" + password)
-        .append(" http://" + url)
-        .append("/management/tenant-monitoring/servers/" + managedServer1)
-        .append(" --silent --show-error")
-        .append(" --noproxy '*'")
-        .append(" -o /dev/null")
-        .append(" -w %{http_code});")
-        .append(" echo ${status}");
+            .append("status=$(curl --user " + username + ":" + password)
+            .append(" http://" + url)
+            .append("/management/tenant-monitoring/servers/" + managedServer1)
+            .append(" --silent --show-error")
+            .append(" --noproxy '*'")
+            .append(" -o /dev/null")
+            .append(" -w %{http_code});")
+            .append(" echo ${status}");
 
     return Command
             .defaultCommandParams()

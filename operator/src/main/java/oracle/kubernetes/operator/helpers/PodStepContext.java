@@ -1270,7 +1270,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Object> callResponses) {
-      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
+      if (callResponses.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
       return super.onFailure(getConflictStep(), packet, callResponses);

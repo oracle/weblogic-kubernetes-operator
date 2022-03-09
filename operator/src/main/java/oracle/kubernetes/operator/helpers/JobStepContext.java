@@ -590,7 +590,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+      return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
               ? doNext(createNewJob(getNext()), packet)
               : onFailure(packet, callResponse);
     }

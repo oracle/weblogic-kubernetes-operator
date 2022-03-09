@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -16,7 +16,7 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
-import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -167,7 +167,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       this.packet = packet;
       retryStrategy = Optional.ofNullable(retry)
             .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
-      this.cont = Optional.ofNullable(cont).orElse("");
+      this.cont = Optional.ofNullable(cont).orElse(null);
       client = helper.take();
     }
 
@@ -194,7 +194,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     // add the failure into the packet and prepare to try again.
     void onFailure(AsyncFiber fiber, ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       if (firstTimeResumed()) {
-        if (statusCode != CallBuilder.NOT_FOUND && LOGGER.isFineEnabled()) {
+        if (statusCode != KubernetesConstants.HTTP_NOT_FOUND && LOGGER.isFineEnabled()) {
           logFailure(ae, statusCode, responseHeaders);
         }
 

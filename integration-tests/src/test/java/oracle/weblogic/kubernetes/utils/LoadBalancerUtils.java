@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -17,8 +17,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -38,13 +38,19 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
@@ -55,6 +61,9 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -72,6 +81,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,11 +100,11 @@ public class LoadBalancerUtils {
    * @param loadBalancerName service name for OCI Load Balancer
    */
   public static void installAndVerifyOCILoadBalancer(
-      String namespace,
-      int portshttp,
-      String clusterName,
-      String domainUID,
-      String loadBalancerName) throws ApiException {
+          String namespace,
+          int portshttp,
+          String clusterName,
+          String domainUID,
+          String loadBalancerName) throws ApiException {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
     Map<String, String> selectors = new HashMap<>();
@@ -104,38 +114,35 @@ public class LoadBalancerUtils {
     selectors.put("weblogic.domainUID",domainUID);
     List<V1ServicePort> ports = new ArrayList<>();
     ports.add(new V1ServicePort()
-        .name("http")
-        .port(portshttp)
-        .targetPort(new IntOrString(portshttp))
-        .protocol("TCP"));
+            .name("http")
+            .port(portshttp)
+            .targetPort(new IntOrString(portshttp))
+            .protocol("TCP"));
 
     V1Service service = new V1Service()
-        .metadata(new V1ObjectMeta()
-            .name(loadBalancerName)
-            .namespace(namespace)
-            .labels(labels)
-            .annotations(annotations))
-        .spec(new V1ServiceSpec()
-            .ports(ports)
-            .selector(selectors)
-            .sessionAffinity("None")
-            .type("LoadBalancer"));
+            .metadata(new V1ObjectMeta()
+                    .name(loadBalancerName)
+                    .namespace(namespace)
+                    .labels(labels)
+                    .annotations(annotations))
+            .spec(new V1ServiceSpec()
+                    .ports(ports)
+                    .selector(selectors)
+                    .sessionAffinity("None")
+                    .type("LoadBalancer"));
     LoggingFacade logger = getLogger();
     assertNotNull(service, "Can't create ocilb service, returns null");
     assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
     checkServiceExists(loadBalancerName,namespace);
 
     // wait until the external IP is generated.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for external IP to be generated in {0} (elapsed time {1}ms, remaining time {2}ms)",
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isOCILoadBalancerReady(
-            loadBalancerName,
-            labels, namespace), "isOCILoadBalancerReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isOCILoadBalancerReady(
+                    loadBalancerName,
+                    labels, namespace), "isOCILoadBalancerReady failed with ApiException"),
+            logger,
+            "external IP to be generated in {0}",
+            namespace);
   }
 
   /**
@@ -146,9 +153,9 @@ public class LoadBalancerUtils {
    * @param nodeportshttps the https nodeport of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps) {
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
+                                                  int nodeportshttp,
+                                                  int nodeportshttps) {
     return installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps, NGINX_CHART_VERSION);
   }
 
@@ -161,18 +168,24 @@ public class LoadBalancerUtils {
    * @param chartVersion the chart version of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps,
-                                                 String chartVersion) {
+  public static NginxParams installAndVerifyNginx(String nginxNamespace,
+                                                  int nodeportshttp,
+                                                  int nodeportshttps,
+                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
+    if (BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
+      testUntil(
+              () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+              logger, "docker login to be successful");
+    }
+
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
-        .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
-        .namespace(nginxNamespace)
-        .repoUrl(NGINX_REPO_URL)
-        .repoName(NGINX_REPO_NAME)
-        .chartName(NGINX_CHART_NAME);
+            .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
+            .namespace(nginxNamespace)
+            .repoUrl(NGINX_REPO_URL)
+            .repoName(NGINX_REPO_NAME)
+            .chartName(NGINX_CHART_NAME);
 
     if (chartVersion != null) {
       nginxHelmParams.chartVersion(chartVersion);
@@ -180,40 +193,37 @@ public class LoadBalancerUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams);
+            .helmParams(nginxHelmParams);
 
     if (nodeportshttp != 0 && nodeportshttps != 0) {
       nginxParams
-          .nodePortsHttp(nodeportshttp)
-          .nodePortsHttps(nodeportshttps);
+              .nodePortsHttp(nodeportshttp)
+              .nodePortsHttps(nodeportshttps);
     }
 
     // install NGINX
     assertThat(installNginx(nginxParams))
-        .as("Test NGINX installation succeeds")
-        .withFailMessage("NGINX installation is failed")
-        .isTrue();
+            .as("Test NGINX installation succeeds")
+            .withFailMessage("NGINX installation is failed")
+            .isTrue();
 
     // verify that NGINX is installed
     logger.info("Checking NGINX release {0} status in namespace {1}",
-        NGINX_RELEASE_NAME, nginxNamespace);
+            NGINX_RELEASE_NAME, nginxNamespace);
     assertTrue(isHelmReleaseDeployed(NGINX_RELEASE_NAME, nginxNamespace),
-        String.format("NGINX release %s is not in deployed status in namespace %s",
-            NGINX_RELEASE_NAME, nginxNamespace));
+            String.format("NGINX release %s is not in deployed status in namespace %s",
+                    NGINX_RELEASE_NAME, nginxNamespace));
     logger.info("NGINX release {0} status is deployed in namespace {1}",
-        NGINX_RELEASE_NAME, nginxNamespace);
+            NGINX_RELEASE_NAME, nginxNamespace);
 
     // wait until the NGINX pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for NGINX to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                nginxNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"),
+            logger,
+            "NGINX to be ready in namespace {0}",
+            nginxNamespace);
 
-    return nginxHelmParams;
+    return nginxParams;
   }
 
   /**
@@ -232,44 +242,41 @@ public class LoadBalancerUtils {
 
     // Helm install parameters
     HelmParams voyagerHelmParams = new HelmParams()
-        .releaseName(VOYAGER_RELEASE_NAME + "-" + voyagerNamespace.substring(3))
-        .namespace(voyagerNamespace)
-        .repoUrl(APPSCODE_REPO_URL)
-        .repoName(APPSCODE_REPO_NAME)
-        .chartName(VOYAGER_CHART_NAME)
-        .chartVersion(VOYAGER_CHART_VERSION);
+            .releaseName(VOYAGER_RELEASE_NAME + "-" + voyagerNamespace.substring(3))
+            .namespace(voyagerNamespace)
+            .repoUrl(APPSCODE_REPO_URL)
+            .repoName(APPSCODE_REPO_NAME)
+            .chartName(VOYAGER_CHART_NAME)
+            .chartVersion(VOYAGER_CHART_VERSION);
 
     // Voyager chart values to override
     VoyagerParams voyagerParams = new VoyagerParams()
-        .helmParams(voyagerHelmParams)
-        .cloudProvider(cloudProvider)
-        .enableValidatingWebhook(enableValidatingWebhook);
+            .helmParams(voyagerHelmParams)
+            .cloudProvider(cloudProvider)
+            .enableValidatingWebhook(enableValidatingWebhook);
 
     // install Voyager
     assertThat(installVoyager(voyagerParams))
-        .as("Test Voyager installation succeeds")
-        .withFailMessage("Voyager installation is failed")
-        .isTrue();
+            .as("Test Voyager installation succeeds")
+            .withFailMessage("Voyager installation is failed")
+            .isTrue();
 
     // verify that Voyager is installed
     logger.info("Checking Voyager release {0} status in namespace {1}",
-        VOYAGER_RELEASE_NAME, voyagerNamespace);
+            VOYAGER_RELEASE_NAME, voyagerNamespace);
     assertTrue(isHelmReleaseDeployed(VOYAGER_RELEASE_NAME, voyagerNamespace),
-        String.format("Voyager release %s is not in deployed status in namespace %s",
-            VOYAGER_RELEASE_NAME, voyagerNamespace));
+            String.format("Voyager release %s is not in deployed status in namespace %s",
+                    VOYAGER_RELEASE_NAME, voyagerNamespace));
     logger.info("Voyager release {0} status is deployed in namespace {1}",
-        VOYAGER_RELEASE_NAME, voyagerNamespace);
+            VOYAGER_RELEASE_NAME, voyagerNamespace);
 
     // wait until the Voyager pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                voyagerNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
+                    "isVoyagerReady failed with ApiException"),
+            logger,
+            "Voyager to be ready in namespace {0}",
+            voyagerNamespace);
 
     return voyagerHelmParams;
   }
@@ -292,7 +299,7 @@ public class LoadBalancerUtils {
                                                   int managedServerPort,
                                                   String domainUid) throws IOException {
     return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, managedServerPort, domainUid,
-        null, null, 0, null);
+            null, null, 0, null);
   }
 
   /**
@@ -320,7 +327,7 @@ public class LoadBalancerUtils {
                                                   String virtualHostName,
                                                   int adminServerPort,
                                                   LinkedHashMap<String, String> clusterNamePortMap)
-      throws IOException {
+          throws IOException {
 
     LoggingFacade logger = getLogger();
 
@@ -337,22 +344,22 @@ public class LoadBalancerUtils {
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()
-        .releaseName(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3))
-        .namespace(apacheNamespace)
-        .chartDir(APACHE_SAMPLE_CHART_DIR);
+            .releaseName(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3))
+            .namespace(apacheNamespace)
+            .chartDir(APACHE_SAMPLE_CHART_DIR);
 
     // Apache chart values to override
     ApacheParams apacheParams = new ApacheParams()
-        .helmParams(apacheHelmParams)
-        .imagePullSecrets(secretNameMap)
-        .image(image)
-        .imagePullPolicy("IfNotPresent")
-        .domainUID(domainUid);
+            .helmParams(apacheHelmParams)
+            .imagePullSecrets(secretNameMap)
+            .image(image)
+            .imagePullPolicy("IfNotPresent")
+            .domainUID(domainUid);
 
     if (httpNodePort >= 0 && httpsNodePort >= 0) {
       apacheParams
-          .httpNodePort(httpNodePort)
-          .httpsNodePort(httpsNodePort);
+              .httpNodePort(httpNodePort)
+              .httpsNodePort(httpsNodePort);
     }
     if (managedServerPort >= 0) {
       apacheParams.managedServerPort(managedServerPort);
@@ -428,11 +435,11 @@ public class LoadBalancerUtils {
 
       String command = "sh ../kubernetes/samples/charts/apache-samples/custom-sample/certgen.sh";
       CommandParams params = Command
-          .defaultCommandParams()
-          .command(command)
-          .env(envs)
-          .saveResults(true)
-          .redirect(true);
+              .defaultCommandParams()
+              .command(command)
+              .env(envs)
+              .saveResults(true)
+              .redirect(true);
 
       Command.withParams(params).execute();
 
@@ -447,28 +454,25 @@ public class LoadBalancerUtils {
 
     // install Apache
     assertThat(installApache(apacheParams))
-        .as("Test Apache installation succeeds")
-        .withFailMessage("Apache installation is failed")
-        .isTrue();
+            .as("Test Apache installation succeeds")
+            .withFailMessage("Apache installation is failed")
+            .isTrue();
 
     // verify that Apache is installed
     logger.info("Checking Apache release {0} status in namespace {1}",
-        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
+            APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
     assertTrue(isHelmReleaseDeployed(APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace),
-        String.format("Apache release %s is not in deployed status in namespace %s",
-            APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace));
+            String.format("Apache release %s is not in deployed status in namespace %s",
+                    APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace));
     logger.info("Apache release {0} status is deployed in namespace {1}",
-        APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
+            APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
 
     // wait until the Apache pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Apache to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                apacheNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"),
+            logger,
+            "Apache to be ready in namespace {0}",
+            apacheNamespace);
 
     return apacheHelmParams;
   }
@@ -486,42 +490,40 @@ public class LoadBalancerUtils {
     LoggingFacade logger = getLogger();
     // Helm install parameters
     HelmParams traefikHelmParams = new HelmParams()
-        .releaseName(TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3))
-        .namespace(traefikNamespace)
-        .repoUrl(TRAEFIK_REPO_URL)
-        .repoName(TRAEFIK_REPO_NAME)
-        .chartName(TRAEFIK_CHART_NAME);
+            .releaseName(TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3))
+            .namespace(traefikNamespace)
+            .repoUrl(TRAEFIK_REPO_URL)
+            .repoName(TRAEFIK_REPO_NAME)
+            .chartName(TRAEFIK_CHART_NAME);
 
     // Traefik chart values to override
     TraefikParams traefikParams = new TraefikParams()
-        .helmParams(traefikHelmParams);
+            .helmParams(traefikHelmParams);
     traefikParams
-        .nodePortsHttp(nodeportshttp)
-        .nodePortsHttps(nodeportshttps);
+            .nodePortsHttp(nodeportshttp)
+            .nodePortsHttps(nodeportshttps);
 
     // install Traefik
     assertThat(installTraefik(traefikParams))
-        .as("Test Traefik installation succeeds")
-        .withFailMessage("Traefik installation is failed")
-        .isTrue();
+            .as("Test Traefik installation succeeds")
+            .withFailMessage("Traefik installation is failed")
+            .isTrue();
 
     // verify that Traefik is installed
     logger.info("Checking Traefik release {0} status in namespace {1}",
-        TRAEFIK_RELEASE_NAME, traefikNamespace);
+            TRAEFIK_RELEASE_NAME, traefikNamespace);
     assertTrue(isHelmReleaseDeployed(TRAEFIK_RELEASE_NAME, traefikNamespace),
-        String.format("Traefik release %s is not in deployed status in namespace %s",
-            TRAEFIK_RELEASE_NAME, traefikNamespace));
+            String.format("Traefik release %s is not in deployed status in namespace %s",
+                    TRAEFIK_RELEASE_NAME, traefikNamespace));
     logger.info("Traefik release {0} status is deployed in namespace {1}",
-        TRAEFIK_RELEASE_NAME, traefikNamespace);
+            TRAEFIK_RELEASE_NAME, traefikNamespace);
 
     // wait until the Traefik pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
-                + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-            traefikNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"),
+            logger,
+            "Traefik to be ready in namespace {0}",
+            traefikNamespace);
 
     return traefikHelmParams;
   }
@@ -555,7 +557,7 @@ public class LoadBalancerUtils {
                                                              boolean setIngressHost) {
 
     return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost,
-        false, 0);
+            false, 0);
   }
 
   /**
@@ -573,7 +575,7 @@ public class LoadBalancerUtils {
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
     return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, true,
-        false, 0);
+            false, 0);
   }
 
   /**
@@ -595,37 +597,59 @@ public class LoadBalancerUtils {
                                                              boolean setIngressHost,
                                                              boolean enableAdminServerRouting,
                                                              int adminServerPort) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, nodeport, clusterNameMSPortMap, setIngressHost,
+            null, enableAdminServerRouting, adminServerPort);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @param ingressNginxClass unique name to add in ingress resource
+   * @param enableAdminServerRouting enable the ingress rule to admin server
+   * @param adminServerPort the port number of admin server pod of the domain
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost,
+                                                             String ingressNginxClass,
+                                                             boolean enableAdminServerRouting,
+                                                             int adminServerPort) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
-
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
-            null, enableAdminServerRouting, adminServerPort);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, null,
+                    ingressNginxClass, setIngressHost,
+                    null, enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
-        .contains(ingressName);
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
+            .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
-        ingressName, domainUid, domainNamespace);
+            ingressName, domainUid, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
         String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+                + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+                + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
         assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -634,7 +658,6 @@ public class LoadBalancerUtils {
 
     return ingressHostList;
   }
-
 
   /**
    * Create an ingress for the domain with domainUid in the specified namespace.
@@ -648,43 +671,40 @@ public class LoadBalancerUtils {
    * @return list of ingress hosts
    */
   public static List<String> createTraefikIngressForDomainAndVerify(
-      String domainUid,
-      String domainNamespace,
-      int nodeport,
-      Map<String, Integer> clusterNameMSPortMap,
-      boolean setIngressHost,
-      String tlsSecret) {
+          String domainUid,
+          String domainNamespace,
+          int nodeport,
+          Map<String, Integer> clusterNameMSPortMap,
+          boolean setIngressHost,
+          String tlsSecret) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressTraefikClass = "traefik";
+    final String ingressTraefikClass = null;
     String ingressName = domainUid + "-" + ingressTraefikClass;
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
-
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid,
-            clusterNameMSPortMap, annotations, setIngressHost, tlsSecret);
+            createIngress(ingressName, domainNamespace, domainUid,
+                    clusterNameMSPortMap, null, ingressTraefikClass, setIngressHost, tlsSecret);
 
     assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
-        .contains(ingressName);
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
+            .contains(ingressName);
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
-        ingressName, domainUid, domainNamespace);
+            ingressName, domainUid, domainNamespace);
 
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
         String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+                + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+                + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
         assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -701,6 +721,7 @@ public class LoadBalancerUtils {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    */
@@ -709,14 +730,15 @@ public class LoadBalancerUtils {
                                                  String ingressName,
                                                  String namespace,
                                                  Map<String, String> annotations,
-                                                 List<NetworkingV1beta1IngressRule> ingressRules,
-                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+                                                 String ingressClassName,
+                                                 List<V1IngressRule> ingressRules,
+                                                 List<V1IngressTLS> tlsList) {
     for (int i = 0; i < maxRetries; i++) {
       try {
         if (isTLS) {
-          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
         } else {
-          createIngress(ingressName, namespace, annotations, ingressRules, null);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, null);
         }
         break;
       } catch (ApiException apiEx) {
@@ -771,44 +793,41 @@ public class LoadBalancerUtils {
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("ingress.appscode.com/type", ingressType);
     annotations.put("ingress.appscode.com/affinity", ingressAffinity);
-    annotations.put("kubernetes.io/ingress.class", ingressClass);
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
+            createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations,
+                    ingressClass, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                domainUid,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+            assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
+                    "isVoyagerReady failed with ApiException"),
+            logger,
+            "Voyager ingress to be ready in namespace {0}",
+            domainUid);
 
     assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+            String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
-        .contains(ingressName);
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, domainNamespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, domainNamespace))
+            .contains(ingressName);
 
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domainNamespace, voyagerIngressName, channelName),
-        "Getting admin server node port failed");
+            () -> getServiceNodePort(domainNamespace, voyagerIngressName, channelName),
+            "Getting admin server node port failed");
     logger.info("Node port for {0} is: {1} :", voyagerIngressName, ingressServiceNodePort);
 
     // check the ingress is ready to route the app to the server pod
     if (ingressServiceNodePort != 0) {
       for (String ingressHost : ingressHostList) {
         String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + ingressServiceNodePort
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+                + "' http://" + K8S_NODEPORT_HOST + ":" + ingressServiceNodePort
+                + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
         assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -816,9 +835,19 @@ public class LoadBalancerUtils {
     }
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
-        ingressName, domainUid, domainNamespace);
+            ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+  private static Callable<Boolean> pullImageFromOcirAndTag(String localImage) {
+    return (() -> {
+      String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
+      LoggingFacade logger = getLogger();
+      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+              localImage, nginxImage);
+      return dockerPull(localImage) && dockerTag(localImage, nginxImage);
+    });
   }
 
   /**

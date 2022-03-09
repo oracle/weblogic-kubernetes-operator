@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -57,30 +57,30 @@ public class IstioUtils {
   public static void installIstio() {
     LoggingFacade logger = getLogger();
     Path istioInstallPath =
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
+            Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
-        String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
+            String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio installation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
-        .execute());
-    
+                    defaultCommandParams()
+                            .command(command)
+                            .redirect(false))
+            .execute());
+
     // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
     // can be (un)installed manually when SKIP_CLEANUP is set to true
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
-        Paths.get(RESULTS_ROOT, "install-istio.sh"), 
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy install-istio.sh to RESULTS_ROOT failed");
+                    Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
+                    Paths.get(RESULTS_ROOT, "install-istio.sh"),
+                    StandardCopyOption.REPLACE_EXISTING),
+            "Copy install-istio.sh to RESULTS_ROOT failed");
 
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
-        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"), 
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy uninstall-istio.sh to RESULTS_ROOT failed");
+                    Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
+                    Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
+                    StandardCopyOption.REPLACE_EXISTING),
+            "Copy uninstall-istio.sh to RESULTS_ROOT failed");
   }
 
   /**
@@ -88,17 +88,17 @@ public class IstioUtils {
    */
   public static void uninstallIstio() {
     LoggingFacade logger = getLogger();
-    Path istioInstallPath = 
-        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
+    Path istioInstallPath =
+            Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
-        String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
+            String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio uninstallation command {0}", command);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
-        .execute());
+                    defaultCommandParams()
+                            .command(command)
+                            .redirect(false))
+            .execute());
   }
 
   /**
@@ -123,7 +123,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return new Integer(result.stdout());
+      return Integer.valueOf(result.stdout());
     }
   }
 
@@ -149,7 +149,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return new Integer(result.stdout());
+      return Integer.valueOf(result.stdout());
     }
   }
 
@@ -175,7 +175,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return new Integer(result.stdout());
+      return Integer.valueOf(result.stdout());
     }
   }
 
@@ -209,7 +209,7 @@ public class IstioUtils {
    * @return true if deployment is success otherwise false
    */
   public static boolean deployTcpIstioGatewayAndVirtualservice(
-      Path configPath) {
+          Path configPath) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -233,7 +233,7 @@ public class IstioUtils {
    * @return true if deployment is success otherwise false
    */
   public static boolean deployIstioDestinationRule(
-      Path configPath) {
+          Path configPath) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -260,7 +260,7 @@ public class IstioUtils {
    * @return true if deployment is successful otherwise false
    */
   public static boolean deployIstioPrometheus(
-      String domainNamespace, String domainUid, String prometheusPort) {
+          String domainNamespace, String domainUid, String prometheusPort) {
     LoggingFacade logger = getLogger();
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
     Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
@@ -272,12 +272,12 @@ public class IstioUtils {
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
     String oldValue = "regex: default;domain1";
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldValue,
-        prometheusRegexValue));
+            oldValue,
+            prometheusRegexValue));
     String oldPortValue = "30510";
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldPortValue,
-        prometheusPort));
+            oldPortValue,
+            prometheusPort));
     ExecResult result = null;
     StringBuffer deployIstioPrometheus = null;
     deployIstioPrometheus = new StringBuffer("kubectl apply -f ");
@@ -295,7 +295,7 @@ public class IstioUtils {
         if (item.getMetadata() != null) {
           if (item.getMetadata().getName().contains("prometheus")) {
             logger.info("Waiting for pod {0} to be ready in namespace {1}",
-                item.getMetadata().getName(), "istio-system");
+                    item.getMetadata().getName(), "istio-system");
             checkPodReady(item.getMetadata().getName(), null, "istio-system");
             checkServiceExists("prometheus", "istio-system");
           }
@@ -328,9 +328,9 @@ public class IstioUtils {
                                                  String encryptionSecretName, int replicaCount,
                                                  String miiImage, String configmapName, String clusterName) {
     return createIstioDomainResource(domainUid,
-        domNamespace, adminSecretName,repoSecretName,
-        encryptionSecretName, replicaCount, miiImage,
-        configmapName, clusterName, null, null);
+            domNamespace, adminSecretName,repoSecretName,
+            encryptionSecretName, replicaCount, miiImage,
+            configmapName, clusterName, null, null);
   }
 
   /**
@@ -351,53 +351,53 @@ public class IstioUtils {
    * @return domain object of the domain resource
    */
   public static Domain createIstioDomainResource(String domainUid, String domNamespace,
-                                      String adminSecretName, String repoSecretName,
-                                      String encryptionSecretName, int replicaCount,
-                                      String miiImage, String configmapName, String clusterName,
-                                      String monexpConfig, String monexpImage) {
+                                                 String adminSecretName, String repoSecretName,
+                                                 String encryptionSecretName, int replicaCount,
+                                                 String miiImage, String configmapName, String clusterName,
+                                                 String monexpConfig, String monexpImage) {
 
     // create the domain CR
     Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888)
-                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
-                .model(new Model()
-                    .domainType("WLS")
-                    .configMap(configmapName)
-                    .onlineUpdate(new OnlineUpdate().enabled(true))
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUid)
+                    .namespace(domNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUid)
+                    .domainHomeSourceType("FromModel")
+                    .image(miiImage)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                            .name(repoSecretName))
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new ServerPod()
+                            .addEnvItem(new V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new AdminServer()
+                            .serverStartState("RUNNING"))
+                    .addClustersItem(new Cluster()
+                            .clusterName(clusterName)
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING"))
+                    .configuration(new Configuration()
+                            .istio(new Istio()
+                                    .enabled(Boolean.TRUE)
+                                    .readinessPort(8888)
+                                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
+                            .model(new Model()
+                                    .domainType("WLS")
+                                    .configMap(configmapName)
+                                    .onlineUpdate(new OnlineUpdate().enabled(true))
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                            .introspectorJobActiveDeadlineSeconds(300L)));
     if (monexpConfig != null) {
       LoggingFacade logger = getLogger();
       logger.info("yaml config file path : " + monexpConfig);
@@ -410,12 +410,12 @@ public class IstioUtils {
       }
       String imagePullPolicy = "IfNotPresent";
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
-          .image(monexpImage)
-          .imagePullPolicy(imagePullPolicy)
-          .configuration(contents));
+              .image(monexpImage)
+              .imagePullPolicy(imagePullPolicy)
+              .configuration(contents));
 
       logger.info("Created domain CR with Monitoring exporter configuration : "
-          + domain.getSpec().getMonitoringExporter().toString());
+              + domain.getSpec().getMonitoringExporter().toString());
     }
     setPodAntiAffinity(domain);
     return domain;
@@ -438,7 +438,7 @@ public class IstioUtils {
    */
   public static AdminServer createAdminServer() {
     AdminServer adminServer = new AdminServer()
-        .serverStartState("RUNNING");
+            .serverStartState("RUNNING");
 
     if (!isLocalHostBindingsEnabled()) {
       adminServer.adminChannelPortForwardingEnabled(true);

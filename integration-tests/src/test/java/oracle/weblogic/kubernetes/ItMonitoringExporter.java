@@ -73,6 +73,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -198,7 +199,7 @@ class ItMonitoringExporter {
   private static String domain6Uid = "monexp-domain-6";
   private static String domain7Uid = "monexp-domain-7";
   private static String domain8Uid = "monexp-domain-8";
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
   private static List<String> ingressHost1List = null;
@@ -319,7 +320,7 @@ class ItMonitoringExporter {
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -894,7 +895,7 @@ class ItMonitoringExporter {
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
     if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
           .as("Test uninstallNginx1 returns true")
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
@@ -1793,8 +1794,8 @@ class ItMonitoringExporter {
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
-    assertTrue((page.asText()).contains(expectedErrorMsg));
-    assertTrue(!(page.asText()).contains("Error 500--Internal Server Error"));
+    assertTrue((page.asNormalizedText()).contains(expectedErrorMsg));
+    assertTrue(!(page.asNormalizedText()).contains("Error 500--Internal Server Error"));
   }
 
   private void changeConfigNegativeAuth(
@@ -1827,7 +1828,7 @@ class ItMonitoringExporter {
       page1 = webClient.getPage(exporterUrl);
     }
     assertNotNull(page1, "can't retrieve exporter dashboard page");
-    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
+    assertTrue((page1.asNormalizedText()).contains("This is the WebLogic Monitoring Exporter."));
 
     // Get the form that we are dealing with and within that form,
     // find the submit button and the field that we want to change.Generated form for cluster had
@@ -1860,7 +1861,7 @@ class ItMonitoringExporter {
     try {
       page2 = button.click();
       assertNotNull(page2, "can't reach page after submit");
-      assertFalse((page2.asText()).contains("Error 500--Internal Server Error"),
+      assertFalse((page2.asNormalizedText()).contains("Error 500--Internal Server Error"),
           "page returns Error 500--Internal Server Error");
     } catch (ClassCastException ex) {
       logger.info(" Can't generate html page, collecting the error ");
@@ -1901,9 +1902,9 @@ class ItMonitoringExporter {
     assertNotNull(page, "Failed to replace configuration");
     Thread.sleep(20 * 1000);
 
-    assertTrue(page.asText().contains("JVMRuntime"),
+    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
-    assertFalse(page.asText().contains("WebAppComponentRuntime"),
+    assertFalse(page.asNormalizedText().contains("WebAppComponentRuntime"),
         "Page contains unexpected WebAppComponentRuntime configuration");
     //needs 10 secs to fetch the metrics to prometheus
     Thread.sleep(20 * 1000);
@@ -1922,10 +1923,11 @@ class ItMonitoringExporter {
 
     // run append
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_webapp.yaml");
-    assertTrue(page.asText().contains("WebAppComponentRuntime"),
+    assertTrue(page.asNormalizedText().contains("WebAppComponentRuntime"),
             "Page does not contain expected WebAppComponentRuntime configuration");
     // check previous config is there
-    assertTrue(page.asText().contains("JVMRuntime"), "Page does not contain expected JVMRuntime configuration");
+    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
+            "Page does not contain expected JVMRuntime configuration");
 
     String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
@@ -1940,8 +1942,8 @@ class ItMonitoringExporter {
   private void replaceOneAttributeValueAsArrayConfiguration() throws Exception {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yaml");
-    assertTrue(page.asText().contains("values: invocationTotalCount"));
-    assertFalse(page.asText().contains("reloadTotal"));
+    assertTrue(page.asNormalizedText().contains("values: invocationTotalCount"));
+    assertFalse(page.asNormalizedText().contains("reloadTotal"));
   }
 
   /**
@@ -1954,9 +1956,9 @@ class ItMonitoringExporter {
           throws Exception {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yaml");
-    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    assertTrue(page.asNormalizedText().contains("values: invocationTotalCount"));
     page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_twoattribs.yaml");
-    assertTrue(page.asText().contains("values: [invocationTotalCount, executionTimeAverage]"));
+    assertTrue(page.asNormalizedText().contains("values: [invocationTotalCount, executionTimeAverage]"));
   }
 
   /**
@@ -1978,10 +1980,10 @@ class ItMonitoringExporter {
   private void appendWithEmptyConfiguration() throws Exception {
     HtmlPage originalPage = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
     assertNotNull(originalPage, "Failed to replace configuration");
-    assertTrue(originalPage.asText().contains("JVMRuntime"),
+    assertTrue(originalPage.asNormalizedText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertTrue(originalPage.asText().equals(page.asText()));
+    assertTrue(originalPage.asNormalizedText().equals(page.asNormalizedText()));
   }
 
   /**
@@ -2066,7 +2068,7 @@ class ItMonitoringExporter {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml");
     assertNotNull(page);
-    assertFalse(page.asText().contains("metricsNameSnakeCase"));
+    assertFalse(page.asNormalizedText().contains("metricsNameSnakeCase"));
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
     checkMetricsViaPrometheus(searchKey, "sessmigr",nodeportserver);
   }
@@ -2081,7 +2083,7 @@ class ItMonitoringExporter {
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
-    assertFalse(page.asText().contains("restPort"));
+    assertFalse(page.asNormalizedText().contains("restPort"));
     //needs 10 secs to fetch the metrics to prometheus
     Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
@@ -2101,8 +2103,8 @@ class ItMonitoringExporter {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml");
     assertNotNull(page);
-    logger.info("page - " + page.asText());
-    assertTrue(page.asText().contains("domainQualifier"));
+    logger.info("page - " + page.asNormalizedText());
+    assertTrue(page.asNormalizedText().contains("domainQualifier"));
 
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
     checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-" + domain1Uid + "\"",nodeportserver);

@@ -1,11 +1,11 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1Service;
 
 /**
@@ -25,7 +25,7 @@ public class ParsedVoyagerIngressYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public NetworkingV1beta1Ingress getVoyagerIngress() {
+  public V1Ingress getVoyagerIngress() {
     return getIngresses().find(getVoyagerIngressName());
   }
 
