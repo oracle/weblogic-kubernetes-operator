@@ -246,12 +246,24 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+		  **/ItMultiDomainModels,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
-                  **/ItManageNameSpace,
+                  **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItStickySession,
+                  **/ItSessionMigration,
+                  **/ItIstioTwoDomainsInImage,
+                  **/ItPodsRestart,
+                  **/ItUsabilityOperatorHelmChart,
                   **/ItInitContainers,
-		  **/ItMiiUpdateDomainConfig,
-                  **/ItUsabilityOperatorHelmChart
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItOCILoadBalancer,
+                  **/ItManageNameSpace
                </includes-failsafe>
             </properties>
         </profile>

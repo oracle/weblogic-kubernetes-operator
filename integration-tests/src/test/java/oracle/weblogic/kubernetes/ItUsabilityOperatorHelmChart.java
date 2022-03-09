@@ -116,6 +116,7 @@ class ItUsabilityOperatorHelmChart {
 
   private static String opNamespace = null;
   private static String op2Namespace = null;
+  private static String op3Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
@@ -150,7 +151,7 @@ class ItUsabilityOperatorHelmChart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -181,6 +182,11 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Getting a unique namespace for operator 2");
     assertNotNull(namespaces.get(5), "Namespace list is null");
     op2Namespace = namespaces.get(5);
+
+    // get a unique operator 3 namespace
+    logger.info("Getting a unique namespace for operator 3");
+    assertNotNull(namespaces.get(6), "Namespace list is null");
+    op3Namespace = namespaces.get(6);
   }
 
   @AfterAll
@@ -797,17 +803,17 @@ class ItUsabilityOperatorHelmChart {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace(op2Namespace)
+        .namespace(op3Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
       // install operator
-      String opServiceAccount = op2Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
+      String opServiceAccount = op3Namespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
           0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
-      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
-      setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
-      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
+      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
+      int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
@@ -820,7 +826,7 @@ class ItUsabilityOperatorHelmChart {
           "can't start or verify domain5 in namespace " + domain4Namespace);
 
       assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
           "Domain4 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -831,7 +837,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain4 scaled to 3 servers");
 
       assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
           "Domain2 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -845,7 +851,7 @@ class ItUsabilityOperatorHelmChart {
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain4Namespace,
                   "/u01/domains/" + domain4Uid, "scaleDown", 1,
-                  op2Namespace,opServiceAccount),
+                  op3Namespace,opServiceAccount),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain4Namespace),
@@ -855,7 +861,7 @@ class ItUsabilityOperatorHelmChart {
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain5Uid, domain4Namespace,
                   "/u01/domains/" + domain5Uid, "scaleDown", 1,
-                  op2Namespace,opServiceAccount),
+                  op3Namespace,opServiceAccount),
           " scaling via scalingAction.sh script was not succeeded for domain5");
 
       assertDoesNotThrow(() ->
@@ -865,17 +871,17 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       try {
         String operatorPodName =
-            assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op2Namespace),
+            assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op3Namespace),
                 "Can't get operator's pod name");
         Path logDirPath = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName());
         assertDoesNotThrow(() -> FileUtils.deleteDirectory(logDirPath.toFile()),
             "Delete directory failed");
         assertDoesNotThrow(() -> Files.createDirectories(logDirPath),
             "Create directory failed");
-        String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(operatorPodName, op2Namespace));
+        String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(operatorPodName, op3Namespace));
         Path pathToLog =
             Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
-                "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op2Namespace + ".log");
+                "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op3Namespace + ".log");
 
         assertDoesNotThrow(() -> Files.write(pathToLog, podLog.getBytes()),
             "Can't write to file " + pathToLog);
@@ -883,8 +889,8 @@ class ItUsabilityOperatorHelmChart {
         logger.info("Failed to collect operator log");
       }
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
-      cleanUpSA(op2Namespace);
+      deleteSecret(OCIR_SECRET_NAME,op3Namespace);
+      cleanUpSA(op3Namespace);
     }
   }
 
