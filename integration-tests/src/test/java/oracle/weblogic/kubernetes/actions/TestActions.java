@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -12,11 +12,11 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -176,7 +176,7 @@ public class TestActions {
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
-  } 
+  }
 
   /**
    * List Domain Custom Resources.
@@ -199,6 +199,21 @@ public class TestActions {
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
                                                                       String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
+  }
+
+  /**
+   * Get the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion version of domain
+   * @return Domain Custom Resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
+                                                                      String namespace,
+                                                                      String domainVersion) throws ApiException {
+    return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
   /**
@@ -259,7 +274,7 @@ public class TestActions {
    * @return introspectVersion new introspectVersion of the domain resource
    */
   public static String patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) {
+          String domainUid, String namespace) {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
@@ -308,7 +323,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-      throws ApiException {
+          throws ApiException {
     return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
   }
 
@@ -330,7 +345,7 @@ public class TestActions {
                                                 String opNamespace,
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
-        externalRestHttpsPort, opNamespace, opServiceAccount);
+            externalRestHttpsPort, opNamespace, opServiceAccount);
   }
 
   /**
@@ -361,9 +376,9 @@ public class TestActions {
                                              String opServiceAccount,
                                              String myWebAppName,
                                              String curlCommand)
-      throws ApiException {
+          throws ApiException {
     return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
-        scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
+            scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
   }
 
   /**
@@ -382,17 +397,17 @@ public class TestActions {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithScalingActionScript(String clusterName,
-                                             String domainUid,
-                                             String domainNamespace,
-                                             String domainHomeLocation,
-                                             String scalingAction,
-                                             int scalingSize,
-                                             String opNamespace,
-                                             String opServiceAccount)
-      throws ApiException, InterruptedException {
+                                                            String domainUid,
+                                                            String domainNamespace,
+                                                            String domainHomeLocation,
+                                                            String scalingAction,
+                                                            int scalingSize,
+                                                            String opNamespace,
+                                                            String opServiceAccount)
+          throws ApiException, InterruptedException {
     return Domain.scaleClusterWithScalingActionScript(clusterName,
-        domainUid, domainNamespace, domainHomeLocation, scalingAction,
-        scalingSize, opNamespace, opServiceAccount);
+            domainUid, domainNamespace, domainHomeLocation, scalingAction,
+            scalingSize, opNamespace, opServiceAccount);
   }
 
   // ------------------------   Ingress Controller ----------------------
@@ -520,23 +535,25 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(
-      String ingressName,
-      String domainNamespace,
-      String domainUid,
-      Map<String, Integer> clusterNameMsPortMap,
-      Map<String, String> annotations,
-      boolean setIngressHost,
-      String tlsSecret) {
+          String ingressName,
+          String domainNamespace,
+          String domainUid,
+          Map<String, Integer> clusterNameMsPortMap,
+          Map<String, String> annotations,
+          String ingressClassName,
+          boolean setIngressHost,
+          String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost, tlsSecret, false, 0);
+            annotations, ingressClassName, setIngressHost, tlsSecret, false, 0);
   }
 
   /**
@@ -548,6 +565,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @param enableAdminServerRouting enable the ingress rule to admin server
@@ -559,12 +577,13 @@ public class TestActions {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
+                                           String ingressClassName,
                                            boolean setIngressHost,
                                            String tlsSecret,
                                            boolean enableAdminServerRouting,
                                            int adminServerPort) {
     return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
-        annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
+            annotations, ingressClassName, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -572,6 +591,7 @@ public class TestActions {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    * @throws ApiException if Kubernetes API call fails
@@ -579,9 +599,10 @@ public class TestActions {
   public static void createIngress(String ingressName,
                                    String namespace,
                                    Map<String, String> annotations,
-                                   List<NetworkingV1beta1IngressRule> ingressRules,
-                                   List<NetworkingV1beta1IngressTLS> tlsList) throws ApiException {
-    Ingress.createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+                                   String ingressClassName,
+                                   List<V1IngressRule> ingressRules,
+                                   List<V1IngressTLS> tlsList) throws ApiException {
+    Ingress.createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
   }
 
   /**
@@ -628,7 +649,7 @@ public class TestActions {
    * @throws ApiException when adding labels to namespace fails
    */
   public static void addLabelsToNamespace(String name, Map<String, String> labels)
-      throws ApiException {
+          throws ApiException {
     Namespace.addLabelsToNamespace(name, labels);
   }
 
@@ -640,8 +661,18 @@ public class TestActions {
    */
   public static String createUniqueNamespace() throws ApiException {
     String name = Namespace.uniqueName();
-    new Namespace().name(name).create();
-    return name;
+    try {
+      new Namespace().name(name).create();
+      return name;
+    } catch (ApiException ex) {
+      //retry in case of failure
+      if (listNamespaces().contains(name)) {
+        return createUniqueNamespace();
+      } else {
+        getLogger().severe(ex.getResponseBody());
+        throw ex;
+      }
+    }
   }
 
   /**
@@ -673,7 +704,7 @@ public class TestActions {
    */
   public static WitParams defaultWitParams() {
     return
-        WebLogicImageTool.defaultWitParams();
+            WebLogicImageTool.defaultWitParams();
   }
 
   /**
@@ -684,9 +715,9 @@ public class TestActions {
    */
   public static boolean createImage(WitParams params) {
     return
-        WebLogicImageTool
-            .withParams(params)
-            .updateImage();
+            WebLogicImageTool
+                    .withParams(params)
+                    .updateImage();
   }
 
   // -------------------------   pv/pvc  ---------------------------------
@@ -740,7 +771,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createPersistentVolumeClaim(V1PersistentVolumeClaim persistentVolumeClaim)
-      throws ApiException {
+          throws ApiException {
     return PersistentVolumeClaim.create(persistentVolumeClaim);
   }
 
@@ -939,7 +970,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
-      throws ApiException {
+          throws ApiException {
     return ClusterRoleBinding.createClusterRoleBinding(clusterRoleBinding);
   }
 
@@ -997,7 +1028,7 @@ public class TestActions {
    */
   public static AppParams defaultAppParams() {
     return
-        AppBuilder.defaultAppParams();
+            AppBuilder.defaultAppParams();
   }
 
   /**
@@ -1009,9 +1040,9 @@ public class TestActions {
    */
   public static boolean buildAppArchive(AppParams params) {
     return
-        AppBuilder
-            .withParams(params)
-            .build();
+            AppBuilder
+                    .withParams(params)
+                    .build();
   }
 
   /**
@@ -1023,9 +1054,9 @@ public class TestActions {
    */
   public static boolean buildCoherenceArchive(AppParams params) {
     return
-      AppBuilder
-        .withParams(params)
-        .buildCoherence();
+            AppBuilder
+                    .withParams(params)
+                    .buildCoherence();
   }
 
   /**
@@ -1037,8 +1068,8 @@ public class TestActions {
    */
   public static boolean archiveApp(AppParams params) {
     return AppBuilder
-        .withParams(params)
-        .archiveApp();
+            .withParams(params)
+            .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------
@@ -1130,18 +1161,18 @@ public class TestActions {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static synchronized ExecResult execCommand(
-      String namespace,
-      String podName,
-      String containerName,
-      boolean redirectToStdout,
-      String... command
+          String namespace,
+          String podName,
+          String containerName,
+          boolean redirectToStdout,
+          String... command
   ) throws IOException, ApiException, InterruptedException {
     // get the pod given the namespace and name of the pod
     // no label selector is needed (thus null below)
     final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
     if (pod == null) {
       throw new IllegalArgumentException(
-          String.format("The pod %s does not exist in namespace %s!", podName, namespace));
+              String.format("The pod %s does not exist in namespace %s!", podName, namespace));
     }
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
@@ -1206,7 +1237,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    **/
   public static OffsetDateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
-      throws ApiException {
+          throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
 
@@ -1323,7 +1354,7 @@ public class TestActions {
    * @throws ApiException when there is error in querying the cluster
    */
   public static String getPodRestartVersion(String namespace, String labelSelector, String podName)
-      throws ApiException {
+          throws ApiException {
     return Kubernetes.getPodRestartVersion(namespace, labelSelector, podName);
   }
 
@@ -1387,8 +1418,8 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static int getContainerRestartCount(
-      String namespace, String labelSelector, String podName, String containerName)
-      throws ApiException {
+          String namespace, String labelSelector, String podName, String containerName)
+          throws ApiException {
     return Kubernetes.getContainerRestartCount(namespace, labelSelector, podName, containerName);
   }
 
@@ -1519,16 +1550,18 @@ public class TestActions {
   /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+                                                               String esNamespace,
                                                                String labelSelector,
                                                                String index) {
-    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+    return LoggingExporter.verifyLoggingExporterReady(opNamespace, esNamespace, labelSelector, index);
   }
 
   // --------------------------- WebLogic Logging Exporter---------------------------------
@@ -1537,12 +1570,13 @@ public class TestActions {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
     return LoggingExporter.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc);
+            wlsLoggingExporterYamlFileLoc, namespace);
   }
 
   /**
@@ -1553,7 +1587,7 @@ public class TestActions {
    * @return restartVersion new restartVersion of the domain resource
    */
   public static String patchDomainResourceWithNewRestartVersion(
-      String domainResourceName, String namespace) {
+          String domainResourceName, String namespace) {
     return Domain.patchDomainResourceWithNewRestartVersion(domainResourceName, namespace);
   }
 
@@ -1565,9 +1599,9 @@ public class TestActions {
    * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
    */
   public static void patchDomainResourceWithModelConfigMap(
-      String domainResourceName, String namespace, String configMapName) {
+          String domainResourceName, String namespace, String configMapName) {
     Domain.patchDomainResourceWithModelConfigMap(domainResourceName,
-        namespace, configMapName);
+            namespace, configMapName);
   }
 
   /**
@@ -1589,7 +1623,7 @@ public class TestActions {
    * @return introspectVersion new introspectVersion of the domain resource
    */
   public static String patchDomainResourceWithOnNonDynamicChanges(
-      String domainUid, String namespace, String onNonDynamicChanges) {
+          String domainUid, String namespace, String onNonDynamicChanges) {
     return Domain.patchDomainResourceWithOnNonDynamicChanges(domainUid, namespace, onNonDynamicChanges);
   }
 

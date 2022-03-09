@@ -126,11 +126,11 @@ class ItPodsShutdownOption {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'ms-1':\n"
-        + "      ListenPort: '10001'\n"
-        + "    'ms-2':\n"
-        + "      ListenPort: '9001'\n";
+            + "  Server:\n"
+            + "    'ms-1':\n"
+            + "      ListenPort: '10001'\n"
+            + "    'ms-2':\n"
+            + "      ListenPort: '9001'\n";
 
     createModelConfigMap(cmName, yamlString);
 
@@ -194,15 +194,15 @@ class ItPodsShutdownOption {
 
     // get pod logs each server which contains server.out file logs and verify values set above are present in the log
     verifyServerLog(domainNamespace, adminServerPodName,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=40"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, indManagedServerPodName1,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
     verifyServerLog(domainNamespace, indManagedServerPodName2,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Forced", "SHUTDOWN_TIMEOUT=45"});
   }
 
   /**
@@ -247,23 +247,23 @@ class ItPodsShutdownOption {
     // create domain custom resource and verify all the pods came up
     Domain domain = buildDomainResource(shutDownObjects);
     domain.spec().serverPod()
-        .addEnvItem(new V1EnvVar()
-            .name("SHUTDOWN_TYPE")
-            .value("Graceful"));
+            .addEnvItem(new V1EnvVar()
+                    .name("SHUTDOWN_TYPE")
+                    .value("Graceful"));
     createVerifyDomain(domain);
 
     // get pod logs each server which contains server.out file logs and verify values set above are present in the log
     // except shutdowntype rest of the values should match with abobe shutdown object values
     verifyServerLog(domainNamespace, adminServerPodName,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=40"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 1,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, managedServerPodNamePrefix + 2,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=60"});
     verifyServerLog(domainNamespace, indManagedServerPodName1,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=false", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=120"});
     verifyServerLog(domainNamespace, indManagedServerPodName2,
-        new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=45"});
+            new String[]{"SHUTDOWN_IGNORE_SESSIONS=true", "SHUTDOWN_TYPE=Graceful", "SHUTDOWN_TIMEOUT=45"});
   }
 
 
@@ -271,62 +271,63 @@ class ItPodsShutdownOption {
   private Domain buildDomainResource(Shutdown[] shutDownObject) {
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .shutdown(shutDownObject[0])
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[1])))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")
-                )
-            .configuration(new Configuration()
-                .model(new Model()
-                    .configMap(cmName)
-                    .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L))
-            .addManagedServersItem(new ManagedServer()
-                .serverStartState("RUNNING")
-                .serverStartPolicy("ALWAYS")
-                .serverName(indManagedServerName1)
-                .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[3])))
-            .addManagedServersItem(new ManagedServer()
-                .serverStartState("RUNNING")
-                .serverStartPolicy("ALWAYS")
-                .serverName(indManagedServerName2)
-                .serverPod(new ServerPod()
-                    .shutdown(shutDownObject[4]))));
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUid)
+                    .namespace(domainNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUid)
+                    .domainHomeSourceType("FromModel")
+                    .image(miiImage)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                            .name(OCIR_SECRET_NAME))
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domainNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new ServerPod()
+                            .shutdown(shutDownObject[0])
+                            .addEnvItem(new V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new AdminServer()
+                            .serverStartState("RUNNING")
+                            .serverPod(new ServerPod()
+                                    .shutdown(shutDownObject[1])))
+                    .addClustersItem(new Cluster()
+                            .clusterName(clusterName)
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING")
+                    )
+                    .configuration(new Configuration()
+                            .introspectorJobActiveDeadlineSeconds(300L)
+                            .model(new Model()
+                                    .configMap(cmName)
+                                    .domainType(WLS_DOMAIN_TYPE)
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                            .introspectorJobActiveDeadlineSeconds(300L))
+                    .addManagedServersItem(new ManagedServer()
+                            .serverStartState("RUNNING")
+                            .serverStartPolicy("ALWAYS")
+                            .serverName(indManagedServerName1)
+                            .serverPod(new ServerPod()
+                                    .shutdown(shutDownObject[3])))
+                    .addManagedServersItem(new ManagedServer()
+                            .serverStartState("RUNNING")
+                            .serverStartPolicy("ALWAYS")
+                            .serverName(indManagedServerName2)
+                            .serverPod(new ServerPod()
+                                    .shutdown(shutDownObject[4]))));
     setPodAntiAffinity(domain);
     domain.getSpec().getClusters().stream().forEach(cluster ->
-        cluster
-            .getServerPod()
-            .shutdown(shutDownObject[2]));
+            cluster
+                    .getServerPod()
+                    .shutdown(shutDownObject[2]));
     return domain;
   }
 
@@ -334,12 +335,12 @@ class ItPodsShutdownOption {
   private void createVerifyDomain(Domain domain) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
+            domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
     // check that admin service/pod exists in the domain namespace
     logger.info("Checking that admin service/pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
+            adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
@@ -347,7 +348,7 @@ class ItPodsShutdownOption {
 
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
+              managedServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
 
@@ -355,12 +356,10 @@ class ItPodsShutdownOption {
     for (String podName : new String[]{indManagedServerPodName1, indManagedServerPodName2}) {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that independent ms service/pod {0} exists in namespace {1}",
-          podName, domainNamespace);
+              podName, domainNamespace);
       checkPodReadyAndServiceExists(podName, domainUid, domainNamespace);
     }
-
   }
-
 
   // get pod log which includes the server.out logs and verify the messages contain the set shutdown properties
   private void verifyServerLog(String namespace, String podName, String[] envVars) {
@@ -380,16 +379,15 @@ class ItPodsShutdownOption {
     data.put("independent-ms.yaml", model);
 
     V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(new V1ObjectMeta()
-            .labels(labels)
-            .name(configMapName)
-            .namespace(domainNamespace));
+            .data(data)
+            .metadata(new V1ObjectMeta()
+                    .labels(labels)
+                    .name(configMapName)
+                    .namespace(domainNamespace));
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Can't create ConfigMap %s", configMapName));
+            String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
 }
-

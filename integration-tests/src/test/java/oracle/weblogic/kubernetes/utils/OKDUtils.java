@@ -9,11 +9,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
@@ -49,9 +50,9 @@ public class OKDUtils {
       }
       if (!routeExists) {
         assertTrue(new Command()
-            .withParams(new CommandParams()
-              .command(command))
-            .execute(), "oc expose service failed");
+                .withParams(new CommandParams()
+                        .command(command))
+                .execute(), "oc expose service failed");
       }
       return getRouteHost(namespace, serviceName);
     } else {
@@ -71,15 +72,15 @@ public class OKDUtils {
       String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
 
       ExecResult result = Command.withParams(
-          new CommandParams()
-              .command(command))
-          .executeAndReturnResult();
+                      new CommandParams()
+                              .command(command))
+              .executeAndReturnResult();
 
       boolean success =
-          result != null
-              && result.exitValue() == 0
-              && result.stdout() != null
-              && result.stdout().contains(serviceName);
+              result != null
+                      && result.exitValue() == 0
+                      && result.stdout() != null
+                      && result.stdout().contains(serviceName);
 
       String outStr = "Did not get the route hostName \n";
       outStr += ", command=\n{\n" + command + "\n}\n";
@@ -110,18 +111,18 @@ public class OKDUtils {
   public static void setTlsTerminationForRoute(String routeName, String namespace) {
     if (OKD) {
       String command = "oc -n " + namespace + " patch route " + routeName
-                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"passthrough\"}}}'";
+              +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"passthrough\"}}}'";
 
       ExecResult result = Command.withParams(
-          new CommandParams()
-              .command(command))
-          .executeAndReturnResult();
+                      new CommandParams()
+                              .command(command))
+              .executeAndReturnResult();
 
       boolean success =
-          result != null
-              && result.exitValue() == 0
-              && result.stdout() != null
-              && result.stdout().contains("patched");
+              result != null
+                      && result.exitValue() == 0
+                      && result.stdout() != null
+                      && result.stdout().contains("patched");
 
       String outStr = "Setting tls termination in route failed \n";
       outStr += ", command=\n{\n" + command + "\n}\n";
@@ -152,20 +153,20 @@ public class OKDUtils {
       // Remove the last \n from the String above
       tlsCert = tlsCert.replaceAll("[\n\r]$", "");
       String command = "oc -n " + namespace + " patch route " + routeName
-          + " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\","
-                                          + "\"key\": \"" + tlsKey + "\","
-                                          + "\"certificate\": \"" + tlsCert + "\"}}}'";
+              + " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\","
+              + "\"key\": \"" + tlsKey + "\","
+              + "\"certificate\": \"" + tlsCert + "\"}}}'";
 
       ExecResult result = Command.withParams(
-          new CommandParams()
-              .command(command))
-          .executeAndReturnResult();
+                      new CommandParams()
+                              .command(command))
+              .executeAndReturnResult();
 
       boolean success =
-          result != null
-              && result.exitValue() == 0
-              && result.stdout() != null
-              && result.stdout().contains("patched");
+              result != null
+                      && result.exitValue() == 0
+                      && result.stdout() != null
+                      && result.stdout().contains("patched");
 
       String outStr = "Setting tls termination in route failed \n";
       outStr += ", command=\n{\n" + command + "\n}\n";
@@ -190,18 +191,18 @@ public class OKDUtils {
   public static void setTargetPortForRoute(String routeName, String namespace, int port) {
     if (OKD) {
       String command = "oc -n " + namespace + " patch route " + routeName
-                          +  " --patch '{\"spec\": {\"port\": {\"targetPort\": \"" + port + "\"}}}'";
+              +  " --patch '{\"spec\": {\"port\": {\"targetPort\": \"" + port + "\"}}}'";
 
       ExecResult result = Command.withParams(
-          new CommandParams()
-              .command(command))
-          .executeAndReturnResult();
+                      new CommandParams()
+                              .command(command))
+              .executeAndReturnResult();
 
       boolean success =
-          result != null
-              && result.exitValue() == 0
-              && result.stdout() != null
-              && result.stdout().contains("patched");
+              result != null
+                      && result.exitValue() == 0
+                      && result.stdout() != null
+                      && result.stdout().contains("patched");
 
       String outStr = "Setting target port in route failed \n";
       outStr += ", command=\n{\n" + command + "\n}\n";
@@ -220,9 +221,9 @@ public class OKDUtils {
     String command = "oc -n " + namespace + " get route " + routeName;
 
     ExecResult result = Command.withParams(
-          new CommandParams()
-              .command(command))
-          .executeAndReturnResult();
+                    new CommandParams()
+                            .command(command))
+            .executeAndReturnResult();
 
     if (result != null) {
       getLogger().info("exitValue = {0}", result.exitValue());
@@ -231,10 +232,10 @@ public class OKDUtils {
     }
 
     boolean exists =
-        result != null
-         && result.exitValue() == 0
-         && result.stdout() != null
-         && result.stdout().contains(routeName);
+            result != null
+                    && result.exitValue() == 0
+                    && result.stdout() != null
+                    && result.stdout().contains(routeName);
 
     return exists;
   }
@@ -254,36 +255,39 @@ public class OKDUtils {
     String host = asExtSvcName;
 
     int adminServicePort
-        = getServicePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
+            = getServicePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
     getLogger().info("admin service external port = {0}", adminServicePort);
 
     String ingressName = asExtSvcName + "-ingress-path-routing";
 
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-        .path("/")
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(asExtSvcName)
-            .servicePort(new IntOrString(7001))
-        );
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
+            .path("/")
+            .pathType("Prefix")
+            .backend(new V1IngressBackend()
+                    .service(new V1IngressServiceBackend()
+                            .name(asExtSvcName)
+                            .port(new V1ServiceBackendPort()
+                                    .number(7001)))
+            );
     httpIngressPaths.add(httpIngressPath);
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-        .host(host)
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
-            .paths(httpIngressPaths));
+    V1IngressRule ingressRule = new V1IngressRule()
+            .host(host)
+            .http(new V1HTTPIngressRuleValue()
+                    .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, null, ingressRules, null));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
-        .contains(ingressName);
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+            .contains(ingressName);
 
     getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
     return host;
@@ -303,31 +307,34 @@ public class OKDUtils {
 
     String ingressName = host + "-ingress-path-routing";
 
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-        .path("/")
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(svcName)
-            .servicePort(new IntOrString(8001))
-        );
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
+            .path("/")
+            .pathType("Prefix")
+            .backend(new V1IngressBackend()
+                    .service(new V1IngressServiceBackend()
+                            .name(svcName)
+                            .port(new V1ServiceBackendPort()
+                                    .number(8001)))
+            );
     httpIngressPaths.add(httpIngressPath);
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-        .host(host)
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
-            .paths(httpIngressPaths));
+    V1IngressRule ingressRule = new V1IngressRule()
+            .host(host)
+            .http(new V1HTTPIngressRuleValue()
+                    .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, null, ingressRules, null));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
-        .contains(ingressName);
+            .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+            .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+            .contains(ingressName);
 
     getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
     return host;
