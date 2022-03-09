@@ -78,7 +78,7 @@ public class Namespace extends UniqueName {
    * @throws ApiException when adding labels to namespace fails
    */
   public static void addLabelsToNamespace(String name, Map<String, String> labels)
-          throws ApiException {
+      throws ApiException {
     boolean found = false;
     V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
     if (!namespaces.getItems().isEmpty()) {

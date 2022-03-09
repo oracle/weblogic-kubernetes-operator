@@ -65,13 +65,13 @@ public class Ingress {
     // set the ingress rule for admin server
     if (enableAdminServerRouting) {
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
-              .path(null)
-              .pathType("ImplementationSpecific")
-              .backend(new V1IngressBackend()
-                      .service(new V1IngressServiceBackend()
-                              .name(domainUid + "-admin-server")
-                              .port(new V1ServiceBackendPort().number(adminServerPort)))
-              );
+          .path(null)
+          .pathType("ImplementationSpecific")
+          .backend(new V1IngressBackend()
+                  .service(new V1IngressServiceBackend()
+                      .name(domainUid + "-admin-server")
+                      .port(new V1ServiceBackendPort().number(adminServerPort)))
+          );
       ArrayList<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
@@ -84,9 +84,9 @@ public class Ingress {
         ingressHostList.add(ingressHost);
       }
       V1IngressRule ingressRule = new V1IngressRule()
-              .host(ingressHost)
-              .http(new V1HTTPIngressRuleValue()
-                      .paths(httpIngressPaths));
+          .host(ingressHost)
+          .http(new V1HTTPIngressRuleValue()
+              .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
     }
@@ -95,14 +95,14 @@ public class Ingress {
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       V1HTTPIngressPath httpIngressPath1 = new V1HTTPIngressPath()
-              .path(null)
-              .pathType("ImplementationSpecific")
-              .backend(new V1IngressBackend()
-                      .service(new V1IngressServiceBackend()
-                              .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-                              .port(new V1ServiceBackendPort()
-                                      .number(managedServerPort)))
-              );
+          .path(null)
+          .pathType("ImplementationSpecific")
+          .backend(new V1IngressBackend()
+                  .service(new V1IngressServiceBackend()
+                      .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                      .port(new V1ServiceBackendPort()
+                          .number(managedServerPort)))
+          );
       ArrayList<V1HTTPIngressPath> httpIngressPaths1 = new ArrayList<>();
       httpIngressPaths1.add(httpIngressPath1);
 
@@ -127,22 +127,22 @@ public class Ingress {
     if (tlsSecret != null) {
       clusterNameMsPortMap.forEach((clusterName, port) -> {
         tlsList.add(new V1IngressTLS()
-                .hosts(Arrays.asList(
-                        domainUid + "." + domainNamespace + "." + clusterName + ".test"))
-                .secretName(tlsSecret));
+            .hosts(Arrays.asList(
+                domainUid + "." + domainNamespace + "." + clusterName + ".test"))
+            .secretName(tlsSecret));
       });
     }
 
     // set the ingress
     V1Ingress ingress = new V1Ingress()
-            .apiVersion(INGRESS_API_VERSION)
-            .kind(INGRESS_KIND)
-            .metadata(new V1ObjectMeta()
-                    .name(ingressName)
-                    .namespace(domainNamespace)
-                    .annotations(annotations))
-            .spec(new V1IngressSpec()
-                    .rules(ingressRules));
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(domainNamespace)
+            .annotations(annotations))
+        .spec(new V1IngressSpec()
+            .rules(ingressRules));
     if (ingressClassName != null) {
       ingress.setSpec(ingress.getSpec().ingressClassName(ingressClassName));
     }
@@ -181,14 +181,14 @@ public class Ingress {
 
     // set the ingress
     V1Ingress ingress = new V1Ingress()
-            .apiVersion(INGRESS_API_VERSION)
-            .kind(INGRESS_KIND)
-            .metadata(new V1ObjectMeta()
-                    .name(ingressName)
-                    .namespace(namespace)
-                    .annotations(annotations))
-            .spec(new V1IngressSpec()
-                    .rules(ingressRules));
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+            .name(ingressName)
+            .namespace(namespace)
+            .annotations(annotations))
+        .spec(new V1IngressSpec()
+            .rules(ingressRules));
 
     if (ingressClassName != null) {
       ingress.setSpec(ingress.getSpec().ingressClassName(ingressClassName));

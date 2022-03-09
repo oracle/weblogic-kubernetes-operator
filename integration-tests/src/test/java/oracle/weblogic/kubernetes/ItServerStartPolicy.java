@@ -140,7 +140,7 @@ class ItServerStartPolicy {
    * Install Operator.
    * Create a domain resource definition.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-  JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -170,19 +170,19 @@ class ItServerStartPolicy {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createDomainSecret(adminSecretName,
-                    ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-                    "weblogicenc", domainNamespace),
-            String.format("createSecret failed for %s", encryptionSecretName));
+            "weblogicenc", domainNamespace),
+        String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "wls-ext-configmap";
     createConfigMapAndVerify(
-            configMapName, domainUid, domainNamespace,
+        configMapName, domainUid, domainNamespace,
             Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
 
     // create the domain CR with a pre-defined configmap
@@ -193,19 +193,19 @@ class ItServerStartPolicy {
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainUid,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
 
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     if (OKD) {
@@ -224,27 +224,27 @@ class ItServerStartPolicy {
   public void beforeEach() {
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i,
-              domainUid, domainNamespace);
+          domainUid, domainNamespace);
     }
 
     // Check configured cluster configuration is available
     boolean isServerConfigured =
-            checkManagedServerConfiguration(ingressHost, "config-cluster-server1");
+        checkManagedServerConfiguration(ingressHost, "config-cluster-server1");
     assertTrue(isServerConfigured,
-            "Could not find managed server from configured cluster");
+        "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
     // Check standalone server configuration is available
     boolean isStandaloneServerConfigured =
-            checkManagedServerConfiguration(ingressHost, "standalone-managed");
+        checkManagedServerConfiguration(ingressHost, "standalone-managed");
     assertTrue(isStandaloneServerConfigured,
-            "Could not find standalone managed server from configured cluster");
+        "Could not find standalone managed server from configured cluster");
     logger.info("Found standalone managed server configuration");
   }
 
@@ -270,8 +270,8 @@ class ItServerStartPolicy {
 
     String regex = "it is at its minimum";
     String result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
-            String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
+            executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
+        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server to go below Minimum");
 
     // Make sure managed-server1 is deleted
@@ -311,23 +311,23 @@ class ItServerStartPolicy {
 
     logger.info("Check managed server pods are not affected");
     Callable<Boolean> isDynRestarted =
-            assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
-                    domainNamespace, dynTs));
+        assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
+            domainNamespace, dynTs));
     assertFalse(assertDoesNotThrow(isDynRestarted::call),
-            "Dynamic managed server pod must not be restated");
+        "Dynamic managed server pod must not be restated");
 
     Callable<Boolean> isCfgRestarted =
-            assertDoesNotThrow(() -> isPodRestarted(configServerPodName,
-                    domainNamespace, cfgTs));
+        assertDoesNotThrow(() -> isPodRestarted(configServerPodName,
+            domainNamespace, cfgTs));
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
-            "Configured managed server pod must not be restated");
+        "Configured managed server pod must not be restated");
 
     // verify that the sample script can start admin server
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     logger.info("Check admin service/pod {0} is created in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
   }
 
   /**
@@ -366,10 +366,10 @@ class ItServerStartPolicy {
     logger.info("Check dynamic managed server pods are not affected");
 
     Callable<Boolean> isDynRestarted =
-            assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
-                    domainNamespace, dynTs));
+        assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
+            domainNamespace, dynTs));
     assertFalse(assertDoesNotThrow(isDynRestarted::call),
-            "Dynamic managed server pod must not be restated");
+        "Dynamic managed server pod must not be restated");
 
     // stopCluster.sh does not take any action on a stopped cluster
     result = executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
@@ -378,7 +378,7 @@ class ItServerStartPolicy {
     logger.info("Start configured cluster using the script");
     executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
     checkPodReadyAndServiceExists(configServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("Configured cluster restart success");
   }
 
@@ -418,16 +418,16 @@ class ItServerStartPolicy {
 
     // check managed server from other cluster are not affected
     Callable<Boolean> isCfgRestarted =
-            assertDoesNotThrow(() -> isPodRestarted(configServerPodName,
-                    domainNamespace, cfgTs));
+        assertDoesNotThrow(() -> isPodRestarted(configServerPodName,
+            domainNamespace, cfgTs));
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
-            "Configured managed server pod must not be restated");
+        "Configured managed server pod must not be restated");
 
     // Verify clustered server are started after startCluster script execution
     logger.info("Start dynamic cluster using the script");
     executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
     checkPodReadyAndServiceExists(dynamicServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("Dynamic cluster restart success");
   }
 
@@ -473,21 +473,21 @@ class ItServerStartPolicy {
 
     // managed server instances can't be started while domain is stopped
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
-            String.format("Failed to run %s", START_SERVER_SCRIPT));
+            executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(result.contains("Cannot start server"),
-            "The script shouldn't start the managed server");
+        "The script shouldn't start the managed server");
     logger.info("Managed server instances can not be started while spec.serverStartPolicy is NEVER");
 
     // Patch the Domain with serverStartPolicy set to ADMIN_ONLY
     // Here only Administration server pod should come up
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/serverStartPolicy", "ADMIN_ONLY"),
-            "Failed to patch domain's serverStartPolicy to ADMIN_ONLY");
+            "/spec/serverStartPolicy", "ADMIN_ONLY"),
+        "Failed to patch domain's serverStartPolicy to ADMIN_ONLY");
     logger.info("Domain is patched to start only administrative server");
 
     checkPodReadyAndServiceExists(adminServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     // make sure all other managed server pods are not provisioned
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
@@ -498,10 +498,10 @@ class ItServerStartPolicy {
     // verify managed server instances can not be started while
     // spec.serverStartPolicy is ADMIN_ONLY
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
-            String.format("Failed to run %s", START_SERVER_SCRIPT));
+            executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(result.contains("Cannot start server"),
-            "The script shouldn't start the managed server");
+        "The script shouldn't start the managed server");
     logger.info("Managed server instances can not be started while spec.serverStartPolicy is ADMIN_ONLY");
 
     // Verify server instances are started after startDomain script execution
@@ -511,12 +511,12 @@ class ItServerStartPolicy {
     // check dynamic managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i,
-              domainUid, domainNamespace);
+          domainUid, domainNamespace);
     }
     checkPodReadyAndServiceExists(configServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     checkPodReadyAndServiceExists(standaloneServerPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("startDomain.sh successfully started the domain");
   }
 
@@ -543,17 +543,17 @@ class ItServerStartPolicy {
     // Make sure that managed server is not running
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/1/serverStartPolicy", "ALWAYS"),
-            "Failed to patch config managedServers's serverStartPolicy to ALWAYS");
+            "/spec/managedServers/1/serverStartPolicy", "ALWAYS"),
+        "Failed to patch config managedServers's serverStartPolicy to ALWAYS");
     logger.info("Configured managed server is patched to set the serverStartPolicy to ALWAYS");
     checkPodReadyAndServiceExists(serverPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("Configured cluster managed server is RUNNING");
 
     // Stop the server by changing the serverStartPolicy to IF_NEEDED
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/1/serverStartPolicy", "IF_NEEDED"),
-            "Failed to patch config managedServers's serverStartPolicy to IF_NEEDED");
+            "/spec/managedServers/1/serverStartPolicy", "IF_NEEDED"),
+        "Failed to patch config managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain resource patched to shutdown the second managed server in configured cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -584,8 +584,8 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/2/serverStartPolicy", "ALWAYS"),
-            "Failed to patch dynamic managedServers's serverStartPolicy to ALWAYS");
+            "/spec/managedServers/2/serverStartPolicy", "ALWAYS"),
+        "Failed to patch dynamic managedServers's serverStartPolicy to ALWAYS");
     logger.info("Dynamic managed server is patched to set the serverStartPolicy to ALWAYS");
     checkPodReadyAndServiceExists(serverPodName,
             domainUid, domainNamespace);
@@ -593,8 +593,8 @@ class ItServerStartPolicy {
 
     // Stop the server by changing the serverStartPolicy to IF_NEEDED
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/2/serverStartPolicy", "IF_NEEDED"),
-            "Failed to patch dynamic managedServers's serverStartPolicy to IF_NEEDED");
+            "/spec/managedServers/2/serverStartPolicy", "IF_NEEDED"),
+        "Failed to patch dynamic managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain resource patched to shutdown the second managed server in dynamic cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -714,16 +714,16 @@ class ItServerStartPolicy {
     logger.info("Standalone managed server is RUNNING");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-            "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
+            "/spec/managedServers/0/serverStartPolicy", "NEVER"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     logger.info("Configured managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/0/serverStartPolicy", "ALWAYS"),
-            "Failed to patch Standalone managedServers's serverStartPolicy to ALWAYS");
+            "/spec/managedServers/0/serverStartPolicy", "ALWAYS"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to ALWAYS");
     logger.info("Domain is patched to start standalone managed server");
 
     checkPodReadyAndServiceExists(serverPodName,
@@ -750,23 +750,23 @@ class ItServerStartPolicy {
 
     // Make sure that configured managed server is ready
     checkPodReadyAndServiceExists(serverPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("Standalone managed server is RUNNING");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-            "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
+            "/spec/managedServers/0/serverStartPolicy", "NEVER"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     logger.info("Standalone managed server shutdown success");
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                    "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED"),
-            "Failed to patch Standalone managedServers's serverStartPolicy to IF_NEEDED");
+            "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED"),
+        "Failed to patch Standalone managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain is patched to start standalone managed server");
     checkPodReadyAndServiceExists(serverPodName,
-            domainUid, domainNamespace);
+        domainUid, domainNamespace);
     logger.info("Standalone managed server restart (IF_NEEDED) success");
   }
 
@@ -790,13 +790,13 @@ class ItServerStartPolicy {
     logger.info("Configured managed server is RUNNING");
     // startServer.sh does not take any action on a running server
     String result = executeLifecycleScript(START_SERVER_SCRIPT,
-            SERVER_LIFECYCLE, "standalone-managed",
-            keepReplicaCountConstantParameter);
+        SERVER_LIFECYCLE, "standalone-managed",
+        keepReplicaCountConstantParameter);
     assertTrue(result.contains("No changes needed"), "startServer.sh shouldn't make changes");
 
     // shutdown standalone-managed using the script stopServer.sh
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE,
-            "standalone-managed", keepReplicaCountConstantParameter);
+        "standalone-managed", keepReplicaCountConstantParameter);
     logger.info("Script executed to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -804,8 +804,8 @@ class ItServerStartPolicy {
 
     // stopServer.sh does not take any action on a stopped server
     result = executeLifecycleScript(STOP_SERVER_SCRIPT,
-            SERVER_LIFECYCLE, "standalone-managed",
-            keepReplicaCountConstantParameter);
+        SERVER_LIFECYCLE, "standalone-managed",
+        keepReplicaCountConstantParameter);
     assertTrue(result.contains("No changes needed"), "stopServer.sh shouldn't make changes");
 
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE,
@@ -863,43 +863,43 @@ class ItServerStartPolicy {
 
     // verify that the script can not stop a non-existing server
     String result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, wrongServerName, "", false),
-            String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
+            executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, wrongServerName, "", false),
+        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server that doesn't exist");
 
     // verify that the script can not start a non-existing server
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, wrongServerName, "", false),
-            String.format("Failed to run %s", START_SERVER_SCRIPT));
+            executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, wrongServerName, "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that doesn't exist");
 
     // verify that the script can not stop a non-existing cluster
     String wrongClusterName = "cluster-3";
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, wrongClusterName, "", false),
-            String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
+            executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, wrongClusterName, "", false),
+        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
     assertTrue(result.contains("cluster cluster-3 is not part of domain"),
-            "The script shouldn't stop a cluster that doesn't exist");
+        "The script shouldn't stop a cluster that doesn't exist");
 
     // verify that the script can not start a non-existing cluster
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, wrongClusterName, "", false),
-            String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
+            executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, wrongClusterName, "", false),
+        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
     assertTrue(result.contains("cluster cluster-3 is not part of domain"),
-            "The script shouldn't start a cluster that doesn't exist");
+        "The script shouldn't start a cluster that doesn't exist");
 
     // verify that the script can not stop a non-existing domain
     String domainName = "mii-start-policy" + "-123";
     regex = ".*" + domainName + ".*\\s*not found";
     result = assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null, "", false, domainName),
-            String.format("Failed to run %s", STOP_DOMAIN_SCRIPT));
+            executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null, "", false, domainName),
+        String.format("Failed to run %s", STOP_DOMAIN_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a domain that doesn't exist");
 
     // verify that the script can not start a non-existing domain
     result = assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null, "", false, domainName),
-            String.format("Failed to run %s", START_DOMAIN_SCRIPT));
+            executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null, "", false, domainName),
+        String.format("Failed to run %s", START_DOMAIN_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a domain that doesn't exist");
   }
 
@@ -922,15 +922,15 @@ class ItServerStartPolicy {
     // verify that the script can not start a server in config cluster that exceeds the max cluster size
     String regex = ".*" + configServerName + ".*\\s*is not part";
     String result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName, "", false),
-            String.format("Failed to run %s", START_SERVER_SCRIPT));
+            executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName, "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
 
     // verify that the script can not start a server in dynamic cluster that exceeds the max cluster size
     regex = ".*is outside the allowed range of";
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
-            String.format("Failed to run %s", START_SERVER_SCRIPT));
+            executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
+        String.format("Failed to run %s", START_SERVER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
   }
 
@@ -944,13 +944,13 @@ class ItServerStartPolicy {
   @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
   void testOperatorLogWarningMsg() {
     String operatorPodName =
-            assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
     String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("WARNING"));
     assertTrue(operatorPodLog.contains(
-            "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
   }
 
   /**
@@ -986,17 +986,17 @@ class ItServerStartPolicy {
 
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "NEVER"),
-              "Failed to patch adminServer's serverStartPolicy to NEVER");
+              "/spec/adminServer/serverStartPolicy", "NEVER"),
+          "Failed to patch adminServer's serverStartPolicy to NEVER");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
 
       // verify the script can stop the server by reducing replica count
       assertDoesNotThrow(() ->
-                      executeLifecycleScript(STOP_SERVER_SCRIPT,
-                              SERVER_LIFECYCLE, serverName, "", true),
-              String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+              executeLifecycleScript(STOP_SERVER_SCRIPT,
+                  SERVER_LIFECYCLE, serverName, "", true),
+          String.format("Failed to run %s", STOP_SERVER_SCRIPT));
       checkPodDeleted(serverPodName, domainUid, domainNamespace);
       logger.info("Shutdown [" + serverName + "] without admin server success");
 
@@ -1005,8 +1005,8 @@ class ItServerStartPolicy {
       // lost while stopping the server in mii model.
 
       assertDoesNotThrow(() ->
-                      executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
-              String.format("Failed to run %s", START_SERVER_SCRIPT));
+              executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
+          String.format("Failed to run %s", START_SERVER_SCRIPT));
       logger.info("Replica count increased without admin server");
 
       // Check if pod in init state
@@ -1016,10 +1016,10 @@ class ItServerStartPolicy {
 
       // (re)Start Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       checkPodReadyAndServiceExists(
-              adminServerPodName, domainUid, domainNamespace);
+          adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
       checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
@@ -1027,10 +1027,10 @@ class ItServerStartPolicy {
     } finally {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
-              adminServerPodName, domainNamespace);
+          adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     }
   }
@@ -1069,17 +1069,17 @@ class ItServerStartPolicy {
 
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "NEVER"),
-              "Failed to patch adminServer's serverStartPolicy to NEVER");
+              "/spec/adminServer/serverStartPolicy", "NEVER"),
+          "Failed to patch adminServer's serverStartPolicy to NEVER");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
 
       // verify the script can stop the server by reducing replica count
       assertDoesNotThrow(() ->
-                      executeLifecycleScript(STOP_SERVER_SCRIPT,
-                              SERVER_LIFECYCLE, serverName, "", true),
-              String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+              executeLifecycleScript(STOP_SERVER_SCRIPT,
+                  SERVER_LIFECYCLE, serverName, "", true),
+          String.format("Failed to run %s", STOP_SERVER_SCRIPT));
       checkPodDeleted(serverPodName, domainUid, domainNamespace);
       logger.info("Shutdown [" + serverName + "] without admin server success");
 
@@ -1088,8 +1088,8 @@ class ItServerStartPolicy {
       // lost while stopping the server in mii model.
 
       assertDoesNotThrow(() ->
-                      executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
-              String.format("Failed to run %s", START_SERVER_SCRIPT));
+              executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
+          String.format("Failed to run %s", START_SERVER_SCRIPT));
       logger.info("Replica count increased without admin server");
 
       // Check if pod in init state
@@ -1099,10 +1099,10 @@ class ItServerStartPolicy {
 
       // (re)Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
               "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       checkPodReadyAndServiceExists(
-              adminServerPodName, domainUid, domainNamespace);
+          adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
       checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
@@ -1110,10 +1110,10 @@ class ItServerStartPolicy {
     } finally {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                      "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+          "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
-              adminServerPodName, domainNamespace);
+          adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     }
   }
@@ -1193,17 +1193,17 @@ class ItServerStartPolicy {
 
     // get the creation time of the configured and dynamic server pod before patching
     OffsetDateTime configServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
     OffsetDateTime dynServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
 
     // use rollCluster.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the configured cluster with rollCluster.sh script");
     String result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2),
-            String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
+            executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2),
+        String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
 
     // wait till rolling restart has started by checking managed server pods have restarted
     logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
@@ -1213,13 +1213,13 @@ class ItServerStartPolicy {
     // check managed server from other cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1,
-            domainUid, domainNamespace, replicaCount)));
+        domainUid, domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
-            assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
-                            dynamicServerPodName, dynServerPodCreationTime).call().booleanValue(),
-                    String.format("pod %s should not been restarted in namespace %s",
-                            dynamicServerPodName, domainNamespace));
+        assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
+                dynamicServerPodName, dynServerPodCreationTime).call().booleanValue(),
+            String.format("pod %s should not been restarted in namespace %s",
+                dynamicServerPodName, domainNamespace));
 
     assertFalse(isPodRestarted,
             String.format("dynamic server %s shouldn't be rolling-restarted", dynamicServerPodName));
@@ -1243,36 +1243,36 @@ class ItServerStartPolicy {
 
     // get the creation time of the configured and dynamic server pod before patching
     OffsetDateTime dynServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
     OffsetDateTime configServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
 
     // use rollCluster.sh to rolling-restart a dynamic cluster
     logger.info("Rolling restart the dynamic cluster with rollCluster.sh script");
     assertDoesNotThrow(() ->
-                    executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1),
-            String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
+            executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1),
+        String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
 
     // wait till rolling restart has started by checking managed server pods have restarted
     logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
-            dynamicServerPodName, domainNamespace);
+        dynamicServerPodName, domainNamespace);
     checkPodRestarted(domainUid, domainNamespace, dynamicServerPodName, dynServerPodCreationTime);
 
     // check managed server from other cluster are not affected
     logger.info("Check configured managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
-            domainUid, domainNamespace, replicaCount)));
+        domainUid, domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
-            assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
-                            configServerPodName, configServerPodCreationTime).call().booleanValue(),
-                    String.format("pod %s should not been restarted in namespace %s",
-                            configServerPodName, domainNamespace));
+        assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
+                configServerPodName, configServerPodCreationTime).call().booleanValue(),
+            String.format("pod %s should not been restarted in namespace %s",
+                configServerPodName, domainNamespace));
 
     assertFalse(isPodRestarted,
-            String.format("configured server %s shouldn't be rolling-restarted", configServerPodName));
+        String.format("configured server %s shouldn't be rolling-restarted", configServerPodName));
   }
 
   /**
@@ -1293,25 +1293,25 @@ class ItServerStartPolicy {
 
     // get the creation time of the configured and dynamic server pod before patching
     OffsetDateTime configServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
     OffsetDateTime dynServerPodCreationTime =
-            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
-                    String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
 
     // use rollDomain.sh to rolling-restart a configured cluster
     logger.info("Rolling restart the domain with rollDomain.sh script");
     String result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(ROLLING_DOMAIN_SCRIPT, DOMAIN, ""),
-            String.format("Failed to run %s", ROLLING_DOMAIN_SCRIPT));
+            executeLifecycleScript(ROLLING_DOMAIN_SCRIPT, DOMAIN, ""),
+        String.format("Failed to run %s", ROLLING_DOMAIN_SCRIPT));
 
     // wait till rolling restart has started by checking managed server pods have restarted
     logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
-            configServerPodName, domainNamespace);
+        configServerPodName, domainNamespace);
     checkPodRestarted(domainUid, domainNamespace, configServerPodName, configServerPodCreationTime);
 
     logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
-            dynamicServerPodName, domainNamespace);
+        dynamicServerPodName, domainNamespace);
     checkPodRestarted(domainUid, domainNamespace, dynamicServerPodName, dynServerPodCreationTime);
   }
 
@@ -1353,7 +1353,7 @@ class ItServerStartPolicy {
     // check managed server from other cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1,
-            domainUid, domainNamespace, replicaCount)));
+        domainUid, domainNamespace, replicaCount)));
     checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env
@@ -1402,7 +1402,7 @@ class ItServerStartPolicy {
     // check managed server from other cluster are not affected
     logger.info("Check configured managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
-            domainUid, domainNamespace, replicaCount)));
+        domainUid, domainNamespace, replicaCount)));
     checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env
@@ -1419,7 +1419,7 @@ class ItServerStartPolicy {
     logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
     String result =  assertDoesNotThrow(() ->
         executeLifecycleScript(SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
-            String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
+        String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
 
     if (checkPodExist) {
       checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
@@ -1429,12 +1429,12 @@ class ItServerStartPolicy {
 
     // verify that scaleCluster.sh does scale to a required replica number
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
-            domainUid, domainNamespace, replicaNum)));
+        domainUid, domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
     result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
-            String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
+            executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
 
     assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName
             + ", the result is -> " + result + " . It doesn't match the expected pattern -> " + regex);
@@ -1450,14 +1450,14 @@ class ItServerStartPolicy {
 
     // restore test env
     assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
-            String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+            executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
+        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("managed server " + configServerPodName + " stopped successfully.");
 
     assertDoesNotThrow(() ->
-                    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
-            String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+            executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
+        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
     checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
   }
@@ -1534,7 +1534,7 @@ class ItServerStartPolicy {
                                     .domainType("WLS")
                                     .configMap(configmapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
+                        .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             ItServerStartPolicy.domainUid, domNamespace);
@@ -1542,7 +1542,7 @@ class ItServerStartPolicy {
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
                     ItServerStartPolicy.domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-            + "for %s in namespace %s", ItServerStartPolicy.domainUid, domNamespace));
+        + "for %s in namespace %s", ItServerStartPolicy.domainUid, domNamespace));
   }
 
   /*
@@ -1553,21 +1553,21 @@ class ItServerStartPolicy {
   private boolean checkManagedServerConfiguration(String ingressHost, String managedServer) {
     ExecResult result;
     int adminServiceNodePort
-            = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String url = OKD ? ingressHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     logger.info("url = {0}", url);
     StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
-            .append(ADMIN_USERNAME_DEFAULT)
-            .append(":")
-            .append(ADMIN_PASSWORD_DEFAULT)
-            .append(" ")
-            .append("http://" + url)
-            .append("/management/tenant-monitoring/servers/")
-            .append(managedServer)
-            .append(" --silent --show-error ")
-            .append(" -o /dev/null")
-            .append(" -w %{http_code});")
-            .append("echo ${status}");
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" ")
+        .append("http://" + url)
+        .append("/management/tenant-monitoring/servers/")
+        .append(managedServer)
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
     logger.info("checkManagedServerConfiguration: curl command {0}",
             new String(checkCluster));
     try {
@@ -1616,26 +1616,26 @@ class ItServerStartPolicy {
     params = new CommandParams().defaults();
     if (scriptType.equals(SERVER_LIFECYCLE)) {
       params.command("sh "
-              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
-              + commonParameters + " -s " + entityName + " " + extraParams);
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + commonParameters + " -s " + entityName + " " + extraParams);
     } else if (scriptType.equals(CLUSTER_LIFECYCLE)) {
       if (extraParams.contains("-r")) {
         commonParameters += " " + extraParams;
       }
 
       params.command("sh "
-              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
-              + commonParameters + " -c " + entityName);
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + commonParameters + " -c " + entityName);
     } else {
       params.command("sh "
-              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
-              + commonParameters);
+          + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+          + commonParameters);
     }
 
     ExecResult execResult = Command.withParams(params).executeAndReturnResult();
     if (checkResult) {
       assertEquals(0, execResult.exitValue(),
-              String.format("Failed to execute script  %s ", script));
+          String.format("Failed to execute script  %s ", script));
     }
     return execResult.toString();
   }

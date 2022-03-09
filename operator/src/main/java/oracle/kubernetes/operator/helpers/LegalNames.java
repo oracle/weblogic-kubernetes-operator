@@ -90,9 +90,9 @@ public class LegalNames {
    */
   public static String toJobIntrospectorName(String domainUid) {
     return toDns1123LegalName(String.format(
-            DOMAIN_INTROSPECTOR_JOB_PATTERN,
-            domainUid,
-            getIntrospectorJobNameSuffix()));
+        DOMAIN_INTROSPECTOR_JOB_PATTERN,
+        domainUid,
+        getIntrospectorJobNameSuffix()));
   }
 
   /**
@@ -101,8 +101,8 @@ public class LegalNames {
    */
   public static String getIntrospectorJobNameSuffix() {
     return Optional.ofNullable(TuningParameters.getInstance())
-            .map(t -> t.get(INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
-            .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
+        .map(t -> t.get(INTROSPECTOR_JOB_NAME_SUFFIX_PARAM))
+        .orElse(LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX);
   }
 
   /**
@@ -114,10 +114,10 @@ public class LegalNames {
    */
   public static String toExternalServiceName(String domainUid, String serverName) {
     return toDns1123LegalName(String.format(
-            EXTERNAL_SERVICE_PATTERN,
-            domainUid,
-            serverName,
-            getExternalServiceNameSuffix()));
+        EXTERNAL_SERVICE_PATTERN,
+        domainUid,
+        serverName,
+        getExternalServiceNameSuffix()));
   }
 
   /**
@@ -126,8 +126,8 @@ public class LegalNames {
    */
   private static String getExternalServiceNameSuffix() {
     return Optional.ofNullable(TuningParameters.getInstance())
-            .map(t -> t.get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
-            .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+        .map(t -> t.get(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM))
+        .orElse(LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
