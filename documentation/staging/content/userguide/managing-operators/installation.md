@@ -99,8 +99,8 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
   $ helm search repo weblogic-operator/weblogic-operator --versions
   ```
 
-- For a specified version of the Helm chart, use the `--version <value>` option with `helm install`
-  to choose the version that you want, with the `latest` value being the default.
+- For a specified version of the Helm chart and operator, use the `--version <value>` option with `helm install`
+  to choose the version that you want, with the `latest` value being the default. 
 
 Install the operator using this format: `helm install <helm-release-name> <helm-repo-name>/weblogic-operator ...`
 ```text
