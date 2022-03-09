@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.rest;
 
+import oracle.kubernetes.operator.RestServerType;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 
 /**
@@ -37,6 +38,13 @@ public interface RestConfig {
    * @return the port number
    */
   int getInternalHttpsPort();
+
+  /**
+   * Gets the webhook https port's in-pod port number.
+   *
+   * @return the port number
+   */
+  int getWebhookHttpsPort();
 
   /**
    * Gets the external https port's certificate.
@@ -112,4 +120,14 @@ public interface RestConfig {
    *     requests).
    */
   RestBackend getBackend(String accessToken);
+
+  RestServerType getRestServerType();
+
+  String getWebhookCertificateData();
+
+  String getWebhookCertificateFile();
+
+  String getWebhookKeyData();
+
+  String getWebhookKeyFile();
 }

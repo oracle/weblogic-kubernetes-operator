@@ -18,6 +18,7 @@ import javax.net.ssl.SSLContext;
 import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.rest.resource.VersionsResource;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -31,6 +32,9 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
+
+import static oracle.kubernetes.operator.RestServerType.ConversionWebhook;
+import static oracle.kubernetes.operator.RestServerType.Operator;
 
 /**
  * The RestServer runs the WebLogic operator's REST api.
@@ -57,8 +61,10 @@ public class RestServer {
   // private String baseHttpUri;
   private final String baseExternalHttpsUri;
   private final String baseInternalHttpsUri;
+  private final String baseWebhookHttpsUri;
   private HttpServer externalHttpsServer;
   private HttpServer internalHttpsServer;
+  private HttpServer webhookHttpsServer;
 
   /**
    * Constructs the WebLogic Operator REST server.
@@ -72,6 +78,7 @@ public class RestServer {
     this.config = config;
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
     baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+    baseWebhookHttpsUri = "https://" + config.getHost() + ":" + config.getWebhookHttpsPort();
     LOGGER.exiting();
   }
 
@@ -133,13 +140,18 @@ public class RestServer {
     ResourceConfig rc =
         new ResourceConfig()
             .register(JacksonFeature.class)
-            .register(CsrfProtectionFilter.class)
             .register(ErrorFilter.class)
-            .register(AuthenticationFilter.class)
             .register(RequestDebugLoggingFilter.class)
             .register(ResponseDebugLoggingFilter.class)
-            .register(ExceptionMapper.class)
-            .packages(VersionsResource.class.getPackageName());
+            .register(ExceptionMapper.class);
+            ;
+    if (restConfig.getRestServerType() == Operator) {
+      rc.register(CsrfProtectionFilter.class)
+              .register(AuthenticationFilter.class)
+              .packages(VersionsResource.class.getPackageName());
+    } else {
+      rc.packages(ConversionWebhookResource.class.getPackageName());
+    }
     rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }
@@ -179,6 +191,15 @@ public class RestServer {
   }
 
   /**
+   * Returns the in-pod URI of the externally available https REST port.
+   *
+   * @return the uri
+   */
+  String getWebhookHttpsUri() {
+    return baseWebhookHttpsUri;
+  }
+
+  /**
    * Starts WebLogic operator's REST api.
    *
    * <p>If a port has not been configured, then it logs that fact, does not start that port, and
@@ -191,31 +212,39 @@ public class RestServer {
    */
   public void start(Container container) throws Exception {
     LOGGER.entering();
-    if (externalHttpsServer != null || internalHttpsServer != null) {
+    if ((externalHttpsServer != null || internalHttpsServer != null) && (!isWebhook())) {
       throw new AssertionError("Already started");
     }
     boolean fullyStarted = false;
     try {
-      if (isExternalSslConfigured()) {
+      if (!isWebhook() && isExternalSslConfigured()) {
         externalHttpsServer = createExternalHttpsServer(container);
         LOGGER.info(
             "Started the external ssl REST server on "
                 + getExternalHttpsUri()
                 + "/operator"); // TBD .fine ?
-      } else {
+      } else if (!isWebhook()) {
         LOGGER.fine(
-            "Did not start the external ssl REST server because external ssl has not been configured.");
+                "Did not start the external ssl REST server because external ssl has not been configured.");
       }
 
-      if (isInternalSslConfigured()) {
+      if (!isWebhook() && isInternalSslConfigured()) {
         internalHttpsServer = createInternalHttpsServer(container);
         LOGGER.info(
             "Started the internal ssl REST server on "
                 + getInternalHttpsUri()
                 + "/operator"); // TBD .fine ?
-      } else {
+      } else if (!isWebhook()) {
         LOGGER.fine(
-            "Did not start the internal ssl REST server because internal ssl has not been configured.");
+                "Did not start the internal ssl REST server because internal ssl has not been configured.");
+      }
+
+      if (isWebhook()) {
+        webhookHttpsServer = createWebhookHttpsServer(container);
+        LOGGER.info(
+                "Started the webhook ssl REST server on "
+                        + getWebhookHttpsUri()
+                        + "/webhook"); // TBD .fine ?
       }
 
       fullyStarted = true;
@@ -246,6 +275,11 @@ public class RestServer {
       internalHttpsServer.shutdownNow();
       internalHttpsServer = null;
       LOGGER.fine("Stopped the internal ssl REST server");
+    }
+    if (webhookHttpsServer != null) {
+      webhookHttpsServer.shutdownNow();
+      webhookHttpsServer = null;
+      LOGGER.fine("Stopped the webhook ssl REST server");
     }
     LOGGER.exiting();
   }
@@ -278,6 +312,22 @@ public class RestServer {
                     config.getOperatorInternalKeyData(),
                     config.getOperatorInternalKeyFile())),
             getInternalHttpsUri());
+    LOGGER.exiting();
+    return result;
+  }
+
+  private HttpServer createWebhookHttpsServer(Container container) throws Exception {
+    LOGGER.entering();
+    HttpServer result =
+            createHttpsServer(
+                    container,
+                    createSslContext(
+                            createKeyManagers(
+                                    config.getWebhookCertificateData(),
+                                    config.getWebhookCertificateFile(),
+                                    config.getWebhookKeyData(),
+                                    config.getWebhookKeyFile())),
+                    getWebhookHttpsUri());
     LOGGER.exiting();
     return result;
   }
@@ -418,5 +468,9 @@ public class RestServer {
       }
     }
     return result;
+  }
+
+  private boolean isWebhook() {
+    return ConversionWebhook == config.getRestServerType();
   }
 }

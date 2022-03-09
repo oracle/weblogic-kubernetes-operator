@@ -57,7 +57,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.rest.WebhookRestConfigImpl.HTTPS_PORT;
+import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
@@ -223,7 +223,7 @@ public class CrdHelper {
               .webhook(new V1WebhookConversion().conversionReviewVersions(
                       Arrays.asList(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
                       .service(new ApiextensionsV1ServiceReference().name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
-                              .namespace(getWebhookNamespace()).port(HTTPS_PORT)
+                              .namespace(getWebhookNamespace()).port(CONVERSION_WEBHOOK_HTTPS_PORT)
                               .path(WEBHOOK_PATH))
                       .caBundle(caBundle)));
     }

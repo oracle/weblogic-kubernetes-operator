@@ -30,8 +30,8 @@ import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.rest.WebhookRestConfigImpl;
-import oracle.kubernetes.operator.rest.WebhookRestServer;
+import oracle.kubernetes.operator.rest.RestConfigImpl;
+import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.work.Component;
@@ -46,6 +46,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.RestServerType.ConversionWebhook;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
 /** A Conversion Webhook for WebLogic Kubernetes Operator. */
@@ -238,7 +239,7 @@ public class ConversionWebhookMain {
   private void completeBegin() {
     try {
       // start the webhook REST server
-      startWebhookRestServer();
+      startWebhookRestServer(ConversionWebhook);
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
@@ -290,15 +291,15 @@ public class ConversionWebhookMain {
     return new NullCompletionCallback(completionAction);
   }
 
-  private void startWebhookRestServer()
+  private void startWebhookRestServer(RestServerType type)
           throws Exception {
-    WebhookRestServer.create(new WebhookRestConfigImpl());
-    WebhookRestServer.getInstance().start(container);
+    RestServer.create(new RestConfigImpl(type));
+    RestServer.getInstance().start(container);
   }
 
   private static void stopWebhookRestServer() {
-    WebhookRestServer.getInstance().stop();
-    WebhookRestServer.destroy();
+    RestServer.getInstance().stop();
+    RestServer.destroy();
   }
 
   private static void markReadyAndStartLivenessThread() {

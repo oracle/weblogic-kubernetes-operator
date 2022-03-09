@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.RestServerType;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
 import oracle.kubernetes.utils.TestUtils;
@@ -40,6 +41,7 @@ import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.RestServerType.Operator;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
 import static org.hamcrest.Matchers.equalTo;
@@ -378,6 +380,11 @@ class RestTest extends JerseyTest {
     @Override
     public RestBackend getBackend(String accessToken) {
       return restBackendSupplier.get();
+    }
+
+    @Override
+    public RestServerType getRestServerType() {
+      return Operator;
     }
   }
 
