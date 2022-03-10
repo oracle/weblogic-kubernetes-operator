@@ -272,7 +272,8 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
   void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
             + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
@@ -849,9 +850,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 
-    String adminSecretName = "weblogic-credentials";
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret

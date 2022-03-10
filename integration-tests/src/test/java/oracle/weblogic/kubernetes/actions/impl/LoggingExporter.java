@@ -35,7 +35,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
+import org.awaitility.core.ConditionFactory;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -48,8 +51,8 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaul
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWleParams;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,6 +64,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class LoggingExporter {
 
   private static LoggingFacade logger = getLogger();
+  private static ConditionFactory withStandardRetryPolicy =
+      with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
+
   private static final int maxIterationsPod = 10;
 
   /**
@@ -94,12 +102,15 @@ public class LoggingExporter {
     }
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
-    testUntil(
-            Deployment.isReady(elasticsearchName, labels, namespace),
-            logger,
-            "Elasticsearch deployment {0} to be completed in {1} namespace",
-            elasticsearchName,
-            namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for Elasticsearch deployment {0}"
+                + "to be completed in {1} namespace (elapsed time {2}ms, remaining time {3}ms)",
+                elasticsearchName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(Deployment.isReady(elasticsearchName, labels, namespace));
 
     // create Elasticsearch service CR
     logger.info("Create Elasticsearch service CR for {0} in namespace {1}",
@@ -147,12 +158,15 @@ public class LoggingExporter {
             kibanaName, namespace));
     logger.info("Checking if Kibana deployment is ready {0} completed in namespace {1}",
         kibanaName, namespace);
-    testUntil(
-            Deployment.isReady(kibanaName, labels, namespace),
-            logger,
-            "Kibana deployment {0} to be completed in namespace {1}",
-            kibanaName,
-            namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for Kibana deployment {0} to be completed"
+                + " in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
+                kibanaName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(Deployment.isReady(kibanaName, labels, namespace));
 
     // create Kibana service CR
     logger.info("Create Kibana service CR for {0} in namespace {1}", kibanaName, namespace);
