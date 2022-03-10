@@ -82,7 +82,6 @@ public interface TestConstants {
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
-  public static final String OCR_DB_19C_IMAGE_TAG = "19.3.0.0";
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
@@ -158,9 +157,6 @@ public interface TestConstants {
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "4.0.17";
-  public static final String NGINX_INGRESS_IMAGE_TAG = "v1.1.1";
-  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
-  public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://helm.traefik.io/traefik";
@@ -274,9 +270,6 @@ public interface TestConstants {
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
-  public static final String ENCRYPION_USERNAME_DEFAULT = "weblogicenc";
-  public static final String ENCRYPION_PASSWORD_DEFAULT = "weblogicenc";
-
   // REST API
   public static final String PROJECT_ROOT = System.getProperty("user.dir");
   public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =
@@ -319,22 +312,4 @@ public interface TestConstants {
 
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
-
-  // domain status condition type
-  public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
-  public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
-  public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
-
-  //Oracle database operator constants
-  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
-  public static final String ORACLE_DB_OPERATOR_RELEASE = Optional.ofNullable(
-      System.getenv("ORACLE_DB_OPERATOR_RELEASE")).orElse(ORACLE_DB_OPERATOR_RELEASE_LATEST);
-  public static final String CERT_MANAGER
-      = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
-  public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
-      + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
-  public static final String SIDB_YAML_URL = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
-      + "config/samples/sidb/singleinstancedatabase.yaml";
-  public static final String ORACLELINUX_TEST_VERSION =
-      Optional.ofNullable(System.getenv("ORACLELINUX_TEST_VERSION")).orElse("7");
 }

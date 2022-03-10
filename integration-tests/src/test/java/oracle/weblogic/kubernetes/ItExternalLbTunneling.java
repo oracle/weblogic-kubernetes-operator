@@ -503,7 +503,7 @@ class ItExternalLbTunneling {
   /**
    * Verify tls RMI access to WLS through routes with edge termination - only for OKD cluster.
    */
-  @Disabled("need to add itls key and certs")
+  @Disabled("need to add tls key and certs")
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify tls RMI access WLS through Route in OKD ")

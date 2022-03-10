@@ -74,8 +74,6 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
-import io.kubernetes.client.openapi.models.V1StorageClass;
-import io.kubernetes.client.openapi.models.V1StorageClassList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
@@ -93,7 +91,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -133,7 +130,6 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
-  private static GenericKubernetesApi<V1StorageClass, V1StorageClassList> storageClassClient = null;
 
   private static ConditionFactory withStandardRetryPolicy = null;
 
@@ -292,17 +288,6 @@ public class Kubernetes {
             "serviceaccounts", // the resource plural
             apiClient //the api client
         );
-
-    storageClassClient =
-        new GenericKubernetesApi<>(
-            V1StorageClass.class, // the api type class
-            V1StorageClassList.class, // the api list type class
-            "storage.k8s.io", // the api group
-            "v1", // the api version
-            "storageclasses", // the resource plural
-            apiClient //the api client
-        );
-
     deleteOptions = new DeleteOptions();
     deleteOptions.setGracePeriodSeconds(0L);
     deleteOptions.setPropagationPolicy(FOREGROUND);
@@ -1062,12 +1047,16 @@ public class Kubernetes {
       }
     }
 
-    testUntil(
-        assertDoesNotThrow(() -> namespaceDeleted(name),
-            String.format("namespaceExists failed with ApiException for namespace %s", name)),
-        getLogger(),
-        "namespace {0} to be deleted",
-        name);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for namespace {0} to be deleted "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                name,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> namespaceDeleted(name),
+            String.format("namespaceExists failed with ApiException for namespace %s",
+                name)));
 
     return true;
   }
@@ -1254,25 +1243,11 @@ public class Kubernetes {
    */
   public static Domain getDomainCustomResource(String domainUid, String namespace)
       throws ApiException {
-    return getDomainCustomResource(domainUid, namespace, DOMAIN_VERSION);
-  }
-
-  /**
-   * Get the Domain Custom Resource.
-   *
-   * @param domainUid unique domain identifier
-   * @param namespace name of namespace
-   * @param domainVersion version of domain
-   * @return domain custom resource or null if Domain does not exist
-   * @throws ApiException if Kubernetes request fails
-   */
-  public static Domain getDomainCustomResource(String domainUid, String namespace, String domainVersion)
-      throws ApiException {
     Object domain;
     try {
       domain = customObjectsApi.getNamespacedCustomObject(
           DOMAIN_GROUP, // custom resource's group name
-          domainVersion, // //custom resource's version
+          DOMAIN_VERSION, // //custom resource's version
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           domainUid // custom object's name
@@ -2377,31 +2352,6 @@ public class Kubernetes {
   }
 
   /**
-   * Create a role in the specified namespace.
-   *
-   * @param namespace the namespace in which the role binding to be created
-   * @param role V1Role object containing role configuration data
-   * @return true if the creation succeeds, false otherwise
-   * @throws ApiException if Kubernetes client call fails
-   */
-  public static boolean createNamespacedRole(String namespace, V1Role role) throws ApiException {
-    try {
-      V1Role crb = rbacAuthApi.createNamespacedRole(
-          namespace, // namespace where this role is created
-          role, // role configuration data
-          PRETTY, // pretty print output
-          null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
-      );
-    } catch (ApiException apex) {
-      getLogger().severe(apex.getResponseBody());
-      throw apex;
-    }
-
-    return true;
-  }
-
-  /**
    * Create a role binding in the specified namespace.
    *
    * @param namespace the namespace in which the role binding to be created
@@ -2679,48 +2629,6 @@ public class Kubernetes {
       throw apex;
     }
     return roles;
-  }
-
-  /**
-   * Create a StorageClass object.
-   *
-   * @param sco V1StorageClass object
-   * @return true if the creation succeeds, false otherwise
-   */
-  public static boolean createStorageClass(V1StorageClass sco) {
-    KubernetesApiResponse<V1StorageClass> response = storageClassClient.create(sco);
-    if (response.isSuccess()) {
-      getLogger().info("Successfully created StorageClass {0}", sco.getMetadata().getName());
-      return true;
-    } else {
-      if (response.getStatus() != null) {
-        getLogger().info(Yaml.dump(response.getStatus()));
-      }
-      getLogger().warning("Failed to create StorageClass {0} with error code {1}",
-          sco.getMetadata().getName(), response.getHttpStatusCode());
-      return response.getHttpStatusCode() == 409;
-    }
-  }
-
-  /**
-   * Delete a StorageClass object.
-   *
-   * @param name V1StorageClass object name
-   * @return true if the deletion succeeds, false otherwise
-   */
-  public static boolean deleteStorageClass(String name) {
-    KubernetesApiResponse<V1StorageClass> response = storageClassClient.delete(name);
-    if (response.isSuccess()) {
-      getLogger().info("Successfully deleted StorageClass {0}", name);
-      return true;
-    } else {
-      if (response.getStatus() != null) {
-        getLogger().info(Yaml.dump(response.getStatus()));
-      }
-      getLogger().warning("Failed to delete StorageClass {0} with error code {1}",
-          name, response.getHttpStatusCode());
-      return false;
-    }
   }
 
   /**
