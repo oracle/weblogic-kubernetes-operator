@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -79,8 +80,8 @@ public class MiiDynamicUpdateHelper {
     this.domainUid = domainUid;
     adminServerPodName = domainUid + "-admin-server";
     managedServerPrefix = domainUid + "-managed-server";
-    pvName = domainUid + "-pv"; // name of the persistent volume
-    pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
