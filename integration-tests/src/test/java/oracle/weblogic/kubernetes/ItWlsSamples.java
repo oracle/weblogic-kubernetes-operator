@@ -180,8 +180,8 @@ class ItWlsSamples {
     if (script.equals("wlst")) {
       assertDoesNotThrow(() -> {
         replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "mode: wdt",
-                "mode: wlst");
+            "mode: wdt",
+            "mode: wlst");
       });
     }
 

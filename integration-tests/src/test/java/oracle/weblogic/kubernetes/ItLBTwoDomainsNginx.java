@@ -384,10 +384,10 @@ class ItLBTwoDomainsNginx {
           .path("/" + domainUid.substring(4) + "(.+)")
           .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
-                  .service(new V1IngressServiceBackend()
-                      .name(domainUid + "-cluster-cluster-1")
-                      .port(new V1ServiceBackendPort()
-                          .number(MANAGED_SERVER_PORT)))
+              .service(new V1IngressServiceBackend()
+                  .name(domainUid + "-cluster-cluster-1")
+                  .port(new V1ServiceBackendPort()
+                      .number(MANAGED_SERVER_PORT)))
           );
       httpIngressPaths.add(httpIngressPath);
     }

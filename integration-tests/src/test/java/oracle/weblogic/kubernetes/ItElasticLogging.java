@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,13 +16,15 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
@@ -37,13 +37,11 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
@@ -53,7 +51,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -66,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggin
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -111,6 +109,7 @@ class ItElasticLogging {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static ConditionFactory withStandardRetryPolicy = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -132,6 +131,10 @@ class ItElasticLogging {
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
+    // create standard, reusable retry/backoff policy
+    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning a unique namespace for Operator");
@@ -186,9 +189,7 @@ class ItElasticLogging {
         opNamespace);
 
     // install WebLogic Logging Exporter if in non-OKD env
-    if (!OKD) {
-      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
-    }
+    installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -305,7 +306,6 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
@@ -340,38 +340,24 @@ class ItElasticLogging {
   }
 
   private static String createAndVerifyDomainImage() {
-    String miiImage = null;
-
     // create image with model files
-    if (!OKD) {
-      String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-      StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
-          .append(WORK_DIR)
-          .append("/")
-          .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
-          .append(",")
-          .append(DOWNLOAD_DIR)
-          .append("/")
-          .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
-          .append(",")
-          .append(DOWNLOAD_DIR)
-          .append("/")
-          .append(SNAKE_DOWNLOADED_FILENAME);
+    String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+    StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
+        .append(WORK_DIR)
+        .append("/")
+        .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
+        .append(",")
+        .append(DOWNLOAD_DIR)
+        .append("/")
+        .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
+        .append(",")
+        .append(DOWNLOAD_DIR)
+        .append("/")
+        .append(SNAKE_DOWNLOADED_FILENAME);
 
-      logger.info("Create image with model file and verify");
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
-          MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
-    } else {
-      List<String> appList = new ArrayList();
-      appList.add(MII_BASIC_APP_NAME);
-
-      // build the model file list
-      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WLS_LOGGING_MODEL_FILE);
-
-      // create image with model files
-      logger.info("Create image with model file and verify");
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, modelList, appList);
-    }
+    logger.info("Create image with model file and verify");
+    String miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
+        MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);

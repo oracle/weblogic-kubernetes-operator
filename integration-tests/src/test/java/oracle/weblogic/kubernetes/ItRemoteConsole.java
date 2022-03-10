@@ -226,10 +226,10 @@ class ItRemoteConsole {
         .path("/")
         .pathType("Prefix")
         .backend(new V1IngressBackend()
-                .service(new V1IngressServiceBackend()
-                    .name(domainUid + "-admin-server")
-                    .port(new V1ServiceBackendPort()
-                        .number(ADMIN_SERVER_PORT)))
+            .service(new V1IngressServiceBackend()
+                .name(domainUid + "-admin-server")
+                .port(new V1ServiceBackendPort()
+                    .number(ADMIN_SERVER_PORT)))
         );
     httpIngressPaths.add(httpIngressPath);
 
