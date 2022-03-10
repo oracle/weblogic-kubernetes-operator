@@ -329,7 +329,8 @@
                 <includes-failsafe>
                   **/ItCrossDomainTransaction,
                   **/ItKubernetesEvents,
-                  **/ItMiiAuxiliaryImage, **/ItMiiCreateAuxImageWithImageTool,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
