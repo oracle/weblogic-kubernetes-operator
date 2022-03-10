@@ -458,7 +458,7 @@
                   **/ItMiiDomain,
                   **/ItMiiDynamicUpdate,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMultiDomainModelsWithLoadBalancer,
+                  **/ItMultiDomainModels,
                   **/ItPodsShutdownOption,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
