@@ -64,6 +64,7 @@ import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
 import static oracle.kubernetes.operator.EventConstants.WILL_NOT_RETRY;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
@@ -184,8 +185,7 @@ class EventHelperTest {
     dispatchAddedEventWatches();
     testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
 
-    assertThat("Found DOMAIN_FAILED event",
-        containsOneEventWithCount(getEvents(testSupport), DOMAIN_FAILED_EVENT, 2), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).inNamespace(NS).withCount(2));
   }
 
   @Test
@@ -214,8 +214,7 @@ class EventHelperTest {
     dispatchAddedEventWatches();
     testSupport.runSteps(createDomainInvalidFailureSteps("Test failure"));
 
-    assertThat("Found DOMAIN_FAILED event",
-        containsOneEventWithCount(getEvents(testSupport), DOMAIN_FAILED_EVENT, 2), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).inNamespace(NS).withCount(2));
   }
 
   @Test
