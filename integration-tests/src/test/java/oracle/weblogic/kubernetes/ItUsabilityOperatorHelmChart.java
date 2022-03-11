@@ -819,11 +819,6 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      logger.info("upgrade operator to FINE logging level");
-      OperatorParams opParams = new OperatorParams()
-              .helmParams(opHelmParams)
-              .javaLoggingLevel("FINE");
-      upgradeAndVerifyOperator(op3Namespace, opParams);
 
       logger.info("Installing and verifying domain4");
       assertTrue(createVerifyDomain(domain4Namespace, domain4Uid),
