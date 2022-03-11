@@ -108,6 +108,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -219,8 +220,8 @@ class ItIntrospectVersion {
 
     final int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -1052,11 +1053,11 @@ class ItIntrospectVersion {
   /**
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
-   * The usecase update the introspectVersion by passing different value to -i
-   * option (non-numeric, non-numeric with space, no value) and make sure that
-   * the introspectVersion is updated accordingly in both domain spec level
+   * The usecase update the introspectVersion by passing differnt value to -i
+   * option (non-numeic, non-numeric with space, no value) and make sure that
+   * the introspectVersion is updated accrodingly in both domain sepc level
    * and server pod level.
-   * It also verifies the introspector job is started/stopped and none of the
+   * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
   @Test

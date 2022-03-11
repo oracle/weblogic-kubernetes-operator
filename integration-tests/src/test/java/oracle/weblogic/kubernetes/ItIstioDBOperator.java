@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -151,8 +152,8 @@ class ItIstioDBOperator {
   private String adminSvcExtHost = null;
 
   private static final String wlsDomainUid = "mii-jms-istio-db";
-  private static String pvName = wlsDomainUid + "-pv";
-  private static String pvcName = wlsDomainUid + "-pvc";
+  private static final String pvName = getUniquePvOrPvcName(wlsDomainUid + "-pv-");
+  private static final String pvcName = getUniquePvOrPvcName(wlsDomainUid + "-pvc-");
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
   private static int wlDomainIstioIngressPort;
