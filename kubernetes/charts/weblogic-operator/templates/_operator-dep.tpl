@@ -47,7 +47,7 @@ spec:
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
         command: ["bash"]
-        args: ["/operator/operator.sh"]
+        args: ["/deployment/operator.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -98,7 +98,7 @@ spec:
             {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
-          mountPath: "/operator/config"
+          mountPath: "/deployment/config"
         - name: "weblogic-operator-debug-cm-volume"
           mountPath: "/operator/debug-config"
         - name: "weblogic-operator-secrets-volume"
@@ -114,7 +114,7 @@ spec:
           exec:
             command:
             - "bash"
-            - "/operator/livenessProbe.sh"
+            - "/probes/livenessProbe.sh"
           initialDelaySeconds: 40
           periodSeconds: 10
           failureThreshold: 5
@@ -122,7 +122,7 @@ spec:
           exec:
             command:
             - "bash"
-            - "/operator/readinessProbe.sh"
+            - "/probes/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -233,7 +233,7 @@ spec:
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
             command: ["bash"]
-            args: ["/webhook/webhook.sh"]
+            args: ["/deployment/webhook.sh"]
             env:
             - name: "WEBHOOK_NAMESPACE"
               valueFrom:
@@ -276,7 +276,7 @@ spec:
                 {{- end }}
             volumeMounts:
             - name: "weblogic-webhook-cm-volume"
-              mountPath: "/webhook/config"
+              mountPath: "/deployment/config"
             - name: "weblogic-webhook-secrets-volume"
               mountPath: "/webhook/secrets"
               readOnly: true
@@ -285,14 +285,14 @@ spec:
               exec:
                 command:
                 - "bash"
-                - "/webhook/webhookLivenessProbe.sh"
+                - "/probes/livenessProbe.sh"
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
                 command:
                 - "bash"
-                - "/webhook/webhookReadinessProbe.sh"
+                - "/probes/readinessProbe.sh"
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}

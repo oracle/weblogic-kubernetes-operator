@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import oracle.kubernetes.operator.RestServerType;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 
 /**
@@ -120,8 +119,6 @@ public interface RestConfig {
    *     requests).
    */
   RestBackend getBackend(String accessToken);
-
-  RestServerType getRestServerType();
 
   String getWebhookCertificateData();
 

@@ -43,7 +43,6 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE;
 
 /**
  * Utility class for generating key-pair and self-signed certificates.
@@ -53,6 +52,7 @@ public final class SelfSignedCertUtils {
 
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
   public static final String WEBLOGIC_OPERATOR_WEBHOOK_SVC = "weblogic-operator-webhook-svc";
+  public static final String WEBHOOK_CERTIFICATE = "webhookCert";
 
   /**
    * Generates a key pair using the BouncyCastle lib.

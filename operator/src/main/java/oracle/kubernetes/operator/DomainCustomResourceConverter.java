@@ -27,7 +27,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NON_EXISTENT;
 import static oracle.kubernetes.operator.logging.MessageKeys.PRINT_HELP;
 
-public class DomainResourceConverter {
+public class DomainCustomResourceConverter {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("DomainResourceConverter", "Operator");
   private static final DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
@@ -42,7 +42,7 @@ public class DomainResourceConverter {
    *
    */
   public static void main(String[] args) {
-    final DomainResourceConverter drc = parseCommandLine(args);
+    final DomainCustomResourceConverter drc = parseCommandLine(args);
 
     File inputFile = new File(drc.inputFileName);
     File outputDir = new File(drc.outputDir);
@@ -58,7 +58,7 @@ public class DomainResourceConverter {
     convertDomain(drc);
   }
 
-  private static void convertDomain(DomainResourceConverter drc) {
+  private static void convertDomain(DomainCustomResourceConverter drc) {
     try (Writer writer = Files.newBufferedWriter(Path.of(drc.outputDir + "/" + drc.outputFileName))) {
       writer.write(domainUpgradeUtils.convertDomain(Files.readString(Path.of(drc.inputFileName))));
     } catch (IOException e) {
@@ -72,7 +72,7 @@ public class DomainResourceConverter {
    * @param outputFileName Name of the output file.
    * @param inputFileName Name of the input file.
    */
-  public DomainResourceConverter(
+  public DomainCustomResourceConverter(
           String outputDir,
           String outputFileName,
           String inputFileName) {
@@ -82,7 +82,7 @@ public class DomainResourceConverter {
     this.inputFileName = inputFileName;
   }
 
-  private static DomainResourceConverter parseCommandLine(String[] args) {
+  private static DomainCustomResourceConverter parseCommandLine(String[] args) {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
 
@@ -103,7 +103,7 @@ public class DomainResourceConverter {
       if (cli.getArgs().length < 1) {
         printHelpAndExit(options);
       }
-      return new DomainResourceConverter(cli.getOptionValue("d"), cli.getOptionValue("f"),
+      return new DomainCustomResourceConverter(cli.getOptionValue("d"), cli.getOptionValue("f"),
               cli.getArgs()[0]);
     } catch (ParseException e) {
       throw new RuntimeException(e);
@@ -112,7 +112,8 @@ public class DomainResourceConverter {
 
   private static void printHelpAndExit(Options options) {
     HelpFormatter help = new HelpFormatter();
-    help.printHelp(120, "java -cp <operator-jar> oracle.kubernetes.operator.DomainResourceConverter "
+    help.printHelp(120, "java -cp <operator-jar> "
+                    + "oracle.kubernetes.operator.DomainCustomResourceConverter "
                     + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-h --help]",
             "", options, "");
     System.exit(1);

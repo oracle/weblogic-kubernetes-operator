@@ -6,12 +6,8 @@ package oracle.kubernetes.operator.rest;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import oracle.kubernetes.operator.RestServerType;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.Certificates;
-import oracle.kubernetes.operator.utils.WebhookCertificates;
-
-import static oracle.kubernetes.operator.RestServerType.Operator;
 
 /** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
@@ -21,15 +17,13 @@ public class RestConfigImpl implements RestConfig {
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
   private final Certificates certificates;
-  private final RestServerType restServerType;
 
   /**
    * Constructs a RestConfigImpl.
-   * @param restServerType is the type of rest server to use when constructing the RestConfigImpl. The type can be
-   *     either Operator or the conversion webhook.
+   * @param certificates Certificates.
    */
-  public RestConfigImpl(RestServerType restServerType) {
-    this(null, null, null, restServerType);
+  public RestConfigImpl(Certificates certificates) {
+    this(null, null, certificates);
   }
 
   /**
@@ -40,24 +34,9 @@ public class RestConfigImpl implements RestConfig {
    * @param certificates Certificates
    */
   public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates) {
-    this(principal, domainNamespaces, certificates, Operator);
-  }
-
-  /**
-   * Constructs a RestConfigImpl.
-   *  @param principal is the name of the Kubernetes User or Service Account to use when calling the
-   *     Kubernetes REST API.
-   * @param domainNamespaces returns a list of the Kubernetes Namespaces covered by this Operator.
-   * @param certificates Certificates
-   * @param restServerType is the type of rest server to use when constructing the RestConfigImpl. The type can be
-   *     either Operator or the conversion webhook.
-   */
-  public RestConfigImpl(String principal, Supplier<Collection<String>> domainNamespaces, Certificates certificates,
-                        RestServerType restServerType) {
     this.domainNamespaces = domainNamespaces;
     this.principal = principal;
     this.certificates = certificates;
-    this.restServerType = restServerType;
   }
 
   @Override
@@ -126,13 +105,8 @@ public class RestConfigImpl implements RestConfig {
   }
 
   @Override
-  public RestServerType getRestServerType() {
-    return restServerType;
-  }
-
-  @Override
   public String getWebhookCertificateData() {
-    return WebhookCertificates.getWebhookCertificateData();
+    return certificates.getWebhookCertificateData();
   }
 
   @Override
@@ -147,6 +121,6 @@ public class RestConfigImpl implements RestConfig {
 
   @Override
   public String getWebhookKeyFile() {
-    return WebhookCertificates.getWebhookKeyFile();
+    return certificates.getWebhookKeyFilePath();
   }
 }

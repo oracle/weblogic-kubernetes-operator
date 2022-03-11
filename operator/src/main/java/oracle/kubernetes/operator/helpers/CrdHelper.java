@@ -46,7 +46,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.utils.WebhookCertificates;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -88,7 +88,7 @@ public class CrdHelper {
   }
 
   static void writeCrdFiles(String crdFileName) throws URISyntaxException {
-    CrdContext context = new CrdContext(null, null, null);
+    CrdContext context = new CrdContext(null, null, null, null);
 
     final URI outputFile = asFileURI(crdFileName);
 
@@ -135,7 +135,12 @@ public class CrdHelper {
   // yaml dump ?  // ordering and format likely to change massively
 
   public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
-    return new CrdStep(version, productVersion);
+    return new CrdStep(version, productVersion, null);
+  }
+
+  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion,
+                                         Certificates certificates) {
+    return new CrdStep(version, productVersion, certificates);
   }
 
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
@@ -158,8 +163,8 @@ public class CrdHelper {
   static class CrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(KubernetesVersion version, SemanticVersion productVersion) {
-      context = new CrdContext(version, productVersion, this);
+    CrdStep(KubernetesVersion version, SemanticVersion productVersion, Certificates certificates) {
+      context = new CrdContext(version, productVersion, this, certificates);
     }
 
     @Override
@@ -174,20 +179,23 @@ public class CrdHelper {
     private final V1CustomResourceDefinition model;
     private final KubernetesVersion version;
     private final SemanticVersion productVersion;
+    private final Certificates certificates;
 
-    CrdContext(KubernetesVersion version, SemanticVersion productVersion, Step conflictStep) {
+    CrdContext(KubernetesVersion version, SemanticVersion productVersion,
+               Step conflictStep, Certificates certificates) {
       this.version = version;
       this.productVersion = productVersion;
       this.conflictStep = conflictStep;
-      this.model = createModel(productVersion);
+      this.model = createModel(productVersion, certificates);
+      this.certificates = certificates;
     }
 
-    static V1CustomResourceDefinition createModel(SemanticVersion productVersion) {
+    static V1CustomResourceDefinition createModel(SemanticVersion productVersion, Certificates certificates) {
       V1CustomResourceDefinition model = new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
-          .spec(createSpec());
+          .spec(createSpec(certificates));
       return AnnotationHelper.withSha256Hash(model,
           Objects.requireNonNull(
               model.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
@@ -203,18 +211,18 @@ public class CrdHelper {
       return metadata;
     }
 
-    static V1CustomResourceDefinitionSpec createSpec() {
+    static V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
       return new V1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .preserveUnknownFields(false)
           .versions(getCrdVersions())
           .scope("Namespaced")
           .names(getCrdNames())
-          .conversion(createConversionWebhook());
+          .conversion(createConversionWebhook(certificates));
     }
 
-    private static V1CustomResourceConversion createConversionWebhook() {
-      return Optional.ofNullable(WebhookCertificates.getWebhookCertificateData())
+    private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
+      return Optional.ofNullable(certificates).map(c -> c.getWebhookCertificateData())
               .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
     }
 
@@ -366,7 +374,7 @@ public class CrdHelper {
     }
 
     Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
-      existingCrd.getSpec().conversion(createConversionWebhook());
+      existingCrd.getSpec().conversion(createConversionWebhook(certificates));
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }

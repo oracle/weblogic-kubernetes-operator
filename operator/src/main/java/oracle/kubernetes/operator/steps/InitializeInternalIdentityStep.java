@@ -62,8 +62,8 @@ public class InitializeInternalIdentityStep extends Step {
     Certificates certificates = new Certificates(delegate);
     this.internalCertFile = certificates.getOperatorInternalCertificateFile();
     this.internalKeyFile = certificates.getOperatorInternalKeyFile();
-    this.configInternalCertFile = new File(delegate.getOperatorHome(), "/config/internalOperatorCert");
-    this.secretsInternalKeyFile = new File(delegate.getOperatorHome(), "/secrets/internalOperatorKey");
+    this.configInternalCertFile = new File(delegate.getDeploymentHome(), "/config/internalOperatorCert");
+    this.secretsInternalKeyFile = new File(delegate.getDeploymentHome(), "/secrets/internalOperatorKey");
   }
 
   @Override

@@ -26,8 +26,8 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
-import oracle.kubernetes.operator.utils.WebhookCertificates;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ConversionWebhookMainTest.getCertificates;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
@@ -53,13 +54,12 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 class CrdHelperTest {
-  private static final KubernetesVersion KUBERNETES_VERSION_15 = new KubernetesVersion(1, 15);
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
 
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
-  private static final int UNPROCESSABLE_ENTITY = 422;
+  public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
 
   private V1CustomResourceDefinition defaultCrd;
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -73,7 +73,7 @@ class CrdHelperTest {
   private final TerminalStep terminalStep = new TerminalStep();
 
   private V1CustomResourceDefinition defineDefaultCrd() {
-    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION);
+    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION, getCertificates());
   }
 
   private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
@@ -112,7 +112,7 @@ class CrdHelperTest {
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(WebhookCertificates.class, "GET_PATH", getInMemoryPath));
+    mementos.add(StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath));
     mementos.add(TuningParametersStub.install());
 
     defaultCrd = defineDefaultCrd();
@@ -245,7 +245,7 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
-    fileSystem.defineFile(WebhookCertificates.WEBHOOK_CERTIFICATE, "asdf");
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
             .getSpec()
@@ -256,7 +256,7 @@ class CrdHelperTest {
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -50,7 +52,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class ConversionWebhookMainTest extends ThreadFactoryTestBase {
+public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -206,6 +208,12 @@ class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
     }
+
+    @Override
+    public File getDeploymentHome() {
+      return new File("/deployment");
+    }
+
   }
 
   static class TestStepFactory implements ConversionWebhookMain.NextStepFactory {
@@ -218,8 +226,12 @@ class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     }
 
     @Override
-    public Step createInitializationStep(Step next) {
+    public Step createInitializationStep(CoreDelegate delegate, Step next) {
       return next;
     }
+  }
+
+  public static Certificates getCertificates() {
+    return new Certificates(new CoreDelegateImpl(buildProperties, null));
   }
 }

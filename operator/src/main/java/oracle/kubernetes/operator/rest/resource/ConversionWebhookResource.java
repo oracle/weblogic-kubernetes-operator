@@ -17,8 +17,6 @@ import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.Result;
 import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
-
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
  * path. It is used as an endpoint for conversion webhook defined in domain CRD, the API server will invoke
@@ -58,7 +56,7 @@ public class ConversionWebhookResource extends BaseResource {
       conversionResponse = new ConversionResponse()
               .uid(getUid(conversionReview))
               .result(new Result().status(FAILED_STATUS)
-                      .message(LOGGER.formatMessage(DOMAIN_CONVERSION_FAILED + t.getMessage())));
+                      .message("Exception: " + t.getMessage()));
     }
     LOGGER.exiting(conversionResponse);
     return conversionUtils.writeConversionReview(new ConversionReviewModel()

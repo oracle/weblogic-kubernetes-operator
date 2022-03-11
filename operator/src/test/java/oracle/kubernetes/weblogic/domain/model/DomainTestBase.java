@@ -47,6 +47,8 @@ public abstract class DomainTestBase {
   public static final String DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML = "converted-domain-sample.yaml";
   public static final String DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML = "aux-image-30-sample-2.yaml";
   public static final String DOMAIN_V9_CONVERTED_SERVER_SCOPED_LEGACY_AUX_IMAGE_YAML = "converted-domain-sample-2.yaml";
+  public static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
+  public static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
   private static final String VALUE1 = "value1";

@@ -166,7 +166,6 @@ public class MessageKeys {
   public static final String PRINT_HELP = "WLSKO-0215";
   public static final String OUTPUT_DIRECTORY = "WLSKO-0216";
   public static final String OUTPUT_FILE_NAME = "WLSKO-0217";
-  public static final String DOMAIN_CONVERSION_FAILED = "WLSKO-0218";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

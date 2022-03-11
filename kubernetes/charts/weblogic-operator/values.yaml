@@ -160,14 +160,14 @@ javaLoggingFileCount: 10
 # for more information on node selectors.
 #nodeSelector:
  
-# webhookOnly - webhoookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
+# webhookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
 # should be created during helm install and if the creation of the operator deployment should be skipped.
 # By default, the helm install will create both the webhook deployment and the operator deployment.
 # If set to true, the helm install will only create the webhook deployment.
 # The default value is false.
 webhookOnly: false
  
-# preserveWebhook - preserveWebhook specifies whether the previous webhook deployment should be preserved
+# preserveWebhook specifies whether the previous webhook deployment should be preserved
 # when the chart is uninstalled using helm uninstall.
 # By default, the helm uninstall will remove both the webhook deployment and the operator deployment.
 # If set to true, the helm uninstall command will skip removing the webhook deployment.

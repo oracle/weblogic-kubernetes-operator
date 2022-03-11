@@ -22,7 +22,9 @@ public interface CoreDelegate extends PacketComponent {
 
   KubernetesVersion getKubernetesVersion();
 
-  File getOperatorHome();
+  File getDeploymentHome();
+
+  File getProbesHome();
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);

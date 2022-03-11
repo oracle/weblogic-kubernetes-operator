@@ -90,8 +90,8 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   }
 
   @Override
-  public File getOperatorHome() {
-    return new File("/operator");
+  public File getDeploymentHome() {
+    return new File("/deployment");
   }
 
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {

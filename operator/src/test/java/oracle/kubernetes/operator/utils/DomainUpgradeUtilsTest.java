@@ -13,12 +13,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.utils.DomainUpgradeUtils.API_VERSION_V9;
+import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V8_AUX_IMAGE30_YAML;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML;
@@ -63,9 +63,5 @@ class DomainUpgradeUtilsTest {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
     return ((Map<String, Object>) yamlReader.readValue(yamlStream, Object.class));
-  }
-
-  private static InputStream inputStreamFromClasspath(String path) {
-    return CrdSchemaGenerator.class.getResourceAsStream(path);
   }
 }

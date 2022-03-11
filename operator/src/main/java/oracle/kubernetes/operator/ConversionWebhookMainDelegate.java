@@ -3,20 +3,13 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
  * Definition of an interface that returns values that the Webhook Main class requires.
  */
-interface ConversionWebhookMainDelegate {
-
-  SemanticVersion getProductVersion();
+interface ConversionWebhookMainDelegate extends CoreDelegate {
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);
@@ -24,7 +17,4 @@ interface ConversionWebhookMainDelegate {
 
   void runSteps(Packet packet, Step firstStep, Runnable completionAction);
 
-  KubernetesVersion getKubernetesVersion();
-
-  ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
 }

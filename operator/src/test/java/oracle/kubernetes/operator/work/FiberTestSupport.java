@@ -459,8 +459,8 @@ public class FiberTestSupport {
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
-    public File getOperatorHome() {
-      return new File("/operator");
+    public File getDeploymentHome() {
+      return new File("/deployment");
     }
 
     @Override

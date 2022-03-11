@@ -20,11 +20,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -35,9 +37,6 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
 import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
-import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.WebhookCertificates.WEBHOOK_DIR;
 
 public class InitializeWebhookIdentityStep extends Step {
 
@@ -47,16 +46,25 @@ public class InitializeWebhookIdentityStep extends Step {
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-webhook";
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
-  private static final File certFile = new File(WEBHOOK_DIR + "/config/webhookCert");
-  private static final File keyFile = new File(WEBHOOK_DIR + "/secrets/webhookKey");
   public static final String WEBHOOK_KEY = "webhookKey";
+
+  private final File internalCertFile;
+  private final File internalKeyFile;
+  private final File certFile;
+  private final File keyFile;
 
   /**
    * Constructor for the InitializeWebhookIdentityStep.
    * @param next Next step to be executed.
    */
-  public InitializeWebhookIdentityStep(Step next) {
+  public InitializeWebhookIdentityStep(CoreDelegate delegate, Step next) {
     super(next);
+    Certificates certificates = new Certificates(delegate);
+    this.internalCertFile = certificates.getWebhookCertificateFile();
+    this.internalKeyFile = certificates.getWebhookKeyFile();
+    this.certFile = new File(delegate.getDeploymentHome(), "/config/webhookCert");
+    this.keyFile = new File(delegate.getDeploymentHome(), "/secrets/webhookKey");
+
   }
 
   @Override
@@ -79,20 +87,20 @@ public class InitializeWebhookIdentityStep extends Step {
   private void reuseIdentity() throws IOException {
     // copy the certificate and key from the webhook's config map and secret
     // to the locations the webhook runtime expects
-    FileUtils.copyFile(certFile, new File(WEBHOOK_CERTIFICATE));
-    FileUtils.copyFile(keyFile, new File(WEBHOOK_CERTIFICATE_KEY));
+    FileUtils.copyFile(certFile, internalCertFile);
+    FileUtils.copyFile(keyFile, internalKeyFile);
   }
 
   private NextAction createIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, new File(WEBHOOK_CERTIFICATE_KEY));
-    X509Certificate cert = generateCertificate(WEBHOOK_CERTIFICATE, keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+    writeToFile(key, internalKeyFile);
+    X509Certificate cert = generateCertificate(internalCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
             CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), new File(WEBHOOK_CERTIFICATE));
+    writeToFile(getBase64Encoded(cert), internalCertFile);
     // put the new certificate in the webhook's config map so that it will be available
     // the next time the webhook is started
-    return doNext(recordWebhookCert(WEBHOOK_CERTIFICATE, cert,
+    return doNext(recordWebhookCert(internalCertFile.getName(), cert,
             recordWebhookKey(key, getNext())), packet);
   }
 

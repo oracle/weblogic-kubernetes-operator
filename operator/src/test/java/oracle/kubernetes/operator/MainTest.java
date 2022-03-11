@@ -280,21 +280,21 @@ class MainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenOperatorStarted_namespaceWatcherIsCreated() {
-    main.startOperator(null);
+    main.startDeployment(null);
 
     assertThat(main.getNamespaceWatcher(), notNullValue());
   }
 
   @Test
   void whenOperatorStarted_operatorNamespaceEventWatcherIsCreated() {
-    main.startOperator(null);
+    main.startDeployment(null);
 
     assertThat(main.getOperatorNamespaceEventWatcher(), notNullValue());
   }
 
   @Test
   void whenOperatorStarted_withoutExistingEvent_nsEventK8SObjectsEmpty() {
-    main.startOperator(null);
+    main.startDeployment(null);
     assertThat(getNSEventMapSize(), equalTo(0));
   }
 
@@ -304,7 +304,7 @@ class MainTest extends ThreadFactoryTestBase {
     CoreV1Event event2 = createNSEvent("event2").reason(STOP_MANAGING_NAMESPACE_EVENT);
 
     testSupport.defineResources(event1, event2);
-    main.startOperator(null);
+    main.startDeployment(null);
     assertThat(getNSEventMapSize(), equalTo(2));
   }
 
@@ -325,7 +325,7 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorStartedInDedicatedMode_namespaceWatcherIsNotCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
-    main.startOperator(null);
+    main.startDeployment(null);
 
     assertThat(main.getNamespaceWatcher(), nullValue());
   }
@@ -334,7 +334,7 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorStartedInDedicatedMode_operatorNamespaceEventWatcherIsNotCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
-    main.startOperator(null);
+    main.startDeployment(null);
 
     assertThat(main.getOperatorNamespaceEventWatcher(), nullValue());
   }

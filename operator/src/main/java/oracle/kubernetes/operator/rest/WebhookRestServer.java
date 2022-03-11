@@ -5,12 +5,11 @@ package oracle.kubernetes.operator.rest;
 
 import java.util.Map;
 
-import oracle.kubernetes.operator.rest.resource.VersionsResource;
+import oracle.kubernetes.operator.rest.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
 
 /**
  * The RestServer runs the WebLogic operator's REST api.
@@ -25,11 +24,9 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
  *       SSL certificate contains the the in-cluster hostnames for contacting this port.
  * </ul>
  */
-public class RestServer extends BaseRestServer {
-  private final String baseExternalHttpsUri;
-  private final String baseInternalHttpsUri;
-  private HttpServer externalHttpsServer;
-  private HttpServer internalHttpsServer;
+public class WebhookRestServer extends BaseRestServer {
+  private final String baseWebhookHttpsUri;
+  private HttpServer webhookHttpsServer;
 
   /**
    * Constructs the WebLogic Operator REST server.
@@ -38,10 +35,9 @@ public class RestServer extends BaseRestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  RestServer(RestConfig config) {
+  private WebhookRestServer(RestConfig config) {
     super(config);
-    baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
-    baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+    baseWebhookHttpsUri = "https://" + config.getHost() + ":" + config.getWebhookHttpsPort();
   }
 
   /**
@@ -54,7 +50,7 @@ public class RestServer extends BaseRestServer {
     LOGGER.entering();
     try {
       if (INSTANCE == null) {
-        INSTANCE = new RestServer(restConfig);
+        INSTANCE = new WebhookRestServer(restConfig);
         return;
       }
 
@@ -80,10 +76,8 @@ public class RestServer extends BaseRestServer {
             .register(RequestDebugLoggingFilter.class)
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
-            .register(CsrfProtectionFilter.class)
-            .register(AuthenticationFilter.class)
-            .packages(VersionsResource.class.getPackageName());
-    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
+            .packages(ConversionWebhookResource.class.getPackageName())
+            .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }
 
@@ -92,17 +86,8 @@ public class RestServer extends BaseRestServer {
    *
    * @return the uri
    */
-  String getExternalHttpsUri() {
-    return baseExternalHttpsUri;
-  }
-
-  /**
-   * Returns the in-pod URI of the externally available https REST port.
-   *
-   * @return the uri
-   */
-  String getInternalHttpsUri() {
-    return baseInternalHttpsUri;
+  String getWebhookHttpsUri() {
+    return baseWebhookHttpsUri;
   }
 
   /**
@@ -119,27 +104,13 @@ public class RestServer extends BaseRestServer {
   @Override
   public void start(Container container) throws Exception {
     LOGGER.entering();
-    if (externalHttpsServer != null || internalHttpsServer != null) {
-      throw new AssertionError("Already started");
-    }
     boolean fullyStarted = false;
     try {
-      if (isExternalSslConfigured()) {
-        externalHttpsServer = createExternalHttpsServer(container);
-        LOGGER.info(
-            "Started the external ssl REST server on "
-                + getExternalHttpsUri()
-                + "/operator"); // TBD .fine ?
-      }
-
-      if (isInternalSslConfigured()) {
-        internalHttpsServer = createInternalHttpsServer(container);
-        LOGGER.info(
-            "Started the internal ssl REST server on "
-                + getInternalHttpsUri()
-                + "/operator"); // TBD .fine ?
-      }
-
+      webhookHttpsServer = createWebhookHttpsServer(container);
+      LOGGER.info(
+              "Started the webhook ssl REST server on "
+                      + getWebhookHttpsUri()
+                      + "/webhook"); // TBD .fine ?
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
@@ -159,64 +130,27 @@ public class RestServer extends BaseRestServer {
    */
   public void stop() {
     LOGGER.entering();
-    if (externalHttpsServer != null) {
-      externalHttpsServer.shutdownNow();
-      externalHttpsServer = null;
-      LOGGER.fine("Stopped the external ssl REST server");
-    }
-    if (internalHttpsServer != null) {
-      internalHttpsServer.shutdownNow();
-      internalHttpsServer = null;
-      LOGGER.fine("Stopped the internal ssl REST server");
+    if (webhookHttpsServer != null) {
+      webhookHttpsServer.shutdownNow();
+      webhookHttpsServer = null;
+      LOGGER.fine("Stopped the webhook ssl REST server");
     }
     LOGGER.exiting();
   }
 
-  private HttpServer createExternalHttpsServer(Container container) throws Exception {
+  private HttpServer createWebhookHttpsServer(Container container) throws Exception {
     LOGGER.entering();
     HttpServer result =
-        createHttpsServer(
-            container,
-            createSslContext(
-                createKeyManagers(
-                    config.getOperatorExternalCertificateData(),
-                    config.getOperatorExternalCertificateFile(),
-                    config.getOperatorExternalKeyData(),
-                    config.getOperatorExternalKeyFile())),
-            getExternalHttpsUri());
+            createHttpsServer(
+                    container,
+                    createSslContext(
+                            createKeyManagers(
+                                    config.getWebhookCertificateData(),
+                                    config.getWebhookCertificateFile(),
+                                    config.getWebhookKeyData(),
+                                    config.getWebhookKeyFile())),
+                    getWebhookHttpsUri());
     LOGGER.exiting();
     return result;
-  }
-
-  private HttpServer createInternalHttpsServer(Container container) throws Exception {
-    LOGGER.entering();
-    HttpServer result =
-        createHttpsServer(
-            container,
-            createSslContext(
-                createKeyManagers(
-                    config.getOperatorInternalCertificateData(),
-                    config.getOperatorInternalCertificateFile(),
-                    config.getOperatorInternalKeyData(),
-                    config.getOperatorInternalKeyFile())),
-            getInternalHttpsUri());
-    LOGGER.exiting();
-    return result;
-  }
-
-  private boolean isExternalSslConfigured() {
-    return isSslConfigured(
-        config.getOperatorExternalCertificateData(),
-        config.getOperatorExternalCertificateFile(),
-        config.getOperatorExternalKeyData(),
-        config.getOperatorExternalKeyFile());
-  }
-
-  private boolean isInternalSslConfigured() {
-    return isSslConfigured(
-        config.getOperatorInternalCertificateData(),
-        config.getOperatorInternalCertificateFile(),
-        config.getOperatorInternalKeyData(),
-        config.getOperatorInternalKeyFile());
   }
 }

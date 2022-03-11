@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator;
 
-public enum RestServerType {
+public enum DeploymentType {
   Operator,
   ConversionWebhook
 }
