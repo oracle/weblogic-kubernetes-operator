@@ -100,9 +100,9 @@ spec:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
         - name: "weblogic-operator-debug-cm-volume"
-          mountPath: "/operator/debug-config"
+          mountPath: "/deployment/debug-config"
         - name: "weblogic-operator-secrets-volume"
-          mountPath: "/operator/secrets"
+          mountPath: "/deployment/secrets"
           readOnly: true
         {{- if .elkIntegrationEnabled }}
         - mountPath: "/logs"
@@ -278,7 +278,7 @@ spec:
             - name: "weblogic-webhook-cm-volume"
               mountPath: "/deployment/config"
             - name: "weblogic-webhook-secrets-volume"
-              mountPath: "/webhook/secrets"
+              mountPath: "/deployment/secrets"
               readOnly: true
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
