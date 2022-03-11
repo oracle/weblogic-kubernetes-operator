@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -141,8 +142,8 @@ class ItFmwDomainInPVUsingWDT {
   @Test
   @DisplayName("Create a FMW domainon on PV using WDT")
   void testFmwDomainOnPVUsingWdt() {
-    final String pvName = domainUid + "-" + domainNamespace + "-pv";
-    final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
     final int t3ChannelPort = getNextFreePort();
 
     // create FMW domain credential secret

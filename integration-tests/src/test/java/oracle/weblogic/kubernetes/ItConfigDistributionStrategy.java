@@ -220,7 +220,7 @@ class ItConfigDistributionStrategy {
 
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    
+
     //create a jdbc resource targeted to cluster
     createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
@@ -703,7 +703,7 @@ class ItConfigDistributionStrategy {
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName0;
     String dsOverrideTestUrl = baseUri + appURI;
-    
+
     testUntil(
         () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
@@ -715,7 +715,7 @@ class ItConfigDistributionStrategy {
             if (!(response.body().contains("getMaxCapacity:12"))) {
               logger.info("Did get getMaxCapacity:12");
               return false;
-            } 
+            }
             if (!(response.body().contains("getInitialCapacity:2"))) {
               logger.info("Did get getInitialCapacity:2");
               return false;
@@ -1007,7 +1007,7 @@ class ItConfigDistributionStrategy {
   }
 
   //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String dsName, String user, String password, 
+  private void createJdbcDataSource(String dsName, String user, String password,
                                     int mySQLNodePort, String sqlSvcEndpoint) {
 
     try {

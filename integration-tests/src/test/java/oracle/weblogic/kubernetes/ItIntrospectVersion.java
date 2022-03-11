@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -217,8 +218,8 @@ class ItIntrospectVersion {
 
     final int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -642,7 +643,7 @@ class ItIntrospectVersion {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    
+
     // verify each managed server can see other member in the cluster
     for (String managedServerName : managedServerNames) {
       verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
@@ -1026,11 +1027,11 @@ class ItIntrospectVersion {
   /**
    * Update the introspectVersion of the domain resource using lifecycle script.
    * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
-   * The usecase update the introspectVersion by passing differnt value to -i 
-   * option (non-numeic, non-numeric with space, no value) and make sure that 
-   * the introspectVersion is updated accrodingly in both domain sepc level 
-   * and server pod level. 
-   * It also verifies the intospector job is started/stoped and none of the 
+   * The usecase update the introspectVersion by passing differnt value to -i
+   * option (non-numeic, non-numeric with space, no value) and make sure that
+   * the introspectVersion is updated accrodingly in both domain sepc level
+   * and server pod level.
+   * It also verifies the intospector job is started/stoped and none of the
    * server pod is rolled since there is no change to resource configuration.
    */
   @Test
@@ -1084,7 +1085,7 @@ class ItIntrospectVersion {
     String ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals(introspectVersion),
         "introspectVersion must change to  "  + introspectVersion);
 
@@ -1118,13 +1119,13 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals(introspectVersion),
         "introspectVersion must change to  "  + introspectVersion);
 
     // use introspectDomain.sh to initiate introspection
-    // Since the current version is non-numeric the updated version is 
-    // updated to 1 
+    // Since the current version is non-numeric the updated version is
+    // updated to 1
     logger.info("Initiate introspection with no explicit version(1)");
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
@@ -1137,11 +1138,11 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("1"), "introspectVersion must change to 1");
 
     // use introspectDomain.sh to initiate introspection
-    // Since the current version is 1, the updated version must be set to 2 
+    // Since the current version is 1, the updated version must be set to 2
     logger.info("Initiate introspection with no explicit version (2)");
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
@@ -1154,7 +1155,7 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("2"), "introspectVersion must change to 2");
 
     // use introspectDomain.sh to initiate introspection
@@ -1172,7 +1173,7 @@ class ItIntrospectVersion {
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed 
+    // verify that introspectVersion is changed
     assertTrue(ivAfter.equals("101"), "introspectVersion must change to 101");
 
     //verify the pods are not restarted in any introspectVersion update
