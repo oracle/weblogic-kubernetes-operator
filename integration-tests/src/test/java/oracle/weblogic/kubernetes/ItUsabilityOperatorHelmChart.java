@@ -811,12 +811,19 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
           0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
+
+
       String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
       int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+      logger.info("upgrade operator to FINE logging level");
+      OperatorParams opParams = new OperatorParams()
+              .helmParams(opHelmParams)
+              .javaLoggingLevel("FINE");
+      upgradeAndVerifyOperator(op3Namespace, opParams);
 
       logger.info("Installing and verifying domain4");
       assertTrue(createVerifyDomain(domain4Namespace, domain4Uid),
