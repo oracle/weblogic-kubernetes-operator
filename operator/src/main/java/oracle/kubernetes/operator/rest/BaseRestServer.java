@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -29,17 +29,8 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 /**
- * The RestServer runs the WebLogic operator's REST api.
- *
- * <p>It provides the following ports that host the WebLogic operator's REST api:
- *
- * <ul>
- *   <li>external http port - this port can be used both inside and outside of a Kubernetes cluster.
- *   <li>external https port - this port can be only be used outside of a Kubernetes cluster since
- *       its SSL certificate contains the external hostnames for contacting this port.
- *   <li>internal https port - this port can only be used inside of a Kubernetes cluster since its
- *       SSL certificate contains the the in-cluster hostnames for contacting this port.
- * </ul>
+ * The base class for the RestServer that runs the WebLogic operator's REST api and
+ * WebhookRestServer that runs domain custom resource conversion webhook's REST api.
  */
 public abstract class BaseRestServer {
   static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -52,20 +43,18 @@ public abstract class BaseRestServer {
   final RestConfig config;
 
   /**
-   * Constructs the WebLogic Operator REST server.
+   * Base constructor for the RestServer and WebhookRestServer.
    *
    * @param config - contains the REST server's configuration, which includes the hostnames and port
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
   BaseRestServer(RestConfig config) {
-    LOGGER.entering();
     this.config = config;
-    LOGGER.exiting();
   }
 
   /**
-   * Accessor for obtaining reference to the RestServer singleton instance.
+   * Accessor for obtaining reference to the RestServer or WebhookRestServer singleton instance.
    *
    * @return RestServer - Singleton instance of the RestServer
    */
@@ -74,8 +63,8 @@ public abstract class BaseRestServer {
   }
 
   /**
-   * Release RestServer singleton instance. Should only be called once. Throws IllegalStateException
-   * if singleton instance not created.
+   * Release singleton instance for RestServer or WebhookRestServer. Should only be called once. Throws
+   * IllegalStateException if singleton instance not created.
    */
   public static void destroy() {
     LOGGER.entering();
@@ -92,10 +81,9 @@ public abstract class BaseRestServer {
   }
 
   /**
-   * Defines a resource configuration that scans for JAX-RS resources and providers in the REST
-   * package.
+   * Defines a resource configuration.
    *
-   * @param restConfig the operator REST configuration
+   * @param restConfig the operator or conversion webhook REST configuration
    * @return a resource configuration
    */
   abstract ResourceConfig createResourceConfig(RestConfig restConfig);
@@ -117,10 +105,7 @@ public abstract class BaseRestServer {
   }
 
   /**
-   * Starts WebLogic operator's REST api.
-   *
-   * <p>If a port has not been configured, then it logs that fact, does not start that port, and
-   * continues (v.s. throwing an exception and not starting any ports).
+   * Starts WebLogic operator's or conversion webhook's REST api.
    *
    * @param container Container
    * @throws Exception if the REST api could not be started for reasons other than a port was not
@@ -130,7 +115,7 @@ public abstract class BaseRestServer {
   public abstract void start(Container container) throws Exception;
 
   /**
-   * Stops WebLogic operator's REST api.
+   * Stops WebLogic operator's or conversion webhook's REST api.
    *
    * <p>Since it only stops ports that are running, it is safe to call this even if start threw an
    * exception or didn't start any ports because none were configured.

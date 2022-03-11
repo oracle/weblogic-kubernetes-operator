@@ -48,8 +48,8 @@ public class InitializeWebhookIdentityStep extends Step {
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
   public static final String WEBHOOK_KEY = "webhookKey";
 
-  private final File internalCertFile;
-  private final File internalKeyFile;
+  private final File webhookCertFile;
+  private final File webhookKeyFile;
   private final File certFile;
   private final File keyFile;
 
@@ -60,8 +60,8 @@ public class InitializeWebhookIdentityStep extends Step {
   public InitializeWebhookIdentityStep(CoreDelegate delegate, Step next) {
     super(next);
     Certificates certificates = new Certificates(delegate);
-    this.internalCertFile = certificates.getWebhookCertificateFile();
-    this.internalKeyFile = certificates.getWebhookKeyFile();
+    this.webhookCertFile = certificates.getWebhookCertificateFile();
+    this.webhookKeyFile = certificates.getWebhookKeyFile();
     this.certFile = new File(delegate.getDeploymentHome(), "/config/webhookCert");
     this.keyFile = new File(delegate.getDeploymentHome(), "/secrets/webhookKey");
 
@@ -87,20 +87,20 @@ public class InitializeWebhookIdentityStep extends Step {
   private void reuseIdentity() throws IOException {
     // copy the certificate and key from the webhook's config map and secret
     // to the locations the webhook runtime expects
-    FileUtils.copyFile(certFile, internalCertFile);
-    FileUtils.copyFile(keyFile, internalKeyFile);
+    FileUtils.copyFile(certFile, webhookCertFile);
+    FileUtils.copyFile(keyFile, webhookKeyFile);
   }
 
   private NextAction createIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, internalKeyFile);
-    X509Certificate cert = generateCertificate(internalCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+    writeToFile(key, webhookKeyFile);
+    X509Certificate cert = generateCertificate(webhookCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
             CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), internalCertFile);
+    writeToFile(getBase64Encoded(cert), webhookCertFile);
     // put the new certificate in the webhook's config map so that it will be available
     // the next time the webhook is started
-    return doNext(recordWebhookCert(internalCertFile.getName(), cert,
+    return doNext(recordWebhookCert(webhookCertFile.getName(), cert,
             recordWebhookKey(key, getNext())), packet);
   }
 

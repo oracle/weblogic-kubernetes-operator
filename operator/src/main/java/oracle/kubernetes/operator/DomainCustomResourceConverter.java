@@ -42,25 +42,25 @@ public class DomainCustomResourceConverter {
    *
    */
   public static void main(String[] args) {
-    final DomainCustomResourceConverter drc = parseCommandLine(args);
+    final DomainCustomResourceConverter converter = parseCommandLine(args);
 
-    File inputFile = new File(drc.inputFileName);
-    File outputDir = new File(drc.outputDir);
+    File inputFile = new File(converter.inputFileName);
+    File outputDir = new File(converter.outputDir);
 
     if (!inputFile.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(INPUT_FILE_NON_EXISTENT, drc.inputFileName));
+      throw new RuntimeException(LOGGER.formatMessage(INPUT_FILE_NON_EXISTENT, converter.inputFileName));
     }
 
     if (!outputDir.exists()) {
       throw new RuntimeException(OUTPUT_FILE_NON_EXISTENT);
     }
 
-    convertDomain(drc);
+    convertDomain(converter);
   }
 
-  private static void convertDomain(DomainCustomResourceConverter drc) {
-    try (Writer writer = Files.newBufferedWriter(Path.of(drc.outputDir + "/" + drc.outputFileName))) {
-      writer.write(domainUpgradeUtils.convertDomain(Files.readString(Path.of(drc.inputFileName))));
+  private static void convertDomain(DomainCustomResourceConverter converter) {
+    try (Writer writer = Files.newBufferedWriter(Path.of(converter.outputDir + "/" + converter.outputFileName))) {
+      writer.write(domainUpgradeUtils.convertDomain(Files.readString(Path.of(converter.inputFileName))));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

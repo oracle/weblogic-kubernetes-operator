@@ -40,8 +40,10 @@ public class RestServer extends BaseRestServer {
    */
   RestServer(RestConfig config) {
     super(config);
+    LOGGER.entering();
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
     baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+    LOGGER.exiting();
   }
 
   /**

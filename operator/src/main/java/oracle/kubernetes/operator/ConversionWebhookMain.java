@@ -23,9 +23,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
-/** A Conversion Webhook for WebLogic Kubernetes Operator. */
+/** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain extends BaseMain {
-  private final CoreDelegate delegate;
   private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = ConversionWebhookMain::createInitializeWebhookIdentityStep;
 
@@ -53,7 +52,7 @@ public class ConversionWebhookMain extends BaseMain {
       main.startDeployment(main::completeBegin);
 
       // now we just wait until the pod is terminated
-      main.waitForDeath(DeploymentType.ConversionWebhook);
+      main.waitForDeath();
 
       // stop the webhook REST server
       stopWebhookRestServer();
@@ -72,7 +71,6 @@ public class ConversionWebhookMain extends BaseMain {
 
   ConversionWebhookMain(CoreDelegate delegate) {
     super(delegate);
-    this.delegate = delegate;
   }
 
   @Override
@@ -87,9 +85,10 @@ public class ConversionWebhookMain extends BaseMain {
 
   private void completeBegin() {
     try {
-      // start the REST server
+      // start the conversion webhook REST server
       startRestServer();
 
+      // start periodic recheck of CRD
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
       delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
 

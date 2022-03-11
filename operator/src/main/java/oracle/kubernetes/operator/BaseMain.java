@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -148,7 +148,7 @@ public abstract class BaseMain {
 
   abstract void stopAllWatchers();
 
-  void waitForDeath(DeploymentType deploymentType) {
+  void waitForDeath() {
     Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
 
     try {
@@ -157,9 +157,7 @@ public abstract class BaseMain {
       Thread.currentThread().interrupt();
     }
 
-    if (deploymentType == DeploymentType.Operator) {
-      stopAllWatchers();
-    }
+    stopAllWatchers();
   }
 
   static Packet createPacketWithLoggingContext(String ns) {

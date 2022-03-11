@@ -44,11 +44,12 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 /** A Kubernetes Operator for WebLogic. */
 public class Main extends BaseMain {
 
-  private NamespaceWatcher namespaceWatcher;
-  protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
+  private NamespaceWatcher namespaceWatcher;
+  protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
+
   /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
   private static final long CRD_DETECTION_DELAY = 10;
 
@@ -149,7 +150,7 @@ public class Main extends BaseMain {
       main.startDeployment(main::completeBegin);
 
       // now we just wait until the pod is terminated
-      main.waitForDeath(DeploymentType.Operator);
+      main.waitForDeath();
 
       // stop the REST server
       stopRestServer();
@@ -238,15 +239,15 @@ public class Main extends BaseMain {
     }
   }
 
-  void completeBegin() {
+  private void completeBegin() {
     try {
       // start the REST server
       startRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
-      delegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
       int stuckPodInterval = getStuckPodInterval();
+      delegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
       delegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
       markReadyAndStartLivenessThread();
