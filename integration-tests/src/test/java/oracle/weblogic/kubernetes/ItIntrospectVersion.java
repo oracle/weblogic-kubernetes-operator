@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -145,7 +146,8 @@ class ItIntrospectVersion {
   private static String adminSvcExtHost = null;
   private static String clusterRouteHost = null;
 
-  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> cl2podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> myclusterpodsWithTimeStamps = null;
 
   private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
@@ -912,14 +914,16 @@ class ItIntrospectVersion {
     final String domainNamespace = introDomainNamespace;
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "cl2-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final String cl2managedServerNameBase = "cl2-ms-";
+    String cl2managedServerPodNamePrefix = domainUid + "-" + cl2managedServerNameBase;
+    final String myclustermanagedServerNameBase = "managed-server";
+    String myclustermanagedServerPodNamePrefix = domainUid + "-" + myclustermanagedServerNameBase;
 
     final int replicaCount = 2;
 
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+      managedServerNames.add(cl2managedServerNameBase + i);
     }
 
     // get the original domain resource before update
@@ -929,9 +933,29 @@ class ItIntrospectVersion {
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
+    logger.info("Getting timestamps for the following pods");
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = cl2managedServerPodNamePrefix + i;
+      logger.info(managedServerPodName);
+    }
     // get the map with server pods and their original creation timestamps
-    podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPodNamePrefix,
+    cl2podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, cl2managedServerPodNamePrefix,
         replicaCount);
+
+    logger.info("Getting timestamps for the following pods");
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
+      logger.info(managedServerPodName);
+    }
+    // get the map with server pods and their original creation timestamps
+    myclusterpodsWithTimeStamps = new LinkedHashMap<>();
+    for (int i = 1; i <= 3; i++) {
+      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
+      myclusterpodsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  managedServerPodName, domainNamespace)));
+    }
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
@@ -969,15 +993,17 @@ class ItIntrospectVersion {
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(verifyRollingRestartOccurred(myclusterpodsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+          cl2managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(cl2managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     //verify admin server accessibility and the health of cluster members
