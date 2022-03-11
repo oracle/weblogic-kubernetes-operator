@@ -330,7 +330,7 @@
                   **/ItCrossDomainTransaction,
                   **/ItKubernetesEvents,
                   **/ItMiiAuxiliaryImage,
-		  **/ItMiiCreateAuxImageWithImageTool,
+                  **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
@@ -338,7 +338,7 @@
                   **/ItMiiNewCreateAuxImage,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMultiDomainModelsWithLoadBalancer,
+                  **/ItMultiDomainModels,
                   **/ItPodsRestart
                 </includes-failsafe>
             </properties>
@@ -459,7 +459,7 @@
                   **/ItMiiDomain,
                   **/ItMiiDynamicUpdate,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMultiDomainModelsWithLoadBalancer,
+                  **/ItMultiDomainModels,
                   **/ItPodsShutdownOption,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
