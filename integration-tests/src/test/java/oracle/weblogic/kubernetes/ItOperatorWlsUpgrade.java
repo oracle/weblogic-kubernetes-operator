@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -136,7 +135,8 @@ class ItOperatorWlsUpgrade {
   private String adminSecretName = "weblogic-credentials";
   private String opNamespace;
   private String domainNamespace;
-  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + "-oupg";
+  private static String miiAuxiliaryImageTag = "aux-explict-upgrade";
+  private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
 
   /**
    * For each test:
@@ -224,11 +224,11 @@ class ItOperatorWlsUpgrade {
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage, archiveList, modelList);
+    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
 
     // Generate a v8 version of domain.yaml file from a template file 
     // by replacing domain namespace, domain uid, base image and aux image
-    String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
+    String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
@@ -265,11 +265,10 @@ class ItOperatorWlsUpgrade {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
-
-    // verify there is no status condition type Completed before upgrading to Latest
+    // verify there is no status condition type Completed 
+    // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-
     upgradeOperatorToLatest();
     verifyPodsNotRolled(domainNamespace, pods);
     reManageCluster();

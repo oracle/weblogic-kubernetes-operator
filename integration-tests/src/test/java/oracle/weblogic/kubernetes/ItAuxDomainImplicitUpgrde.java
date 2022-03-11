@@ -129,8 +129,8 @@ class ItAuxDomainImplicitUpgrde {
   @DisplayName("Test to implicit upgrade of v8 version of AuxDomain with webhook")
   void testImplicitAuxV8DomainUpgrade() {
 
-
-    // admin/managed server name here should match with model yaml
+    String miiAuxiliaryImageTag = "aux-implicit-upgrade";
+    String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
@@ -140,11 +140,11 @@ class ItAuxDomainImplicitUpgrde {
 
     // create auxiliary image using imagetool command if does not exists
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    createPushAuxiliaryImageWithDomainConfig(miiAuxiliaryImage, archiveList, modelList);
+    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    String auxImage = miiAuxiliaryImage + ":" + MII_BASIC_IMAGE_TAG;
+    String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
