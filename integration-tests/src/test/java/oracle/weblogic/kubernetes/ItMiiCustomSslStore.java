@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.SslUtils.generateJksStores;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -68,8 +69,8 @@ class ItMiiCustomSslStore {
   private static String domainNamespace = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-custom-ssl";
-  private static final String pvName = domainUid + "-pv"; // name of the persistent volume
-  private static final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private static final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+  private static final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
