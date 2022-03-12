@@ -7,7 +7,6 @@ package oracle.kubernetes.operator;
 public interface ProcessingConstants {
 
   String MAIN_COMPONENT_NAME = "main";
-  String WEBHOOK_COMPONENT_NAME = "webhookMain";
   String DELEGATE_COMPONENT_NAME = "delegate";
   String DOMAIN_COMPONENT_NAME = "domain";
   String FIBER_COMPONENT_NAME = "fiber";

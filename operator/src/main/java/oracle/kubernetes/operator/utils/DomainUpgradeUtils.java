@@ -94,6 +94,7 @@ public class DomainUpgradeUtils {
     String apiVersion = (String)domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
+    removeProgressingConditionFromDomainStatus(domain);
     domain.put("apiVersion", desiredAPIVersion);
     LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -141,6 +142,17 @@ public class DomainUpgradeUtils {
     Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
             convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
     spec.remove("auxiliaryImageVolumes");
+  }
+
+  private void removeProgressingConditionFromDomainStatus(Map<String, Object> domain) {
+    Map<String, Object> domainStatus = (Map<String, Object>) domain.get("status");
+    List<Object> conditions = (List) Optional.ofNullable(domainStatus).map(status -> status.get("conditions"))
+            .orElse(null);
+    Optional.ofNullable(conditions).ifPresent(x -> x.removeIf(cond -> hasType((Map<String, Object>)cond)));
+  }
+
+  private boolean hasType(Map<String, Object> condition) {
+    return Optional.ofNullable(condition.get("type")).map(type -> "Progressing".equals(type)).orElse(false);
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {

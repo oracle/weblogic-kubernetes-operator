@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +33,7 @@ import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -52,6 +54,21 @@ public class Main extends BaseMain {
 
   /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
   private static final long CRD_DETECTION_DELAY = 10;
+
+  static {
+    container
+            .getComponents()
+            .put(
+                    ProcessingConstants.MAIN_COMPONENT_NAME,
+                    Component.createFor(
+                            ScheduledExecutorService.class,
+                            wrappedExecutorService,
+                            TuningParameters.class,
+                            TuningParameters.getInstance(),
+                            ThreadFactory.class,
+                            threadFactory));
+  }
+
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");

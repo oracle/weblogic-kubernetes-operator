@@ -105,7 +105,16 @@
           "webLogicCredentialsSecret": {
             "name": "sample-domain1-weblogic-credentials"
           }
-        }
+        },
+        "status": {
+            "conditions": [
+                {
+                    "lastTransitionTime": "2022-03-11T19:41:08.794468Z",
+                    "status": "True",
+                    "type": "Progressing"
+                }
+            ]
+       }
       }
     ]
   },

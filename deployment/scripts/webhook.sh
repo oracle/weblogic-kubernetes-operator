@@ -2,8 +2,6 @@
 # Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-export PATH=$PATH:/operator
-
 echo "Launching the Domain Custom Resource Conversion Webhook for Oracle WebLogic Server Kubernetes Operator..."
 
 # Relays SIGTERM to all java processes
