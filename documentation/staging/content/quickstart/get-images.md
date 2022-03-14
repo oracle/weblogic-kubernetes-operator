@@ -19,11 +19,9 @@ weight: 3
     $ docker pull traefik:2.2.1
     ```
 
-1. Obtain the WebLogic Server image from the
-   [Oracle Container Registry](https://container-registry.oracle.com).
+1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com).
 
-    a. First time users, follow these
-       [directions]({{< relref "/userguide/base-images/_index.md#obtain-images-from-the-oracle-container-registry" >}}).
+    a. First time users, follow these [directions]({{< relref "/userguide/base-images/_index.md#obtain-images-from-the-oracle-container-registry" >}}).
 
     b. Find and then pull the WebLogic 12.2.1.4 install image:
 
