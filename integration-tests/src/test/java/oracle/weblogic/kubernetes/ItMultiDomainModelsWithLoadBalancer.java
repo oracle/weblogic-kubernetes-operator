@@ -17,9 +17,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
@@ -173,6 +175,8 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static String miiDomainNegativeNamespacePortforward = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
+  private static Map<String, Quantity> resourceRequest = new HashMap<>();
+  private static Map<String, Quantity> resourceLimit = new HashMap<>();
   private static String operExtSvcRouteHost = null;
   private String curlCmd = null;
 
@@ -237,6 +241,12 @@ class ItMultiDomainModelsWithLoadBalancer {
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
     }
+
+    // set resource request and limit
+    resourceRequest.put("cpu", new Quantity("250m"));
+    resourceRequest.put("memory", new Quantity("768Mi"));
+    resourceLimit.put("cpu", new Quantity("2"));
+    resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
@@ -904,7 +914,10 @@ class ItMultiDomainModelsWithLoadBalancer {
                         + "-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .resources(new V1ResourceRequirements()
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminChannelPortForwardingEnabled(true)
@@ -1166,7 +1179,10 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .resources(new V1ResourceRequirements()
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
