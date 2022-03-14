@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -134,6 +135,8 @@ class ItMiiAuxiliaryImage {
   private static final String miiAuxiliaryImage10 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage10Tag;
   private static final String miiAuxiliaryImage11Tag = "image11" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage11 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage11Tag;
+  private static final String miiAuxiliaryImage12Tag = "image12" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage112 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage12Tag;
 
   private static final String errorPathAuxiliaryImage1Tag = "errorimage1" + MII_BASIC_IMAGE_TAG;
   private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage1Tag;
@@ -627,53 +630,77 @@ class ItMiiAuxiliaryImage {
 
   }
 
+
   /**
-   * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
-   * location. Verify domain events and operator log contains the expected error message.
+   * Create a domain using auxiliary image with configMap containing model files.
+   * Verify domain events and operator log contains the expected error message.
    */
   @Test
-  @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
-  void testCreateDomainNoFilesAtSourceModelHome() {
+  @DisplayName("Test to create domain using auxiliary image with configMap and empty model files dir")
+  void testCreateDomainWithConfigMapAndEmptryModelFileDir() {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
-    final String domainUid = "domain5";
+    final String domainUid = "domain3";
+    final String adminServerPodNameDomain = domainUid + "-admin-server";
+    final String managedServerPrefixDomain = domainUid + "-managed-server";
 
     WitParams witParams =
-        new WitParams()
-            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-            .modelImageTag(miiAuxiliaryImage8Tag)
-            .wdtHome(auxiliaryImagePathCustom)
-            .wdtModelHome(auxiliaryImagePathCustom + "/models")
-            .wdtVersion("latest");
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage8Tag, witParams);
+            new WitParams()
+                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+                    .modelImageTag(miiAuxiliaryImage12Tag)
+                    .wdtHome(auxiliaryImagePathCustom)
+                    .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage12Tag, witParams);
+
+    String configMapName = "modelfiles-cm";
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    modelList.add(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
+            configMapName, domainNamespace, MII_BASIC_WDT_MODEL_FILE, "/multi-model-one-ds.20.yaml");
+
+    //List<String> modelFiles = Arrays.asList(MODEL_DIR + "/" + modelFileName3, MODEL_DIR + "/" + modelFileName4);
+    createConfigMapAndVerify(
+            configMapName, domainUid, domainNamespace, modelList);
 
     OffsetDateTime timestamp = now();
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, miiAuxiliaryImage8);
+            domainUid, miiAuxiliaryImage8);
     Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
-        miiAuxiliaryImage8);
+            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+            encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+            miiAuxiliaryImage8);
+
+    domainCR.spec().configuration().model().configMap(configMapName);
+
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domainNamespace);
+            domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                domainUid, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace));
-
+                    domainUid, domainNamespace)),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domainNamespace));
+    createDomainAndVerify(domainUid, domainCR, domainNamespace,
+            adminServerPodNameDomain, managedServerPrefixDomain, replicaCount);
+    /*
     String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
-        + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
+            + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
 
     // check the operator pod log contains the expected error message
     checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-        "Warning", timestamp, errorMessage);
+            "Warning", timestamp, errorMessage);
+
+     */
 
   }
 
