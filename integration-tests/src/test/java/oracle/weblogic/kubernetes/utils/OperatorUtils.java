@@ -178,6 +178,41 @@ public class OperatorUtils {
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
+   * @param loggingLevel operator logging level
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
+                                                        String loggingLevel,
+                                                        HelmParams opHelmParams,
+                                                        String... domainNamespace) {
+
+    return installAndVerifyOperator(opNamespace,
+            opServiceAccount,
+            withRestAPI,
+            externalRestHttpsPort,
+            opHelmParams,
+            false,
+            null,
+            null,
+            false,
+            loggingLevel,
+            -1,
+            -1,
+            domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -191,7 +226,9 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        null, null, false, -1, -1, domainNamespace);
+        null, null,
+            false, -1,
+            -1, domainNamespace);
   }
 
   /**
@@ -251,6 +288,53 @@ public class OperatorUtils {
                                                         int domainPresenceFailureRetryMaxCount,
                                                         int domainPresenceFailureRetrySeconds,
                                                         String... domainNamespace) {
+    return installAndVerifyOperator(opNamespace,
+            opServiceAccount,
+    withRestAPI,
+    externalRestHttpsPort,
+    opHelmParams,
+    elkIntegrationEnabled,
+    domainNamespaceSelectionStrategy,
+    domainNamespaceSelector,
+    enableClusterRoleBinding,
+    "INFO",
+    domainPresenceFailureRetryMaxCount,
+    domainPresenceFailureRetrySeconds,
+    domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param loggingLevel logging level of operator
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
+                                                        HelmParams opHelmParams,
+                                                        boolean elkIntegrationEnabled,
+                                                        String domainNamespaceSelectionStrategy,
+                                                        String domainNamespaceSelector,
+                                                        boolean enableClusterRoleBinding,
+                                                        String loggingLevel,
+                                                        int domainPresenceFailureRetryMaxCount,
+                                                        int domainPresenceFailureRetrySeconds,
+                                                        String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
     // Create a service account for the unique opNamespace
@@ -281,6 +365,7 @@ public class OperatorUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
+        .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
 
     if (domainNamespaceSelectionStrategy != null) {
