@@ -13,7 +13,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
@@ -65,9 +64,10 @@ public class LoggingExporterUtils {
   /**
    * Install Elasticsearch and wait up to five minutes until Elasticsearch pod is ready.
    *
+   * @param namespace namespace in which to install elastic search
    * @return Elasticsearch installation parameters
    */
-  public static LoggingExporterParams installAndVerifyElasticsearch() {
+  public static LoggingExporterParams installAndVerifyElasticsearch(String namespace) {
     LoggingFacade logger = getLogger();
     final String elasticsearchPodNamePrefix = ELASTICSEARCH_NAME;
 
@@ -77,7 +77,7 @@ public class LoggingExporterUtils {
         .elasticsearchImage(ELASTICSEARCH_IMAGE)
         .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
         .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+        .loggingExporterNamespace(namespace);
 
     // install Elasticsearch
     assertThat(installElasticsearch(elasticsearchParams))
@@ -90,10 +90,10 @@ public class LoggingExporterUtils {
         .conditionEvaluationListener(
             condition -> logger.info(
                 "Waiting for Elasticsearch to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                ELKSTACK_NAMESPACE,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
+        .until(assertDoesNotThrow(() -> isElkStackPodReady(namespace, elasticsearchPodNamePrefix),
             "isElkStackPodReady failed with ApiException"));
 
     return elasticsearchParams;
@@ -102,9 +102,10 @@ public class LoggingExporterUtils {
   /**
    * Install Kibana and wait up to five minutes until Kibana pod is ready.
    *
+   * @param namespace namespace in which to install kibana
    * @return Kibana installation parameters
    */
-  public static LoggingExporterParams installAndVerifyKibana() {
+  public static LoggingExporterParams installAndVerifyKibana(String namespace) {
     LoggingFacade logger = getLogger();
     final String kibanaPodNamePrefix = ELASTICSEARCH_NAME;
 
@@ -113,7 +114,7 @@ public class LoggingExporterUtils {
         .kibanaName(KIBANA_NAME)
         .kibanaImage(KIBANA_IMAGE)
         .kibanaType(KIBANA_TYPE)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+        .loggingExporterNamespace(namespace)
         .kibanaContainerPort(KIBANA_PORT);
 
     // install Kibana
@@ -127,10 +128,10 @@ public class LoggingExporterUtils {
         .conditionEvaluationListener(
             condition -> logger.info(
                 "Waiting for Kibana to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                ELKSTACK_NAMESPACE,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
+        .until(assertDoesNotThrow(() -> isElkStackPodReady(namespace, kibanaPodNamePrefix),
             "isElkStackPodReady failed with ApiException"));
 
     return kibanaParams;
@@ -141,13 +142,14 @@ public class LoggingExporterUtils {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installAndVerifyWlsLoggingExporter(String filter,
-                                                           String wlsLoggingExporterYamlFileLoc) {
+                                                           String wlsLoggingExporterYamlFileLoc, String namespace) {
     // Install WebLogic Logging Exporter
     assertThat(TestActions.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc))
+        wlsLoggingExporterYamlFileLoc, namespace))
         .as("WebLogic Logging Exporter installation succeeds")
         .withFailMessage("WebLogic Logging Exporter installation failed")
         .isTrue();

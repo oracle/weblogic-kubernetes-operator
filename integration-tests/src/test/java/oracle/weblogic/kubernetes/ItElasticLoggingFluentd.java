@@ -54,12 +54,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -134,6 +132,9 @@ class ItElasticLoggingFluentd {
   private static LoggingExporterParams kibanaParams = null;
   private static LoggingFacade logger = null;
 
+  static String elasticSearchHost;
+  static String elasticSearchNs;
+
   private static String k8sExecCmdPrefix;
   private static Map<String, String> testVarMap;
 
@@ -145,7 +146,7 @@ class ItElasticLoggingFluentd {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(2) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -163,14 +164,15 @@ class ItElasticLoggingFluentd {
     domainNamespace = namespaces.get(1);
 
     // install and verify Elasticsearch
+    elasticSearchNs = namespaces.get(2);
     logger.info("install and verify Elasticsearch");
-    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(),
+    elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
     assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(),
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
     assertTrue(kibanaParams != null, "Failed to install Kibana");
 
@@ -188,11 +190,12 @@ class ItElasticLoggingFluentd {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName);
 
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     testVarMap = new HashMap<String, String>();
 
     StringBuffer elasticsearchUrlBuff =
         new StringBuffer("curl http://")
-            .append(ELASTICSEARCH_HOST)
+            .append(elasticSearchHost)
             .append(":")
             .append(ELASTICSEARCH_HTTP_PORT);
     k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
@@ -220,13 +223,13 @@ class ItElasticLoggingFluentd {
           .elasticsearchImage(ELASTICSEARCH_IMAGE)
           .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
           .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+          .loggingExporterNamespace(elasticSearchNs);
 
       kibanaParams = new LoggingExporterParams()
           .kibanaName(KIBANA_NAME)
           .kibanaImage(KIBANA_IMAGE)
           .kibanaType(KIBANA_TYPE)
-          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .loggingExporterNamespace(elasticSearchNs)
           .kibanaContainerPort(KIBANA_PORT);
 
       // uninstall ELK Stack
@@ -330,7 +333,7 @@ class ItElasticLoggingFluentd {
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         elasticSearchHost, elasticSearchPort),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 

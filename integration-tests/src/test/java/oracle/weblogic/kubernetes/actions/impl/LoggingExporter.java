@@ -322,10 +322,11 @@ public class LoggingExporter {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
     // Copy WebLogic Logging Exporter files to WORK_DIR
     String[] loggingExporterFiles =
         {WLS_LOGGING_EXPORTER_YAML_FILE_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME};
@@ -336,6 +337,8 @@ public class LoggingExporter {
       assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
           String.format("Failed to copy %s to %s", srcPath, destPath));
       logger.info("Copied {0} to {1}}", srcPath, destPath);
+      assertDoesNotThrow(() -> FileUtils.replaceStringInFile(destPath.toString(), "default", namespace),
+          String.format("Failed to replace namespace default to %s", namespace));
     }
 
     // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
