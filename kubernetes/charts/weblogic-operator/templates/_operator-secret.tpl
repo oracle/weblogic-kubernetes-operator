@@ -32,6 +32,10 @@ data:
   {{- if $webhookKey }}
   webhookKey: {{ $webhookKey }}
   {{- end }}
+  {{- $webhookCert := index $secret.data "webhookCert" }}
+  {{- if $webhookCert }}
+  webhookCert: {{ $webhookCert }}
+  {{- end }}
   {{- end }}
 metadata:
   labels:

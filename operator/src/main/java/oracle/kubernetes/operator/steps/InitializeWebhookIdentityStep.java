@@ -15,13 +15,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import jakarta.json.Json;
-import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -35,13 +33,13 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
+import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBHOOK_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
 public class InitializeWebhookIdentityStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  private static final String WEBHOOK_CM = "weblogic-webhook-cm";
   private static final String WEBHOOK_SECRETS = "weblogic-webhook-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-webhook";
@@ -62,7 +60,7 @@ public class InitializeWebhookIdentityStep extends Step {
     Certificates certificates = new Certificates(delegate);
     this.webhookCertFile = certificates.getWebhookCertificateFile();
     this.webhookKeyFile = certificates.getWebhookKeyFile();
-    this.certFile = new File(delegate.getDeploymentHome(), "/config/webhookCert");
+    this.certFile = new File(delegate.getDeploymentHome(), "/secrets/webhookCert");
     this.keyFile = new File(delegate.getDeploymentHome(), "/secrets/webhookKey");
 
   }
@@ -85,7 +83,7 @@ public class InitializeWebhookIdentityStep extends Step {
   }
 
   private void reuseIdentity() throws IOException {
-    // copy the certificate and key from the webhook's config map and secret
+    // copy the certificate and key from the webhook's secret
     // to the locations the webhook runtime expects
     FileUtils.copyFile(certFile, webhookCertFile);
     FileUtils.copyFile(keyFile, webhookKeyFile);
@@ -97,11 +95,11 @@ public class InitializeWebhookIdentityStep extends Step {
     writeToFile(key, webhookKeyFile);
     X509Certificate cert = generateCertificate(webhookCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
             CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), webhookCertFile);
-    // put the new certificate in the webhook's config map so that it will be available
+    String certString = getBase64Encoded(cert);
+    writeToFile(certString, webhookCertFile);
+    // put the new certificate and key in the webhook's secret so that it will be available
     // the next time the webhook is started
-    return doNext(recordWebhookCert(webhookCertFile.getName(), cert,
-            recordWebhookKey(key, getNext())), packet);
+    return doNext(recordWebhookIdentity(new WebhookIdentity(key, certString.getBytes()), getNext()), packet);
   }
 
   private static String convertToPEM(Object object) throws IOException {
@@ -125,63 +123,92 @@ public class InitializeWebhookIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
-  private static Step recordWebhookCert(String certName, X509Certificate cert, Step next) throws IOException {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
-    return new CallBuilder()
-            .patchConfigMapAsync(WEBHOOK_CM, getWebhookNamespace(),
-                    null,
-                    new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
-  }
-
-  private static Step recordWebhookKey(String key, Step next) {
+  private Step recordWebhookIdentity(WebhookIdentity webhookIdentity, Step next) {
     return new CallBuilder().readSecretAsync(WEBHOOK_SECRETS,
-            getWebhookNamespace(), readSecretResponseStep(next, key));
+            getWebhookNamespace(), readSecretResponseStep(next, webhookIdentity));
   }
 
-  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String webhookKey) {
-    return new ReadSecretResponseStep(next, webhookKey);
+  private ResponseStep<V1Secret> readSecretResponseStep(Step next, WebhookIdentity webhookIdentity) {
+    return new ReadSecretResponseStep(next, webhookIdentity);
   }
 
-  private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
-    final String webhookKey;
+  private class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
+    final WebhookIdentity webhookIdentity;
 
-    ReadSecretResponseStep(Step next, String webhookKey) {
+    ReadSecretResponseStep(Step next, WebhookIdentity webhookIdentity) {
       super(next);
-      this.webhookKey = webhookKey;
+      this.webhookIdentity = webhookIdentity;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
+      Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(s -> s.getData()).orElse(new HashMap<>());
       if (existingSecret == null) {
-        return doNext(createSecret(getNext(), webhookKey), packet);
-      } else {
-        return doNext(replaceSecret(getNext(), existingSecret, webhookKey), packet);
+        return doNext(createSecret(getNext(), webhookIdentity), packet);
+      } else if (identityExists(data)) {
+        reuseExistingIdentity(data);
+        return doNext(getNext(), packet);
+      }
+      return doNext(replaceSecret(getNext(), existingSecret, webhookIdentity), packet);
+    }
+
+    private boolean identityExists(Map<String, byte[]> data) {
+      return data.get(WEBHOOK_KEY) != null && data.get(WEBHOOK_CERTIFICATE) != null;
+    }
+
+    private void reuseExistingIdentity(Map<String, byte[]> data) {
+      try {
+        Files.write(webhookKeyFile.toPath(), data.get(WEBHOOK_KEY));
+        Files.write(webhookCertFile.toPath(), data.get(WEBHOOK_CERTIFICATE));
+      } catch (Exception e) {
+        LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
+        throw new RuntimeException(e);
       }
     }
   }
 
-  private static Step createSecret(Step next, String webhookKey) {
+  private Step createSecret(Step next, WebhookIdentity webhookIdentity) {
     return new CallBuilder()
             .createSecretAsync(getWebhookNamespace(),
-                    createModel(null, webhookKey), new DefaultResponseStep<>(next));
-  }
-
-  private static Step replaceSecret(Step next, V1Secret secret, String webhookKey) {
-    return new CallBuilder()
-            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookKey),
+                    createModel(null, webhookIdentity),
                     new DefaultResponseStep<>(next));
   }
 
-  protected static final V1Secret createModel(V1Secret secret, String webhookKey) {
+  private Step replaceSecret(Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
+    return new CallBuilder()
+            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookIdentity),
+                    new ReplaceSecretResponseStep(webhookIdentity, next));
+  }
+
+  private class ReplaceSecretResponseStep extends DefaultResponseStep<V1Secret> {
+    WebhookIdentity webhookIdentity;
+
+    ReplaceSecretResponseStep(WebhookIdentity webhookIdentity, Step next) {
+      super(next);
+      this.webhookIdentity = webhookIdentity;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
+      if (UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+        return doNext(Step.chain(readSecretResponseStep(getNext(), webhookIdentity), getNext()), packet);
+      } else {
+        return super.onFailure(packet, callResponse);
+      }
+    }
+  }
+
+  protected static final V1Secret createModel(V1Secret secret, WebhookIdentity webhookIdentity) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put(WEBHOOK_KEY, webhookKey.getBytes());
+      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put(WEBHOOK_KEY, webhookKey.getBytes());
+      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }
@@ -191,5 +218,32 @@ public class InitializeWebhookIdentityStep extends Step {
     labels.put("weblogic.webhookName", getWebhookNamespace());
     return new V1ObjectMeta().name(WEBHOOK_SECRETS).namespace(getWebhookNamespace())
             .labels(labels);
+  }
+
+  final class WebhookIdentity {
+
+    private String webhookKey;
+    private byte[] webhookCert;
+
+    public WebhookIdentity(String webhookKey, byte[] webhookCert) {
+      this.webhookKey = webhookKey;
+      this.webhookCert = webhookCert;
+    }
+
+    public String getWebhookKey() {
+      return webhookKey;
+    }
+
+    public byte[] getWebhookCert() {
+      return webhookCert;
+    }
+
+    @Override
+    public String toString() {
+      return "WebhookIdentity{"
+              + "webhookKey='" + webhookKey + '\''
+              + ", webhookCert='" + webhookCert + '\''
+              + '}';
+    }
   }
 }
