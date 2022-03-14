@@ -70,7 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -653,20 +653,20 @@ class ItMiiAuxiliaryImage {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage12Tag, witParams);
 
     String configMapName = "modelfiles-cm";
-
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
-
-    List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
-    modelList.add(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
     logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
             configMapName, domainNamespace, MII_BASIC_WDT_MODEL_FILE, "/multi-model-one-ds.20.yaml");
 
     //List<String> modelFiles = Arrays.asList(MODEL_DIR + "/" + modelFileName3, MODEL_DIR + "/" + modelFileName4);
-    createConfigMapAndVerify(
-            configMapName, domainUid, domainNamespace, modelList);
+    List<Path> cmFiles = new ArrayList<>();
+    cmFiles.add(
+            Paths.get(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE));
+    cmFiles.add(Paths.get(MODEL_DIR + "/multi-model-one-ds.20.yaml"));
+    cmFiles.add(Paths.get(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip"));
 
+    assertDoesNotThrow(
+            () -> createConfigMapForDomainCreation(
+                    configMapName, cmFiles, domainNamespace, this.getClass().getSimpleName()),
+            "Create configmap for domain creation failed");
     OffsetDateTime timestamp = now();
 
     // create domain custom resource using auxiliary image
