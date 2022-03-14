@@ -1,13 +1,12 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -192,9 +191,10 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(createCondition("Failed").reason(reason)));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1Job setFailedConditionWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().conditions(
-            new ArrayList<>(Arrays.asList(new V1JobCondition().type("Failed").status("True").reason(reason)))));
+            List.of(new V1JobCondition().type("Failed").status("True").reason(reason))));
   }
 
   @Test

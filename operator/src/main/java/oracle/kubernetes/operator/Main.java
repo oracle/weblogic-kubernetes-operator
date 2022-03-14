@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.CrdHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -62,6 +63,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -262,6 +264,11 @@ public class Main {
     }
 
     @Override
+    public boolean mayRetry(@NotNull DomainPresenceInfo domainPresenceInfo) {
+      return true;
+    }
+
+    @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
       return engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -422,8 +429,8 @@ public class Main {
     return namespaceWatcher;
   }
 
-  private static NullCompletionCallback andThenDo(Runnable completionAction) {
-    return new NullCompletionCallback(completionAction);
+  private static MainCompletionCallback andThenDo(Runnable completionAction) {
+    return new MainCompletionCallback(completionAction);
   }
 
   Runnable recheckDomains() {
@@ -617,10 +624,10 @@ public class Main {
     }
   }
 
-  private static class NullCompletionCallback implements CompletionCallback {
+  private static class MainCompletionCallback implements CompletionCallback {
     private final Runnable completionAction;
 
-    NullCompletionCallback(Runnable completionAction) {
+    MainCompletionCallback(Runnable completionAction) {
       this.completionAction = completionAction;
     }
 

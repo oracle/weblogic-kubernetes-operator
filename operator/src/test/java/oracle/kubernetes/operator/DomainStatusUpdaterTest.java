@@ -144,7 +144,7 @@ class DomainStatusUpdaterTest {
   void failedStepWithFailureMessage_andNoJob_doesNotContainValidationWarnings() {
     info.addValidationWarning(validationWarning);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, null));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -153,7 +153,7 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_andNoJob_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, null));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(
         getRecordedDomain(),
@@ -164,7 +164,7 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_andNoJob_generateFailedEvent() {
     domain.setStatus(null);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, null));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
   }
@@ -173,7 +173,7 @@ class DomainStatusUpdaterTest {
   void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
     info.addValidationWarning(validationWarning);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, job));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -182,7 +182,7 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, job));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(
         getRecordedDomain(),
@@ -193,7 +193,7 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_generateFailedEvent() {
     domain.setStatus(null);
 
-    testSupport.runSteps(createInternalFailureSteps(failure, job));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
   }
@@ -218,7 +218,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
-    testSupport.runSteps(createInternalFailureSteps(failure, job));
+    testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
   }
@@ -262,7 +262,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenFailureStepCreatedWithCountOnNullJob_uidIsEmpty() {
     final DomainStatusUpdater.FailureStep failureSteps
-          = (DomainStatusUpdater.FailureStep) DomainStatusUpdater.createFailedStep(Internal, "").trackingRetries(null);
+          = (DomainStatusUpdater.FailureStep) DomainStatusUpdater.createFailedStep(Internal, "").forIntrospection(null);
 
     assertThat(failureSteps.jobUid, emptyString());
   }
@@ -271,7 +271,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenFailureStepCreatedWithCountOnJob_uidMatchesJobUid() {
     final DomainStatusUpdater.FailureStep failureSteps = (DomainStatusUpdater.FailureStep)
-          DomainStatusUpdater.createFailedStep(Introspection, "").trackingRetries(createIntrospectorJob("abcd"));
+          DomainStatusUpdater.createFailedStep(Introspection, "").forIntrospection(createIntrospectorJob("abcd"));
 
     assertThat(failureSteps.jobUid, equalTo("abcd"));
   }

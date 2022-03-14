@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -16,6 +16,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -51,6 +52,14 @@ class DomainConditionTest {
     SystemClockTestSupport.increment();
 
     assertThat(oldCondition.equals(new DomainCondition(Available).withStatus("True")), is(true));
+  }
+
+  @Test
+  void failedConditionMayIncludeIntrospectionJobUid() {
+    final DomainCondition condition = new DomainCondition(Failed);
+    condition.setIntrospectionUid("abcde");
+
+    assertThat(condition.getIntrospectionUid(), equalTo("abcde"));
   }
 
   @Test
