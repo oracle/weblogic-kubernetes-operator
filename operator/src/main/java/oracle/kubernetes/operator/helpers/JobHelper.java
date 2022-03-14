@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -460,13 +460,13 @@ public class JobHelper {
         }
       }
 
-      private String createFailureMessage(Packet packet, V1Job job) {
+      private String createFailureMessage(Packet packet, @Nullable V1Job job) {
         String jobName = Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse("");
         String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
         return LOGGER.formatMessage(INTROSPECTOR_JOB_FAILED,
             Objects.requireNonNull(jobName),
-            job.getMetadata().getNamespace(),
-            job.getStatus(),
+            Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getNamespace).orElse(""),
+            Optional.ofNullable(job).map(V1Job::getStatus).orElse(null),
             jobPodName);
       }
 

@@ -936,18 +936,40 @@ public class Domain {
         .append(" --scaling_size=")
         .append(scalingSize)
         .append(" --kubernetes_master=")
-        .append("https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT");
+        .append("https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT")
+        .append(" 2>> /u01/scalingAction.out ");
 
 
     String commandToExecuteInsidePod = scalingCommand.toString();
 
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
-        "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+    ExecResult result = null;
+    try {
+      result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
+          "/bin/sh", "-c", commandToExecuteInsidePod),
+          String.format("Could not execute the command %s in pod %s, namespace %s",
+              commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
+      logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+          commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+    } catch (Error err) {
+      logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+          commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+      // copy scalingAction.log to local
+      testUntil(
+              () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+                      "/u01/scalingAction.log",
+                      Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
+              logger,
+              "Copying scalingAction.log from admin server pod");
+      // copy scalingAction.out to local
+      testUntil(
+              () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+                      "/u01/scalingAction.out",
+                      Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.out")),
+              logger,
+              "Copying scalingAction.out from admin server pod");
+      throw err;
 
+    }
     // copy scalingAction.log to local
     testUntil(
         () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
@@ -955,6 +977,13 @@ public class Domain {
           Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
         logger,
         "Copying scalingAction.log from admin server pod");
+    // copy scalingAction.out to local
+    testUntil(
+        () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+            "/u01/scalingAction.out",
+            Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.out")),
+        logger,
+        "Copying scalingAction.out from admin server pod");
     //      domainHomeLocation + "/bin/scripts/scalingAction.log",
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -522,6 +522,14 @@ class ManagedServersUpStepTest {
   }
 
   @Test
+  void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
+    configurator.setShuttingDown(true);
+
+    assertThat(createNextStepWithNullWlsDomainConfig(), instanceOf(ClusterServicesStep.class));
+  }
+
+
+  @Test
   void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true);
     addWlsCluster("cluster1", "ms1", "ms2");
@@ -693,6 +701,14 @@ class ManagedServersUpStepTest {
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
     serversUpStepFactory.shutdownInfos.addAll(ssi);
     return factory.createServerStep(domainPresenceInfo, config, serversUpStepFactory, nextStep);
+  }
+
+  private Step createNextStepWithNullWlsDomainConfig() {
+    configSupport.setAdminServerName(ADMIN);
+    ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo, false);
+    List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
+    return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
   }
 
   private void addShutdownServerInfo(String serverName, List<String> servers,

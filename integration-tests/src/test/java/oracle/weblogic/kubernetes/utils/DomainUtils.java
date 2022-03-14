@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -759,19 +760,10 @@ public class DomainUtils {
                                       String namespace,
                                       V1Container jobContainer) {
     getLogger().info("Running Kubernetes job to create domain");
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .addInitContainersItem(createfixPVCOwnerContainer(pvName, "/u01/shared"))
-                    .addContainersItem(jobContainer  // container containing WLST or WDT details
-                        .name("create-weblogic-domain-onpv-container")
+    V1PodSpec podSpec = new V1PodSpec()
+        .restartPolicy("Never")
+        .addContainersItem(jobContainer  // container containing WLST or WDT details
+               .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .addPortsItem(new V1ContainerPort()
@@ -779,7 +771,7 @@ public class DomainUtils {
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                                  .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
                             new V1VolumeMount()
                                 .name(pvName) // location to write domain
                                 .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
@@ -794,9 +786,23 @@ public class DomainUtils {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(Collections.singletonList(
+                    .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
+    }
+
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+    podTemplateSpec.spec(podSpec);
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(podTemplateSpec));
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
