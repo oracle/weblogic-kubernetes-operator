@@ -256,18 +256,20 @@ public class LoggingExporter {
   /**
    * Verify that the Logging Exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
-   *                  WebLogic server pod (for WebLogic Logging Exporter)
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
+   *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+                                                               String esNamespace,
                                                                String labelSelector,
                                                                String index) {
     // Get index status info
     String statusLine =
-        execLoggingExpStatusCheck(namespace, labelSelector, "*" + index + "*");
+        execLoggingExpStatusCheck(opNamespace, esNamespace, labelSelector, "*" + index + "*");
     assertNotNull(statusLine);
 
     String [] parseString = statusLine.split("\\s+");
@@ -496,7 +498,9 @@ public class LoggingExporter {
     return elasticsearchService;
   }
 
-  private static String execLoggingExpStatusCheck(String namespace, String labelSelector, String indexRegex) {
+  private static String execLoggingExpStatusCheck(String opNamespace, String esNamespace,
+      String labelSelector, String indexRegex) {
+    String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
         .append(ELASTICSEARCH_HOST)
@@ -508,14 +512,14 @@ public class LoggingExporter {
 
     // get Operator pod name
     String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, namespace));
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
 
     int i = 0;
     ExecResult statusLine = null;
     while (i < maxIterationsPod) {
       statusLine = assertDoesNotThrow(
-          () -> execCommand(namespace, operatorPodName, null, true,
+          () -> execCommand(opNamespace, operatorPodName, null, true,
               "/bin/sh", "-c", cmd));
       assertNotNull(statusLine, "curl command returns null");
 

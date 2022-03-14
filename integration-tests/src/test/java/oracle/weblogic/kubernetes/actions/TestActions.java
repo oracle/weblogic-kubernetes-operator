@@ -1519,16 +1519,18 @@ public class TestActions {
   /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
-                                                               String labelSelector,
-                                                               String index) {
-    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+      String esNamespace,
+      String labelSelector,
+      String index) {
+    return LoggingExporter.verifyLoggingExporterReady(opNamespace, esNamespace, labelSelector, index);
   }
 
   // --------------------------- WebLogic Logging Exporter---------------------------------
