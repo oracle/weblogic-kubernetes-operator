@@ -38,7 +38,6 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -206,9 +205,6 @@ class ItOperatorWlsUpgrade {
   /**
    * Auxiliary Image Domain upgrade from Operartor v3.3.8 to latest.
    */
-  // Need to uncomment the following test method 
-  // once the code to upgrade v8 style auximage domain is merged into main branch 
-  @Disabled()
   @Test
   @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to latest")
   void testOperatorWlsAuxDomainUpgradeFrom338ToLatest() {
@@ -328,6 +324,7 @@ class ItOperatorWlsUpgrade {
 
   // upgrade to operator to latest version 
   private void upgradeOperatorToLatest() {
+    latestOperatorImageName = getOperatorImageName();
     HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
@@ -369,7 +366,6 @@ class ItOperatorWlsUpgrade {
       String domainVersion, 
       String externalServiceNameSuffix) {
 
-    latestOperatorImageName = getOperatorImageName();
     // create WLS domain and verify
     createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
            externalServiceNameSuffix);

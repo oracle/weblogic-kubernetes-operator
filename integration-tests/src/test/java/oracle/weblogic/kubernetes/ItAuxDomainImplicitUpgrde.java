@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test implicit upgrade of domain resource with auximage in v8 format")
 @IntegrationTest
-@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItAuxDomainImplicitUpgrde {
   private static String opNamespace = null;
   private static String domainNamespace = null;
