@@ -39,7 +39,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -503,7 +502,7 @@ public class LoggingExporter {
     String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
-        .append(ELASTICSEARCH_HOST)
+        .append(elasticSearchHost)
         .append(":")
         .append(ELASTICSEARCH_HTTP_PORT)
         .append("/_cat/indices/")
