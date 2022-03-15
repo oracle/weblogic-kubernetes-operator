@@ -282,6 +282,7 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItT3Channel,
+                  **/ItAuxDomainImplicitUpgrde,
                   **/ItDedicatedMode,
                   **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
