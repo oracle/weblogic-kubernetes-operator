@@ -167,8 +167,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 /**
  * Verify Prometheus, Grafana, Webhook, Coordinator are installed and running
  * Verify the monitoring exporter installed in model in image domain can generate the WebLogic metrics.
@@ -359,8 +357,10 @@ class ItMonitoringExporter {
     try {
       logger.info("Create wdt domain and verify that it's running");
       createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount, false);
-      ingressHost2List =
-              createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
+      String ingressClassName = nginxHelmParams.getIngressClassName();
+      ingressHost2List
+          = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap,
+          false, ingressClassName, false, 0);
       logger.info("Installing Prometheus and Grafana");
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
               domain2Namespace,
@@ -565,8 +565,10 @@ class ItMonitoringExporter {
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-    ingressHost1List =
-       createIngressForDomainAndVerify(domain4Uid, domain4Namespace, clusterNameMsPortMap, false);
+    String ingressClassName = nginxHelmParams.getIngressClassName();
+    ingressHost1List
+        = createIngressForDomainAndVerify(domain4Uid, domain4Namespace, 0, clusterNameMsPortMap,
+        false, ingressClassName, false, 0);
     verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
         domain4Namespace,
