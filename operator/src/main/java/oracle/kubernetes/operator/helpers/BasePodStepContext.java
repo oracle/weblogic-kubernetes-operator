@@ -193,12 +193,8 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   private void addConfiguredEnvVarsExcludingAuxImagePaths(TuningParameters tuningParameters, List<V1EnvVar> vars) {
     getConfiguredEnvVars(tuningParameters).stream()
-            .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()) && !USER_MEM_ARGS.equals(v.getName()))
+            .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()))
             .forEach(var -> addIfMissing(vars, var.getName(), var.getValue(), var.getValueFrom()));
-
-    getConfiguredEnvVars(tuningParameters).stream()
-            .filter(v -> USER_MEM_ARGS.equals(v.getName()))
-            .forEach(var -> addEnvVar(vars, var.getName(), var.getValue()));
   }
 
   private void addAuxImagePathsEnvVarIfExists(TuningParameters tuningParameters, List<V1EnvVar> vars) {
@@ -212,7 +208,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   private void addEnvVar(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
-    if ((value != null) && (!value.isEmpty())) {
+    if (((value != null) && (!value.isEmpty())) || (valueFrom == null)) {
       addEnvVar(vars, name, value);
     } else {
       addEnvVarWithValueFrom(vars, name, valueFrom);
