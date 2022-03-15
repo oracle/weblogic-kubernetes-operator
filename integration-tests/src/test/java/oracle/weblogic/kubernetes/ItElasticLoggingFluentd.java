@@ -191,6 +191,17 @@ class ItElasticLoggingFluentd {
         () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+
+    // create fluentd configuration
+    configFluentd();
+
+    // create and verify WebLogic domain image using model in image with model files
+    String imageName = createAndVerifyDomainImage();
+
+    // create and verify one cluster domain
+    logger.info("Create domain and verify that it's running");
+    createAndVerifyDomain(imageName);
+
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -217,16 +228,6 @@ class ItElasticLoggingFluentd {
         logger,
         "operator to be running in namespace {0}",
         opNamespace);
-
-    // create fluentd configuration
-    configFluentd();
-
-    // create and verify WebLogic domain image using model in image with model files
-    String imageName = createAndVerifyDomainImage();
-
-    // create and verify one cluster domain
-    logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(imageName);
 
     testVarMap = new HashMap<>();
 
