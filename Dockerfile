@@ -46,9 +46,11 @@ RUN set -eux; \
     java -Xshare:dump; \
     useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
     mkdir -m 775 /operator; \
+    mkdir -m 775 /deployment; \
+    mkdir -m 775 /probes; \
     mkdir -m 775 /logs; \
     mkdir /operator/lib; \
-    chown -R oracle:root /operator /logs
+    chown -R oracle:root /operator /deployment /probes /logs
 
 USER oracle
 
@@ -59,8 +61,8 @@ COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /opera
 COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
-  CMD /operator/livenessProbe.sh
+  CMD /probes/livenessProbe.sh
 
-WORKDIR /operator/
+WORKDIR /deployment/
 
-CMD ["/operator/operator.sh"]
+CMD ["/deployment/operator.sh"]

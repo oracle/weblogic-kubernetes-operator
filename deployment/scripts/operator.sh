@@ -13,7 +13,8 @@ relay_SIGTERM() {
 
 trap relay_SIGTERM SIGTERM
 
-/deployment/initialize-external-operator-identity.sh
+DEPLOYMENT_DIR="/deployment"
+${DEPLOYMENT_DIR}/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=$DEBUG_SUSPEND,address=*:$REMOTE_DEBUG_PORT"
@@ -26,7 +27,7 @@ fi
 
 # set up a logging.properties file that has a FileHandler in it, and have it
 # write to /logs/operator.log
-LOGGING_CONFIG="/deployment/logstash.properties"
+LOGGING_CONFIG="${DEPLOYMENT_DIR}/logstash.properties"
 
 # if the java logging level has been customized and is a valid value, update logstash.properties to match
 if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
