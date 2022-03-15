@@ -91,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
@@ -186,15 +187,8 @@ class ItElasticLoggingFluentd {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    // create fluentd configuration
-    configFluentd();
-
-    // create and verify WebLogic domain image using model in image with model files
-    String imageName = createAndVerifyDomainImage();
-
-    // create and verify one cluster domain
-    logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(imageName);
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     // upgrade to latest operator
@@ -212,6 +206,9 @@ class ItElasticLoggingFluentd {
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
+    // check operator pod is not running
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
+
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
     testUntil(
@@ -220,6 +217,16 @@ class ItElasticLoggingFluentd {
         logger,
         "operator to be running in namespace {0}",
         opNamespace);
+
+    // create fluentd configuration
+    configFluentd();
+
+    // create and verify WebLogic domain image using model in image with model files
+    String imageName = createAndVerifyDomainImage();
+
+    // create and verify one cluster domain
+    logger.info("Create domain and verify that it's running");
+    createAndVerifyDomain(imageName);
 
     testVarMap = new HashMap<>();
 

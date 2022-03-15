@@ -81,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -186,6 +187,9 @@ class ItElasticLogging {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+
     // install WebLogic Logging Exporter
     installAndVerifyWlsLoggingExporter(managedServerFilter,
         wlsLoggingExporterYamlFileLoc, elasticSearchNs);
@@ -214,6 +218,9 @@ class ItElasticLogging {
 
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
+    // check operator pod is not running
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
