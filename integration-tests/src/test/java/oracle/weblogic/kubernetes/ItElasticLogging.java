@@ -23,6 +23,8 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -52,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
@@ -62,8 +65,10 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FI
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -75,6 +80,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -194,12 +200,33 @@ class ItElasticLogging {
     testVarMap = new HashMap<String, String>();
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
 
-    StringBuffer elasticsearchUrlBuff =
-        new StringBuffer("curl http://")
-            .append(elasticSearchHost)
-            .append(":")
-            .append(ELASTICSEARCH_HTTP_PORT);
-    k8sExecCmdPrefix = elasticsearchUrlBuff.toString();
+    // upgrade to latest operator
+    HelmParams upgradeHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // build operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
+
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
+    // wait for the operator to be ready
+    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+    testUntil(
+        assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+            "operatorIsReady failed with ApiException"),
+        logger,
+        "operator to be running in namespace {0}",
+        opNamespace);
+
+    String elasticsearchUrlBuff
+        = "curl http://" + elasticSearchHost + ":" + ELASTICSEARCH_HTTP_PORT;
+    k8sExecCmdPrefix = elasticsearchUrlBuff;
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
