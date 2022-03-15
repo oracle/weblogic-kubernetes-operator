@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -426,8 +427,8 @@ class ItOpUpgradeFmwDomainInPV {
   }
 
   private void createFmwDomainAndVerify(String domainVersion) {
-    final String pvName = domainUid + "-" + domainNamespace + "-pv";
-    final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
     final int t3ChannelPort = getNextFreePort();
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster

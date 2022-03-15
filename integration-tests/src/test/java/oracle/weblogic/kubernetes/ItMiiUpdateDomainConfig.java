@@ -99,6 +99,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -131,8 +132,8 @@ class ItMiiUpdateDomainConfig {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-add-config";
-  private static String pvName = domainUid + "-pv"; // name of the persistent volume
-  private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private static final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+  private static final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
   private StringBuffer curlString = null;
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
@@ -334,7 +335,7 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a WebLogic domain with a defined configmap in the 
+   * Create a WebLogic domain with a defined configmap in the
    * configuration/model section of the domain resource.
    * The configmap has multiple sparse WDT model files that define
    * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
@@ -725,7 +726,7 @@ class ItMiiUpdateDomainConfig {
    * Set allowReplicasBelowMinDynClusterSize to false.
    * Make sure that the cluster can be scaled up to 5 servers and
    * scaled down to 1 server.
-   * Create a configmap with a sparse model file with the following attributes 
+   * Create a configmap with a sparse model file with the following attributes
    * Cluster/cluster-1/DynamicServers
    *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
    * Patch the domain resource with the configmap and update the restartVersion.
@@ -947,7 +948,7 @@ class ItMiiUpdateDomainConfig {
   }
 
   // Add an environmental variable with special character
-  // Make sure the variable is available in domain resource with right value 
+  // Make sure the variable is available in domain resource with right value
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
