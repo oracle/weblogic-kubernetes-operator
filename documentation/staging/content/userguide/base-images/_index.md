@@ -43,46 +43,41 @@ description: "Create, obtain, or inspect images for WebLogic Server or Fusion Mi
 
 #### Overview
 
-You will need WebLogic Server or Fusion Middleware Infrastructure
-images to run your WebLogic domains in Kubernetes,
-where the image location is specified in the domain resource's `domain.spec.image` attribute.
-Oracle recommends obtaining such images
-from the Oracle Container Registry (OCR)
+A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes. Oracle recommends obtaining these images from the Oracle Container Registry (OCR)
 or creating custom images using the WebLogic Image Tool.
-The recommended approach depends on your
-[domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}):
+Using either the pre-built image from the Oracle Container Registry or building your own custom image using the WebLogic Image Tool are both recommended approaches for each of the [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) use cases:
 
-* Model in Image domains that leverage auxiliary images:
-  * Directly use an OCR or custom image which only contains the WebLogic Server or Fusion Middleware Infrastructure binaries.
-  * Also use separate auxiliary images to supply WebLogic Deploy Tool install, configuration model files, and application archives.
-  * See:
+* Model in Image domains that leverage [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}):
+  * This is a multiple container image approach that keeps the Oracle binaries separate from the application binaries and domain configuration.
+  * The Oracle Home binaries are provided by the OCR or custom image.
+  * One or more auxiliary images are required to provide the WebLogic Server domain configuration and application binaries.
+  * For additional details:
     * [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
     * [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
     * [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
     * [Auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
 
 * Model in Image domains that _do not_ leverage auxiliary images:
-  * This approach is for Model in Image type domains where
-    the WebLogic Deploy Tooling install and potentially also model files
-    are supplied in the same image that includes WebLogic Server or Fusion Middleware Infrastructure binaries.
+  * This is a single container image approach that groups the Oracle binaries, domain configuration, and application binaries into a single image.
+  * The Oracle Home binaries are provided by the OCR or custom image.
+  * The image containing the Oracle Home must be extended with the WebLogic Deploy Tooling install, the domain configuration as WebLogic Deploy Tooling models, and the application binaries.
   * May use an OCR or custom image as a base image which only contains the WebLogic Server or Fusion Middleware Infrastructure binaries.
   * See [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
 
 * Domain in Image domains:
-  * Create a custom image which contains a WebLogic domain home directory
-    and WebLogic Server or Fusion Middleware Infrastructure binaries.
+  * This is a single container image approach that groups the Oracle binaries, WebLogic Server domain, and application binaries into a single image.
+  * The Oracle Home binaries are provided by the OCR or custom image.
+  * The image containing the Oracle Home must be extended with the WebLogic Server domain and the application binaries.
   * May use an OCR or custom image as a base image which only contains the WebLogic Server or Fusion Middleware Infrastructure binaries.
   * See [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image).
 
-* Domain in PV type domains:
-  * Directly use an OCR or custom image which only contains the WebLogic Server or Fusion Middleware Infrastructure binaries.
-  * WebLogic configuration and applications are separately supplied
-    in a domain home on the PV. It is up to the customer
-    to create and update the domain home (the operator does not do this).
+* Domain in Persistent Volume (PV) type domains:
+  * The Oracle Home binaries are provided by the OCR or custom image.
+  * The WebLogic domain configuration and applications are supplied in a domain home on the PV. The user must create and update the domain home, as needed (the operator does not do this).
   * See:
-    * [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
-    * [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
-    * [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
+  * [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+  * [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
+  * [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
 
 To understand how to update images for a running domain,
 see [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain).
@@ -90,29 +85,14 @@ see [Apply patched images to a running domain](#apply-patched-images-to-a-runnin
 #### Understand Oracle Container Registry images
 
 {{% notice note %}}
-All of the OCR images that are described in this section are built using
-the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
-Customers can also use WIT to build their own WebLogic Server or Fusion Middleware Infrastructure images
-(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
-apply one-off patches to existing OCR images,
-or overlay their own files and applications on top of an OCR image.
-See [Contents](#contents) for information about using this tool
-to create custom WebLogic Server or Fusion Middleware Infrastructure images for the WebLogic Kubernetes Operator.
+All of the OCR images that are described in this section are built using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). Customers can also use the WIT to build their own WebLogic Server or Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches), apply one-off patches to existing OCR images, or overlay their own files and applications on top of an OCR image. See [creating your own custom image](##create-a-custom-image-with-patches-applied) for information about using this tool to create custom WebLogic Server or Fusion Middleware Infrastructure images for the WebLogic Kubernetes Operator.
 {{% /notice %}}
 
-The Oracle Container Registry (OCR) is
-located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/)
-and contains images for licensed commercial Oracle software products
-that you may use in your enterprise for deployment using Docker.
+The Oracle Container Registry (OCR) is located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/) and contains images for licensed commercial Oracle software products that may be used in your enterprise for deployment using a container engine and Kubernetes.
 
-OCR supplies _WebLogic Server images_ which have a pre-installed Oracle Home
-with Oracle WebLogic Server and Coherence.
-OCR also supplies _Fusion Middleware Infrastructure images_
-which  have a pre-installed Oracle Home with Oracle WebLogic Server,
-Coherence, Fusion Middleware Control, and Java Required Files (JRF).
+OCR contains _WebLogic Server images_ which have a pre-installed Oracle Home with Oracle WebLogic Server and Coherence. OCR, also, contains _Fusion Middleware Infrastructure images_ which have a pre-installed Oracle Home with Oracle WebLogic Server, Coherence, Fusion Middleware Control, and Java Required Files (JRF).
 
 See the following sections for information about OCR image names and accessing OCR images:
-
 - [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
 - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
 - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
@@ -122,31 +102,22 @@ See the following sections for information about OCR image names and accessing O
 ##### Compare General Availability to Critical Patch Updates images
 
 {{% notice warning %}}
-The latest Oracle Container Registry (OCR) **GA images**
-include the latest security patches for Oracle Linux and Java,
-and do _not_ include the latest security patches for WebLogic Server.
-Oracle strongly recommends using images with the latest security patches,
-such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+The _WebLogic Server images_ and _Fusion Middleware Infrastructure images_ (**GA images**) on OCR are updated quarterly to include the latest security patches for Oracle Linux and Oracle Java, but do _not_ include the latest security patches for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with all the latest security patches, such as the Critical Patch Updates (**CPU images**) images provided quarterly on OCR or custom generated images using WIT with `--recommendedPatches`.  See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
 
-OCR images WebLogic Server or Fusion Middleware Infrastructure can be 
-either General Availability (GA) images or Critical Patch Updates (CPU) images:
+**GA images** versus **CPU images**:
 
 - General Availability (GA) images.
-  - Located in OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
-  - Updated quarterly.
-  - Includes latest updates for Oracle Linux, and Java, but _not_ for Oracle WebLogic Server.
-  - GA images are free to use and are subject to
-    [Oracle Technology Network (OTN) Developer License Terms](https://www.oracle.com/downloads/licenses/standard-license.html),
-    which include, but are not limited to:
+  - Located in the OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
+  - Updated quarterly with Oracle Linux and Oracle Java security updates.
+  - GA images are free to use and are subject to [Oracle Technology Network (OTN) Developer License Terms](https://www.oracle.com/downloads/licenses/standard-license.html), which include, but are not limited to:
     - Must only be used for the purpose of developing, testing, prototyping, and demonstrating applications.
     - Must _not_ be used for any data processing, business, commercial, or production purposes.
 
 - Critical Patch Updates (CPU) images.
-  - Located in OCR repositories "middleware/weblogic_cpu" and "middleware/fmw-infrastructure_cpu".
-  - Updated quarterly (every CPU cycle).
-  - Includes critical security fixes for Oracle Linux, Java, and Oracle WebLogic Server and Coherence.
+  - Located in the OCR repositories "middleware/weblogic_cpu" and "middleware/fmw-infrastructure_cpu".
+  - Updated quarterly with Oracle Linux and Oracle Java security updates.
+  - Updated quarterly with the latest Patch Set Update (PSU) for WebLogic Server or Fusion Middleware, and all  of the recommended security patches for products included in that distribution.
   - Suitable for production use.
 
 ##### WebLogic distribution installer type
@@ -568,28 +539,37 @@ _Important_:
   or shutdown the running domain entirely before applying the new image.
   See [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image) for background.
 
-- If you specify the `--pull` parameter,
-  and the `--fromImage` base OS image
-  refers to an image in a repository,
-  and the repository image is newer than the locally cached version of the image,
-  then the command will download the repository image
-  to the local docker cache and use it
-  instead of using the outdated local image.
+- WIT `rebase` command:
 
-See [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
+  - The `rebase` command is used for the Domain in Image
+    and Model in Image domain home source types:
 
-##### WIT `update` command
+    - For Domain in Image, `rebase`:
+      - Creates a new WebLogic image and copies an existing WebLogic domain home
+        from an older image to the new image.
+      - The created image is suitable for deploying to an already running
+        domain with an older version of the domain home.
+    - For Model in Image, `rebase`:
+      - Creates a new WebLogic image and copies existing WDT install and models from 
+        an existing image to the new image.
 
-The WIT `update` command:
+  - The new image can be created in one of two ways:
+    - As a layer on an existing
+      WebLogic image in the repository
+      that doesn't already have a domain home, such as an updated CPU image from OCR.
+    - Or, as a new WebLogic image from a base OS image.
 
-- Can be used for all domain home source types (Domain in Image, Model in Image, and Domain in PV).
+- WIT `update` command:
 
-- Creates a new WebLogic image layered on
-  an existing WebLogic image specified in its `--fromImage` parameter
-  (which is in turn layered on a base OS image).
-
-- Optionally generates a domain home in the image using WLST or WDT
-  (for the Domain in Image domain home source type).
+  - Creates a new WebLogic image layered on
+    an existing WebLogic image (specified in WIT's `--fromImage` parameter)
+    - Note that if you specify the `--pull` parameter for WIT,
+      and the `--fromImage` refers to an image in a repository,
+      and the repository image is newer than the locally cached version of the image,
+      then the command will download the repository image
+      to the local docker cache and use it
+      instead of using the outdated local image.
+  - This option can be used to generate a domain home or a model home in the new image using WDT.
 
 - Optionally include a WDT install and model files in the image
   (for the Model in Image domain home soure type).
@@ -604,52 +584,9 @@ _Important_:
     when the update is intended for a running domain.
     Use the [WIT `rebase` command](#wit-rebase-command) instead,
     or shutdown the running domain entirely before applying the new image.
-    See
-    [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain)
-    for background.
-
-  - If you specify `--pull` parameter,
-    and the `--fromImage` refers to an image in a repository,
-    and the repository image is newer than the locally cached version of the image,
-    then the command will download the repository image
-    to the local docker cache and use it
-    instead of using the outdated local image.
-
-See [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
-
-##### WIT `rebase` command
-
-The WIT `rebase` command is designed to be used with the Domain in Image
-domain home source type, and is only needed when you already have a running
-domain and want to update the domain with a new image without shutting
-down the entire domain first. For details, see [Domain in Image](#domain-in-image).
-
-##### WIT `createAuxImage` command
-
-The WIT `createAuxImage` command
-supports creating auxiliary images
-for the Model in Image domain home source type
-The auxiliary images
-solely contain WDT files for the Model in Image use case,
-and are used in addition to the
-domain resource image that contains your WebLogic and Java installs.
-
-See [Auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
-in the Model in Image section of the user guide.
-
-#### Create a custom image with patches applied
-
-All domain home source types require a base image which contains JDK and a WebLogic Server binaries.
-This base image is usually [obtained directly from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry),
-but, as needed, you can also [create your own custom base image](#create-a-custom-base-image).
-
-If you are using the Domain in Image domain home source type,
-then you will additionally need to use this base image
-to [create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image).
-
-Or if you are using the Model in Image domain home source _without_ auxiliary images,
-then you will additionally need to use this base image
-to [create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
+    See [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain) for background.
+  - Optionally includes a WDT install and model files in the image (for the Model in Image domain home soure type).
+  - **Note:** Due to the immutable layering in container images, patching an Oracle Home using the `update` command results in a larger WebLogic Server image. Consider using `rebase` or `create` to reduce the size impact of applying patches.
 
 ##### Create a custom base image
 
@@ -663,25 +600,17 @@ See
 [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
 {{% /notice %}}
 
+1. To download the Image Tool, follow the [Setup](https://oracle.github.io/weblogic-image-tool/quickstart/setup/) instructions and refer to the [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) Guide.
 Here's an example of using the WIT `create` command to create a base WebLogic Server image
 from a base Oracle Linux image, a WebLogic installer download, and a JRE installer download:
 
 1. First, [install the WebLogic Image Tool](#install-the-weblogic-image-tool).
 
-1. Download your desired JRE installer from the 
-   [Oracle Technology Network Java download page](https://www.oracle.com/java/technologies/downloads/)
-   or from the
-   [Oracle Software Delivery Cloud (OSDC)](https://edelivery.oracle.com/osdc/faces/Home.jspx).
+1. Download your desired JRE installer from the  [Oracle Technology Network Java download page](https://www.oracle.com/java/technologies/downloads/) or from the [Oracle Software Delivery Cloud (OSDC)](https://edelivery.oracle.com/osdc/faces/Home.jspx).
 
-1. Download your desired WebLogic Server installer from the
-   [Oracle Technology Network WebLogic Server download page](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
-   or from the
-   [Oracle Software Delivery Cloud (OSDC)](https://edelivery.oracle.com/osdc/faces/Home.jspx).
+1. Download your desired WebLogic Server installer from the [Oracle Technology Network WebLogic Server download page](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html) or from the [Oracle Software Delivery Cloud (OSDC)](https://edelivery.oracle.com/osdc/faces/Home.jspx).
 
-   Note that the WebLogic Server installers may not be fully patched.
-   You will use the "--patches" or "--recommendedPatches" Image Tool options
-   in a later step to add patches.
-
+   Note that the WebLogic Server installers will not be fully patched. You should use the "--patches" or "--recommendedPatches" options in WIT to apply one-off and recommended Oracle patches.
 1. Add the installers to your WIT cache using the
    [WIT `cache` command](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
    For example, assuming you downloaded the installers to the `/home/acmeuser/wls-installers` directory:
@@ -705,13 +634,10 @@ from a base Oracle Linux image, a WebLogic installer download, and a JRE install
      --path=/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
    ```
 
-   For details, see the WIT
-   [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) guide.
+   For details, see the WIT [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) guide.
 
 1. Use the WIT [Create Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
-   to build the image using a default Oracle Linux image as its base,
-   download the patches,
-   and apply the patches.
+   to build the image using a default Oracle Linux image as its base, and download and apply the patches.
 
    For example, use the following command to create a WebLogic Server image
    named `latest_weblogic:12.2.1.4` with
@@ -753,33 +679,31 @@ from a base Oracle Linux image, a WebLogic installer download, and a JRE install
 
    Notes:
 
-   - To enable WIT to download patches,
-     you must supply your My Oracle Support (Oracle Single Sign-On) credentials
-     using the `--user` and `--passwordEnv` parameters.
-     This example assumes that you have set the `MYPWD`
-     shell environment variable so that it contains your password.
-   - The `--type` parameter designates the type of WebLogic Server,
-     Fusion Middleware (FMW) Infrastructure install, etc,
-     to include in the generated image.
-     - For example,
-       the `wls` type corresponds to the WebLogic Server (WLS) generic install,
-       the `wlsslim` type to the WLS slim install,
-       and the `wlsdev` type to the WLS developer install.
-     - See
-       [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
-       for a discussion of some install types.
-     - Run `imagetool create -h` to get the list of accepted types.
-   - The `--recommendedPatches` parameter finds and applies
-     the latest PatchSet Update (PSU)
-     and recommended patches. This takes precedence over `--latestPSU`.
-   - These sample commands use a default base image,
-     which is an Oracle Linux OS image,
-     and, due to specifying the `--pull` parameter,
-     the commands will download (pull) the latest version of this image
-     if the latest version is not already cached locally.
-   - See the
-     [WebLogic Image Tool User Guide](https://oracle.github.io/weblogic-image-tool/userguide/tools/)
-     for details about each parameter.
+   You can also [inspect](#inspect-images) the contents of the image.
+
+**Notes:**
+- To enable WIT to download patches,
+  you must supply your My Oracle Support (Oracle Single Sign-On) credentials
+  using the `--user` and `--passwordEnv` parameters (or one of the other password CLA options).
+  This example assumes that you have set the `MYPWD`
+  shell environment variable so that it contains your password.
+- The `--type` parameter designates the Oracle product install, such as WebLogic Server,
+  Fusion Middleware (FMW) Infrastructure install, etc.,
+  to include in the generated image. For example,
+  the `wls` type corresponds to the WebLogic Server (WLS) generic install,
+  the `wlsslim` type to the WLS slim install,
+  and the `wlsdev` type to the WLS developer install.
+  See
+  [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+  for a discussion of each install type.
+- The `--recommendedPatches` parameter finds and applies the latest PatchSet Update (PSU)
+  and recommended patches for each of the products included in the installer. For example, for WebLogic Server, the recommended patches for Coherence and TopLink are included. 
+- These sample commands use a default base image, which is an Oracle Linux OS image,
+  and downloads (pulls) this image only if it is not already cached locally.
+  You can use `docker images` to view your image cache.
+  The `--pull` parameter for WIT is passed to the container build engine which forces a check to the remote repository, if applicable, prior to the build execution of the new image in order to update any image used during the build (updates dependencies).
+- See the [WebLogic Image Tool User Guide](https://oracle.github.io/weblogic-image-tool/userguide/tools/)
+  for details about each parameter.
 
 1. After the tool creates the image, verify that the image is in your local repository:
 
@@ -1145,7 +1069,7 @@ For the Model in Image domain home source type _without_ using auxiliary images:
 
 - The container image contains the JDK, WebLogic Server binaries,
   a [WebLogic Deployment Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) installation,
-  and potentially also WDT model files application archive files.
+  WDT model files, and an application archive file.
 - The domain home is generated by the operator during runtime.
 
 If you need to update the image for a running Model in Image domain,
