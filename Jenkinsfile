@@ -101,7 +101,7 @@ pipeline {
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
-        kubeconfig = "${result_root}/kubeconfig"
+        kubeconfig_file = "${result_root}/kubeconfig"
 
         kind_name = "kind"
         kind_network = "kind"
@@ -380,10 +380,10 @@ pipeline {
             steps {
                 sh '''
                     export PATH=${runtime_path}
-                    if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig}"; then
+                    if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                         echo "Deleted orphaned kind cluster ${kind_name}"
                     fi
-                    cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig}" --config=-
+                    cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
@@ -402,7 +402,7 @@ nodes:
         containerPath: ${pv_root}
 EOF
 
-                    export KUBECONFIG=${kubeconfig}
+                    export KUBECONFIG=${kubeconfig_file}
                     kubectl cluster-info --context "kind-${kind_name}"
 
                     for node in $(kind get nodes --name "${kind_name}"); do
@@ -458,7 +458,7 @@ EOF
                     mkdir -m777 -p "${WORKSPACE}/.mvn"
                     touch ${WORKSPACE}/.mvn/maven.config
                     
-                    export KUBECONFIG=${kubeconfig}
+                    export KUBECONFIG=${kubeconfig_file}
                     K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                     export NO_PROXY="${K8S_NODEPORT_HOST}"
 
@@ -493,7 +493,7 @@ EOF
             steps {
                 sh '''
                     export PATH=${runtime_path}
-                    export KUBECONFIG=${kubeconfig}
+                    export KUBECONFIG=${kubeconfig_file}
                     mkdir -m777 -p ${result_root}/kubelogs
                     if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
                         echo "Failed to export kind logs for kind cluster ${kind_name}"
@@ -527,7 +527,7 @@ EOF
                   docker rm --force "${registry_name}"
                 fi
                 echo 'Remove old Kind cluster (if any)...'
-                if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig}"; then
+                if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                     echo "Failed to delete kind cluster ${kind_name}"
                 fi
                 
