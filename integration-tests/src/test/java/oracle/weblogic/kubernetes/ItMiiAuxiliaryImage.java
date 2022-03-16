@@ -749,7 +749,7 @@ class ItMiiAuxiliaryImage {
 
     String wdtInstallPath = "/aux";
     String wdtModelHomePath = "/aux/y";
-    String domainUid = "domain4";
+    String domainUid = "domain5";
 
     // creating image with wdtModelHome dir located under wdtInstallHome dir
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
