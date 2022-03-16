@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,9 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import io.kubernetes.client.openapi.models.ApiextensionsV1ServiceReference;
+import io.kubernetes.client.openapi.models.ApiextensionsV1WebhookClientConfig;
+import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
@@ -32,23 +36,29 @@ import io.kubernetes.client.openapi.models.V1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1WebhookConversion;
 import io.kubernetes.client.util.Yaml;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.MainDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.apache.commons.codec.binary.Base64;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
+import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
 /** Helper class to ensure Domain CRD is created. */
@@ -59,6 +69,8 @@ public class CrdHelper {
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
+  public static final String VERSION_V1 = "v1";
+  public static final String WEBHOOK_PATH = "/webhook";
 
   private CrdHelper() {
   }
@@ -76,7 +88,7 @@ public class CrdHelper {
   }
 
   static void writeCrdFiles(String crdFileName) throws URISyntaxException {
-    CrdContext context = new CrdContext(null, null);
+    CrdContext context = new CrdContext(null, null, null, null);
 
     final URI outputFile = asFileURI(crdFileName);
 
@@ -122,8 +134,13 @@ public class CrdHelper {
   // Map = gson.fromJson(Map.class)
   // yaml dump ?  // ordering and format likely to change massively
 
-  public static Step createDomainCrdStep(MainDelegate mainDelegate) {
-    return new CrdStep(mainDelegate);
+  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
+    return new CrdStep(version, productVersion, null);
+  }
+
+  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion,
+                                         Certificates certificates) {
+    return new CrdStep(version, productVersion, certificates);
   }
 
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
@@ -146,8 +163,8 @@ public class CrdHelper {
   static class CrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(MainDelegate mainDelegate) {
-      context = new CrdContext(mainDelegate, this);
+    CrdStep(KubernetesVersion version, SemanticVersion productVersion, Certificates certificates) {
+      context = new CrdContext(version, productVersion, this, certificates);
     }
 
     @Override
@@ -160,20 +177,25 @@ public class CrdHelper {
   static class CrdContext {
     private final Step conflictStep;
     private final V1CustomResourceDefinition model;
-    private final MainDelegate mainDelegate;
+    private final KubernetesVersion version;
+    private final SemanticVersion productVersion;
+    private final Certificates certificates;
 
-    CrdContext(MainDelegate mainDelegate, Step conflictStep) {
-      this.mainDelegate = mainDelegate;
+    CrdContext(KubernetesVersion version, SemanticVersion productVersion,
+               Step conflictStep, Certificates certificates) {
+      this.version = version;
+      this.productVersion = productVersion;
       this.conflictStep = conflictStep;
-      this.model = createModel(Optional.ofNullable(mainDelegate).map(MainDelegate::getProductVersion).orElse(null));
+      this.model = createModel(productVersion, certificates);
+      this.certificates = certificates;
     }
 
-    static V1CustomResourceDefinition createModel(SemanticVersion productVersion) {
+    static V1CustomResourceDefinition createModel(SemanticVersion productVersion, Certificates certificates) {
       V1CustomResourceDefinition model = new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
-          .spec(createSpec());
+          .spec(createSpec(certificates));
       return AnnotationHelper.withSha256Hash(model,
           Objects.requireNonNull(
               model.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
@@ -189,13 +211,29 @@ public class CrdHelper {
       return metadata;
     }
 
-    static V1CustomResourceDefinitionSpec createSpec() {
+    static V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
       return new V1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .preserveUnknownFields(false)
           .versions(getCrdVersions())
           .scope("Namespaced")
-          .names(getCrdNames());
+          .names(getCrdNames())
+          .conversion(createConversionWebhook(certificates));
+    }
+
+    private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
+      return Optional.ofNullable(certificates).map(c -> c.getWebhookCertificateData())
+              .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
+    }
+
+    private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
+      return new V1CustomResourceConversion().strategy(WEBHOOK)
+              .webhook(new V1WebhookConversion().conversionReviewVersions(
+                      Arrays.asList(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
+                      .service(new ApiextensionsV1ServiceReference().name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
+                              .namespace(getWebhookNamespace()).port(CONVERSION_WEBHOOK_HTTPS_PORT)
+                              .path(WEBHOOK_PATH))
+                      .caBundle(caBundle)));
     }
 
     static String getVersionFromCrdSchemaFileName(String name) {
@@ -295,7 +333,7 @@ public class CrdHelper {
     }
 
     private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
-      return COMPARATOR.isOutdatedCrd(mainDelegate.getProductVersion(), existingCrd, this.model);
+      return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, this.model);
     }
 
     private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
@@ -313,6 +351,11 @@ public class CrdHelper {
       return found;
     }
 
+    private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
+      return existingCrd.getSpec().getConversion() != null
+              && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
+    }
+
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
       for (V1CustomResourceDefinitionVersion version : versions) {
@@ -328,6 +371,12 @@ public class CrdHelper {
 
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
           existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
+    }
+
+    Step updateExistingCrdWithConversion(Step next, V1CustomResourceDefinition existingCrd) {
+      existingCrd.getSpec().conversion(createConversionWebhook(certificates));
+      return new CallBuilder().replaceCustomResourceDefinitionAsync(
+              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }
 
     Step updateCrd(Step next, V1CustomResourceDefinition existingCrd) {
@@ -350,14 +399,14 @@ public class CrdHelper {
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
         V1CustomResourceDefinition existingCrd = callResponse.getResult();
-        mainDelegate.getCrdReference().set(existingCrd);
-
         if (existingCrd == null) {
           return doNext(createCrd(getNext()), packet);
         } else if (isOutdatedCrd(existingCrd)) {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
           return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+        } else if (!existingCrdContainsConversionWebhook(existingCrd)) {
+          return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);
         }
@@ -365,7 +414,6 @@ public class CrdHelper {
 
       @Override
       protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        mainDelegate.getCrdReference().set(null);
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -385,10 +433,7 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        V1CustomResourceDefinition existingCrd = callResponse.getResult();
-        mainDelegate.getCrdReference().set(existingCrd);
-
-        LOGGER.info(MessageKeys.CREATING_CRD, existingCrd.getMetadata().getName());
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 
@@ -414,9 +459,7 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        V1CustomResourceDefinition existingCrd = callResponse.getResult();
-        mainDelegate.getCrdReference().set(existingCrd);
-        LOGGER.info(MessageKeys.CREATING_CRD, existingCrd.getMetadata().getName());
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse.getResult().getMetadata().getName());
         return doNext(packet);
       }
 

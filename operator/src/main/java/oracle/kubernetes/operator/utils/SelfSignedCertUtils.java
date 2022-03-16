@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -42,6 +42,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
 /**
  * Utility class for generating key-pair and self-signed certificates.
@@ -50,6 +51,8 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public final class SelfSignedCertUtils {
 
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
+  public static final String WEBLOGIC_OPERATOR_WEBHOOK_SVC = "weblogic-operator-webhook-svc";
+  public static final String WEBHOOK_CERTIFICATE = "webhookCert";
 
   /**
    * Generates a key pair using the BouncyCastle lib.
@@ -94,9 +97,10 @@ public final class SelfSignedCertUtils {
    * @throws CertIOException on building JcaContentSignerBuilder
    * @throws CertificateException on getting certificate from provider
    */
-  public static X509Certificate generateCertificate(KeyPair keyPair, String hashAlgorithm, String commonName,
-                                                    int certificateValidityDays)
+  public static X509Certificate generateCertificate(String cert, KeyPair keyPair, String hashAlgorithm,
+                                                    String commonName, int certificateValidityDays)
           throws OperatorCreationException, CertificateException, CertIOException {
+
     Instant now = Instant.now();
     Date notBefore = Date.from(now);
     Date notAfter = Date.from(now.plus(Duration.ofDays(certificateValidityDays)));
@@ -111,20 +115,25 @@ public final class SelfSignedCertUtils {
                     x500Name,
                     keyPair.getPublic())
                     .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
-                    .addExtension(Extension.subjectAlternativeName, false, getSAN());
+                    .addExtension(Extension.subjectAlternativeName, false, getSAN(cert));
 
     return new JcaX509CertificateConverter()
             .setProvider(new BouncyCastleProvider()).getCertificate(certificateBuilder.build(contentSigner));
   }
 
   @NotNull
-  private static GeneralNames getSAN() {
+  private static GeneralNames getSAN(String cert) {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
-    return new GeneralNames(new GeneralName[] {
+    String namespace = getOperatorNamespace();
+    if (WEBHOOK_CERTIFICATE.equals(cert)) {
+      host = WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+      namespace = getWebhookNamespace();
+    }
+    return new GeneralNames(new GeneralName[]{
         new GeneralName(GeneralName.dNSName, host),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace()),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc"),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local")});
+        new GeneralName(GeneralName.dNSName, host + "." + namespace),
+        new GeneralName(GeneralName.dNSName, host + "." + namespace + ".svc"),
+        new GeneralName(GeneralName.dNSName, host + "." + namespace + ".svc.cluster.local")});
   }
 
   private static X500NameBuilder createX500NameBuilder(String commonName) {

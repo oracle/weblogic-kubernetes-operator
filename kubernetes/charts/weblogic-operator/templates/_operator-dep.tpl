@@ -3,6 +3,7 @@
 
 {{- define "operator.operatorDeployment" }}
 ---
+{{- if not .webhookOnly }}
 apiVersion: "apps/v1"
 kind: "Deployment"
 metadata:
@@ -46,7 +47,7 @@ spec:
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
         command: ["bash"]
-        args: ["/operator/operator.sh"]
+        args: ["/deployment/operator.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -97,11 +98,11 @@ spec:
             {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
-          mountPath: "/operator/config"
+          mountPath: "/deployment/config"
         - name: "weblogic-operator-debug-cm-volume"
-          mountPath: "/operator/debug-config"
+          mountPath: "/deployment/debug-config"
         - name: "weblogic-operator-secrets-volume"
-          mountPath: "/operator/secrets"
+          mountPath: "/deployment/secrets"
           readOnly: true
         {{- if .elkIntegrationEnabled }}
         - mountPath: "/logs"
@@ -113,14 +114,15 @@ spec:
           exec:
             command:
             - "bash"
-            - "/operator/livenessProbe.sh"
+            - "/probes/livenessProbe.sh"
           initialDelaySeconds: 40
-          periodSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           exec:
             command:
             - "bash"
-            - "/operator/readinessProbe.sh"
+            - "/probes/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -164,4 +166,171 @@ spec:
           - key: logstash.conf
             path: logstash.conf
       {{- end }}
+{{- end }}
+---
+  {{ $chartVersion := .Chart.Version }}
+  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
+  {{- if or (ne $webhookExists "true") (.recreateWebhook) }}
+    # webhook does not exist or chart version is newer, create a new webhook
+    apiVersion: "v1"
+    kind: "ConfigMap"
+    metadata:
+      labels:
+        weblogic.webhookName: {{ .Release.Namespace | quote }}
+      name: "weblogic-webhook-cm"
+      namespace: {{ .Release.Namespace | quote }}
+    data:
+      serviceaccount: {{ .serviceAccount | quote }}
+---
+    # webhook does not exist or chart version is newer, create a new webhook
+    apiVersion: "apps/v1"
+    kind: "Deployment"
+    metadata:
+      name: "weblogic-operator-webhook"
+      namespace: {{ .Release.Namespace | quote }}
+      labels:
+        weblogic.webhookName: {{ .Release.Namespace | quote }}
+        weblogic.webhookVersion: {{ .Chart.Version }}
+      {{- if .preserveWebhook }}
+      annotations:
+        "helm.sh/hook": pre-install
+        "helm.sh/resource-policy": keep
+        "helm.sh/hook-delete-policy": "before-hook-creation"
+      {{- end }}
+    spec:
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          weblogic.webhookName: {{ .Release.Namespace | quote }}
+      replicas: 1
+      template:
+        metadata:
+          {{- with .annotations }}
+          annotations:
+          {{- end }}
+          {{- range $key, $value := .annotations }}
+            {{ $key }}: {{ $value | quote }}
+          {{- end }}
+          labels:
+            weblogic.webhookName: {{ .Release.Namespace | quote }}
+            app: "weblogic-operator-webhook"
+          {{- range $key, $value := .labels }}
+            {{ $key }}: {{ $value | quote }}
+          {{- end }}
+        spec:
+          serviceAccountName: {{ .serviceAccount | quote }}
+          {{- with .nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          {{- with .affinity }}
+          affinity:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          containers:
+          - name: "weblogic-operator-webhook"
+            image: {{ .image | quote }}
+            imagePullPolicy: {{ .imagePullPolicy | quote }}
+            command: ["bash"]
+            args: ["/deployment/webhook.sh"]
+            env:
+            - name: "WEBHOOK_NAMESPACE"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.namespace"
+            - name: "WEBHOOK_POD_NAME"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.name"
+            - name: "WEBHOOK_POD_UID"
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.uid"
+            - name: "JAVA_LOGGING_LEVEL"
+              value: {{ .javaLoggingLevel | quote }}
+            - name: "JAVA_LOGGING_MAXSIZE"
+              value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
+            - name: "JAVA_LOGGING_COUNT"
+              value: {{ .javaLoggingFileCount | default 10 | quote }}
+            {{- if .remoteDebugNodePortEnabled }}
+            - name: "REMOTE_DEBUG_PORT"
+              value: {{ .webhookDebugHttpPort | quote }}
+            - name: "DEBUG_SUSPEND"
+              {{- if .suspendOnDebugStartup }}
+              value: "y"
+              {{- else }}
+              value: "n"
+              {{- end }}
+            {{- end }}
+            resources:
+              requests:
+                cpu: {{ .cpuRequests | default "100m" }}
+                memory: {{ .memoryRequests | default "100Mi" }}
+              limits:
+                {{- if .cpuLimits}}
+                cpu: {{ .cpuLimits }}
+                {{- end }}
+                {{- if .memoryLimits}}
+                memory: {{ .memoryLimits }}
+                {{- end }}
+            volumeMounts:
+            - name: "weblogic-webhook-cm-volume"
+              mountPath: "/deployment/config"
+            - name: "weblogic-webhook-secrets-volume"
+              mountPath: "/deployment/secrets"
+              readOnly: true
+            {{- if not .remoteDebugNodePortEnabled }}
+            livenessProbe:
+              exec:
+                command:
+                - "bash"
+                - "/probes/livenessProbe.sh"
+              initialDelaySeconds: 40
+              periodSeconds: 5
+            readinessProbe:
+              exec:
+                command:
+                - "bash"
+                - "/probes/readinessProbe.sh"
+              initialDelaySeconds: 2
+              periodSeconds: 10
+            {{- end }}
+          {{- if .elkIntegrationEnabled }}
+          - name: "logstash"
+            image: {{ .logStashImage | quote }}
+            volumeMounts:
+            - name: "log-dir"
+              mountPath: "/logs"
+            - name: "logstash-config-cm-volume"
+              mountPath: "/usr/share/logstash/pipeline"
+            env:
+            - name: "ELASTICSEARCH_HOST"
+              value: {{ .elasticSearchHost | quote }}
+            - name: "ELASTICSEARCH_PORT"
+              value: {{ .elasticSearchPort | quote }}
+          {{- end }}
+          {{- if .imagePullSecrets }}
+          imagePullSecrets:
+          {{ .imagePullSecrets | toYaml }}
+          {{- end }}
+          volumes:
+          - name: "weblogic-webhook-cm-volume"
+            configMap:
+              name: "weblogic-webhook-cm"
+          - name: "weblogic-webhook-secrets-volume"
+            secret:
+              secretName: "weblogic-webhook-secrets"
+          {{- if .elkIntegrationEnabled }}
+          - name: "log-dir"
+            emptyDir:
+              medium: "Memory"
+          - name: "logstash-config-cm-volume"
+            configMap:
+              name: "weblogic-webhook-logstash-cm"
+              items:
+              - key: logstash.conf
+                path: logstash.conf
+          {{- end }}
+  {{- end }}
 {{- end }}
