@@ -562,7 +562,7 @@
   </dependencies>
 
   <properties>
-    <sonar.organization>weblogic</sonar.organization>
+    <sonar.organization>oracle</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
