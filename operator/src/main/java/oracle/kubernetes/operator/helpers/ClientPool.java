@@ -66,7 +66,6 @@ public class ClientPool extends Pool<ApiClient> {
 
   @Override
   public void discard(ApiClient client) {
-    client = null;
     instance.updateAndGet(newClient -> getApiClient());
   }
 
