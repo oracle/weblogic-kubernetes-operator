@@ -77,7 +77,7 @@ public class WebLogicImageTool {
 
     return Command.withParams(
         defaultCommandParams()
-            .command(buildiWitCommand())
+            .command(buildWitCommand())
             .env(params.env())
             .redirect(params.redirect()))
         .execute();
@@ -104,7 +104,7 @@ public class WebLogicImageTool {
         .download(DOWNLOAD_DIR + "/" + version);
   }
 
-  private String buildiWitCommand() {
+  private String buildWitCommand() {
     LoggingFacade logger = getLogger();
     String command =
         IMAGE_TOOL
