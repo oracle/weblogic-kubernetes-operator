@@ -1251,6 +1251,12 @@ public class CommonTestUtils {
     logger.info("Found the " + resourcePath + " configuration");
   }
 
+  /**
+   * Returns the java system property value, converting an empty string to null.
+   *
+   * @param propertyName the Java system property name
+   * @return the actual property value, or null
+   */
   public static String getNonEmptySystemProperty(String propertyName) {
     String propertyValue = System.getProperty(propertyName);
     if (propertyValue != null && propertyValue.isEmpty()) {
@@ -1259,6 +1265,14 @@ public class CommonTestUtils {
     return propertyValue;
   }
 
+  /**
+   * Returns the java system property value or the default.
+   * Any an empty string in the actual value is treated as null so that the default is returned.
+   *
+   * @param propertyName the Java system property name
+   * @param defaultValue the value to return is the property
+   * @return the actual property value or the default value
+   */
   public static String getNonEmptySystemProperty(String propertyName, String defaultValue) {
     String propertyValue = System.getProperty(propertyName);
     if (propertyValue == null || propertyValue.isEmpty()) {
