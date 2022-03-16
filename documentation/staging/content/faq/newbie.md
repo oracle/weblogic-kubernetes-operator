@@ -118,8 +118,11 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 **Q:** How can I get a patched Oracle container image for running in Kubernetes (one-off patches, overlays, CPUs, etc.)?
 
 **A:** Download pre-patched images from the Oracle Container Registry or use WebLogic Image Tool to create your own.
-For additional information on WebLogic container images on Oracle Container registry, see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/#obtain-images-from-the-oracle-container-registry" >}}). 
-For additional information on creating new container images with WebLogic Image Tool, see [Patch WebLogic Server images]({{< relref "/userguide/base-images/#create-a-custom-image-with-patches-applied" >}})).
+For additional information on WebLogic container images on Oracle Container registry,
+see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/_index.md#obtain-images-from-the-oracle-container-registry" >}}).
+
+For additional information on creating new container images with the WebLogic Image Tool,
+see [Patch WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 
