@@ -132,7 +132,7 @@ public class DomainCustomResourceConverter {
     help.printHelp(120, "Converts V8 or earlier domain custom resource yaml to V9 or a future version."
                     + "\n       java -cp <operator-jar> "
                     + "oracle.kubernetes.operator.DomainCustomResourceConverter "
-                    + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-o overwrite_existing_file] "
+                    + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-o --overwriteExistingFile] "
                     + "[-h --help]",
             "", options, "");
     System.exit(1);
