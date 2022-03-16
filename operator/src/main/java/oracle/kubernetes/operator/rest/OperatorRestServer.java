@@ -25,7 +25,7 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
  *       SSL certificate contains the the in-cluster hostnames for contacting this port.
  * </ul>
  */
-public class RestServer extends BaseRestServer {
+public class OperatorRestServer extends BaseRestServer {
   private final String baseExternalHttpsUri;
   private final String baseInternalHttpsUri;
   private HttpServer externalHttpsServer;
@@ -38,7 +38,7 @@ public class RestServer extends BaseRestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  RestServer(RestConfig config) {
+  OperatorRestServer(RestConfig config) {
     super(config);
     LOGGER.entering();
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
@@ -56,7 +56,7 @@ public class RestServer extends BaseRestServer {
     LOGGER.entering();
     try {
       if (INSTANCE == null) {
-        INSTANCE = new RestServer(restConfig);
+        INSTANCE = new OperatorRestServer(restConfig);
         return;
       }
 

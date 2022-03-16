@@ -20,9 +20,11 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FilenameUtils;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.INPUT_FILE_NON_EXISTENT;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_DIRECTORY;
+import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NON_EXISTENT;
 import static oracle.kubernetes.operator.logging.MessageKeys.PRINT_HELP;
@@ -46,13 +48,18 @@ public class DomainCustomResourceConverter {
 
     File inputFile = new File(converter.inputFileName);
     File outputDir = new File(converter.outputDir);
+    File outputFile = new File(converter.outputDir + "/" + converter.outputFileName);
 
     if (!inputFile.exists()) {
       throw new RuntimeException(LOGGER.formatMessage(INPUT_FILE_NON_EXISTENT, converter.inputFileName));
     }
 
     if (!outputDir.exists()) {
-      throw new RuntimeException(OUTPUT_FILE_NON_EXISTENT);
+      throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_NON_EXISTENT, outputDir));
+    }
+
+    if (outputFile.exists()) {
+      throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_EXISTS, outputFile.getName()));
     }
 
     convertDomain(converter);
@@ -77,8 +84,10 @@ public class DomainCustomResourceConverter {
           String outputFileName,
           String inputFileName) {
     this.outputDir = Optional.ofNullable(outputDir).orElse(new File(inputFileName).getParent());
+    String inputFileNameBase = FilenameUtils.getBaseName(inputFileName);
+    String inputFileNameExtension  = FilenameUtils.getExtension(inputFileName);
     this.outputFileName = Optional.ofNullable(outputFileName)
-            .orElse("Converted_" + new File(inputFileName).getName());
+            .orElse(inputFileNameBase + "__converted." + inputFileNameExtension);
     this.inputFileName = inputFileName;
   }
 

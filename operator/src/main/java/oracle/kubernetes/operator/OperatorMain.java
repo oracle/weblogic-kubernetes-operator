@@ -28,8 +28,8 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.OperatorRestServer;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
-import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -44,13 +44,13 @@ import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Kubernetes Operator for WebLogic. */
-public class Main extends BaseMain {
+public class OperatorMain extends BaseMain {
 
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
-  private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
+  private static final NextStepFactory NEXT_STEP_FACTORY = OperatorMain::createInitializeInternalIdentityStep;
 
   /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
   private static final long CRD_DETECTION_DELAY = 10;
@@ -161,13 +161,13 @@ public class Main extends BaseMain {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    Main main = createMain(getBuildProperties());
+    OperatorMain operatorMain = createMain(getBuildProperties());
 
     try {
-      main.startDeployment(main::completeBegin);
+      operatorMain.startDeployment(operatorMain::completeBegin);
 
       // now we just wait until the pod is terminated
-      main.waitForDeath();
+      operatorMain.waitForDeath();
 
       // stop the REST server
       stopRestServer();
@@ -176,18 +176,18 @@ public class Main extends BaseMain {
     }
   }
 
-  static @Nonnull Main createMain(Properties buildProps) {
+  static @Nonnull OperatorMain createMain(Properties buildProps) {
     final MainDelegateImpl delegate = new MainDelegateImpl(buildProps, wrappedExecutorService);
 
     delegate.logStartup(LOGGER);
-    return new Main(delegate);
+    return new OperatorMain(delegate);
   }
 
   DomainNamespaces getDomainNamespaces() {
     return delegate.getDomainNamespaces();
   }
 
-  Main(MainDelegate delegate) {
+  OperatorMain(MainDelegate delegate) {
     super(delegate);
     this.delegate = delegate;
     stuckPodProcessing = new StuckPodProcessing(delegate);
@@ -392,10 +392,10 @@ public class Main extends BaseMain {
   @Override
   protected void startRestServer()
       throws Exception {
-    RestServer.create(
+    OperatorRestServer.create(
         new RestConfigImpl(delegate.getPrincipal(), delegate.getDomainNamespaces()::getNamespaces,
                 new Certificates(delegate)));
-    RestServer.getInstance().start(container);
+    OperatorRestServer.getInstance().start(container);
   }
 
   // -----------------------------------------------------------------------------
@@ -406,8 +406,8 @@ public class Main extends BaseMain {
   // -----------------------------------------------------------------------------
 
   private static void stopRestServer() {
-    RestServer.getInstance().stop();
-    RestServer.destroy();
+    OperatorRestServer.getInstance().stop();
+    OperatorRestServer.destroy();
   }
 
   @Override

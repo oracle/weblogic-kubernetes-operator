@@ -70,7 +70,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>oracle.kubernetes.operator.Main</mainClass>
+              <mainClass>oracle.kubernetes.operator.OperatorMain</mainClass>
             </manifest>
             <manifestEntries>
               <Implementation-Title>${project.artifactId}</Implementation-Title>

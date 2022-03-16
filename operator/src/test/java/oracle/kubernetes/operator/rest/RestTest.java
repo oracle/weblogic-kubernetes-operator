@@ -90,7 +90,7 @@ class RestTest extends JerseyTest {
 
   @Override
   protected Application configure() {
-    return new RestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
+    return new OperatorRestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
   }
 
   // Note: the #configure method is called during class initialization, before the restBackend field
