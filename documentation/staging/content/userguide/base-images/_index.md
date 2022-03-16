@@ -60,7 +60,7 @@ Using either the pre-built image from the Oracle Container Registry or building 
 * Model in Image domains that _do not_ leverage auxiliary images:
   * This is a single container image approach that groups the Oracle binaries, domain configuration, and application binaries into a single image.
   * The Oracle Home binaries are provided by the OCR or custom image.
-  * The image containing the Oracle Home must be extended with the WebLogic Deploy Tooling install, the domain configuration as WebLogic Deploy Tooling models, and the application binaries.
+  * The image containing the Oracle Home must be extended with the WebLogic Deploy Tooling installation, the domain configuration as WebLogic Deploy Tooling models, and the application binaries.
   * May use an OCR or custom image as a base image which only contains the WebLogic Server or Fusion Middleware Infrastructure binaries.
   * See [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
 
@@ -85,7 +85,7 @@ see [Apply patched images to a running domain](#apply-patched-images-to-a-runnin
 #### Understand Oracle Container Registry images
 
 {{% notice note %}}
-All of the OCR images that are described in this section are built using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). Customers can also use the WIT to build their own WebLogic Server or Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches), apply one-off patches to existing OCR images, or overlay their own files and applications on top of an OCR image. See [creating your own custom image](##create-a-custom-image-with-patches-applied) for information about using this tool to create custom WebLogic Server or Fusion Middleware Infrastructure images for the WebLogic Kubernetes Operator.
+All of the OCR images that are described in this section are built using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). You can also use the WIT to build your own WebLogic Server or Fusion Middleware Infrastructure images (with the latest Oracle Linux images, Java updates, and WebLogic Server patches), apply one-off patches to existing OCR images, or overlay your own files and applications on top of an OCR image. See [creating your own custom image](#create-a-custom-image-with-patches-applied) for information about using this tool to create custom WebLogic Server or Fusion Middleware Infrastructure images for the WebLogic Kubernetes Operator.
 {{% /notice %}}
 
 The Oracle Container Registry (OCR) is located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/) and contains images for licensed commercial Oracle software products that may be used in your enterprise for deployment using a container engine and Kubernetes.
@@ -102,10 +102,10 @@ See the following sections for information about OCR image names and accessing O
 ##### Compare General Availability to Critical Patch Updates images
 
 {{% notice warning %}}
-The _WebLogic Server images_ and _Fusion Middleware Infrastructure images_ (**GA images**) on OCR are updated quarterly to include the latest security patches for Oracle Linux and Oracle Java, but do _not_ include the latest security patches for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with all the latest security patches, such as the Critical Patch Updates (**CPU images**) images provided quarterly on OCR or custom generated images using WIT with `--recommendedPatches`.  See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+The _WebLogic Server images_ and _Fusion Middleware Infrastructure images_ (**General Availability images**) on OCR are updated quarterly to include the latest security patches for Oracle Linux and Oracle Java, but do _not_ include the latest security patches for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with all the latest security patches, such as the Critical Patch Updates images provided quarterly on OCR or custom generated images using WIT with `--recommendedPatches`.  See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
 
-**GA images** versus **CPU images**:
+**General Availibility images** versus **Critical Patch Updates images**:
 
 - General Availability (GA) images.
   - Located in the OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
@@ -214,7 +214,7 @@ After the Oracle Standard Terms and Restrictions have been accepted,
 you can pull images of the software from OCR using the standard `docker pull` command
 while using your SSO for your `docker login` credentials.
 
-For example, to use docker to pull an image from OCR:
+For example, to use Docker to pull an image from OCR:
 
 1. Accept the Oracle Standard Terms and Restrictions
    for the Oracle software images that you intend to deploy:
@@ -242,21 +242,21 @@ For example, to use docker to pull an image from OCR:
         that links the software images
         to your Oracle Single Sign-On login credentials.
         This database is automatically checked when
-        you use docker pull to obtain images from OCR.
+        you use Docker pull to obtain images from OCR.
 
    **Note**: This step is only needed once for each image name (not the tag level).
    For example, if you accept the terms for the "weblogic_cpu"
    link in the "middleware" repository, then
    the acceptance applies to all versions of WebLogic CPU images.
 
-1. Log docker in to the Oracle Container Registry. For example,
+1. Log Docker in to the Oracle Container Registry. For example,
    the following command will prompt for your SSO credentials:
 
    ```shell
    $ docker login container-registry.oracle.com
    ```
 
-1. Use docker to pull the desired image:
+1. Use Docker to pull the desired image:
 
    ```shell
    $ docker pull container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
@@ -266,13 +266,13 @@ For example, to use docker to pull an image from OCR:
    (which uses "weblogic" GA images with version 12.2.1.4),
    then pull `container-registry.oracle.com/middleware/weblogic:12.2.1.4`).
 
-1. Use docker to display an inventory of your local image cache:
+1. Use Docker to display an inventory of your local image cache:
 
    ```shell
    $ docker images
    ```
 
-1. If desired, you can [inspect](inspect-images) the content of the image.
+1. If desired, you can [inspect](#inspect-images) the content of the image.
 
 __Notes:__
 - If you are using a multi-node Kubernetes cluster,
@@ -420,13 +420,13 @@ for accessing the registry, see the Kubernetes documentation about
 Alternatively, it may be preferable to manually place an image in advance
 on each Kubernetes worker node in your Kubernetes cluster.
 
-For example, if the desired image is located in a docker registry,
+For example, if the desired image is located in a Docker registry,
 then you can manually call `docker login` and `docker pull` on each
 worker node. For the steps to do with Orace Container Registry images,
 see [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
 
 As another example,
-if the docker image is located in a local docker cache,
+if the Docker image is located in a local docker cache,
 then you can get an inventory of the cache by calling `docker images`,
 you can save the image to a tar file `docker save -o myimage.tar myimagerepo:myimagetag`,
 and finally copy the tar file to each node and call `docker load -o myimage.tar` on each node.
@@ -567,9 +567,9 @@ _Important_:
       and the `--fromImage` refers to an image in a repository,
       and the repository image is newer than the locally cached version of the image,
       then the command will download the repository image
-      to the local docker cache and use it
+      to the local Docker cache and use it
       instead of using the outdated local image.
-  - This option can be used to generate a domain home or a model home in the new image using WDT.
+  - You can use this option to generate a domain home or a model home in the new image using WDT.
 
 - Optionally include a WDT install and model files in the image
   (for the Model in Image domain home soure type).
@@ -908,7 +908,7 @@ to create the domain home in Domain in Image.
   fromImage=container-registry.oracle.com/middleware/weblogic:12.2.1.4
   finalImage=my-dii-wlst:v1
   
-  # Copy sample WLST, docker commands, and setup scripts
+  # Copy sample WLST, Docker commands, and setup scripts
   # to the staging directory and modify to point to the domain home
   
   [ -e "$stageDir" ] && echo "Error: stage dir '$stagedir' already exists." && exit 1
