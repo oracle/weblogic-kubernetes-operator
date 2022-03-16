@@ -35,7 +35,9 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -203,6 +205,10 @@ class ServerPod extends KubernetesResource {
           + "See `kubectl explain pods.spec.containers.securityContext`.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
+  public List<V1Volume> getVolumes() {
+    return volumes;
+  }
+
   /**
    * The additional volumes.
    *
@@ -210,6 +216,18 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`.")
   private final List<V1Volume> volumes = new ArrayList<>();
+
+  public List<V1VolumeMount> getVolumeMounts() {
+    return volumeMounts;
+  }
+
+  public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
+    this.volumeMounts.addAll(volumeMounts);
+  }
+
+  public void setVolumes(List<V1Volume> volumes) {
+    this.volumes.addAll(volumes);
+  }
 
   /**
    * The additional volume mounts.
@@ -394,8 +412,7 @@ class ServerPod extends KubernetesResource {
     return this.shutdown;
   }
 
-  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions,
-      Boolean waitForAllSessions) {
+  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions, Boolean waitForAllSessions) {
     this.shutdown
         .shutdownType(shutdownType)
         .timeoutSeconds(timeoutSeconds)
@@ -453,10 +470,10 @@ class ServerPod extends KubernetesResource {
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
-      addIfMissing(var);
+      addIfMissing(new V1VolumeBuilder(var).build());
     }
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
-      addIfMissing(var);
+      addIfMissing(new V1VolumeMountBuilder(var).build());
     }
     for (V1Container c : serverPod1.getInitContainers()) {
       addInitContainerIfMissing(createWithEnvCopy(c));

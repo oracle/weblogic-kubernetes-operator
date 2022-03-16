@@ -13,4 +13,15 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
   name: "weblogic-operator-logstash-cm"
   namespace: {{ .Release.Namespace | quote }}
+---
+apiVersion: "v1"
+data:
+  logstash.conf: |
+{{ .Files.Get "logstash.conf" | indent 4 }}
+kind: "ConfigMap"
+metadata:
+  labels:
+    weblogic.webhookName: {{ .Release.Namespace | quote }}
+  name: "weblogic-webhook-logstash-cm"
+  namespace: {{ .Release.Namespace | quote }}
 {{- end }}

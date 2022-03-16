@@ -1,10 +1,8 @@
 #!/bin/bash
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-export PATH=$PATH:/operator
-
-echo "Launching Oracle WebLogic Server Kubernetes Operator..."
+echo "Launching the Domain Custom Resource Conversion Webhook for Oracle WebLogic Server Kubernetes Operator..."
 
 # Relays SIGTERM to all java processes
 relay_SIGTERM() {
@@ -14,8 +12,6 @@ relay_SIGTERM() {
 }
 
 trap relay_SIGTERM SIGTERM
-
-/operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=$DEBUG_SUSPEND,address=*:$REMOTE_DEBUG_PORT"
@@ -28,7 +24,7 @@ fi
 
 # set up a logging.properties file that has a FileHandler in it, and have it
 # write to /logs/operator.log
-LOGGING_CONFIG="/operator/logstash.properties"
+LOGGING_CONFIG="/deployment/logstash.properties"
 
 # if the java logging level has been customized and is a valid value, update logstash.properties to match
 if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
@@ -55,19 +51,10 @@ fi
 sed -i -e "s|JAVA_LOGGING_MAXSIZE|${JAVA_LOGGING_MAXSIZE:-20000000}|g" $LOGGING_CONFIG
 sed -i -e "s|JAVA_LOGGING_COUNT|${JAVA_LOGGING_COUNT:-10}|g" $LOGGING_CONFIG
 
-if [ "${MOCK_WLS}" == 'true' ]; then
-  MOCKING_WLS="-DmockWLS=true"
-fi
-
-LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
-mkdir -m 777 -p /logs
-# assumption is that we have mounted a volume on /logs which is also visible to
-# the logstash container/pod.
-
 # Container memory optimization flags
 HEAP="-XshowSettings:vm"
 
 # Start operator
-java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java -cp /operator/weblogic-kubernetes-operator.jar $HEAP $MOCKING_WLS $DEBUG $LOGGING oracle.kubernetes.operator.ConversionWebhookMain &
 PID=$!
 wait $PID

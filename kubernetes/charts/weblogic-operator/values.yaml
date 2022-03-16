@@ -159,6 +159,20 @@ javaLoggingFileCount: 10
 # the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 # for more information on node selectors.
 #nodeSelector:
+ 
+# webhookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
+# should be created during helm install and if the creation of the operator deployment should be skipped.
+# By default, the helm install will create both the webhook deployment and the operator deployment.
+# If set to true, the helm install will only create the webhook deployment.
+# The default value is false.
+webhookOnly: false
+ 
+# preserveWebhook specifies whether the previous webhook deployment should be preserved
+# when the chart is uninstalled using helm uninstall.
+# By default, the helm uninstall will remove both the webhook deployment and the operator deployment.
+# If set to true, the helm uninstall command will skip removing the webhook deployment.
+# The default value is false.
+preserveWebhook: false
 
 # affinity specifies a set of matching rules related to the presence of other workloads that the Kubernetes scheduler
 # will use when selecting the node where the operator will run. If the affinity value is specified, then this content
@@ -192,6 +206,12 @@ internalDebugHttpPort: 30999
 # Otherwise, it is ignored.
 externalDebugHttpPort: 30999
 
+# webhookDebugHttpPort specifies the port number inside the Kubernetes cluster for the webhook's Java
+# remote debug interface.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+webhookDebugHttpPort: 31999
+
 # dns1123Fields overrides the default list of field names that the operator
 # converts to DNS-1123 legal values when replacing variable references in the 
 # Domain resource. The default list can be found inside the class LegalNames
@@ -218,6 +238,7 @@ introspectorJobNameSuffix: "-introspector"
 # The default suffix is '-ext'.
 # The default suffix in pre-3.1.0 is "-external".
 externalServiceNameSuffix: "-ext"
+
 
 # clusterSizePaddingValidationEnabled specifies if additional one or two characters
 # need to be reserved to account for longer managed server names because of an increased

@@ -11,13 +11,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
@@ -26,7 +26,7 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.MainDelegate;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -37,6 +37,8 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ConversionWebhookMainTest.getCertificates;
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
@@ -52,13 +54,12 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 class CrdHelperTest {
-  private static final KubernetesVersion KUBERNETES_VERSION_15 = new KubernetesVersion(1, 15);
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
 
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
-  private static final int UNPROCESSABLE_ENTITY = 422;
+  public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
 
   private V1CustomResourceDefinition defaultCrd;
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -68,10 +69,11 @@ class CrdHelperTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
+  private final Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
   private final TerminalStep terminalStep = new TerminalStep();
 
   private V1CustomResourceDefinition defineDefaultCrd() {
-    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION);
+    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION, getCertificates());
   }
 
   private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
@@ -110,6 +112,7 @@ class CrdHelperTest {
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
+    mementos.add(StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath));
     mementos.add(TuningParametersStub.install());
 
     defaultCrd = defineDefaultCrd();
@@ -146,8 +149,7 @@ class CrdHelperTest {
 
   @Test
   void whenCrdV1SupportedAndNoCrd_createIt() {
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -157,8 +159,7 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -169,8 +170,7 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
     testSupport.runSteps(Step.chain(scriptCrdStep, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
@@ -181,8 +181,7 @@ class CrdHelperTest {
   void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION));
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE);
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
@@ -200,18 +199,67 @@ class CrdHelperTest {
   }
 
   @Test
-  void whenExistingCrdHasFutureVersion_dontReplaceIt() {
+  void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
-    existing
-        .getSpec()
-        .addVersionsItem(
-            new V1CustomResourceDefinitionVersion()
-                .served(true)
-                .name(KubernetesConstants.DOMAIN_VERSION));
+    existing.getSpec().addVersionsItem(
+            new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("Webhook"));
     testSupport.defineResources(existing);
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+  }
+
+  @Test
+  void whenExistingCrdHasNoneConversionStrategy_replaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasOldVersionAndNoneConversionStrategy_replaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_OLD);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+    assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));
   }
 
   @Test
@@ -226,8 +274,7 @@ class CrdHelperTest {
                 .served(true)
                 .name(KubernetesConstants.DOMAIN_VERSION));
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(delegate));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -238,8 +285,7 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -252,8 +298,7 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
-    MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, KUBERNETES_VERSION_16, PRODUCT_VERSION);
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(delegate);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -266,31 +311,4 @@ class CrdHelperTest {
 
     assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
   }
-
-  abstract static class MainDelegateStub implements MainDelegate {
-    private final KubernetesVersion kubernetesVersion;
-    private final SemanticVersion productVersion;
-    private final AtomicReference<V1CustomResourceDefinition> crdReference = new AtomicReference<>();
-
-    MainDelegateStub(KubernetesVersion kubernetesVersion, SemanticVersion productVersion) {
-      this.kubernetesVersion = kubernetesVersion;
-      this.productVersion = productVersion;
-    }
-
-    @Override
-    public KubernetesVersion getKubernetesVersion() {
-      return kubernetesVersion;
-    }
-
-    @Override
-    public SemanticVersion getProductVersion() {
-      return productVersion;
-    }
-
-    @Override
-    public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
-      return crdReference;
-    }
-  }
-
 }

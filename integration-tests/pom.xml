@@ -246,7 +246,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItMultiDomainModels,
+		  **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
