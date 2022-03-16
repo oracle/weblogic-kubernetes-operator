@@ -105,7 +105,6 @@ public abstract class BasePodStepContext extends StepContextBase {
   final List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
 
     List<V1EnvVar> vars = new ArrayList<>();
-    //List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
     addConfiguredEnvVarsExcludingAuxImagePaths(tuningParameters, vars);
 
     addDefaultEnvVarIfMissing(

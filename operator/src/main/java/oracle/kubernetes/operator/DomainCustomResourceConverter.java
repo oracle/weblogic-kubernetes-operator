@@ -27,6 +27,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_DIRECTORY;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NON_EXISTENT;
+import static oracle.kubernetes.operator.logging.MessageKeys.OVERWRITE_EXISTING_OUTPUT_FILE;
 import static oracle.kubernetes.operator.logging.MessageKeys.PRINT_HELP;
 
 public class DomainCustomResourceConverter {
@@ -37,6 +38,7 @@ public class DomainCustomResourceConverter {
   String inputFileName;
   String outputDir;
   String outputFileName;
+  Boolean overwriteExistingFile;
 
   /**
    * Entry point of the DomainResourceConverter.
@@ -58,7 +60,7 @@ public class DomainCustomResourceConverter {
       throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_NON_EXISTENT, outputDir));
     }
 
-    if (outputFile.exists()) {
+    if (outputFile.exists() && !converter.overwriteExistingFile) {
       throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_EXISTS, outputFile.getName()));
     }
 
@@ -82,6 +84,7 @@ public class DomainCustomResourceConverter {
   public DomainCustomResourceConverter(
           String outputDir,
           String outputFileName,
+          Boolean overwriteExistingFile,
           String inputFileName) {
     this.outputDir = Optional.ofNullable(outputDir).orElse(new File(inputFileName).getParent());
     String inputFileNameBase = FilenameUtils.getBaseName(inputFileName);
@@ -89,20 +92,25 @@ public class DomainCustomResourceConverter {
     this.outputFileName = Optional.ofNullable(outputFileName)
             .orElse(inputFileNameBase + "__converted." + inputFileNameExtension);
     this.inputFileName = inputFileName;
+    this.overwriteExistingFile = overwriteExistingFile;
   }
 
   private static DomainCustomResourceConverter parseCommandLine(String[] args) {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
 
-    Option helpOpt = new Option("h", "help", false, PRINT_HELP);
+    Option helpOpt = new Option("h", "help", false, LOGGER.formatMessage(PRINT_HELP));
     options.addOption(helpOpt);
 
-    Option outputDir = new Option("d", "outputDir", true, OUTPUT_DIRECTORY);
+    Option outputDir = new Option("d", "outputDir", true, LOGGER.formatMessage(OUTPUT_DIRECTORY));
     options.addOption(outputDir);
 
-    Option outputFile = new Option("f", "outputFile", true, OUTPUT_FILE_NAME);
+    Option outputFile = new Option("f", "outputFile", true, LOGGER.formatMessage(OUTPUT_FILE_NAME));
     options.addOption(outputFile);
+
+    Option overwriteExistingFile = new Option("o", "overwriteExistingFile", false,
+            LOGGER.formatMessage(OVERWRITE_EXISTING_OUTPUT_FILE));
+    options.addOption(overwriteExistingFile);
 
     try {
       CommandLine cli = parser.parse(options, args);
@@ -113,7 +121,7 @@ public class DomainCustomResourceConverter {
         printHelpAndExit(options);
       }
       return new DomainCustomResourceConverter(cli.getOptionValue("d"), cli.getOptionValue("f"),
-              cli.getArgs()[0]);
+              cli.hasOption("o"), cli.getArgs()[0]);
     } catch (ParseException e) {
       throw new RuntimeException(e);
     }
@@ -121,7 +129,8 @@ public class DomainCustomResourceConverter {
 
   private static void printHelpAndExit(Options options) {
     HelpFormatter help = new HelpFormatter();
-    help.printHelp(120, "java -cp <operator-jar> "
+    help.printHelp(120, "Converts V8 or earlier domain custom resource yaml to V9 or a future version."
+                    + "\n       java -cp <operator-jar> "
                     + "oracle.kubernetes.operator.DomainCustomResourceConverter "
                     + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-h --help]",
             "", options, "");
