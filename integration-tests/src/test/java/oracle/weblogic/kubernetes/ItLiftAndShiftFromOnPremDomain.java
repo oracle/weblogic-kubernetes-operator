@@ -391,6 +391,8 @@ class ItLiftAndShiftFromOnPremDomain {
   private static void updateDomainYamlFile() {
     try {
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+          "apiVersion: \"weblogic.oracle/v8\"", "apiVersion: \"weblogic.oracle/" + DOMAIN_VERSION + "\"");
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "\\{\\{\\{domainHome\\}\\}\\}", "/u01/domains/" + domainUid);

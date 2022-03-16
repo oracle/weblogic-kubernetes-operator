@@ -62,8 +62,8 @@ public class InitializeInternalIdentityStep extends Step {
     Certificates certificates = new Certificates(delegate);
     this.internalCertFile = certificates.getOperatorInternalCertificateFile();
     this.internalKeyFile = certificates.getOperatorInternalKeyFile();
-    this.configInternalCertFile = new File(delegate.getOperatorHome(), "/config/internalOperatorCert");
-    this.secretsInternalKeyFile = new File(delegate.getOperatorHome(), "/secrets/internalOperatorKey");
+    this.configInternalCertFile = new File(delegate.getDeploymentHome(), "/config/internalOperatorCert");
+    this.secretsInternalKeyFile = new File(delegate.getDeploymentHome(), "/secrets/internalOperatorKey");
   }
 
   @Override
@@ -94,7 +94,8 @@ public class InitializeInternalIdentityStep extends Step {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
     writeToFile(key, internalKeyFile);
-    X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
+    X509Certificate cert = generateCertificate(internalCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+            CERTIFICATE_VALIDITY_DAYS);
     writeToFile(getBase64Encoded(cert), internalCertFile);
     // put the new certificate in the operator's config map so that it will be available
     // the next time the operator is started

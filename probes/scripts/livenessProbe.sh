@@ -6,7 +6,7 @@
 #
 RETVAL=$(test -f /operator/debug-config/livenessProbeSuccessOverride ; echo $?)
 
-FILE=/operator/.alive
+FILE=/probes/.alive
 if [ ! -f ${FILE} ]; then
   exit $RETVAL
 fi

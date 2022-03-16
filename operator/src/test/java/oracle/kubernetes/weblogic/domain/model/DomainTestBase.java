@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -43,6 +43,12 @@ public abstract class DomainTestBase {
   protected static final String DOMAIN_V2_SAMPLE_YAML_3 = "domain-sample-3.yaml";
   protected static final String DOMAIN_V2_SAMPLE_YAML_4 = "domain-sample-4.yaml";
   protected static final String DOMAIN_V2_SAMPLE_YAML_5 = "domain-sample-5.yaml";
+  public static final String DOMAIN_V8_AUX_IMAGE30_YAML = "aux-image-30-sample.yaml";
+  public static final String DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML = "converted-domain-sample.yaml";
+  public static final String DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML = "aux-image-30-sample-2.yaml";
+  public static final String DOMAIN_V9_CONVERTED_SERVER_SCOPED_LEGACY_AUX_IMAGE_YAML = "converted-domain-sample-2.yaml";
+  public static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
+  public static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
   private static final String VALUE1 = "value1";

@@ -154,6 +154,21 @@ public class MessageKeys {
   public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
   public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
   public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
+  public static final String CONVERSION_WEBHOOK_STARTED = "WLSKO-0205";
+  public static final String COULD_NOT_CREATE_WEBHOOK_LIVENESS_FILE = "WLSKO-0206";
+  public static final String NO_WEBHOOK_CERTIFICATE = "WLSKO-0207";
+  public static final String WEBHOOK_CONFIG_NAMESPACE = "WLSKO-0208";
+  public static final String WAIT_FOR_CRD_INSTALLATION = "WLSKO-0209";
+  public static final String WEBHOOK_SHUTTING_DOWN = "WLSKO-0210";
+  public static final String STARTING_WEBHOOK_LIVENESS_THREAD = "WLSKO-0211";
+  public static final String WEBHOOK_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0212";
+  public static final String INPUT_FILE_NON_EXISTENT = "WLSKO-0213";
+  public static final String OUTPUT_FILE_NON_EXISTENT = "WLSKO-0214";
+  public static final String OUTPUT_FILE_EXISTS = "WLSKO-0215";
+  public static final String PRINT_HELP = "WLSKO-0216";
+  public static final String OUTPUT_DIRECTORY = "WLSKO-0217";
+  public static final String OUTPUT_FILE_NAME = "WLSKO-0218";
+  public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0219";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
