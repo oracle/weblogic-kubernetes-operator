@@ -537,7 +537,7 @@ EOF
                 tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
                 popd
             '''
-            archiveArtifacts(artifacts: "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
+            archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
         }
     }
