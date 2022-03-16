@@ -481,10 +481,6 @@ $ /tmp/imagetool/bin/imagetool.sh -?
 
 #### WIT options overview
 
-TBD Derek it looks like you wantedto combine all options
-into one section, but didn't quite finish. I've tried
-to complete the work...
-
 The WebLogic Image Tool (WIT) `create`, `update`, or `rebase` commands supply
 three different ways to generate a custom WebLogic Server install image
 from a base OS image (optionally with WebLogic patches).

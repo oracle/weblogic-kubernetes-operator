@@ -147,8 +147,6 @@ See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kuberne
 
 ##### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
-TBD Monica: Does WLS on AKS Marketplace include Fusion Middleware Infrastructure? If so, I assume we should mention that too...
-
 The WebLogic Server on AKS Azure Marketplace
 offer lets you embrace cloud computing by providing greater choice
 and flexibility for deploying your WLS domains and applications.
@@ -327,8 +325,6 @@ See [Ensure you are using recently patched images]({{< relref "/userguide/base-i
 {{% /notice %}}
 
 #### Additional references
-
-TBD Monica Do we need to keep the following refs?
 
 - [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
 - [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
