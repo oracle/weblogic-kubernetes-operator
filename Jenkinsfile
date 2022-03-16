@@ -507,11 +507,20 @@ EOF
                     if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
                         echo "Failed to run journalctl for compute node"
                     fi
+
+                    mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                    pushd ${outdir}
+                    ls -al
+                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
+                    popd
                 '''
+                archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
+                junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
             }
         }
     }
     post {
+        // Jenkins server not properly configured to when email...
 //        failure {
 //            mail to: "${wko_build_email}", from: 'noreply@oracle.com',
 //                    subject: "WKO: ${env.JOB_NAME} - Failed",
@@ -530,15 +539,7 @@ EOF
                 if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
                     echo "Failed to delete kind cluster ${kind_name}"
                 fi
-                
-                mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                pushd ${outdir}
-                ls -al
-                tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
-                popd
             '''
-            archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
-            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
         }
     }
 }
