@@ -46,7 +46,7 @@ public class StuckPodProcessing {
     Step step = new CallBuilder()
           .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
           .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
-    mainDelegate.runSteps(Main.createPacketWithLoggingContext(namespace), step, null);
+    mainDelegate.runSteps(OperatorMain.createPacketWithLoggingContext(namespace), step, null);
   }
 
   @SuppressWarnings("unchecked")

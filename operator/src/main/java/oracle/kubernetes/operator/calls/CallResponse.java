@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.kubernetes.operator.Upgradable;
 
 public final class CallResponse<T> {
   private final RequestParams requestParams;
@@ -44,13 +43,9 @@ public final class CallResponse<T> {
    */
   private CallResponse(RequestParams requestParams, T result, ApiException ex, int statusCode) {
     this.requestParams = requestParams;
-    this.result = upgradeResultIfNeeded(result);
+    this.result = result;
     this.ex = ex;
     this.statusCode = statusCode;
-  }
-
-  private T upgradeResultIfNeeded(T result) {
-    return (result instanceof Upgradable) ? ((Upgradable<T>) result).upgrade() : result;
   }
 
   public boolean isFailure() {

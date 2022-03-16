@@ -36,7 +36,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ER
 import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
@@ -581,11 +580,6 @@ public class DomainStatus {
 
   public DomainStatus withIntrospectJobFailureCount(int failureCount) {
     this.introspectJobFailureCount = failureCount;
-    return this;
-  }
-
-  public DomainStatus upgrade() {
-    Optional.ofNullable(conditions).ifPresent(x -> x.removeIf(cond -> cond.hasType(Progressing)));
     return this;
   }
 

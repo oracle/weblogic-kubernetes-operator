@@ -64,6 +64,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
@@ -755,7 +756,7 @@ class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  void introspectorPodSpec_createdWithoutConfiguredInitContainers() {
+  void introspectorPodSpec_createdWithoutConfiguredNormalInitContainers() {
     configureDomain()
         .withInitContainer(
             createContainer(
@@ -764,8 +765,21 @@ class JobHelperTest extends DomainValidationBaseTest {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getInitContainers(),
-        nullValue());
+        getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithConfiguredAuxImageInitContainers() {
+    configureDomain()
+            .withInitContainer(
+                    createContainer(
+                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                            "echo managed server && sleep 120"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
   }
 
   @Test
@@ -781,6 +795,82 @@ class JobHelperTest extends DomainValidationBaseTest {
         getPodSpec(jobSpec).getContainers(),
         not(hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
     );
+  }
+
+  @Test
+  void whenAdminServerHasLegacyAuxImageInitContainers_introspectorPodStartupWithThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withInitContainer(
+                    createContainer(
+                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                            "echo managed server && sleep 120"));
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
+  }
+
+  @Test
+  void whenAdminServerHasNormalInitContainers_introspectorPodStartupWithoutThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withInitContainer(
+                    createContainer(
+                            "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+  }
+
+  @Test
+  void whenAdminServerHasNormalAdditionalVolume_introspectorPodStartupWithoutThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withAdditionalVolume("Test", "/test");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getVolumes().size(), equalTo(3));
+  }
+
+  @Test
+  void whenAdminServerHasLegacyAuxImageVolume_introspectorPodStartupWithoutThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withAdditionalVolume(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getVolumes().size(), equalTo(4));
+  }
+
+  @Test
+  void whenAdminServerHasNormalAdditionalVolumeMount_introspectorPodStartupWithoutThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withAdditionalVolumeMount("Test", "/test");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
+            .orElse(null).size(), equalTo(3));
+  }
+
+  @Test
+  void whenAdminServerHasLegacyAuxImageVolumeMount_introspectorPodStartupWithoutThem() {
+    configureDomain()
+            .configureAdminServer()
+            .withAdditionalVolumeMount(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
+                    .orElse(null).size(), equalTo(4));
   }
 
   @Test
