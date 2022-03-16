@@ -329,11 +329,9 @@ class ItElasticLoggingFluentd {
         "Failed to copy fluentd.configmap.elk.yaml");
 
     // replace weblogic.domainUID, namespace in fluentd.configmap.elk.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-domain", domainUid),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-domain", domainUid),
         "Could not modify weblogic.domainUID in fluentd.configmap.elk.yaml");;
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destFluentdYamlFile.toString(), "fluentd-namespace", domainNamespace),
+    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-namespace", domainNamespace),
         "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
