@@ -1250,4 +1250,20 @@ public class CommonTestUtils {
         resourcePath);
     logger.info("Found the " + resourcePath + " configuration");
   }
+
+  public static String getNonEmptySystemProperty(String propertyName) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue != null && propertyValue.isEmpty()) {
+      propertyValue = null;
+    }
+    return propertyValue;
+  }
+
+  public static String getNonEmptySystemProperty(String propertyName, String defaultValue) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue == null || propertyValue.isEmpty()) {
+      propertyValue = defaultValue;
+    }
+    return propertyValue;
+  }
 }
