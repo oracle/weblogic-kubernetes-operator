@@ -61,6 +61,7 @@
             <release>11</release>
             <compilerArgs>
               <arg>-Xpkginfo:always</arg>
+              <arg>-Xlint:all</arg>
             </compilerArgs>
           </configuration>
         </plugin>

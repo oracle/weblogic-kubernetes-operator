@@ -92,7 +92,7 @@ class ItWlsSamples {
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
-      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? OCIR_WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
+      SKIP_BUILD_IMAGES_IF_EXISTS ? OCIR_WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";

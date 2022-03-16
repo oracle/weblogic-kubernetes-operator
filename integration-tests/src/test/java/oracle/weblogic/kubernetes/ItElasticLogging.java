@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
@@ -221,9 +222,7 @@ class ItElasticLogging {
    */
   @AfterAll
   void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
 
       // uninstall ELK Stack
       elasticsearchParams = new LoggingExporterParams()

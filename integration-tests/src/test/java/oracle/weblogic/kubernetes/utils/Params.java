@@ -3,10 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 
-import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_WLS_IMAGE_TAGS;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAGS;
 
 public class Params {
 
@@ -16,7 +15,6 @@ public class Params {
    * @return stream of WebLogic image tag values
    */
   public static Stream<String> webLogicImageTags() {
-    return Stream.of(Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAGS"))
-        .orElse(DEFAULT_WLS_IMAGE_TAGS).split(","));
+    return Stream.of(WEBLOGIC_IMAGE_TAGS.split(","));
   }
 }

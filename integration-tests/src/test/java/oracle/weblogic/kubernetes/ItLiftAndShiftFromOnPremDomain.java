@@ -33,8 +33,12 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPDEMO;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -361,13 +365,17 @@ class ItLiftAndShiftFromOnPremDomain {
             .value(DISCOVER_DOMAIN_OUTPUT_DIR))
         .addEnvItem(new V1EnvVar()
             .name("APP")
-            .value(System.getenv("opdemo")))
-        .addEnvItem(new V1EnvVar()
-            .name("http_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(System.getenv("http_proxy")));
+            .value(OPDEMO));
+
+    if (HTTP_PROXY != null) {
+      container.addEnvItem(new V1EnvVar().name("http_proxy").value(HTTP_PROXY));
+    }
+    if (HTTPS_PROXY != null) {
+      container.addEnvItem(new V1EnvVar().name("https_proxy").value(HTTPS_PROXY));
+    }
+    if (NO_PROXY != null) {
+      container.addEnvItem(new V1EnvVar().name("no_proxy").value(NO_PROXY));
+    }
 
     return setupWebLogicPod(namespace, container);
   }
