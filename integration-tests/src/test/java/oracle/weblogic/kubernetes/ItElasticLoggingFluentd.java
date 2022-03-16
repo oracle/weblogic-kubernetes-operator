@@ -360,21 +360,18 @@ class ItElasticLoggingFluentd {
 
   private static void createAndVerifyDomain(String miiImage) {
     // create secret for admin credentials
-    final String elasticSearchHost = "elasticsearch.default.svc.cluster.local";
-    final String elasticSearchPort = "9200";
-
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        elasticSearchHost, elasticSearchPort),
+        elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     final String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc", elasticSearchHost, elasticSearchPort),
+        "weblogicenc", "weblogicenc", elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
