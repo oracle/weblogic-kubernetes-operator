@@ -150,7 +150,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitorin
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -814,58 +813,11 @@ class ItMonitoringExporter {
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana("grafana",
-              monitoringNS,
-              monitoringExporterEndToEndDir + "/grafana/values.yaml",
-              grafanaChartVersion);
+          monitoringNS,
+          monitoringExporterEndToEndDir + "/grafana/values.yaml",
+          grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      int nodeportgrafana = grafanaHelmParams.getNodePort();
-      //wait until it starts dashboard
-      String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-                      + " -X GET http://admin:12345678@%s:%s/api/dashboards",
-              K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                condition -> logger.info("Check access to grafana dashboard  "
-                                      + "(elapsed time {0}ms, remaining time {1}ms)",
-                              condition.getElapsedTimeInMS(),
-                              condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-                      String.format("Check access to grafana dashboard"
-                              )));
-      logger.info("installing grafana dashboard");
-      // url
-      String curlCmd0 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                              + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
-                              + "  --data-binary @%sgrafana/datasource.json",
-                      K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-
-      logger.info("Executing Curl cmd {0}", curlCmd);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
-
-      String curlCmd1 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                              + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
-                              + "  --data-binary @%sgrafana/dashboard.json",
-                      K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-      logger.info("Executing Curl cmd {0}", curlCmd1);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
-
-      String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-                      + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
-              K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Check grafana dashboard metric against expected {0} "
-                                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                          "wls_jvm_uptime",
-                          condition.getElapsedTimeInMS(),
-                          condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
-                      String.format("Check grafana dashboard wls against expected %s",
-                              "wls_jvm_uptime")));
     }
-    logger.info("Grafana is running");
   }
 
   /**
