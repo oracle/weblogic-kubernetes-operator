@@ -15,7 +15,7 @@ The WebLogic Kubernetes Operator (the “operator”) is open source and free, l
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
-For more information, see [Pricing and licensing]({{< relref "/userguide/platforms/environments.md#pricing-and-licensing" >}}).
+For more information, see [Pricing and licensing]({{< relref "/userguide/platforms/environments#pricing-and-licensing" >}}).
 
 #### How can I get help?
 
@@ -122,7 +122,7 @@ For additional information on WebLogic container images on Oracle Container regi
 see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/_index.md#obtain-images-from-the-oracle-container-registry" >}}).
 
 For additional information on creating new container images with the WebLogic Image Tool,
-see [Patch WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}).
+see [Patch WebLogic images]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 

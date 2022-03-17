@@ -57,13 +57,13 @@ deploy the WebLogic Server and the operator for you. These include:
 **Notes:**
 
 - **Important:** Some supported environments have additional help or samples that are specific
-to the operator, or are subject to limitations and restrictions: see
+to the operator, or are subject to limitations and restrictions; see
 [Important notes about specific environments](#important-notes-about-specific-environments).
 
 - For detailed virtualization licensing, cloud licensing, and support
 descriptions, see [Pricing and licensing](#pricing-and-licensing).
 
-- The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
+- The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites;
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
 
 ### Important notes about specific environments
@@ -277,13 +277,13 @@ For more information, see the
 Oracle provides two different types of WebLogic Server or Fusion Middleware (FMW) Infrastructure images:
 
 - _Critical Patch Update (CPU) images:_
-  images with the latest WebLogic Server (or Fusion Middleware Infrastructure) and Coherence PSU
+  Images with the latest WebLogic Server (or Fusion Middleware Infrastructure) and Coherence PSU
   and other fixes released by the
   Critical Patch Update (CPU) program.
   CPU images are intended for production use.
 
 - _General Availability (GA) WebLogic Server (or Fusion Middleware Infrastructure) images:_
-  images which are _not_ intended for production use
+  Images which are _not_ intended for production use
   and do _not_ include WebLogic, Fusion Middleware Infrastructure, or Coherence PSUs.
 
 All WebLogic Server and Fusion Middleware Infrastructure licenses,
@@ -296,7 +296,7 @@ Customers with access to WebLogic Server support additionally have:
   - Access to Critical Patch Update (CPU) WebLogic Server images which bundle Java SE.
   - Access to WebLogic Server patches.
   - Oracle support for WebLogic Server images.
-  - Oracle support for the WebLogic Kubernetes ToolKit.
+  - Oracle support for the WebLogic Kubernetes Toolkit.
 
 (Customers with access to Fusion Middleware Infrastructure support have
 similar access to its CPU images, patches, and support.)
@@ -306,9 +306,9 @@ to create new or updated (patched) WebLogic or Fusion Middleware Infrastructure 
 See My Oracle Support (MOS)
 [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1)
 for community and Oracle support policies
-for the WebLogic Kubernetes ToolKit.
+for the WebLogic Kubernetes Toolkit.
 
-See [Domain images]({{< relref "/userguide/base-images/_index.md" >}})
+See [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}})
 for information about obtaining WebLogic Server or Fusion Middleware Infrastructure images,
 developer and production licensing details,
 the different types of images,
@@ -328,4 +328,3 @@ See [Ensure you are using recently patched images]({{< relref "/userguide/base-i
 
 - [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
 - [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
-
