@@ -395,7 +395,6 @@
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
-                  **/ItKubernetesEvents,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
