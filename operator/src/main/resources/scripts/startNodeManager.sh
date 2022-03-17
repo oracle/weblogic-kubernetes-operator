@@ -96,7 +96,8 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
   serverOutOption=""
 else
   # setup ".out" location for a WL server
-  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
+  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
+  serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs}"
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
