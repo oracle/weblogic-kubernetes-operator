@@ -357,8 +357,10 @@ class ItMonitoringExporter {
       logger.info("Create wdt domain and verify that it's running");
       createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount, false);
       String ingressClassName = nginxHelmParams.getIngressClassName();
+      Map<String, Integer> clusterNameMsPortMap1 = new HashMap<>();
+      clusterNameMsPortMap1.put(cluster1Name, managedServerPort);
       ingressHost2List
-          = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap,
+          = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap1,
           false, ingressClassName, false, 0);
       logger.info("Installing Prometheus and Grafana");
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
