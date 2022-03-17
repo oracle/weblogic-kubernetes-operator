@@ -94,6 +94,8 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -961,6 +963,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    String wdtInstallHome = getWdtInstallHome();
+    if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
+    }
+    String wdtModelHome = getModelHome();
+    if (wdtModelHome != null && !wdtModelHome.isEmpty() && !wdtModelHome.equals(DEFAULT_WDT_MODEL_HOME)) {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, wdtModelHome);
+    }
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
@@ -969,8 +979,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       Optional.ofNullable(getAuxiliaryImagePaths(auxiliaryImageList, getDomain().getAuxiliaryImageVolumes()))
               .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
     });
