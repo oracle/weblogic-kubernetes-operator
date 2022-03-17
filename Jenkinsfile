@@ -87,7 +87,7 @@ pipeline {
 
     environment {
         github_url = "${env.GIT_URL}"
-        github_creds = "f0462980-d698-4b60-9af1-970407043d41"  // mark's github token - for private projects on github
+        github_creds = "ecnj_github"
         dockerhub_username_creds = "docker-username"
         dockerhub_password_creds = "docker-password"
         ocr_username_creds = 'OCR username'

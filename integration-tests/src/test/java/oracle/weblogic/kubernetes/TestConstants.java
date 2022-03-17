@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.util.Optional;
 
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -51,7 +52,7 @@ public interface TestConstants {
 
 
   // kind constants
-  public static final String KIND_REPO = getNonEmptySystemProperty("wko.it.kind.repo");
+  public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
   public static final String REPO_DUMMY_VALUE = "dummy";
 
   // ocir constants

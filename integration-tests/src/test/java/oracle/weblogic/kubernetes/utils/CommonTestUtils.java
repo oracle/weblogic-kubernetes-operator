@@ -1280,4 +1280,18 @@ public class CommonTestUtils {
     }
     return propertyValue;
   }
+
+  /**
+   * Returns the Kind Repo value with a trailing slash.
+   *
+   * @param propertyName the name used to retrieve the Kind Repo value
+   * @return the Kind Repo value with a trailing slash
+   */
+  public static String getKindRepoValue(String propertyName) {
+    String propertyValue = getNonEmptySystemProperty(propertyName);
+    if (propertyValue != null && !propertyValue.endsWith("/")) {
+      propertyValue += "/";
+    }
+    return propertyValue;
+  }
 }
