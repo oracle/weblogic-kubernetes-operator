@@ -14,7 +14,7 @@ source ${SCRIPTPATH}/utils.sh
 
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
-serverLogHome="${serverLogHome//servers/${SERVER_NAME}/logs}"
+serverLogHome="${serverLogHome/servers/${SERVER_NAME}/logs"
 STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
 SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
 SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"

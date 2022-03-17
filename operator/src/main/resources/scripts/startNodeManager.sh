@@ -97,7 +97,7 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
 else
   # setup ".out" location for a WL server
   serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
-  serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs}"
+  serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
@@ -128,9 +128,9 @@ trace "FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR='${FAIL_BOOT_ON_SITUATIONAL_CONFIG_
 
 createFolder "${NODEMGR_LOG_HOME}" "This directory is used to hold node manager logs for server '$SERVER_NAME'. If 'domain.spec.logHomeEnabled' is 'true', then it is located within the 'domain.spec.logHome' directory, otherwise it is located within within the NODEMGR_HOME '${NODEMGR_HOME}' directory." || exit 1
 
-nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
-nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
-nodemgr_lck_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log.lck
+nodemgr_log_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}_nodemanager.log
+nodemgr_out_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.out
+nodemgr_lck_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.log.lck
 
 checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file nodemgr_lck_file
 

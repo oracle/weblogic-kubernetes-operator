@@ -263,10 +263,10 @@ def customizeNodeManagerCreds(topology):
 
 
 def customizeDomainLogPath(topology):
-  customizeLog(env.getDomainName(), topology)
+  customizeLog(env.getDomainName(), topology, isDomainLog=True)
 
 
-def customizeLog(name, topologyOrServer):
+def customizeLog(name, topologyOrServer, isDomainLog=False):
   if name is None:
     # domain name is req'd to create domain log configuration.
     # Missing domain name indicates our model is a fragment
@@ -279,8 +279,10 @@ def customizeLog(name, topologyOrServer):
   if 'Log' not in topologyOrServer:
     topologyOrServer['Log'] = {}
 
-  topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
-
+  if isDomainLog:
+    topologyOrServer['Log']['FileName'] = "%s/%s.log" % (logs_dir, name)
+  else:
+    topologyOrServer['Log']['FileName'] = "%s/servers/%s/logs/%s.log" % (logs_dir, name, name)
 
 def customizeCustomFileStores(model):
   customizeFileStores(model['resources'])
@@ -758,7 +760,7 @@ def customizeAccessLog(name, server):
     if 'FileName' not in web_server_log:
       web_server_log['FileName'] = {}
 
-    web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
+    web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)
 
 
 def getLogOrNone(config):

@@ -1783,7 +1783,7 @@ class SitConfigGenerator(Generator):
       ret = None
     return ret
 
-  def customizeLog(self, name, bean, isDomainBean):
+  def customizeLog(self, name, bean, isDomainBean=false):
     logs_dir = self.env.getDomainLogHome()
     if logs_dir is None or len(logs_dir) == 0:
       return
@@ -1804,7 +1804,11 @@ class SitConfigGenerator(Generator):
 
     self.writeln("<d:log" + logaction + ">")
     self.indent()
-    self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
+    if not isDomainBean:
+      self.writeln("<d:file-name%s>%s/servers/%s/logs/%s.log</d:file-name>" % (fileaction, logs_dir, name, name))
+    else:
+      self.writeln("<d:file-name%s>%s/%s.log</d:file-name>" % (fileaction, logs_dir, name))
+
     self.undent()
     self.writeln("</d:log>")
 
@@ -1869,8 +1873,10 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:web-server-log>")
       self.indent()
       # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
-      self.writeln("<d:file-name f:combine-mode=\"replace\">"
-                   + logs_dir + "/" + name + "_access.log</d:file-name>")
+
+      self.writeln("<d:file-name f:combine-mode=\"replace\">%s/servers/%s/logs/%s_access.log</d:file-name>" % (
+        logs_dir, name, name))
+
       self.undent()
       self.writeln("</d:web-server-log>")
       self.undent()
