@@ -117,11 +117,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -613,6 +615,12 @@ class ItMonitoringExporter {
     replaceMetricsDomainQualifierTrueConfiguration();
     logger.info("Testing replace with no restPort configuration");
     replaceMetricsNoRestPortConfiguration();
+
+    //cleanup
+    List<String> ingresses = listIngresses(domain4Namespace);
+    for (String ingress : ingresses) {
+      deleteIngress(ingress, domain4Namespace);
+    }
   }
 
 
