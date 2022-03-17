@@ -103,6 +103,7 @@ public class LoggingExporterUtils {
   /**
    * Install Kibana and wait up to five minutes until Kibana pod is ready.
    *
+   * @param namespace namespace in which to install kibana
    * @return Kibana installation parameters
    */
   public static LoggingExporterParams installAndVerifyKibana(String namespace) {
