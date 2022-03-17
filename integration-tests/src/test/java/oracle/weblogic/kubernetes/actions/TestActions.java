@@ -176,7 +176,7 @@ public class TestActions {
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
-  } 
+  }
 
   /**
    * List Domain Custom Resources.
@@ -1519,16 +1519,18 @@ public class TestActions {
   /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
-   * @param namespace namespace of Operator pod (for ELK Stack) or
+   * @param opNamespace namespace of Operator pod (for ELK Stack) or
    *                  WebLogic server pod (for WebLogic logging exporter)
+   * @param esNamespace namespace of Elastic search component
    * @param labelSelector string containing the labels the Operator or WebLogic server is decorated with
    * @param index index key word used to search the index status of the logging exporter
    * @return a map containing key and value pair of logging exporter index
    */
-  public static Map<String, String> verifyLoggingExporterReady(String namespace,
-                                                               String labelSelector,
-                                                               String index) {
-    return LoggingExporter.verifyLoggingExporterReady(namespace, labelSelector, index);
+  public static Map<String, String> verifyLoggingExporterReady(String opNamespace,
+      String esNamespace,
+      String labelSelector,
+      String index) {
+    return LoggingExporter.verifyLoggingExporterReady(opNamespace, esNamespace, labelSelector, index);
   }
 
   // --------------------------- WebLogic Logging Exporter---------------------------------
@@ -1537,12 +1539,13 @@ public class TestActions {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
+   * @param namespace logging exporter publish host namespace
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
     return LoggingExporter.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc);
+        wlsLoggingExporterYamlFileLoc, namespace);
   }
 
   /**
