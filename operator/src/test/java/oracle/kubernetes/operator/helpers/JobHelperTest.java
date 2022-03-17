@@ -61,6 +61,7 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
@@ -754,15 +755,28 @@ class JobHelperTest extends DomainValidationBaseTest {
   @Test
   void introspectorPodSpec_createdWithoutConfiguredInitContainers() {
     configureDomain()
-        .withInitContainer(
-            createContainer(
-                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+            .withInitContainer(
+                    createContainer(
+                            "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getInitContainers(),
-        nullValue());
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithCompatibilityAuxImageInitContainers() {
+    configureDomain()
+            .withInitContainer(
+                    createContainer(
+                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                            "echo managed server && sleep 120"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
   }
 
   @Test

@@ -14,8 +14,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
-  static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
-  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
+  public static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
+  public static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")

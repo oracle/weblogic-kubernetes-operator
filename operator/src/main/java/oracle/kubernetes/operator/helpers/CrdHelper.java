@@ -49,6 +49,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
 /** Helper class to ensure Domain CRD is created. */
@@ -293,6 +294,11 @@ public class CrdHelper {
       return new CreateResponseStep(next);
     }
 
+    private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
+      return existingCrd.getSpec().getConversion() != null
+              && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
+    }
+
     private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
       return COMPARATOR.isOutdatedCrd(mainDelegate.getProductVersion(), existingCrd, this.model);
     }
@@ -353,6 +359,8 @@ public class CrdHelper {
 
         if (existingCrd == null) {
           return doNext(createCrd(getNext()), packet);
+        } else if (existingCrdContainsConversionWebhook(existingCrd)) {
+          return doNext(packet);
         } else if (isOutdatedCrd(existingCrd)) {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
