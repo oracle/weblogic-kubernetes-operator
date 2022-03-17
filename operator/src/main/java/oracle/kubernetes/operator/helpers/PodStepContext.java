@@ -967,10 +967,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
-    String wdtModelHome = getModelHome();
-    if (wdtModelHome != null && !wdtModelHome.isEmpty() && !wdtModelHome.equals(DEFAULT_WDT_MODEL_HOME)) {
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, wdtModelHome);
-    }
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
