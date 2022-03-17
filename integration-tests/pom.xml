@@ -400,7 +400,6 @@
                   **/ItManagedCoherence,
                   **/ItManageNameSpace,
                   **/ItMiiAuxiliaryImage,
-                  **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
