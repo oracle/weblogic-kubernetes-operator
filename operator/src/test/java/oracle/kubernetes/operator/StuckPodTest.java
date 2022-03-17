@@ -33,7 +33,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
-import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
@@ -212,7 +212,7 @@ class StuckPodTest {
 
     @Override
     public void addToPacket(Packet packet) {
-      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(MainDelegate.class, this));
+      packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(MainDelegate.class, this));
     }
 
     @Override

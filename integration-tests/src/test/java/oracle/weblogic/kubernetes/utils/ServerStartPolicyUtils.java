@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -176,13 +177,8 @@ public class ServerStartPolicyUtils {
         domainUid, domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
-    result =  assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
-                STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
-        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
-
-    logger.info("The cluster {0} scaled result {1}.", clusterName, result);
-    assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
+    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
+        "Checking for cluster status for cluster: " + clusterName);
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 
@@ -460,4 +456,17 @@ public class ServerStartPolicyUtils {
 
     return matcher.find();
   }
+
+  private static Callable<Boolean> checkClusterStatus(String domainUid, String domainNamespace,
+                                               String samplePathDir, String clusterName,
+                                               String regex) {
+    // use clusterStatus.sh to verify scaling results
+    String result = assertDoesNotThrow(() ->
+            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
+    logger.info("Status of cluster {0} retured {1}, expected {2}", clusterName, result, regex);
+    return () -> verifyExecuteResult(result, regex);
+  }
+
 }

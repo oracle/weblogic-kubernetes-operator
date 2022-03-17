@@ -34,18 +34,22 @@ public class InMemoryCertificates {
   }
 
   static void defineOperatorExternalKeyFile(String contents) {
-    fileSystem.defineFile("/operator/external-identity/externalOperatorKey", contents);
+    fileSystem.defineFile("/deployment/external-identity/externalOperatorKey", contents);
   }
 
   static void defineOperatorInternalKeyFile(String contents) {
-    fileSystem.defineFile("/operator/internal-identity/internalOperatorKey", contents);
+    fileSystem.defineFile("/deployment/internal-identity/internalOperatorKey", contents);
   }
 
   static void defineOperatorExternalCertificateFile(String contents) {
-    fileSystem.defineFile("/operator/external-identity/externalOperatorCert", contents);
+    fileSystem.defineFile("/deployment/external-identity/externalOperatorCert", contents);
   }
 
   static void defineOperatorInternalCertificateFile(String contents) {
-    fileSystem.defineFile("/operator/internal-identity/internalOperatorCert", contents);
+    fileSystem.defineFile("/deployment/internal-identity/internalOperatorCert", contents);
+  }
+
+  static void defineWebhookCertificateFile(String contents) {
+    fileSystem.defineFile("/deployment/webhook-identity/webhookCert", contents);
   }
 }

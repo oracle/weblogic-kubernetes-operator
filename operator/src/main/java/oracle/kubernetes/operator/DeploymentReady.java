@@ -7,12 +7,12 @@ import java.io.File;
 import java.io.IOException;
 
 /** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
-public class OperatorReady {
+public class DeploymentReady {
 
   private final File readinessFile;
 
-  public OperatorReady(MainDelegate delegate) {
-    readinessFile = new File(delegate.getOperatorHome(), ".ready");
+  public DeploymentReady(CoreDelegate delegate) {
+    readinessFile = new File(delegate.getProbesHome(), ".ready");
   }
 
   /**

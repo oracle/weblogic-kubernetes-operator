@@ -166,7 +166,7 @@ public class TestAssertions {
   public static Callable<Boolean> domainDoesNotExist(String domainUid, String domainVersion, String namespace) {
     return () -> !Domain.doesDomainExist(domainUid, domainVersion, namespace);
   }
-  
+
   /**
    * Check if a WebLogic custom resource domain object exists in specified
    * namespace.
@@ -874,6 +874,20 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
     return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+
+  /**
+   * Check whether persistent volume with pvName not exists.
+   *
+   * @param pvName name of the persistent volume
+   * @param labelSelector labelselector for pv
+   * @return true if pv not exists otherwise false
+   */
+  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
+    return () -> {
+      return !PersistentVolume.pvExists(pvName, labelSelector).call();
+    };
   }
 
   /**

@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -232,10 +233,10 @@ class ItOperatorFmwUpgrade {
   }
 
   private void installAndUpgradeOperator(
-         String operatorVersion, String domainVersion, 
+         String operatorVersion, String domainVersion,
          String externalServiceNameSuffix) {
 
-    // install operator with older release 
+    // install operator with older release
     HelmParams opHelmParams = installOperator(operatorVersion);
 
     // create FMW domain and verify
@@ -273,7 +274,7 @@ class ItOperatorFmwUpgrade {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
-    // deploy application and access the application once 
+    // deploy application and access the application once
     // to make sure the app is accessible
     deployAndAccessApplication(domainNamespace,
                                  domainUid,
@@ -285,7 +286,7 @@ class ItOperatorFmwUpgrade {
                                  "7001",
                                  "8001");
 
-    // start a new thread to collect the availability data of 
+    // start a new thread to collect the availability data of
     // the application while the main thread performs operator upgrade
     List<Integer> appAvailability = new ArrayList<Integer>();
     logger.info("Start a thread to keep track of the application's availability");
@@ -339,8 +340,8 @@ class ItOperatorFmwUpgrade {
         } catch (InterruptedException ie) {
           // do nothing
         }
-        // check the application availability data that we have collected, 
-        // and see if the application has been available all the time 
+        // check the application availability data that we have collected,
+        // and see if the application has been available all the time
         // during the upgrade
         logger.info("Verify that the application was available when the operator was being upgraded");
         assertTrue(appAlwaysAvailable(appAvailability),
@@ -350,11 +351,11 @@ class ItOperatorFmwUpgrade {
   }
 
   private void createFmwDomainAndVerify(String domainVersion) {
-    final String pvName = domainUid + "-" + domainNamespace + "-pv";
-    final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
     final int t3ChannelPort = getNextFreePort();
 
-    // create pull secrets for domainNamespace when running in non-kind 
+    // create pull secrets for domainNamespace when running in non-kind
     // Kubernetes cluster this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
@@ -413,8 +414,8 @@ class ItOperatorFmwUpgrade {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid) 
-            .domainHomeSourceType("PersistentVolume") 
+            .domainHome("/shared/domains/" + domainUid)
+            .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(Arrays.asList(

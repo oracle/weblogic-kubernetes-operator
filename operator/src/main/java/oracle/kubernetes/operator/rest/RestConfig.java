@@ -39,6 +39,13 @@ public interface RestConfig {
   int getInternalHttpsPort();
 
   /**
+   * Gets the webhook https port's in-pod port number.
+   *
+   * @return the port number
+   */
+  int getWebhookHttpsPort();
+
+  /**
    * Gets the external https port's certificate.
    *
    * @return base64 encoded PEM containing the certificate, or null if
@@ -112,4 +119,12 @@ public interface RestConfig {
    *     requests).
    */
   RestBackend getBackend(String accessToken);
+
+  String getWebhookCertificateData();
+
+  String getWebhookCertificateFile();
+
+  String getWebhookKeyData();
+
+  String getWebhookKeyFile();
 }

@@ -6,6 +6,15 @@ package oracle.kubernetes.weblogic.domain.model;
 public class AuxiliaryImageEnvVars {
 
   /** The auxiliary image path. */
+  public static final String AUXILIARY_IMAGE_PATH = "AUXILIARY_IMAGE_PATH";
+
+  /** The auxiliary image paths. */
+  public static final String AUXILIARY_IMAGE_PATHS = "AUXILIARY_IMAGE_PATHS";
+
+  /** The auxiliary image container command. */
+  public static final String AUXILIARY_IMAGE_COMMAND = "AUXILIARY_IMAGE_COMMAND";
+
+  /** The auxiliary image path. */
   public static final String AUXILIARY_IMAGE_MOUNT_PATH = "AUXILIARY_IMAGE_MOUNT_PATH";
 
   /** The auxiliary image target path. */

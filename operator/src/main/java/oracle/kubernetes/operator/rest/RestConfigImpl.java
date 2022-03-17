@@ -12,9 +12,19 @@ import oracle.kubernetes.operator.utils.Certificates;
 /** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
 
+  public static final Integer CONVERSION_WEBHOOK_HTTPS_PORT = 8084;
+
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
   private final Certificates certificates;
+
+  /**
+   * Constructs a RestConfigImpl.
+   * @param certificates Certificates.
+   */
+  public RestConfigImpl(Certificates certificates) {
+    this(null, null, certificates);
+  }
 
   /**
    * Constructs a RestConfigImpl.
@@ -42,6 +52,11 @@ public class RestConfigImpl implements RestConfig {
   @Override
   public int getInternalHttpsPort() {
     return 8082;
+  }
+
+  @Override
+  public int getWebhookHttpsPort() {
+    return CONVERSION_WEBHOOK_HTTPS_PORT;
   }
 
   @Override
@@ -87,5 +102,25 @@ public class RestConfigImpl implements RestConfig {
   @Override
   public RestBackend getBackend(String accessToken) {
     return new RestBackendImpl(principal, accessToken, domainNamespaces);
+  }
+
+  @Override
+  public String getWebhookCertificateData() {
+    return certificates.getWebhookCertificateData();
+  }
+
+  @Override
+  public String getWebhookCertificateFile() {
+    return null;
+  }
+
+  @Override
+  public String getWebhookKeyData() {
+    return null;
+  }
+
+  @Override
+  public String getWebhookKeyFile() {
+    return certificates.getWebhookKeyFilePath();
   }
 }
