@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.work.Step;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
 import static oracle.kubernetes.operator.JobWatcher.isFailed;
-import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
@@ -86,12 +86,12 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public void addToPacket(Packet packet) {
-    packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
+    packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
   }
 
   @Override
-  public File getOperatorHome() {
-    return new File("/operator");
+  public File getDeploymentHome() {
+    return new File("/deployment");
   }
 
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {

@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +40,10 @@ import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -58,6 +62,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_F
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -610,6 +615,49 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createSpecWithAdminServer(
+                            Collections.singletonList(auxiliaryImageVolume), Collections.singletonList(auxiliaryImage),
+                            createServerPodWithAuxImages(Collections.singletonList(auxiliaryImage2)))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image:v2",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER)));
+    assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName(TEST_VOLUME_NAME))
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(CUSTOM_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
+            CUSTOM_COMMAND_SCRIPT);
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createSpecWithAdminServer(Collections.singletonList(auxiliaryImageVolume), new ArrayList<>(),
+                            createServerPodWithAuxImages(Collections.singletonList(auxiliaryImage)))));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMPATIBILITY_MODE
+                    + getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
   void whenDomainWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
     getConfigurator().withEnvironmentVariable("item1", "value1")
             .withInitContainer(
@@ -650,9 +698,9 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "IfNotPresent"),
-                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                    "wdt-image:v2", "IfNotPresent")));
+                    "wdt-image:v1", "IfNotPresent"),
+                    Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image:v2", "IfNotPresent")));
     assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -669,6 +717,53 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasLegcayAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage, auxiliaryImage2))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+                    ADMIN_SERVER),
+                Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                    "wdt-image:v2", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+                        ADMIN_SERVER)));
+    assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName("test")).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName("test"))
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+    getConfigurator()
+            .withAuxiliaryImageVolumeMountPath(CUSTOM_MOUNT_PATH)
+            .withAuxiliaryImages(Collections.singletonList((getAuxiliaryImage("wdt-image:v2"))));
+
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName("test"))
+                    .mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test

@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class CrdSchemaGeneratorTest {
+public class CrdSchemaGeneratorTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -143,7 +143,7 @@ class CrdSchemaGeneratorTest {
     return new ByteArrayInputStream(new ObjectMapper().writeValueAsBytes(obj));
   }
 
-  private static InputStream inputStreamFromClasspath(String path) {
+  public static InputStream inputStreamFromClasspath(String path) {
     return CrdSchemaGenerator.class.getResourceAsStream(path);
   }
 }

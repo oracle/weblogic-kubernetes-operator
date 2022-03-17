@@ -32,10 +32,12 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
   public static final String KUBERNETES_PLATFORM_HELM_VARIABLE = "kubernetesPlatform";
+  public static final String USER_MEM_ARGS = "USER_MEM_ARGS";
 
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
@@ -89,6 +91,29 @@ public abstract class BasePodStepContext extends StepContextBase {
         .env(getEnvironmentVariables(tuningParameters))
         .resources(getServerSpec().getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
+  }
+
+  /**
+   * Return a list of environment variables to be set up in the pod. This method does some
+   * processing of the list of environment variables such as token substitution before returning the
+   * list.
+   *
+   * @param tuningParameters TuningParameters containing parameters that may be used in environment
+   *     variables
+   * @return A List of environment variables to be set up in the pod
+   */
+  final List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+
+    List<V1EnvVar> vars = new ArrayList<>();
+    addConfiguredEnvVarsExcludingAuxImagePaths(tuningParameters, vars);
+
+    addDefaultEnvVarIfMissing(
+            vars, USER_MEM_ARGS, "-Djava.security.egd=file:/dev/./urandom");
+
+    addAuxImagePathsEnvVarIfExists(tuningParameters, vars);
+
+    hideAdminUserCredentials(vars);
+    return doDeepSubstitution(varsToSubVariables(vars), vars);
   }
 
   protected V1Volume createEmptyDirVolume() {
@@ -165,24 +190,16 @@ public abstract class BasePodStepContext extends StepContextBase {
    */
   abstract List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters);
 
-  /**
-   * Return a list of environment variables to be set up in the pod. This method does some
-   * processing of the list of environment variables such as token substitution before returning the
-   * list.
-   *
-   * @param tuningParameters TuningParameters containing parameters that may be used in environment
-   *     variables
-   * @return A List of environment variables to be set up in the pod
-   */
-  final List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+  private void addConfiguredEnvVarsExcludingAuxImagePaths(TuningParameters tuningParameters, List<V1EnvVar> vars) {
+    getConfiguredEnvVars(tuningParameters).stream()
+            .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()))
+            .forEach(var -> addIfMissing(vars, var.getName(), var.getValue(), var.getValueFrom()));
+  }
 
-    List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
-
-    addDefaultEnvVarIfMissing(
-        vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
-
-    hideAdminUserCredentials(vars);
-    return doDeepSubstitution(varsToSubVariables(vars), vars);
+  private void addAuxImagePathsEnvVarIfExists(TuningParameters tuningParameters, List<V1EnvVar> vars) {
+    getConfiguredEnvVars(tuningParameters).stream()
+            .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
+            .forEach(var -> addIfMissing(vars, var.getName(), var.getValue(), var.getValueFrom()));
   }
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
@@ -190,7 +207,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   private void addEnvVar(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
-    if ((value != null) && (!value.isEmpty())) {
+    if (((value != null) && (!value.isEmpty())) || (valueFrom == null)) {
       addEnvVar(vars, name, value);
     } else {
       addEnvVarWithValueFrom(vars, name, valueFrom);

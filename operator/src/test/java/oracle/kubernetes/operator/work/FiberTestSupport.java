@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
@@ -459,13 +459,13 @@ public class FiberTestSupport {
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
-    public File getOperatorHome() {
-      return new File("/operator");
+    public File getDeploymentHome() {
+      return new File("/deployment");
     }
 
     @Override
     public void addToPacket(Packet packet) {
-      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
+      packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
     }
   }
 }
