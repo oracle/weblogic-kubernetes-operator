@@ -117,11 +117,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -150,7 +152,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitorin
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -358,8 +359,10 @@ class ItMonitoringExporter {
       logger.info("Create wdt domain and verify that it's running");
       createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount, false);
       String ingressClassName = nginxHelmParams.getIngressClassName();
+      Map<String, Integer> clusterNameMsPortMap1 = new HashMap<>();
+      clusterNameMsPortMap1.put(cluster1Name, managedServerPort);
       ingressHost2List
-          = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap,
+          = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap1,
           false, ingressClassName, false, 0);
       logger.info("Installing Prometheus and Grafana");
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
@@ -612,6 +615,12 @@ class ItMonitoringExporter {
     replaceMetricsDomainQualifierTrueConfiguration();
     logger.info("Testing replace with no restPort configuration");
     replaceMetricsNoRestPortConfiguration();
+
+    //cleanup
+    List<String> ingresses = listIngresses(domain4Namespace);
+    for (String ingress : ingresses) {
+      deleteIngress(ingress, domain4Namespace);
+    }
   }
 
 
@@ -814,58 +823,11 @@ class ItMonitoringExporter {
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana("grafana",
-              monitoringNS,
-              monitoringExporterEndToEndDir + "/grafana/values.yaml",
-              grafanaChartVersion);
+          monitoringNS,
+          monitoringExporterEndToEndDir + "/grafana/values.yaml",
+          grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      int nodeportgrafana = grafanaHelmParams.getNodePort();
-      //wait until it starts dashboard
-      String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-                      + " -X GET http://admin:12345678@%s:%s/api/dashboards",
-              K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                condition -> logger.info("Check access to grafana dashboard  "
-                                      + "(elapsed time {0}ms, remaining time {1}ms)",
-                              condition.getElapsedTimeInMS(),
-                              condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-                      String.format("Check access to grafana dashboard"
-                              )));
-      logger.info("installing grafana dashboard");
-      // url
-      String curlCmd0 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                              + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
-                              + "  --data-binary @%sgrafana/datasource.json",
-                      K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-
-      logger.info("Executing Curl cmd {0}", curlCmd);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
-
-      String curlCmd1 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                              + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
-                              + "  --data-binary @%sgrafana/dashboard.json",
-                      K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-      logger.info("Executing Curl cmd {0}", curlCmd1);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
-
-      String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-                      + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
-              K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Check grafana dashboard metric against expected {0} "
-                                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                          "wls_jvm_uptime",
-                          condition.getElapsedTimeInMS(),
-                          condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
-                      String.format("Check grafana dashboard wls against expected %s",
-                              "wls_jvm_uptime")));
     }
-    logger.info("Grafana is running");
   }
 
   /**
