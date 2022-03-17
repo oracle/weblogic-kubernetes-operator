@@ -95,7 +95,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
