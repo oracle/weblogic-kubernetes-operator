@@ -903,7 +903,7 @@ class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't open '/aux/models/multi-model-one-ds.20.yaml: "
+    String expectedErrorMsg = "cp: can't open '/auxiliary/models/multi-model-one-ds.20.yaml': "
         + "Permission denied";
 
     // check the domain event contains the expected error message
