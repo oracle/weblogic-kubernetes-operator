@@ -257,8 +257,9 @@ class ItMultiDomainModelsWithLoadBalancer {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
       }
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+      String ingressClassName = nginxHelmParams.getIngressClassName();
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
-          true, ADMIN_SERVER_PORT);
+          ingressClassName, true, ADMIN_SERVER_PORT);
     }
 
   }
