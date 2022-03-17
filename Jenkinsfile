@@ -345,7 +345,7 @@ pipeline {
 
         stage('Preparing Integration Test Environment') {
             steps {
-                sh 'mkdir -m777 -p ${result_root}/wl_k8s_test_results'
+                sh 'mkdir -m777 -p ${result_root}'
                 echo "Results will be in ${result_root}"
                 sh 'mkdir -m777 -p ${pv_root}'
                 echo "Persistent volume files, if any, will be in ${pv_root}"
@@ -473,6 +473,7 @@ EOF
                     echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""              >> ${WORKSPACE}/.mvn/maven.config
                     echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""        >> ${WORKSPACE}/.mvn/maven.config
                     echo "-Dwko.it.result.root=\"${result_root}\""             >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.pv.root=\"${pv_root}\""             >> ${WORKSPACE}/.mvn/maven.config
                     echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\"" >> ${WORKSPACE}/.mvn/maven.config
 
                     echo "${WORKSPACE}/.mvn/maven.config contents:"
