@@ -206,7 +206,6 @@
                                 <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
                                 <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
-
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <OCIR_USERNAME>${env.OCIR_USERNAME}</OCIR_USERNAME>

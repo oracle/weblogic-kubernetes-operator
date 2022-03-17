@@ -473,8 +473,9 @@ EOF
                     echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""              >> ${WORKSPACE}/.mvn/maven.config
                     echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""        >> ${WORKSPACE}/.mvn/maven.config
                     echo "-Dwko.it.result.root=\"${result_root}\""             >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.pv.root=\"${pv_root}\""             >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.pv.root=\"${pv_root}\""                     >> ${WORKSPACE}/.mvn/maven.config
                     echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""   >> ${WORKSPACE}/.mvn/maven.config
 
                     echo "${WORKSPACE}/.mvn/maven.config contents:"
                     cat "${WORKSPACE}/.mvn/maven.config"
