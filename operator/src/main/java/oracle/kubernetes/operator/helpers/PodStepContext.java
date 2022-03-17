@@ -84,6 +84,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
@@ -93,6 +94,7 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -861,8 +863,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    getEnvironmentVariables(tuningParameters).forEach(envVar ->
-            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+      getEnvironmentVariables(tuningParameters).forEach(envVar ->
+              addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    }
     return initContainerEnvVars;
   }
 
@@ -958,6 +962,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    String wdtInstallHome = getWdtInstallHome();
+    if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
+    }
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
@@ -966,8 +974,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       Optional.ofNullable(getAuxiliaryImagePaths(auxiliaryImageList, getDomain().getAuxiliaryImageVolumes()))
               .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
     });

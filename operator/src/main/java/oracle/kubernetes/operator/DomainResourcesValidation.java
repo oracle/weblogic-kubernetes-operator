@@ -123,7 +123,7 @@ class DomainResourcesValidation {
   }
 
   private void addDomainList(DomainList list) {
-    list.getItems().forEach(this::addDomain);
+    Optional.ofNullable(list).ifPresent(l -> l.getItems().forEach(this::addDomain));
   }
 
   private void addDomain(Domain domain) {
