@@ -36,7 +36,7 @@ set -o pipefail
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
-function usage {
+usage() {
   echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
@@ -65,7 +65,7 @@ function usage {
   exit $1
 }
 
-function captureLogs {
+captureLogs() {
   echo "Capture Kind logs..."
   mkdir "${RESULT_ROOT}/kubelogs"
   kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
@@ -121,7 +121,7 @@ while getopts "v:n:o:t:c:x:p:d:i:l:m:sh" opt; do
   esac
 done
 
-function versionprop {
+versionprop() {
   grep "${1}_${2}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
@@ -201,11 +201,16 @@ esac
 
 echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
-if [ "${running}" != 'true' ]; then
-  docker run \
-    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
-    registry:2
+if [ "${running}" = 'false' ]; then
+  docker rm --force "${reg_name}"
 fi
+if [ "${running}" = 'true' ]; then
+  docker stop "${reg_name}"
+  docker rm --force "${reg_name}"
+fi
+docker run \
+  -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
+  registry:2
 
 reg_host="${reg_name}"
 if [ "${kind_network}" = "bridge" ]; then
@@ -303,6 +308,7 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo "Run tests..."
+
 if [ "${test_filter}" != "**/It*" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
@@ -319,3 +325,8 @@ fi
 echo "Collect journalctl logs"
 docker exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
 docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
+
+echo "Destroy cluster and registry"
+kind delete cluster --name "${kind_name}"
+docker stop "${reg_name}"
+docker rm --force "${reg_name}"
