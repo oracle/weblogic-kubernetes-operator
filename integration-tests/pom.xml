@@ -68,7 +68,6 @@
         <wko.it.sleep.seconds.after.failure>${env.SLEEP_SECONDS_AFTER_FAILURE}</wko.it.sleep.seconds.after.failure>
         <wko.it.wit.java.home>${env.WIT_JAVA_HOME}</wko.it.wit.java.home>
         <wko.it.weblogic.image_tags>${env.WEBLOGIC_IMAGE_TAGS}</wko.it.weblogic.image_tags>
-        <wko.it.two.clusters>${env.TWO_CLUSTERS}</wko.it.two.clusters>
         <wko.it.k8s.nodeport.host1>${env.K8S_NODEPORT_HOST1}</wko.it.k8s.nodeport.host1>
         <wko.it.k8s.nodeport.host2>${env.K8S_NODEPORT_HOST2}</wko.it.k8s.nodeport.host2>
         <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
@@ -126,6 +125,50 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-required-environment-variables-are-set</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireEnvironmentVariables>
+                                    <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
+                                    <variableName>TWO_CLUSTERS</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCIR_USERNAME environment variable to specify the OCIR username to use for pulling/pushing images.</message>
+                                    <variableName>OCIR_USERNAME</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCIR_PASSWORD environment variable to specify the OCIR password to use for pulling/pushing images.</message>
+                                    <variableName>OCIR_PASSWORD</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCIR_EMAIL environment variable to specify the OCIR user's email address to use for creating the image pull secret.</message>
+                                    <variableName>OCIR_EMAIL</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCR_USERNAME environment variable to specify the OCR username to use for pulling images.</message>
+                                    <variableName>OCR_USERNAME</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
+                                    <variableName>OCR_PASSWORD</variableName>
+                                </requireEnvironmentVariables>
+                                <requireEnvironmentVariables>
+                                    <message>Set the OCR_EMAIL environment variable to specify the OCR user's email address to use for creating the image pull secret.</message>
+                                    <variableName>OCR_EMAIL</variableName>
+                                </requireEnvironmentVariables>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
@@ -141,7 +184,6 @@
                         <exclude/>
                     </excludes>
                 </configuration>
-
                 <executions>
                     <execution>
                         <id>integration-tests</id>
@@ -207,18 +249,6 @@
                                 <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
                             </systemPropertyVariables>
-                            <environmentVariables>
-                                <OCIR_USERNAME>${env.OCIR_USERNAME}</OCIR_USERNAME>
-                                <OCIR_PASSWORD>${env.OCIR_PASSWORD}</OCIR_PASSWORD>
-                                <OCIR_EMAIL>${env.OCIR_EMAIL}</OCIR_EMAIL>
-                                <OCR_USERNAME>${env.OCR_USERNAME}</OCR_USERNAME>
-                                <OCR_PASSWORD>${env.OCR_PASSWORD}</OCR_PASSWORD>
-                                <OCR_EMAIL>${env.OCR_EMAIL}</OCR_EMAIL>
-                                <http_proxy>${env.http_proxy}</http_proxy>
-                                <https_proxy>${env.https_proxy}</https_proxy>
-                                <no_proxy>${env.no_proxy}</no_proxy>
-                                <TWO_CLUSTERS>${wko.it.two.clusters}</TWO_CLUSTERS>
-                            </environmentVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
                     </execution>
