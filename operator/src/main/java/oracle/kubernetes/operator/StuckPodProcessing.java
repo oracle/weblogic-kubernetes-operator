@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,16 +17,15 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 
-import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
 import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 
 /**
@@ -156,8 +155,8 @@ public class StuckPodProcessing {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
-      try (LoggingContext ignored =
-               setThreadContext().namespace(namespace).domainUid(domainUID)) {
+      try (ThreadLoggingContext ignored =
+               ThreadLoggingContext.setThreadContext().namespace(namespace).domainUid(domainUID)) {
         LOGGER.info(POD_FORCE_DELETED, name, namespace);
       }
       return super.onSuccess(packet, callResponse);
