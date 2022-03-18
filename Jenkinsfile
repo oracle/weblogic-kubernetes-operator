@@ -496,7 +496,7 @@ EOF
                     export OCIR_EMAIL=$OCIR_EMAIL}
                     
                     echo $(env|grep TWO_CLUSTERS)
-                    echo $(env|grep $OCIR_EMAIL)
+                    echo $(env|grep OCIR_EMAIL)
                     
                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                         echo "integration-tests failed"
