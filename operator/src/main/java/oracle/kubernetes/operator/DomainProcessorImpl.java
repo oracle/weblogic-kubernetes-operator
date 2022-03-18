@@ -1100,10 +1100,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   
       private void runFailureSteps(Throwable throwable) {
         gate.startFiberIfLastFiberMatches(
-            getDomainUid(),
+            domainUid,
             Fiber.getCurrentIfSet(),
             getFailureSteps(throwable),
-            getPacket(),
+            packet,
             new FailureReportCompletionCallback());
       }
 
@@ -1116,14 +1116,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           return createInternalFailureSteps(throwable);
         }
       }
-    }
-
-    private Packet getPacket() {
-      return packet;
-    }
-
-    private String getDomainUid() {
-      return domainUid;
     }
 
     private boolean hasReachedMaximumFailureCount() {
