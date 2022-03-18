@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -12,10 +12,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
-import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
+import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 /**
  * An asynchronous step to handle http requests.
@@ -115,7 +115,7 @@ public class HttpAsyncRequestStep extends Step {
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      try (LoggingContext ignored =
+      try (ThreadLoggingContext ignored =
                setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
         if (throwable instanceof HttpTimeoutException) {
           LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
