@@ -266,7 +266,7 @@ createFolder() {
 initAuxiliaryImage() {
   local copyWdtInstallFiles=true
   local copyModelFiles=true
-  local cpOut
+  local cpOut=""
 
   local sourceWdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
   if [ "${sourceWdtInstallHome}" != "NONE" ]; then
