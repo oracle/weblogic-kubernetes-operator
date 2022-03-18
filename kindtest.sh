@@ -202,6 +202,9 @@ esac
 echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" = 'false' ]; then
+  docker rm --force "${reg_name}"
+fi
+if [ "${running}" = 'true' ]; then
   docker stop "${reg_name}"
   docker rm --force "${reg_name}"
 fi
