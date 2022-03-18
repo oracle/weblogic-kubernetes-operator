@@ -487,14 +487,17 @@ EOF
                     cat "${WORKSPACE}/.mvn/maven.config"
                     cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
 
-                    export TWO_CLUSTERS \
-                           OCR_USERNAME \
-                           OCR_PASSWORD \
-                           OCR_EMAIL \
-                           OCIR_USERNAME \
-                           OCIR_PASSWORD \
-                           OCIR_EMAIL
-
+                    export TWO_CLUSTERS=${TWO_CLUSTERS}
+                    export OCR_USERNAME=${OCR_USERNAME}
+                    export OCR_PASSWORD=${OCR_PASSWORD}
+                    export OCR_EMAIL=${OCR_EMAIL}
+                    export OCIR_USERNAME=${OCIR_USERNAME}
+                    export OCIR_PASSWORD=${OCIR_PASSWORD}
+                    export OCIR_EMAIL=$OCIR_EMAIL}
+                    
+                    echo $(env|grep TWO_CLUSTERS)
+                    echo $(env|grep $OCIR_EMAIL)
+                    
                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                         echo "integration-tests failed"
                     fi
