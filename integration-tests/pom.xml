@@ -133,6 +133,7 @@
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
+                            <skip>${wko.it.skip.enforcer.rules}</skip>
                             <rules>
                                 <requireEnvironmentVariable>
                                     <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
