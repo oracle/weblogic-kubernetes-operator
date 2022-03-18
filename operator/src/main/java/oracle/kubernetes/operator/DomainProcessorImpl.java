@@ -74,12 +74,14 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainPresence.getDomainPresenceFailureRetrySeconds;
+import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -88,6 +90,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
+import static oracle.kubernetes.operator.logging.MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -349,7 +352,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return new ManagedServersUpStep(null);
   }
 
-  private FiberGate getMakeRightFiberGate(String ns) {
+  private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
     return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
@@ -645,7 +648,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             TimeUnit.SECONDS));
   }
 
-  private void logThrowable(Throwable throwable) {
+  private static void logThrowable(Throwable throwable) {
     if (throwable instanceof Step.MultiThrowable) {
       for (Throwable t : ((Step.MultiThrowable) throwable).getThrowables()) {
         logThrowable(t);
@@ -876,6 +879,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
+    private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
+      return Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getIntrospectJobFailureCount)
+              .orElse(0);
+    }
+
     private int getFailureRetryMaxCount() {
       return DomainPresence.getFailureRetryMaxCount();
     }
@@ -918,13 +929,9 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(liveInfo, delegate.getKubernetesVersion(),
                   PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                   JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-      runDomainPlan(
-            getDomain(),
-            getDomainUid(),
-            getNamespace(),
-            createDomainPlanSteps(packet),
-            deleting,
-            willInterrupt);
+
+      new DomainPlan(delegate, getNamespace(), getDomainUid(), createDomainPlanSteps(packet), deleting, willInterrupt)
+            .execute();
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
@@ -1025,14 +1032,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
-  private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getStatus)
-            .map(DomainStatus::getIntrospectJobFailureCount)
-            .orElse(0);
-  }
-
   private boolean hasReachedMaximumFailureCount(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
             .map(DomainPresenceInfo::getDomain)
@@ -1046,85 +1045,126 @@ public class DomainProcessorImpl implements DomainProcessor {
         && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
   }
 
-  @SuppressWarnings("unused")
-  private void runDomainPlan(
-      Domain dom,
-      String domainUid,
-      String ns,
-      Step.StepAndPacket plan,
-      boolean isDeleting,
-      boolean isWillInterrupt) {
-    FiberGate gate = getMakeRightFiberGate(ns);
-    CompletionCallback cc =
-        new CompletionCallback() {
-          @Override
-          public void onCompletion(Packet packet) {
-            // no-op
-          }
+  abstract static class ThrowableCallback implements CompletionCallback {
+    @Override
+    public final void onCompletion(Packet packet) {
+      // no-op
+    }
+  }
 
-          @Override
-          public void onThrowable(Packet packet, Throwable throwable) {
-            logThrowable(throwable);
-            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
-            Step failureSteps = createInternalFailureSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB));
-            if (existing != null) {
-              if (hasReachedMaximumFailureCount(existing)) {
-                failureSteps = createAbortedFailureSteps();
-              }
-            }
-            gate.startFiberIfLastFiberMatches(
-                domainUid,
-                Fiber.getCurrentIfSet(),
-                failureSteps,
-                plan.packet,
-                new CompletionCallback() {
-                  @Override
-                  public void onCompletion(Packet packet) {
-                    // no-op
-                  }
+  private class DomainPlan {
+    private final DomainProcessorDelegate delegate;
+    private final String ns;
+    private final String domainUid;
+    private final FiberGate gate;
+    private final boolean isDeleting;
+    private final boolean isWillInterrupt;
+    private final Step firstStep;
+    private final Packet packet;
 
-                  @Override
-                  public void onThrowable(Packet packet, Throwable throwable) {
-                    logThrowable(throwable);
-                  }
-                });
+    public DomainPlan(DomainProcessorDelegate delegate, String ns, String domainUid, StepAndPacket stepAndPacket,
+                      boolean isDeleting, boolean isWillInterrupt) {
+      this.delegate = delegate;
+      this.ns = ns;
+      this.domainUid = domainUid;
+      this.firstStep = stepAndPacket.step;
+      this.packet = stepAndPacket.packet;
+      this.gate = getMakeRightFiberGate(delegate, ns);
+      this.isDeleting = isDeleting;
+      this.isWillInterrupt = isWillInterrupt;
+    }
 
-            gate.getExecutor()
-                .schedule(
-                    () -> {
-                      if (existing != null) {
-                        try (LoggingContext ignored =
-                                 LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
-                          existing.setPopulated(false);
-                          // proceed only if we have not already retried max number of times
-                          int retryCount = getCurrentIntrospectFailureRetryCount(existing);
-                          LOGGER.fine("Failure count for DomainPresenceInfo: {0} is now: {1}", existing, retryCount);
-                          if (!hasReachedMaximumFailureCount(existing)) {
-                            createMakeRightOperation(existing)
-                                .withDeleting(isDeleting)
-                                .withExplicitRecheck()
-                                .execute();
-                          } else {
-                            LOGGER.severe(
-                                MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
-                                domainUid,
-                                ns,
-                                DomainPresence.getFailureRetryMaxCount(),
-                                throwable);
-                          }
-                        }
-                      }
-                    },
-                    DomainPresence.getDomainPresenceFailureRetrySeconds(),
-                    TimeUnit.SECONDS);
-          }
-        };
+    private void execute() {
+      if (isWillInterrupt) {
+        gate.startFiber(domainUid, firstStep, packet, createCompletionCallback());
+      } else {
+        gate.startFiberIfNoCurrentFiber(domainUid, firstStep, packet, createCompletionCallback());
+      }
+    }
 
-    LOGGER.fine("Starting fiber for domainUid -> " + domainUid + ", isWillInterrupt -> " + isWillInterrupt);
-    if (isWillInterrupt) {
-      gate.startFiber(domainUid, plan.step, plan.packet, cc);
-    } else {
-      gate.startFiberIfNoCurrentFiber(domainUid, plan.step, plan.packet, cc);
+    private CompletionCallback createCompletionCallback() {
+      return new DomainPlanCompletionCallback();
+    }
+
+    class DomainPlanCompletionCallback extends ThrowableCallback {
+      @Override
+      public void onThrowable(Packet packet, Throwable throwable) {
+        reportFailure(throwable);
+        scheduleRetry(throwable);
+      }
+
+      private void reportFailure(Throwable throwable) {
+        logThrowable(throwable);
+        runFailureSteps(throwable);
+      }
+  
+      private void runFailureSteps(Throwable throwable) {
+        gate.startFiberIfLastFiberMatches(
+            domainUid,
+            Fiber.getCurrentIfSet(),
+            getFailureSteps(throwable),
+            packet,
+            new FailureReportCompletionCallback());
+      }
+
+      private Step getFailureSteps(Throwable throwable) {
+        if (hasReachedMaximumFailureCount()) {
+          return createAbortedFailureSteps();
+        } else if (throwable instanceof IntrospectionJobHolder) {
+          return createIntrospectionFailureSteps(throwable, ((IntrospectionJobHolder) throwable).getIntrospectionJob());
+        } else {
+          return createInternalFailureSteps(throwable);
+        }
+      }
+    }
+
+    private boolean hasReachedMaximumFailureCount() {
+      return DomainProcessorImpl.this.hasReachedMaximumFailureCount(getExistingDomainPresenceInfo());
+    }
+
+    class FailureReportCompletionCallback extends ThrowableCallback {
+      @Override
+      public void onThrowable(Packet packet, Throwable throwable) {
+        logThrowable(throwable);
+      }
+    }
+
+    public void scheduleRetry(Throwable throwable) {
+      if (hasReachedMaximumFailureCount()) {
+        reportTooManyRetries(throwable);
+      } else {
+        Optional.ofNullable(getExistingDomainPresenceInfo()).ifPresent(this::scheduleRetry);
+      }
+    }
+
+    private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
+      if (delegate.mayRetry(domainPresenceInfo)) {
+        MakeRightRetry retry = new MakeRightRetry(domainPresenceInfo);
+        gate.getExecutor().schedule(retry::execute, getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
+      }
+    }
+
+    private void reportTooManyRetries(Throwable throwable) {
+      LOGGER.severe(CANNOT_START_DOMAIN_AFTER_MAX_RETRIES, domainUid, ns, getFailureRetryMaxCount(), throwable);
+    }
+
+    private DomainPresenceInfo getExistingDomainPresenceInfo() {
+      return DomainProcessorImpl.getExistingDomainPresenceInfo(ns, domainUid);
+    }
+
+    class MakeRightRetry {
+      private final DomainPresenceInfo domainPresenceInfo;
+
+      MakeRightRetry(DomainPresenceInfo domainPresenceInfo) {
+        this.domainPresenceInfo = domainPresenceInfo;
+      }
+
+      void execute() {
+        try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+          domainPresenceInfo.setPopulated(false);
+          createMakeRightOperation(domainPresenceInfo).withDeleting(isDeleting).withExplicitRecheck().execute();
+        }
+      }
     }
   }
 

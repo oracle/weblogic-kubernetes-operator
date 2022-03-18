@@ -176,6 +176,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `introspectionUid` | string | The uid of an introspection job associated with this failed condition |
 | `lastProbeTime` | DateTime | Last time we probed the condition. |
 | `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
 | `message` | string | Human-readable message indicating details about last transition. |
