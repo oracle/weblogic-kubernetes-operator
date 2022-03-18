@@ -266,6 +266,7 @@ createFolder() {
 initAuxiliaryImage() {
   local copyWdtInstallFiles=true
   local copyModelFiles=true
+  local cpOut=""
 
   local sourceWdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
   if [ "${sourceWdtInstallHome}" != "NONE" ]; then
@@ -293,7 +294,7 @@ initAuxiliaryImage() {
         "don't want to have an install copy. Exiting."
         return 1
       fi
-      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* \
+      cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* \
                                           ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy \
                                           2>&1)
       if [ $? -ne 0 ]; then
@@ -322,7 +323,7 @@ initAuxiliaryImage() {
     fi
     if [ "${copyModelFiles}" == "true" ]; then
       createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
-      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* \
+      cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* \
                                           ${AUXILIARY_IMAGE_TARGET_PATH}/models \
                                           2>&1)
       if [ $? -ne 0 ]; then
