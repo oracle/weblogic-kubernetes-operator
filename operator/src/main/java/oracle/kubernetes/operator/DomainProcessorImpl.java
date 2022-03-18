@@ -879,6 +879,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
+    private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
+      return Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getIntrospectJobFailureCount)
+              .orElse(0);
+    }
+
     private int getFailureRetryMaxCount() {
       return DomainPresence.getFailureRetryMaxCount();
     }
@@ -1024,14 +1032,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
-  private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getStatus)
-            .map(DomainStatus::getIntrospectJobFailureCount)
-            .orElse(0);
-  }
-
   private boolean hasReachedMaximumFailureCount(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
             .map(DomainPresenceInfo::getDomain)
@@ -1089,26 +1089,22 @@ public class DomainProcessorImpl implements DomainProcessor {
     class DomainPlanCompletionCallback extends ThrowableCallback {
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
-        reportFailure(packet, throwable);
+        logThrowable(throwable);
+        runFailureSteps(throwable);
         scheduleRetry(throwable);
       }
     }
 
-    private void reportFailure(Packet packet, Throwable throwable) {
-      logThrowable(throwable);
-      runFailureSteps(packet, throwable);
-    }
-
-    private void runFailureSteps(Packet packet, Throwable throwable) {
+    private void runFailureSteps(Throwable throwable) {
       gate.startFiberIfLastFiberMatches(
           this.domainUid,
           Fiber.getCurrentIfSet(),
-          getFailureSteps(packet, throwable),
+          getFailureSteps(throwable),
           this.packet,
           new FailureReportCompletionCallback());
     }
 
-    private Step getFailureSteps(Packet packet, Throwable throwable) {
+    private Step getFailureSteps(Throwable throwable) {
       if (hasReachedMaximumFailureCount()) {
         return createAbortedFailureSteps();
       } else if (throwable instanceof IntrospectionJobHolder) {
