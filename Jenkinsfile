@@ -270,7 +270,7 @@ pipeline {
         //
         stage('GitHub Checkout') {
             steps {
-                sh "sodo rm -rf ${WORKSPACE}/*"
+                sh "sudo rm -rf ${WORKSPACE}/*"
                 checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
                           doGenerateSubmoduleConfigurations: false,
                           extensions: [], submoduleCfg: [],
