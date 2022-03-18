@@ -511,9 +511,8 @@ EOF
                     fi
 
                     mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                    pushd ${outdir}
-                    ls -al
-                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
+                    pushd ${result_root}
+                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" 
                     popd
                 '''
                 archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
