@@ -201,11 +201,16 @@ esac
 
 echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
-if [ "${running}" != 'true' ]; then
-  docker run \
-    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
-    registry:2
+if [ "${running}" = 'false' ]; then
+  docker rm --force "${reg_name}"
 fi
+if [ "${running}" = 'true' ]; then
+  docker stop "${reg_name}"
+  docker rm --force "${reg_name}"
+fi
+docker run \
+  -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
+  registry:2
 
 reg_host="${reg_name}"
 if [ "${kind_network}" = "bridge" ]; then
@@ -324,3 +329,4 @@ docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROO
 echo "Destroy cluster and registry"
 kind delete cluster --name "${kind_name}"
 docker stop "${reg_name}"
+docker rm --force "${reg_name}"
