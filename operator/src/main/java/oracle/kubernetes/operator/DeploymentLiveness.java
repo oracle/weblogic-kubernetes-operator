@@ -15,13 +15,13 @@ import oracle.kubernetes.operator.logging.MessageKeys;
  * This task maintains the "liveness" indicator so that Kubernetes knows the Operator is still
  * alive.
  */
-public class OperatorLiveness implements Runnable {
+public class DeploymentLiveness implements Runnable {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final File livenessFile;
 
-  public OperatorLiveness(MainDelegate delegate) {
-    livenessFile = new File(delegate.getOperatorHome(), ".alive");
+  public DeploymentLiveness(CoreDelegate delegate) {
+    livenessFile = new File(delegate.getProbesHome(), ".alive");
   }
 
   @Override

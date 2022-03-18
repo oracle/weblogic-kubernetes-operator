@@ -73,11 +73,11 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_E
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
-import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
-import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
-import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
-import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
+import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
+import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
+import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
@@ -90,6 +90,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.OPERATOR_STARTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_NAMESPACE;
 import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_SERVICE_ACCOUNT;
+import static oracle.kubernetes.operator.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
@@ -103,7 +104,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-class MainTest extends ThreadFactoryTestBase {
+class OperatorMainTest extends ThreadFactoryTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -147,6 +148,7 @@ class MainTest extends ThreadFactoryTestBase {
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC4));
   private static final V1Namespace NAMESPACE_WEBLOGIC5
           = new V1Namespace().metadata(new V1ObjectMeta().name(NS_WEBLOGIC5).putLabelsItem(LABEL, VALUE));
+  public static final String CRD = "CRD";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -155,7 +157,7 @@ class MainTest extends ThreadFactoryTestBase {
   private final String ns = "nsrand" + new Random().nextInt(10000);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
-  private final Main main = new Main(delegate);
+  private final OperatorMain operatorMain = new OperatorMain(delegate);
 
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
@@ -210,7 +212,7 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorCreated_logStartupMessage() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OPERATOR_STARTED);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OPERATOR_STARTED, GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
@@ -219,7 +221,7 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorCreated_logOperatorNamespace() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_NAMESPACE);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_NAMESPACE, getOperatorNamespace()));
   }
@@ -228,7 +230,7 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorCreated_logServiceAccountName() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_SERVICE_ACCOUNT);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT, "default"));
   }
@@ -240,7 +242,7 @@ class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
           String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES,
           String.join(", ", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3)));
@@ -251,7 +253,7 @@ class MainTest extends ThreadFactoryTestBase {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES, getOperatorNamespace()));
   }
@@ -261,7 +263,7 @@ class MainTest extends ThreadFactoryTestBase {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
     defineSelectionStrategy(SelectionStrategy.RegExp);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, not(containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)));
   }
@@ -271,28 +273,28 @@ class MainTest extends ThreadFactoryTestBase {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
 
-    Main.createMain(buildProperties);
+    OperatorMain.createMain(buildProperties);
 
     assertThat(logRecords, not(containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)));
   }
 
   @Test
   void whenOperatorStarted_namespaceWatcherIsCreated() {
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
 
-    assertThat(main.getNamespaceWatcher(), notNullValue());
+    assertThat(operatorMain.getNamespaceWatcher(), notNullValue());
   }
 
   @Test
   void whenOperatorStarted_operatorNamespaceEventWatcherIsCreated() {
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
 
-    assertThat(main.getOperatorNamespaceEventWatcher(), notNullValue());
+    assertThat(operatorMain.getOperatorNamespaceEventWatcher(), notNullValue());
   }
 
   @Test
   void whenOperatorStarted_withoutExistingEvent_nsEventK8SObjectsEmpty() {
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
     assertThat(getNSEventMapSize(), equalTo(0));
   }
 
@@ -302,7 +304,7 @@ class MainTest extends ThreadFactoryTestBase {
     CoreV1Event event2 = createNSEvent("event2").reason(STOP_MANAGING_NAMESPACE_EVENT);
 
     testSupport.defineResources(event1, event2);
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
     assertThat(getNSEventMapSize(), equalTo(2));
   }
 
@@ -323,18 +325,18 @@ class MainTest extends ThreadFactoryTestBase {
   void whenOperatorStartedInDedicatedMode_namespaceWatcherIsNotCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
 
-    assertThat(main.getNamespaceWatcher(), nullValue());
+    assertThat(operatorMain.getNamespaceWatcher(), nullValue());
   }
 
   @Test
   void whenOperatorStartedInDedicatedMode_operatorNamespaceEventWatcherIsNotCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
-    main.startOperator(null);
+    operatorMain.startDeployment(null);
 
-    assertThat(main.getOperatorNamespaceEventWatcher(), nullValue());
+    assertThat(operatorMain.getOperatorNamespaceEventWatcher(), nullValue());
   }
 
   @Test
@@ -343,15 +345,19 @@ class MainTest extends ThreadFactoryTestBase {
 
     recheckDomains();
 
-    verifyWatchersNotDefined(main.getDomainNamespaces(), getOperatorNamespace());
+    verifyWatchersNotDefined(operatorMain.getDomainNamespaces(), getOperatorNamespace());
   }
 
   private void simulateMissingCRD() {
     testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
   }
 
+  private void simulateMissingCRDPermissions() {
+    testSupport.failOnResource(CRD, null, null, HttpURLConnection.HTTP_FORBIDDEN);
+  }
+
   private void recheckDomains() {
-    testSupport.runSteps(main.createDomainRecheckSteps());
+    testSupport.runSteps(operatorMain.createDomainRecheckSteps());
   }
 
   private void runCreateReadNamespacesStep() {
@@ -360,13 +366,13 @@ class MainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenNoCRD_logReasonForFailure() {
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WAIT_FOR_CRD_INSTALLATION);
     simulateMissingCRD();
     delegate.hideCRD();
 
     recheckDomains();
 
-    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+    assertThat(logRecords, containsInfo(WAIT_FOR_CRD_INSTALLATION));
   }
 
   @Test
@@ -399,9 +405,10 @@ class MainTest extends ThreadFactoryTestBase {
     recheckDomains();
 
     testSupport.cancelFailures();
+    simulateMissingCRDPermissions();
     recheckDomains();
 
-    verifyWatchersDefined(main.getDomainNamespaces(), getOperatorNamespace());
+    verifyWatchersDefined(operatorMain.getDomainNamespaces(), getOperatorNamespace());
   }
 
   @Test
@@ -411,12 +418,12 @@ class MainTest extends ThreadFactoryTestBase {
     testSupport.cancelFailures();
     recheckDomains();
 
-    loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WAIT_FOR_CRD_INSTALLATION);
     simulateMissingCRD();
     delegate.hideCRD();
     recheckDomains();
 
-    assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+    assertThat(logRecords, containsInfo(WAIT_FOR_CRD_INSTALLATION));
   }
 
   @Test
@@ -694,7 +701,7 @@ class MainTest extends ThreadFactoryTestBase {
   void beforeNamespaceAdded_watchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
 
-    verifyWatchersNotDefined(main.getDomainNamespaces(), ns);
+    verifyWatchersNotDefined(operatorMain.getDomainNamespaces(), ns);
   }
 
   private void verifyWatchersNotDefined(DomainNamespaces domainNamespaces, String ns) {
@@ -709,18 +716,18 @@ class MainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterNullNamespaceAdded_WatchersAreNotDefined() {
-    main.dispatchNamespaceWatch(WatchEvent.createAddedEvent((V1Namespace) null).toWatchResponse());
+    operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent((V1Namespace) null).toWatchResponse());
 
-    verifyWatchersNotDefined(main.getDomainNamespaces(), ns);
+    verifyWatchersNotDefined(operatorMain.getDomainNamespaces(), ns);
   }
 
   @Test
   void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
-    main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
-    verifyWatchersNotDefined(main.getDomainNamespaces(), ns);
+    verifyWatchersNotDefined(operatorMain.getDomainNamespaces(), ns);
   }
 
   @Test
@@ -728,9 +735,9 @@ class MainTest extends ThreadFactoryTestBase {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
 
-    main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
-    verifyWatchersDefined(main.getDomainNamespaces(), ns);
+    verifyWatchersDefined(operatorMain.getDomainNamespaces(), ns);
   }
 
   private void verifyWatchersDefined(DomainNamespaces domainNamespaces, String ns) {
@@ -747,7 +754,7 @@ class MainTest extends ThreadFactoryTestBase {
   void afterNamespaceAdded_scriptConfigMapIsDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
-    main.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
+    operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
     assertThat(getScriptMap(ns), notNullValue());
   }
@@ -1189,7 +1196,7 @@ class MainTest extends ThreadFactoryTestBase {
 
     @Override
     public void addToPacket(Packet packet) {
-      packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
+      packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
     }
 
     @Override
@@ -1222,13 +1229,13 @@ class MainTest extends ThreadFactoryTestBase {
     }
   }
 
-  static class TestStepFactory implements Main.NextStepFactory {
+  static class TestStepFactory implements OperatorMain.NextStepFactory {
     @SuppressWarnings("FieldCanBeLocal")
     private static TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(Main.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(OperatorMain.class, "NEXT_STEP_FACTORY", factory);
     }
 
     @Override

@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -13,13 +12,12 @@ import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.operator.Upgradable;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainList is a list of Domains. */
-public class DomainList implements KubernetesListObject, Upgradable<DomainList> {
+public class DomainList implements KubernetesListObject {
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -229,9 +227,4 @@ public class DomainList implements KubernetesListObject, Upgradable<DomainList> 
         .isEquals();
   }
 
-  @Override
-  public DomainList upgrade() {
-    Optional.ofNullable(items).ifPresent(list -> list.forEach(Domain::upgrade));
-    return this;
-  }
 }

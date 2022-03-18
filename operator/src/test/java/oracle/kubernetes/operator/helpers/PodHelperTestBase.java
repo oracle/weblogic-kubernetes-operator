@@ -4,12 +4,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
 
+import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.Quantity;
@@ -65,6 +68,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -115,6 +119,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -122,6 +128,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -148,9 +155,12 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -203,6 +213,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
   public static final String LONG_CHANNEL_NAME = "Very_Long_Channel_Name";
   public static final String TRUNCATED_PORT_NAME_PREFIX = "very-long-ch";
+  public static final String CUSTOM_COMMAND_SCRIPT = "customScript.sh";
+  static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -222,6 +234,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -273,6 +286,16 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_MODEL_HOME, sourceModelHome));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
+    return envVars;
+  }
+
+  static List<V1EnvVar> getLegacyAuxiliaryImageEnvVariables(String image, String name, String command) {
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, command));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name));
     return envVars;
   }
 
@@ -843,6 +866,316 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                     .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent",
+                    AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @NotNull
+  protected String getAuxiliaryImageVolumeName() {
+    return getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  protected static String getAuxiliaryImageVolumeName(String testVolumeName) {
+    return AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
+  }
+
+  @NotNull
+  protected static String getLegacyAuxiliaryImageVolumeName() {
+    return COMPATIBILITY_MODE + getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  protected String getLegacyAuxiliaryImageVolumeName(String testVolumeName) {
+    return COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMPATIBILITY_MODE + getAuxiliaryImageVolumeName())
+                    .mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, null, "Memory");
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, "100G", null);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "ALWAYS");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "ALWAYS",
+                    AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+                    serverName)));
+  }
+
+  static ImmutableMap<String, Object> createLegacyDomainMap(Map<String, Object> spec) {
+    return ImmutableMap.of("apiVersion", "weblogic.oracle/v8",
+            "kind", "Domain",
+            "metadata", createMetadata(),
+            "spec", spec);
+  }
+
+  static Map<String, Object> createDomainSpecMap(List<Object> auxiliaryImageVolumes, List<Object> auxiliaryImages) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages));
+    return spec;
+  }
+
+  static Map<String, Object> createSpecWithAdminServer(List<Object> auxiliaryImageVolumes, List<Object> auxiliaryImages,
+                                                       Map<String,Object> adminSpec) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages));
+    spec.put("adminServer", adminSpec);
+    return spec;
+  }
+
+  static Map<String, Object> createSpecWithClusters(List<Object> auxiliaryImageVolumes, List<Object> auxiliaryImages,
+                                                       List<Object> clustersSpec) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages));
+    spec.put("clusters", clustersSpec);
+    return spec;
+  }
+
+  static Map<String, Object> createSpecWithManagedServers(List<Object> auxiliaryImageVolumes, List<Object>
+          auxiliaryImages, List<Object> managedServersSpec) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages));
+    spec.put("managedServers", managedServersSpec);
+    return spec;
+  }
+
+  static List<Object> createClusterSpecWithAuxImages(List<Object> auxiliaryImages, String clusterName) {
+    List<Object> clusterSpec = new ArrayList<>();
+    clusterSpec.add(ImmutableMap.of("clusterName", clusterName,
+            "serverPod", createServerPod(auxiliaryImages)));
+    return clusterSpec;
+  }
+
+  static List<Object> createManagedServersSpecWithAuxImages(List<Object> auxiliaryImages, String msName) {
+    List<Object> managedServersSpec = new ArrayList<>();
+    managedServersSpec.add(ImmutableMap.of("serverName", msName,
+            "serverPod", createServerPod(auxiliaryImages)));
+    return managedServersSpec;
+  }
+
+  static Map<String, Object> createServerPodWithAuxImages(List<Object> auxiliaryImages) {
+    return ImmutableMap.of("serverPod", createServerPod(auxiliaryImages));
+  }
+
+  @NotNull
+  private static Map<String, Object> createServerPod(List<Object> auxiliaryImages) {
+    Map<String, Object> serverPod = new LinkedHashMap<>();
+    serverPod.put("auxiliaryImages", auxiliaryImages);
+    return serverPod;
+  }
+
+  @NotNull
+  private static Map<String, Object> createWebLogicCredentialsSecret() {
+    Map<String, Object> webLogicCredentialsSecret = new LinkedHashMap<>();
+    webLogicCredentialsSecret.put("name", "webLogicCredentialsSecretName");
+    return webLogicCredentialsSecret;
+  }
+
+  @NotNull
+  static Map<String, Object> createMetadata() {
+    Map<String, Object> metadata = new LinkedHashMap<>();
+    metadata.put("name", "domain1");
+    metadata.put("namespace", "namespace");
+    metadata.put("uid", "12345");
+    return metadata;
+  }
+
+  static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy) {
+    return createAuxiliaryImage(image, imagePullPolicy,
+            AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, TEST_VOLUME_NAME);
+  }
+
+  static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy, String command) {
+    return createAuxiliaryImage(image, imagePullPolicy, command,
+            TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  private static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy, String command,
+                                                          String volume) {
+    Map<String, Object> auxiliaryImage = new LinkedHashMap<>();
+    auxiliaryImage.put("image", image);
+    auxiliaryImage.put("imagePullPolicy", imagePullPolicy);
+    auxiliaryImage.put("volume", volume);
+    auxiliaryImage.put("command", command);
+    return auxiliaryImage;
+  }
+
+  static Map<String, Object> createAuxiliaryImageVolume(String mountPath) {
+    return createAuxiliaryImageVolume(TEST_VOLUME_NAME, mountPath);
+  }
+
+  @NotNull
+  static Map<String, Object> createAuxiliaryImageVolume(String name, String mountPath) {
+    Map<String, Object> auxiliaryImageVolumes = new LinkedHashMap<>();
+    auxiliaryImageVolumes.put("name", name);
+    auxiliaryImageVolumes.put("mountPath", mountPath);
+    return auxiliaryImageVolumes;
+  }
+
+  @NotNull
+  static Map<String, Object> createAuxiliaryImageVolume(String name, String mountPath, String sizeLimit,
+                                                                String medium) {
+    Map<String, Object> auxiliaryImageVolume = new LinkedHashMap<>();
+    auxiliaryImageVolume.put("name", name);
+    auxiliaryImageVolume.put("mountPath", mountPath);
+    Optional.ofNullable(sizeLimit).ifPresent(s -> auxiliaryImageVolume.put("sizeLimit", s));
+    Optional.ofNullable(medium).ifPresent(m -> auxiliaryImageVolume.put("medium", m));
+    return auxiliaryImageVolume;
+  }
+
+  void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
+    try {
+      testSupport.addDomainPresenceInfo(new DomainPresenceInfo(
+              conversionUtils.readDomain(conversionUtils.convertDomain(new Yaml().dump(map)))));
+      addAuxiliaryImagePathsEnvToPacket();
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
+            CUSTOM_COMMAND_SCRIPT);
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(Collections.singletonList(auxiliaryImageVolume),
+                            Collections.singletonList(auxiliaryImage))));
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT, serverName)));
+  }
+
+  private void addAuxiliaryImagePathsEnvToPacket() {
+    testSupport.addToPacket(ENVVARS,
+            Collections.singletonList(new V1EnvVar().name(AUXILIARY_IMAGE_PATHS)
+                    .value(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasMultipleLegacyAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image2:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage, auxiliaryImage2))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image1:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image2:v1",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   @NotNull
@@ -2212,5 +2545,4 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
       return doDelay(next, packet, delay, TimeUnit.SECONDS);
     }
   }
-
 }

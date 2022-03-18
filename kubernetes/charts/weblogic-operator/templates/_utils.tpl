@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{/*
@@ -489,5 +489,24 @@ Verify that a Kubernetes resource exists in a given namespace
 {{-     $errorMsg := cat $type $name " not found in namespace " $namespace -}}
 {{-     include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{-   end -}}
+{{- end -}}
+{{- end -}}
+
+
+{{/*
+Return true if there's an existing webhook deployment and chart version is less than or equal to the exsiting webhook version.
+*/}}
+{{- define "utils.verifyExistingWebhookDeployment" -}}
+{{- $chartVersion := index . 0 -}}
+{{- range $deployment := (lookup "apps/v1" "Deployment" "" "").items }}
+{{-   if not $deployment.metadata.labels }}
+{{-    $ignore := set $deployment.metadata "labels" (dict) }}
+{{-   end }}
+{{-   if and (eq $deployment.metadata.name "weblogic-operator-webhook") (hasKey $deployment.metadata.labels "weblogic.webhookVersion") }}
+{{      $webhookVersion := get $deployment.metadata.labels "weblogic.webhookVersion" }}
+{{-     if le $chartVersion $webhookVersion }}
+{{-       print "true" }}
+{{-     end -}}
+{{-   end  -}}
 {{- end -}}
 {{- end -}}

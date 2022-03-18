@@ -13,7 +13,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
@@ -149,7 +149,7 @@ public final class HealthCheckHelper {
           }
         }
 
-        if (!Main.isDedicated()) {
+        if (!OperatorMain.isDedicated()) {
           for (Resource r : clusterAccessChecks.keySet()) {
             for (Operation op : clusterAccessChecks.get(r)) {
               check(rules, r, op, namespace);

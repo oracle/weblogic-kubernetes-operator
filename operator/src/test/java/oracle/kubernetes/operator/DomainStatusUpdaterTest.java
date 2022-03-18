@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -80,6 +81,7 @@ class DomainStatusUpdaterTest {
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(SystemClockTestSupport.installClock());
+    mementos.add(TuningParametersStub.install());
 
     domain.setStatus(new DomainStatus());
     info.setAdminServerName(ADMIN);

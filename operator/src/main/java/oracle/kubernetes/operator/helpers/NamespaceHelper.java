@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_UID_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
@@ -31,6 +32,10 @@ public class NamespaceHelper {
 
   public static String getOperatorPodUID() {
     return Optional.ofNullable(getHelmVariable(OPERATOR_POD_UID_ENV)).orElse("");
+  }
+
+  public static String getWebhookNamespace() {
+    return Optional.ofNullable(getHelmVariable(WEBHOOK_NAMESPACE_ENV)).orElse(DEFAULT_NAMESPACE);
   }
 
   /**

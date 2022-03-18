@@ -25,7 +25,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
-import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -140,7 +140,7 @@ public class RestBackendImpl implements RestBackend {
       return null;
     }
     V1TokenReviewStatus status = atn.check(principal, accessToken,
-        Main.isDedicated() ? getOperatorNamespace() : null);
+        OperatorMain.isDedicated() ? getOperatorNamespace() : null);
     if (status == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
     }
@@ -181,7 +181,7 @@ public class RestBackendImpl implements RestBackend {
 
   private List<Domain> getDomains(String ns) {
     try {
-      return callBuilder.listDomain(ns).upgrade().getItems();
+      return callBuilder.listDomain(ns).getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }

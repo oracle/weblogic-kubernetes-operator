@@ -246,7 +246,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItMultiDomainModels,
+		  **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
@@ -395,13 +395,11 @@
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
-                  **/ItKubernetesEvents,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
                   **/ItManageNameSpace,
                   **/ItMiiAuxiliaryImage,
-                  **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
