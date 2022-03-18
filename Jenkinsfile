@@ -77,6 +77,7 @@ def _kind_image = ''
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
+        skipDefaultCheckout(true)
         timeout(time: 800, unit: 'MINUTES')
     }
 
@@ -269,11 +270,16 @@ pipeline {
         //
         stage('GitHub Checkout') {
             steps {
-                sh "rm -rf ${WORKSPACE}/*"
-                checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
+//                sh "rm -rf ${WORKSPACE}/*"
+//                checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
+//                          doGenerateSubmoduleConfigurations: false,
+//                          extensions: [], submoduleCfg: [],
+//                          userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
+                cleanWs()
+                checkout([$class: 'GitSCM', branches: [[name: params.commit_sha]],
                           doGenerateSubmoduleConfigurations: false,
                           extensions: [], submoduleCfg: [],
-                          userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
+                          userRemoteConfigs: scm.userRemoteConfigs ])
             }
         }
 
