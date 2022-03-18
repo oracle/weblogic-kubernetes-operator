@@ -134,34 +134,34 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <requireEnvironmentVariables>
+                                <requireEnvironmentVariable>
                                     <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
                                     <variableName>TWO_CLUSTERS</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCIR_USERNAME environment variable to specify the OCIR username to use for pulling/pushing images.</message>
                                     <variableName>OCIR_USERNAME</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCIR_PASSWORD environment variable to specify the OCIR password to use for pulling/pushing images.</message>
                                     <variableName>OCIR_PASSWORD</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCIR_EMAIL environment variable to specify the OCIR user's email address to use for creating the image pull secret.</message>
                                     <variableName>OCIR_EMAIL</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCR_USERNAME environment variable to specify the OCR username to use for pulling images.</message>
                                     <variableName>OCR_USERNAME</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
                                     <variableName>OCR_PASSWORD</variableName>
-                                </requireEnvironmentVariables>
-                                <requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
                                     <message>Set the OCR_EMAIL environment variable to specify the OCR user's email address to use for creating the image pull secret.</message>
                                     <variableName>OCR_EMAIL</variableName>
-                                </requireEnvironmentVariables>
+                                </requireEnvironmentVariable>
                             </rules>
                         </configuration>
                     </execution>
