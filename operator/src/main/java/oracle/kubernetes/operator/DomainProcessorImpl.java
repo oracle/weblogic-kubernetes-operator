@@ -47,12 +47,12 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
@@ -91,6 +91,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES;
+import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -369,8 +370,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       BiConsumer<String, FiberGate> consumer =
           (namespace, gate) -> gate.getCurrentFibers().forEach(
             (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-              try (LoggingContext ignored
-                  = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+              try (ThreadLoggingContext ignored
+                  = setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
                 LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getResourceName());
               }
             }));
@@ -809,7 +810,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public void execute() {
-      try (LoggingContext ignored = LoggingContext.setThreadContext().presenceInfo(liveInfo)) {
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
         if (!delegate.isNamespaceRunning(getNamespace())) {
           return;
         }
@@ -1160,7 +1161,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
 
       void execute() {
-        try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
+        try (ThreadLoggingContext ignored = setThreadContext().namespace(ns).domainUid(domainUid)) {
           domainPresenceInfo.setPopulated(false);
           createMakeRightOperation(domainPresenceInfo).withDeleting(isDeleting).withExplicitRecheck().execute();
         }
@@ -1382,8 +1383,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         getStatusFiberGate(getNamespace())
               .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
       } catch (Throwable t) {
-        try (LoggingContext ignored
-                   = LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
+        try (ThreadLoggingContext ignored
+                   = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
           LOGGER.severe(MessageKeys.EXCEPTION, t);
         }
       }
