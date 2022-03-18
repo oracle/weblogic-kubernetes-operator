@@ -1089,29 +1089,41 @@ public class DomainProcessorImpl implements DomainProcessor {
     class DomainPlanCompletionCallback extends ThrowableCallback {
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
-        logThrowable(throwable);
-        runFailureSteps(throwable);
+        reportFailure(throwable);
         scheduleRetry(throwable);
       }
-    }
 
-    private void runFailureSteps(Throwable throwable) {
-      gate.startFiberIfLastFiberMatches(
-          this.domainUid,
-          Fiber.getCurrentIfSet(),
-          getFailureSteps(throwable),
-          this.packet,
-          new FailureReportCompletionCallback());
-    }
-
-    private Step getFailureSteps(Throwable throwable) {
-      if (hasReachedMaximumFailureCount()) {
-        return createAbortedFailureSteps();
-      } else if (throwable instanceof IntrospectionJobHolder) {
-        return createIntrospectionFailureSteps(throwable, ((IntrospectionJobHolder) throwable).getIntrospectionJob());
-      } else {
-        return createInternalFailureSteps(throwable);
+      private void reportFailure(Throwable throwable) {
+        logThrowable(throwable);
+        runFailureSteps(throwable);
       }
+  
+      private void runFailureSteps(Throwable throwable) {
+        gate.startFiberIfLastFiberMatches(
+            getDomainUid(),
+            Fiber.getCurrentIfSet(),
+            getFailureSteps(throwable),
+            getPacket(),
+            new FailureReportCompletionCallback());
+      }
+
+      private Step getFailureSteps(Throwable throwable) {
+        if (hasReachedMaximumFailureCount()) {
+          return createAbortedFailureSteps();
+        } else if (throwable instanceof IntrospectionJobHolder) {
+          return createIntrospectionFailureSteps(throwable, ((IntrospectionJobHolder) throwable).getIntrospectionJob());
+        } else {
+          return createInternalFailureSteps(throwable);
+        }
+      }
+    }
+
+    private Packet getPacket() {
+      return packet;
+    }
+
+    private String getDomainUid() {
+      return domainUid;
     }
 
     private boolean hasReachedMaximumFailureCount() {
