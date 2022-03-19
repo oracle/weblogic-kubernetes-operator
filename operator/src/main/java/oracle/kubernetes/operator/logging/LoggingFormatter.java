@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -172,7 +172,7 @@ public class LoggingFormatter extends Formatter {
   }
 
   private String getDomainUidFromThreadContext() {
-    return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
+    return ThreadLoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
@@ -199,7 +199,7 @@ public class LoggingFormatter extends Formatter {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
           .map(p -> p.getSpi(LoggingContext.class))
-          .or(LoggingContext::optionalContext)
+          .or(ThreadLoggingContext::optionalContext)
           .map(LoggingContext::namespace)
           .orElse("");
   }

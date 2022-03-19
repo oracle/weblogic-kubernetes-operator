@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.HttpResponseStep;
-import oracle.kubernetes.operator.logging.LoggingContext;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -350,7 +350,7 @@ public class MonitoringExporterSteps {
       } else {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
-        try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(getNamespace(packet))) {
+        try (ThreadLoggingContext ignored = ThreadLoggingContext.setThreadContext().namespace(getNamespace(packet))) {
           for (String serverName : serverNames) {
             startDetails.add(new StepAndPacket(stepFactory.apply(serverName), packet.copy()));
           }

@@ -3,7 +3,13 @@
 
 package oracle.kubernetes.operator.rest;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,6 +48,9 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
+import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
+import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_REQUEST;
+import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_RESPONSE;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -49,6 +58,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class RestTest extends JerseyTest {
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
+  private static final String WEBHOOK_HREF = "/webhook";
   private static final String V1_HREF = OPERATOR_HREF + "/" + V1;
   private static final String LATEST_HREF = OPERATOR_HREF + "/latest";
 
@@ -80,7 +90,7 @@ class RestTest extends JerseyTest {
 
   @Override
   protected Application configure() {
-    return RestServer.createResourceConfig(RestConfigStub.create(this::getRestBackend));
+    return new OperatorRestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
   }
 
   // Note: the #configure method is called during class initialization, before the restBackend field
@@ -292,6 +302,54 @@ class RestTest extends JerseyTest {
         sendScaleRequest("cluster1", 3).getStatus(), equalTo(HttpURLConnection.HTTP_BAD_REQUEST));
   }
 
+  @Test
+  void whenConversionWebhookRequestSent_hasExpectedResponse() {
+    try {
+      String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
+      Response response = sendConversionWebhookRequest(conversionReview);
+      String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+
+      assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private Response sendConversionWebhookRequest(String conversionReview) throws IOException {
+    return createRequest(WEBHOOK_HREF)
+            .post(createConversionRequest(conversionReview));
+  }
+
+  private String getAsString(String fileName) {
+    return getAsString(inputStreamFromClasspath(fileName));
+  }
+
+  private String getAsString(InputStream inputStream) {
+    return new BufferedReader(
+            new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+            .lines()
+            .collect(Collectors.joining("\n"));
+  }
+
+  private Entity<String> createConversionRequest(String jsonStr) {
+    return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
+  }
+
+  @Test
+  void whenConversionWebhookHasAnException_responseHasFailedStatus() {
+    try {
+      String conversionReview = "some_unexpected_string";
+      Response response = sendConversionWebhookRequest(conversionReview);
+      String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+
+      assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   private void excludeRequestedByHeader() {
     includeRequestedByHeader = false;
   }
@@ -378,6 +436,21 @@ class RestTest extends JerseyTest {
     @Override
     public RestBackend getBackend(String accessToken) {
       return restBackendSupplier.get();
+    }
+
+    @Override
+    public String getHost() {
+      return "localhost";
+    }
+
+    @Override
+    public int getExternalHttpsPort() {
+      return 8081;
+    }
+
+    @Override
+    public int getInternalHttpsPort() {
+      return 8082;
     }
   }
 

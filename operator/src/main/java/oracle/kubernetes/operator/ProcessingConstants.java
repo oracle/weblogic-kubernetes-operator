@@ -7,7 +7,7 @@ package oracle.kubernetes.operator;
 public interface ProcessingConstants {
 
   String MAIN_COMPONENT_NAME = "main";
-  String DELAGTE_COMPONENT_NAME = "delegate";
+  String DELEGATE_COMPONENT_NAME = "delegate";
   String DOMAIN_COMPONENT_NAME = "domain";
   String FIBER_COMPONENT_NAME = "fiber";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
@@ -54,4 +54,8 @@ public interface ProcessingConstants {
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
 
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
+
+  String WEBHOOK = "Webhook";
+
+  String COMPATIBILITY_MODE = "compatibility-mode-";
 }

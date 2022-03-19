@@ -32,8 +32,22 @@ UNKNOWN_SHELL=true
 
 checkEnv AUXILIARY_IMAGE_TARGET_PATH AUXILIARY_IMAGE_CONTAINER_NAME || exit 1
 
-initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
-cat /tmp/auxiliaryImage.out
-mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
-cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+if [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "operator-aux-container"* ]]; then
+  initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
+  cat /tmp/auxiliaryImage.out
+
+  mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
+  cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compatibility-mode-operator-aux-container"* ]]; then
+  initCompatibilityModeInitContainersWithLegacyAuxImages > /tmp/compatibilityModeInitContainers.out 2>&1
+  cat /tmp/compatibilityModeInitContainers.out
+
+  mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/compatibilityModeInitContainerLogs
+  cp /tmp/compatibilityModeInitContainers.out ${AUXILIARY_IMAGE_TARGET_PATH}/compatibilityModeInitContainerLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+else
+  trace SEVERE "Invalid auxiliary image container name '$AUXILIARY_IMAGE_CONTAINER_NAME'. " \
+               "The auxiliary image container name must start with either 'operator-aux-container' " \
+               "or 'compatibility-mode-operator-aux-container'. Exiting."
+  exit 1
+fi
 exit

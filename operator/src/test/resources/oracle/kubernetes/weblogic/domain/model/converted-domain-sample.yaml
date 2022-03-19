@@ -1,0 +1,88 @@
+apiVersion: weblogic.oracle/v9
+kind: Domain
+metadata:
+  name: sample-domain1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain1
+spec:
+  domainHomeSourceType: FromModel
+  domainHome: /u01/domains/sample-domain1
+  image: container-registry.oracle.com/middleware/weblogic:12.2.1.4
+  imagePullPolicy: IfNotPresent
+  webLogicCredentialsSecret:
+    name: sample-domain1-weblogic-credentials
+  includeServerOutInPodLog: true
+  serverStartPolicy: IF_NEEDED
+  serverPod:
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: domain1
+    - name: JAVA_OPTIONS
+      value: -Dweblogic.StdoutDebugEnabled=false
+    - name: USER_MEM_ARGS
+      value: '-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m '
+    - name: AUXILIARY_IMAGE_PATHS
+      value: /auxiliary
+    resources:
+      requests:
+        cpu: 250m
+        memory: 768Mi
+    volumes:
+    - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+      emptyDir: {
+        }
+    initContainers:
+    - name: compatibility-mode-operator-aux-container1
+      image: model-in-image:WLS-AI-v1
+      command:
+      - /weblogic-operator/scripts/auxImage.sh
+      imagePullPolicy: IfNotPresent
+      env:
+      - name: AUXILIARY_IMAGE_PATH
+        value: /auxiliary
+      - name: AUXILIARY_IMAGE_TARGET_PATH
+        value: /tmpAuxiliaryImage
+      - name: AUXILIARY_IMAGE_COMMAND
+        value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+      - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+        value: model-in-image:WLS-AI-v1
+      - name: AUXILIARY_IMAGE_CONTAINER_NAME
+        value: compatibility-mode-operator-aux-container1
+      volumeMounts:
+      - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+        mountPath: /tmpAuxiliaryImage
+      - name: weblogic-scripts-cm-volume
+        mountPath: /weblogic-operator/scripts
+    volumeMounts:
+    - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+      mountPath: /auxiliary
+  adminServer:
+    serverStartState: RUNNING
+    adminChannelPortForwardingEnabled: false
+  replicas: 1
+  clusters:
+  - clusterName: cluster-1
+    serverStartState: RUNNING
+    serverPod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: weblogic.clusterName
+                  operator: In
+                  values:
+                  - $(CLUSTER_NAME)
+              topologyKey: kubernetes.io/hostname
+    replicas: 2
+  restartVersion: '1'
+  introspectVersion: '1'
+  configuration:
+    model:
+      domainType: WLS
+      modelHome: /auxiliary/models
+      wdtInstallHome: /auxiliary/weblogic-deploy
+      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret

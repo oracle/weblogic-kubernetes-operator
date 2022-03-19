@@ -93,7 +93,7 @@ class NamespaceTest {
     processNamespaces();
     defineNamespaces(NS);
 
-    testSupport.runSteps(new Main(delegate).createDomainRecheckSteps());
+    testSupport.runSteps(new OperatorMain(delegate).createDomainRecheckSteps());
     assertThat(domainNamespaces.getJobWatcher(NS), not(sameInstance(oldWatcher)));
   }
 

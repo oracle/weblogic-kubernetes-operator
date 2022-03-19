@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
 import static oracle.kubernetes.utils.LogMatcher.containsConfig;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -37,7 +38,7 @@ class CertificatesTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(consoleHandlerMemento
-          .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE)
+          .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE, NO_WEBHOOK_CERTIFICATE)
           .withLogLevel(Level.FINE));
     mementos.add(InMemoryCertificates.installWithoutData());
   }
@@ -60,7 +61,7 @@ class CertificatesTest {
     Certificates certificates = new Certificates(mainDelegate);
 
     assertThat(
-        certificates.getOperatorExternalKeyFilePath(), equalTo("/operator/external-identity/externalOperatorKey"));
+        certificates.getOperatorExternalKeyFilePath(), equalTo("/deployment/external-identity/externalOperatorKey"));
   }
 
   @Test
@@ -75,7 +76,7 @@ class CertificatesTest {
 
     Certificates certificates = new Certificates(mainDelegate);
     assertThat(
-        certificates.getOperatorInternalKeyFilePath(), equalTo("/operator/internal-identity/internalOperatorKey"));
+        certificates.getOperatorInternalKeyFilePath(), equalTo("/deployment/internal-identity/internalOperatorKey"));
   }
 
   @Test
@@ -119,6 +120,30 @@ class CertificatesTest {
   }
 
   @Test
+  void whenWebhookCertificateFileDefined_returnPath() {
+    InMemoryCertificates.defineWebhookCertificateFile("asdf");
+
+    Certificates certificates = new Certificates(mainDelegate);
+    assertThat(certificates.getWebhookCertificateData(), notNullValue());
+  }
+
+  @Test
+  void whenNoWebhookCertificateFile_returnNull() {
+    consoleHandlerMemento.ignoreMessage(NO_WEBHOOK_CERTIFICATE);
+
+    Certificates certificates = new Certificates(mainDelegate);
+    assertThat(certificates.getWebhookCertificateData(), nullValue());
+  }
+
+  @Test
+  void whenNoWebhookCertificateFile_logConfigMessage() {
+    Certificates certificates = new Certificates(mainDelegate);
+    certificates.getWebhookCertificateData();
+
+    assertThat(logRecords, containsConfig(NO_WEBHOOK_CERTIFICATE));
+  }
+
+  @Test
   void whenInternalCertificateFileDefined_returnPath() {
     InMemoryCertificates.defineOperatorInternalCertificateFile("asdf");
 
@@ -127,8 +152,8 @@ class CertificatesTest {
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
-    public File getOperatorHome() {
-      return new File("/operator");
+    public File getDeploymentHome() {
+      return new File("/deployment");
     }
   }
 }
