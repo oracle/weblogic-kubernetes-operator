@@ -495,8 +495,23 @@ EOF
                     export OCIR_PASSWORD=${OCIR_PASSWORD}
                     export OCIR_EMAIL=$OCIR_EMAIL}
                     
-                    echo $(env|grep TWO_CLUSTERS)
-                    echo $(env|grep OCIR_EMAIL)
+                    if [ ! -z "${http_proxy}" ]; then
+                        export http_proxy
+                    elif [ ! -z "${HTTP_PROXY}" ]; then
+                        export HTTP_PROXY
+                    fi
+
+                    if [ ! -z "${https_proxy}" ]; then
+                        export https_proxy
+                    elif [ ! -z "${HTTPS_PROXY}" ]; then
+                        export HTTPS_PROXY
+                    fi
+                    
+                    if [ ! -z "${no_proxy}" ]; then
+                        export no_proxy
+                    elif [ ! -z "${NO_PROXY}" ]; then
+                        export NO_PROXY
+                    fi
                     
                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                         echo "integration-tests failed"
@@ -529,7 +544,7 @@ EOF
 
                     mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                     pushd ${result_root}
-                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" 
+                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
                     popd
                 '''
                 archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
