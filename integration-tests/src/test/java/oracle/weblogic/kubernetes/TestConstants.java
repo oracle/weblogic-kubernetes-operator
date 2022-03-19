@@ -89,7 +89,7 @@ public interface TestConstants {
   public static final String OCR_PASSWORD = Optional.ofNullable(System.getenv("OCR_PASSWORD"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
-      .orElse(REPO_DUMMY_VALUE);
+      .orElse(OCR_USERNAME);
 
   // OCR default image values, these values will be used while running locally
   public static final String OCR_WEBLOGIC_IMAGE_NAME = "middleware/weblogic";

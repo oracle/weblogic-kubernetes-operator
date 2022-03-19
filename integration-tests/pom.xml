@@ -159,10 +159,6 @@
                                     <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
                                     <variableName>OCR_PASSWORD</variableName>
                                 </requireEnvironmentVariable>
-                                <requireEnvironmentVariable>
-                                    <message>Set the OCR_EMAIL environment variable to specify the OCR user's email address to use for creating the image pull secret.</message>
-                                    <variableName>OCR_EMAIL</variableName>
-                                </requireEnvironmentVariable>
                             </rules>
                         </configuration>
                     </execution>
