@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test implicit upgrade of domain resource with auximage in v8 format")
 @IntegrationTest
-class ItAuxDomainImplicitUpgrde {
+class ItAuxDomainImplicitUpgrade {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
