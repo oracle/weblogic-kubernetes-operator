@@ -11,7 +11,8 @@ public class DomainPresence {
 
   static int getDomainPresenceFailureRetrySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
-        .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetrySeconds)
+        .map(TuningParameters::getMainTuning)
+        .map(t -> t.domainPresenceFailureRetrySeconds)
         .orElse(DEFAULT_TIMEOUT_SECONDS);
   }
 
@@ -21,7 +22,8 @@ public class DomainPresence {
    */
   public static int getFailureRetryMaxCount() {
     return Optional.ofNullable(TuningParameters.getInstance())
-        .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetryMaxCount)
+        .map(TuningParameters::getMainTuning)
+        .map(t -> t.domainPresenceFailureRetryMaxCount)
         .orElse(DEFAULT_RETRY_MAX_COUNT);
   }
 }

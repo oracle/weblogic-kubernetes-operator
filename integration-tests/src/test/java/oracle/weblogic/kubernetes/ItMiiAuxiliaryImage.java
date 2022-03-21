@@ -22,7 +22,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -860,7 +859,6 @@ class ItMiiAuxiliaryImage {
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
-  @Disabled("Regression bug, test fails")
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
     final String domainUid2 = "domain8";
@@ -905,7 +903,7 @@ class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "cp: can't open '/aux/models/multi-model-one-ds.20.yaml: "
+    String expectedErrorMsg = "cp: can't open '/auxiliary/models/multi-model-one-ds.20.yaml': "
         + "Permission denied";
 
     // check the domain event contains the expected error message
