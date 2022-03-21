@@ -13,6 +13,7 @@ import java.util.Map;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -28,7 +29,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAUL
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -37,10 +37,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
@@ -65,7 +64,6 @@ class ItAuxDomainImplicitUpgrade {
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
-  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + "-upg";
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -115,7 +113,10 @@ class ItAuxDomainImplicitUpgrade {
   }
 
   /**
-   * Create a domain resource with auxiliary image.
+   * Create v8 domain resource with auxiliary image(s).
+   * The first image (model-only-image) only contains wls model file 
+   * The second image (wdt-only-image) only contains wdt installation
+   * The third image (config-only-image) only contains JMS/JDBC configuration
    * Use an domain.yaml file with API Version expliciltly set to v8.
    * Use the v8 style auxililiary configuration supported in WKO v3.3.x
    * Start the Operator with latest version
@@ -124,29 +125,59 @@ class ItAuxDomainImplicitUpgrade {
    *  configuration in ServerPod section and start the domain 
    */
   @Test
-  @DisplayName("Test to implicit upgrade of v8 version of AuxDomain with webhook")
-  void testImplicitAuxV8DomainUpgrade() {
+  @DisplayName("Test implicit upgrade of v8 version of Auxiliary Domain")
+  void testImplicitV8MutipleAuxImagesDomainUpgrade() {
 
-    String miiAuxiliaryImageTag = "aux-implicit-upgrade";
-    String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
-    final String auxiliaryImagePath = "/auxiliary";
+    String modelOnlyImageTag = "model-only-image";
+    String wdtOnlyImageTag = "wdt-only-image";
+    String configOnlyImageTag = "config-only-image";
+
+    String modelOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  modelOnlyImageTag;
+    String wdtOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  wdtOnlyImageTag;
+    String configOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  configOnlyImageTag;
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
-    // create auxiliary image using imagetool command if does not exists
-    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
-    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
+    // Create auxiliary image(s) using imagetool command if does not exists
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(modelOnlyImageTag)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion("NONE");
+    logger.info("Creating auxiliary image {0} using imagetool.sh ", modelOnlyImage);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, modelOnlyImageTag, witParams);
+
+    modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelFiles(modelList)
+            .modelImageTag(configOnlyImageTag)
+            .wdtVersion("NONE");
+    logger.info("Creating auxiliary image {0} using imagetool.sh ", configOnlyImage);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, configOnlyImageTag, witParams);
+
+    witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(wdtOnlyImageTag)
+            .wdtVersion("latest");
+    logger.info("Creating auxiliary image {0} using imagetool.sh ", wdtOnlyImage);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, wdtOnlyImageTag, witParams);
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
-    templateMap.put("AUX_IMAGE", auxImage);
+    templateMap.put("MODEL_ONLY_IMAGE", modelOnlyImage);
+    templateMap.put("WDT_ONLY_IMAGE", wdtOnlyImage);
+    templateMap.put("CONFIG_ONLY_IMAGE", configOnlyImage);
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
@@ -214,20 +245,6 @@ class ItAuxDomainImplicitUpgrade {
           "sample-war",
           managedServerPrefix + index,
           domainNamespace);
-    }
-  }
-
-  /**
-   * Cleanup images.
-   */
-  public void tearDownAll() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      // delete images
-      if (miiAuxiliaryImage != null) {
-        deleteImage(miiAuxiliaryImage);
-      }
     }
   }
 
