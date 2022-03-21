@@ -443,7 +443,7 @@ class ItElasticLoggingFluentd {
                                     .fieldPath("metadata.labels['weblogic.serverName']"))))
                         .addEnvItem(new V1EnvVar()
                             .name("LOG_PATH")
-                            .value("/scratch/logs/" + domainUid + "/servers/$(SERVER_NAME)/$(SERVER_NAME).log"))
+                            .value("/scratch/logs/" + domainUid + "/servers/$(SERVER_NAME)/logs/$(SERVER_NAME).log"))
                         .addEnvItem(new V1EnvVar()
                             .name("FLUENTD_CONF")
                             .value("fluentd.conf"))
