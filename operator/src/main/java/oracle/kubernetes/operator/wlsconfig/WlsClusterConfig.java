@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -145,7 +145,7 @@ public class WlsClusterConfig {
     int dcsize = dynamicServersConfig == null ? 0 : dynamicServersConfig.getDynamicClusterSize();
     List<WlsServerConfig> result = new ArrayList<>(dcsize + servers.size());
     Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getServerConfigs)
-        .ifPresent(dynamicServers -> dynamicServers.forEach(item -> result.add(item)));
+        .ifPresent(result::addAll);
     result.addAll(servers);
     result.sort(Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName())));
     return result;

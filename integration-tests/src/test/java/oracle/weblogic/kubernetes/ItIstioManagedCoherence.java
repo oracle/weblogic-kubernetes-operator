@@ -66,7 +66,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -503,7 +503,7 @@ class ItIstioManagedCoherence {
     logger.info("number of records in cache = " + result.stdout());
     if (!(result.stdout().equals("6"))) {
       logger.info("number of records in cache = " + result.stdout());
-      assertTrue("6".equals(result.stdout()), "Expected 6 records");
+      assertEquals("6", result.stdout(), "Expected 6 records");
     }
 
     // get the data from cache
@@ -515,7 +515,7 @@ class ItIstioManagedCoherence {
     logger.info("Cache is cleared and should be empty" + result.stdout());
     if (!(result.stdout().trim().equals("0"))) {
       logger.info("number of records in cache = " + result.stdout());
-      assertFalse("0".equals(result.stdout()), "Expected 0 records");
+      assertNotEquals("0", result.stdout(), "Expected 0 records");
     }
     return true;
   }
