@@ -38,7 +38,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -294,6 +293,12 @@ class ItMultiDomainModelsWithLoadBalancer {
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
 
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+
     final String hostName = "localhost";
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
@@ -342,6 +347,12 @@ class ItMultiDomainModelsWithLoadBalancer {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -393,71 +404,11 @@ class ItMultiDomainModelsWithLoadBalancer {
         true, domainHome, "scaleDown", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
 
-    // shutdown domain and verify the domain is shutdown
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-  }
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
 
-  /**
-   * Verify admin console login using admin node port.
-   * Skip the test for slim images due to unavailability of console application
-   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
-   */
-  @ParameterizedTest
-  @DisplayName("Test admin console login using admin node port")
-  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
-  void testAdminConsoleLoginUsingAdminNodePort(String domainType) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
-
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-
-    // In OKD cluster, we need to get the routeHost for the external admin service
-    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
-        }, "Access to admin server node port failed"),
-        logger,
-        "Console login validation");
-
-    // shutdown domain and verify the domain is shutdown
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-  }
-
-  /**
-   * Verify admin console login using ingress controller.
-   * Skip the test for slim images due to unavailability of console application
-   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
-   */
-  @ParameterizedTest
-  @DisplayName("Test admin console login using ingress controller")
-  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  void testAdminConsoleLoginUsingIngressController(String domainType) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
-
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-
-    String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
-        + domainUid + "." + domainNamespace + ".adminserver.test"
-        + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-
-    logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
-    logger.info("WebLogic console on domain1 is accessible");
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -861,7 +812,7 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
-    
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         miiDomainUid, domainNamespace, miiImage);
@@ -1263,4 +1214,47 @@ class ItMultiDomainModelsWithLoadBalancer {
       }
     }
   }
+
+  // verify the admin console login using admin node port
+  private void verifyAdminConsoleLoginUsingAdminNodePort(String domainUid, String domainNamespace) {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+
+    // In OKD cluster, we need to get the routeHost for the external admin service
+    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+  }
+
+  // Verify admin console login using ingress controller
+  private void verifyAdminConsoleLoginUsingIngressController(String domainUid, String domainNamespace) {
+
+    if (!OKD) {
+      assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+      String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
+          + domainUid + "." + domainNamespace + ".adminserver.test"
+          + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+
+      logger.info("Executing curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      logger.info("WebLogic console on domain1 is accessible");
+    } else {
+      logger.info("Skipping the admin console login test using ingress controller in OKD environment");
+    }
+  }
+
 }
