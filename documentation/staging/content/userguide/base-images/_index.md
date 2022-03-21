@@ -7,14 +7,15 @@ description: "Create, obtain, or inspect images for WebLogic Server or Fusion Mi
 
 ### Contents
 
+- [Overview](#overview)
+
 - [Understanding WebLogic images](#understanding-weblogic-images)
-  - [Overview](#overview)
   - [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
     - [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
     - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
     - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
     - [Example OCR image names](#example-ocr-image-names)
-    - [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
+  - [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
   - [Inspect images](#inspect-images)
   - [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images)
     - [Option 1: Store images in a central registry and set up image pull secrets on each domain resource](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource)
@@ -35,9 +36,7 @@ description: "Create, obtain, or inspect images for WebLogic Server or Fusion Mi
     - [Model in Image without auxiliary images](#model-in-image-without-auxiliary-images)
     - [Domain in Image](#domain-in-image)
 
-### Understanding WebLogic images
-
-#### Overview
+### Overview
 
 A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes.
 Oracle recommends obtaining these images from the Oracle Container Registry (OCR)
@@ -64,6 +63,19 @@ The steps for using or creating these images depends on the
 
 To understand how to update images for a running domain,
 see [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain).
+
+### Understanding WebLogic images
+
+This section describes how to obtain and inspect container images
+with WebLogic Server or Fusion Middleware Infrastructure
+from the Oracle Container Registry (OCR), and how to
+set up Kubernetes to access domain images. See:
+
+- [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+- [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
+- [Inspect images](#inspect-images)
+- [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images)
+- [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
 
 #### Understand Oracle Container Registry images
 
@@ -176,7 +188,7 @@ where the names are abbreviated to omit their `container-registry.oracle.com/mid
 |`weblogic_cpu:12.2.1.4-generic-jdk8-ol7`|CPU image with latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU. Note that this image has no date stamp, so it can change over time with potential updates to JDK 8, to Oracle Linux 7, and to the latest CPU.|
 |`weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124`|CPU image with JDK 8u311, Oracle Linux 7u9, and the Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU.|
 
-##### Obtain images from the Oracle Container Registry
+#### Obtain images from the Oracle Container Registry
 
 {{% notice warning %}}
 _WebLogic Server General Availability images_ and _Fusion Middleware Infrastructure General Availability images_ (**GA images**) on OCR are updated quarterly to include the latest security patches for Oracle Linux and Oracle Java, but do _not_ include the latest security patches for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with all the latest security patches, such as Critical Patch Updates images (**CPU images**) provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with `--recommendedPatches`.  See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
@@ -227,7 +239,8 @@ For example, to use Docker to pull an image from OCR:
    link in the "middleware" repository, then
    the acceptance applies to all versions of WebLogic CPU images.
 
-1. Log Docker in to the Oracle Container Registry. For example,
+1. Provide Docker with credentials for accessing
+   the Oracle Container Registry. For example,
    the following command will prompt for your SSO credentials:
 
    ```shell
