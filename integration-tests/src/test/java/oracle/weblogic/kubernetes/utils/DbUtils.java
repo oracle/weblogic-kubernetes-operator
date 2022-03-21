@@ -69,7 +69,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -696,7 +695,7 @@ public class DbUtils {
    * @throws IOException when fails to modify operator yaml file
    */
   public static void installDBOperator(String namespace) throws IOException {
-    Path operatorYamlSrcFile = Paths.get(MODEL_DIR, "dboperator", "oracle-database-operator.yaml");
+    Path operatorYamlSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "oracle-database-operator.yaml");
     Path operatorYamlDestFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
 
     Files.createDirectories(operatorYamlDestFile.getParent());
@@ -780,7 +779,7 @@ public class DbUtils {
     Path dbYaml = Paths.get(DOWNLOAD_DIR, namespace, "oracledb.yaml");
     Files.createDirectories(dbYaml.getParent());
     Files.deleteIfExists(dbYaml);
-    FileUtils.copy(Paths.get(MODEL_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
+    FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
 
     replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
