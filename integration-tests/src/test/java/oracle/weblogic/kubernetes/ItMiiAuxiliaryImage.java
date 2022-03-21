@@ -744,134 +744,29 @@ class ItMiiAuxiliaryImage {
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with"
-          + " wdtModelHome is placed under the directory for the wdtInstallHome")
+          + " wdtModelHome is placed under or same directory for the wdtInstallHome or vice-versa")
   void testCreateDomainUseWdtModelHomeDirUnderWdtInstallHome() {
 
     String wdtInstallPath = "/aux";
     String wdtModelHomePath = "/aux/y";
     String domainUid = "domain5";
 
-    // creating image with wdtModelHome dir located under wdtInstallHome dir
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    // creating image13 with wdtModelHome dir located under wdtInstallHome dir, verify error message
+    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+            wdtModelHomePath,domainUid,miiAuxiliaryImage13Tag);
 
-    List<String> modelList = new ArrayList<>();
-    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
 
-    // create image13 with model and no wdt installation files
-    WitParams witParams =
-            new WitParams()
-                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-                    .modelImageTag(miiAuxiliaryImage13Tag)
-                    .modelFiles(modelList)
-                    .modelArchiveFiles(archiveList)
-                    .wdtHome(wdtInstallPath)
-                    .wdtModelHome(wdtModelHomePath)
-                    .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage13Tag, witParams);
-    // create image14 with same wdtModelHome and wdtInstallHome dir
+    // create image14 with same wdtModelHome and wdtInstallHome dir, verify error message
     wdtInstallPath = "/aux";
     wdtModelHomePath = "/aux";
-    witParams =
-            new WitParams()
-                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-                    .modelImageTag(miiAuxiliaryImage14Tag)
-                    .modelFiles(modelList)
-                    .modelArchiveFiles(archiveList)
-                    .wdtHome(wdtInstallPath)
-                    .wdtModelHome(wdtModelHomePath)
-                    .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage14Tag, witParams);
-    // create image15 with wdtInstallHome under wdtModelHome dir
+    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+            wdtModelHomePath,domainUid,miiAuxiliaryImage14Tag);
+
+    // create image15 with wdtInstallHome under wdtModelHome dir,verify error message
     wdtInstallPath = "/aux/y";
     wdtModelHomePath = "/aux";
-    witParams =
-            new WitParams()
-                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-                    .modelImageTag(miiAuxiliaryImage15Tag)
-                    .modelFiles(modelList)
-                    .modelArchiveFiles(archiveList)
-                    .wdtHome(wdtInstallPath)
-                    .wdtModelHome(wdtModelHomePath)
-                    .modelArchiveFiles(archiveList);
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage15Tag, witParams);
-
-    OffsetDateTime timestamp = now();
-
-    // create domain custom resource using auxiliary image13
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domainUid, miiAuxiliaryImage13);
-    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
-            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
-            encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
-            List.of("cluster-1"),
-            miiAuxiliaryImage13);
-
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace)),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace));
-
-    String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
-            + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, errorMessage);
-
-    deleteDomainResource(domainNamespace, domainUid);
-
-    // create domain custom resource using auxiliary image14
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domainUid, miiAuxiliaryImage14);
-    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
-            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
-            encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
-            List.of("cluster-1"),
-            miiAuxiliaryImage14);
-
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR1),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace)),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace));
-
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, errorMessage);
-
-    deleteDomainResource(domainNamespace, domainUid);
-
-    // create domain custom resource using auxiliary image15
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domainUid, miiAuxiliaryImage15);
-    Domain domainCR2 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
-            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
-            encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
-            List.of("cluster-1"),
-            miiAuxiliaryImage15);
-
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR2),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace)),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace));
-
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, errorMessage);
-
+    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+            wdtModelHomePath,domainUid,miiAuxiliaryImage15Tag);
   }
 
 
@@ -1418,5 +1313,54 @@ class ItMiiAuxiliaryImage {
       index++;
     }
     return domainCR;
+  }
+
+  private void createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(String wdtInstallPath,
+                                                                                               String wdtModelHomePath,
+                                                                                               String domainUid,
+                                                                                               String imageTag) {
+
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    OffsetDateTime timestamp = now();
+    WitParams witParams =
+            new WitParams()
+                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+                    .modelImageTag(imageTag)
+                    .modelFiles(modelList)
+                    .modelArchiveFiles(archiveList)
+                    .wdtHome(wdtInstallPath)
+                    .wdtModelHome(wdtModelHomePath)
+                    .modelArchiveFiles(archiveList);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,imageTag, witParams);
+    String imageName = MII_AUXILIARY_IMAGE_NAME + ":" + imageTag;
+    // create domain custom resource using auxiliary image13
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+            domainUid, imageName);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+            encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
+            List.of("cluster-1"),
+            imageName);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+            domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domainNamespace)),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domainNamespace));
+
+    String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
+            + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+            "Warning", timestamp, errorMessage);
+
+    deleteDomainResource(domainNamespace, domainUid);
   }
 }
