@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -340,12 +340,17 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
   }
 
-  static class DeadlineExceededException extends Exception {
+  static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
     final V1Job job;
 
     DeadlineExceededException(V1Job job) {
       super();
       this.job = job;
+    }
+
+    @Override
+    public V1Job getIntrospectionJob() {
+      return job;
     }
 
     public String toString() {
@@ -354,7 +359,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),
           getJobStartedSeconds(),
-          DomainPresence.getDomainPresenceFailureRetryMaxCount());
+          DomainPresence.getFailureRetryMaxCount());
     }
 
     private long getJobStartedSeconds() {

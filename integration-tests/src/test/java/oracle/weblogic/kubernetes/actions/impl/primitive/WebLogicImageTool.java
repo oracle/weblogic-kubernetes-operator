@@ -181,18 +181,23 @@ public class WebLogicImageTool {
    */
   public boolean addInstaller() {
     String wdtVersion = (params.wdtVersion() != null) ? params.wdtVersion() : "latest";
-    String command = String.format(
-        "%s cache addInstaller --type wdt --version %s --path %s",
-        IMAGE_TOOL,
-        wdtVersion,
-        DOWNLOAD_DIR + "/" + wdtVersion + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT);
+    if (!wdtVersion.equals("NONE")) {
+      String command = String.format(
+          "%s cache addInstaller --type wdt --version %s --path %s",
+          IMAGE_TOOL,
+          wdtVersion,
+          DOWNLOAD_DIR + "/" + wdtVersion + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT);
 
-    return Command.withParams(
-            defaultCommandParams()
-            .command(command)
-            .env(params.env())
-            .redirect(params.redirect()))
-        .execute();
+      return Command.withParams(
+          defaultCommandParams()
+              .command(command)
+              .env(params.env())
+              .redirect(params.redirect()))
+          .execute();
+    } else {
+      return true;
+    }
+
   }
 
   /**
@@ -200,16 +205,21 @@ public class WebLogicImageTool {
    * @return true if the command succeeds
    */
   public boolean deleteEntry() {
-    String command = String.format("%s cache deleteEntry --key wdt_%s",
-        IMAGE_TOOL,
-        params.wdtVersion());
+    String wdtVersion = (params.wdtVersion() != null) ? params.wdtVersion() : "latest";
+    if (!wdtVersion.equals("NONE")) {
+      String command = String.format("%s cache deleteEntry --key wdt_%s",
+          IMAGE_TOOL,
+          params.wdtVersion());
 
-    return Command.withParams(
-            defaultCommandParams()
-            .command(command)
-            .env(params.env())
-            .redirect(params.redirect()))
-        .execute();
+      return Command.withParams(
+          defaultCommandParams()
+              .command(command)
+              .env(params.env())
+              .redirect(params.redirect()))
+          .execute();
+    } else {
+      return true;
+    }
   }
 
   /**
@@ -223,7 +233,7 @@ public class WebLogicImageTool {
     }
 
     // download WDT if it is not in the expected location
-    if (params.wdtVersion() != null) {
+    if (params.wdtVersion() != null && params.wdtVersion() != "NONE") {
       if (!downloadWdt(params.wdtVersion())) {
         return false;
       }
@@ -262,7 +272,7 @@ public class WebLogicImageTool {
     }
 
     // download WDT if it is not in the expected location
-    if (params.wdtVersion() != null) {
+    if (params.wdtVersion() != null && params.wdtVersion() != "NONE") {
       if (!downloadWdt(params.wdtVersion())) {
         return new ExecResult(1, "failed to download WDT with version " + params.wdtVersion(),
             "failed to download WDT with version " + params.wdtVersion());
@@ -368,6 +378,14 @@ public class WebLogicImageTool {
 
     if (params.target() != null) {
       command += " --target " + params.target();
+    }
+
+    if (params.additionalBuildCommands() != null) {
+      command += " --additionalBuildCommands " + params.additionalBuildCommands();
+    }
+
+    if (params.additionalBuildFiles() != null) {
+      command += " --additionalBuildFiles " + params.additionalBuildFiles();
     }
 
     logger.info("Build auxiliary image with command: {0}", command);

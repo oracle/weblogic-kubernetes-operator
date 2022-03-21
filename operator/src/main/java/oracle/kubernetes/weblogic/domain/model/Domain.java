@@ -36,7 +36,6 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.Upgradable;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -56,7 +55,7 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-public class Domain implements KubernetesObject, Upgradable<Domain> {
+public class Domain implements KubernetesObject {
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -754,6 +753,18 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
         .map(Configuration::getIntrospectorJobActiveDeadlineSeconds).orElse(null);
   }
 
+  /**
+   * Returns the value of the maximum server pod ready wait time.
+   *
+   * @param serverName server name
+   * @param clusterName cluster name
+   * @return value of the wait time in seconds.
+   */
+  public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
+    return Optional.ofNullable(getServer(serverName, clusterName))
+        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+  }
+
   public String getWdtConfigMap() {
     return spec.getWdtConfigMap();
   }
@@ -1378,9 +1389,4 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
 
   }
 
-  @Override
-  public Domain upgrade() {
-    Optional.ofNullable(getStatus()).ifPresent(DomainStatus::upgrade);
-    return this;
-  }
 }

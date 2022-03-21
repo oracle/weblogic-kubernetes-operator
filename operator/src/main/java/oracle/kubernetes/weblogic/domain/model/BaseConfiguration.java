@@ -370,6 +370,15 @@ public abstract class BaseConfiguration {
     this.restartVersion = restartVersion;
   }
 
+
+  long getMaximumReadyWaitTimeSeconds() {
+    return serverPod.getMaxReadyWaitTimeSeconds();
+  }
+
+  public void setMaxReadyWaitTimeSeconds(long waitTime) {
+    serverPod.setMaxReadyWaitTimeSeconds(waitTime);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

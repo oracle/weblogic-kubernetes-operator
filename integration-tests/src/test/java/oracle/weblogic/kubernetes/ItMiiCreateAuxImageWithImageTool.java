@@ -5,11 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
@@ -24,8 +20,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.nio.file.Files.readAllLines;
-import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -37,29 +31,25 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -67,17 +57,15 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
-class ItMiiNewCreateAuxImage40 {
+class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -85,14 +73,11 @@ class ItMiiNewCreateAuxImage40 {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-new1";
-  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-new2";
-  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-new3";
+  private static String miiAuxiliaryImageTag = "new" + MII_BASIC_IMAGE_TAG;
+  private static String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
-  public static final String ORACLELINUX_TEST_VERSION =
-      Optional.ofNullable(System.getenv("ORACLELINUX_TEST_VERSION")).orElse("7");
 
   /**
    * Install Operator.
@@ -155,33 +140,33 @@ class ItMiiNewCreateAuxImage40 {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(miiAuxiliaryImage1, modelList, archiveList),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, modelList, archiveList),
+        logger,
+        "createAuxImage to be successful");
+   
 
     // push auxiliary image to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {2}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domain1Uid, miiAuxiliaryImage1);
+        domain1Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domain1Uid, miiAuxiliaryImage1, domainNamespace);
+        domain1Uid, miiAuxiliaryImage, domainNamespace);
     String adminServerPodName = domain1Uid + "-admin-server";
     String managedServerPrefix = domain1Uid + "-managed-server";
 
@@ -228,8 +213,8 @@ class ItMiiNewCreateAuxImage40 {
 
     WitParams witParams =
         new WitParams()
-        .modelImageName(miiAuxiliaryImage2)
-        .modelImageTag(MII_BASIC_IMAGE_TAG)
+        .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+        .modelImageTag(miiAuxiliaryImageTag)
         .baseImageName("oraclelinux")
         .baseImageTag(ORACLELINUX_TEST_VERSION)
         .wdtHome(auxiliaryImagePath2)
@@ -237,37 +222,37 @@ class ItMiiNewCreateAuxImage40 {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
+        MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(witParams),
+        logger,
+        "createAuxImage to be successful");
+    
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domain2Uid, miiAuxiliaryImage2);
+        domain2Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
-        miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage);
 
     String adminServerPodName = domain2Uid + "-admin-server";
     String managedServerPrefix = domain2Uid + "-managed-server";
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
-        domain2Uid, miiAuxiliaryImage1, domainNamespace);
+        domain2Uid, miiAuxiliaryImage, domainNamespace);
     createDomainAndVerify(domain2Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
     //create router for admin service on OKD
@@ -279,7 +264,7 @@ class ItMiiNewCreateAuxImage40 {
     // verify the WDT version
     String wdtVersion =
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
-                "/aux"));
+                "/aux", this.getClass().getSimpleName()));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
   }
@@ -304,40 +289,38 @@ class ItMiiNewCreateAuxImage40 {
     String customWdtModelHome = "/customwdtmodelhome/models";
     WitParams witParams =
         new WitParams()
-            .modelImageName(miiAuxiliaryImage3)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImageTag)
             .wdtHome(customWdtHome)
             .wdtModelHome(customWdtModelHome)
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
+    if (dockerImageExists(miiAuxiliaryImage, MII_BASIC_IMAGE_TAG)) {
+      deleteImage(miiAuxiliaryImage);
     }
+    logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
+    testUntil(
+        withStandardRetryPolicy,
+        createAuxiliaryImage(witParams),
+        logger,
+        "createAuxImage to be successful");
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG,
+    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domain3Uid, miiAuxiliaryImage3);
+            domain3Uid, miiAuxiliaryImage);
     Domain domainCR = createDomainResource40(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
-            .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
+            .image(miiAuxiliaryImage)
             .imagePullPolicy("IfNotPresent")
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
@@ -347,7 +330,7 @@ class ItMiiNewCreateAuxImage40 {
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
-            domain3Uid, miiAuxiliaryImage1, domainNamespace);
+            domain3Uid, miiAuxiliaryImage, domainNamespace);
     createDomainAndVerify(domain3Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
     //create router for admin service on OKD
@@ -429,9 +412,27 @@ class ItMiiNewCreateAuxImage40 {
 
     // create auxiliary image
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
-    // verify the build will attempt to pull a newer version of busybox
-    assertTrue(result.exitValue() == 0
-        && result.stdout().contains("Trying to pull repository docker.io/library/busybox"));
+    assertEquals(0, result.exitValue());
+
+    // verify that busybox and aux image have the same RootFS
+    params = Command
+            .defaultCommandParams()
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' busybox:latest")
+            .saveResults(true)
+            .redirect(true);
+
+    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of busybox:latest");
+    String rootFS = params.stdout();
+
+    params = Command
+            .defaultCommandParams()
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
+            .saveResults(true)
+            .redirect(true);
+
+    assertTrue(Command.withParams(params).execute(),
+            "failed to inspect RootFS of " + auxImageName + ":" + MII_BASIC_IMAGE_TAG);
+    assertEquals(rootFS, params.stdout());
   }
 
   /**
@@ -478,123 +479,37 @@ class ItMiiNewCreateAuxImage40 {
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // delete images
-      if (miiAuxiliaryImage1 != null) {
-        deleteImage(miiAuxiliaryImage1);
-      }
-
-      if (miiAuxiliaryImage2 != null) {
-        deleteImage(miiAuxiliaryImage2);
-      }
-
-      if (miiAuxiliaryImage3 != null) {
-        deleteImage(miiAuxiliaryImage3);
+      if (miiAuxiliaryImage != null) {
+        deleteImage(miiAuxiliaryImage);
       }
     }
   }
 
-  private boolean createAuxImageUsingWIT(WitParams witParams) {
-
-    WitParams newWitParams = setupCommonWitParameters(witParams);
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using imagetool.sh", witParams.modelImageName(), witParams.modelImageTag());
-    return createAuxImage(newWitParams);
+  /**
+   * Check Configured JMS Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                               String adminSvcExtHost) {
+    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JMSSystemResources", "TestClusterJmsModule2", "200");
   }
 
-  private ExecResult createAuxImageUsingWITAndReturnResult(WitParams witParams) {
+  /**
+   * Check Configured JDBC Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  public static void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
 
-    WitParams newWitParams = setupCommonWitParameters(witParams);
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using imagetool.sh", witParams.modelImageName(), witParams.modelImageTag());
-    ExecResult result = createAuxImageAndReturnResult(newWitParams);
-    logger.info("result stdout={0}", result.stdout());
-    logger.info("result stderr={0}", result.stderr());
-    return result;
-  }
-
-  private WitParams setupCommonWitParameters(WitParams witParams) {
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
-
-    String witTarget = ((OKD) ? "OpenShift" : "Default");
-
-    return witParams.target(witTarget).env(env).redirect(true);
-  }
-
-  private Callable<Boolean> createAuxiliaryImage(String auxImage, List<String> modelList, List<String> archiveList) {
-
-    return (() -> {
-      WitParams witParams =
-          new WitParams()
-              .modelImageName(auxImage)
-              .modelImageTag(MII_BASIC_IMAGE_TAG)
-              .modelFiles(modelList)
-              .modelArchiveFiles(archiveList);
-
-      return createAuxImageUsingWIT(witParams);
-    });
-  }
-
-  private Callable<Boolean> createAuxiliaryImage(WitParams witParams) {
-
-    return (() -> createAuxImageUsingWIT(witParams));
-  }
-
-  private void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"),
-        logger,
-          "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "TestClusterJmsModule2");
-    logger.info("Found the JMSSystemResource configuration");
-  }
-
-  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-
-    testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-            "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
-        logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
-    logger.info("Found the DataResource configuration");
-  }
-
-  private String checkWDTVersion(String domainNamespace, String adminServerPodName, String auxiliaryImagePath)
-      throws Exception {
-    assertDoesNotThrow(() ->
-        deleteQuietly(get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
-        " Can't find file in the pod, or failed to copy");
-
-
-    return readAllLines(get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
+    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB");
   }
 }

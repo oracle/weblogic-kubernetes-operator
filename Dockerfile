@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # HOW TO BUILD THIS IMAGE
@@ -25,7 +25,7 @@ RUN set -eux; \
 ENV LANG="en_US.UTF-8" \
     JAVA_HOME="/usr/local/java" \
     PATH="/operator:$JAVA_HOME/bin:$PATH" \
-    JAVA_URL="https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz"
+    JAVA_URL="https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz"
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
@@ -46,19 +46,23 @@ RUN set -eux; \
     java -Xshare:dump; \
     useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
     mkdir -m 775 /operator; \
+    mkdir -m 775 /deployment; \
+    mkdir -m 775 /probes; \
     mkdir -m 775 /logs; \
     mkdir /operator/lib; \
-    chown -R oracle:root /operator /logs
+    chown -R oracle:root /operator /deployment /probes /logs
 
 USER oracle
 
 COPY --chown=oracle:root operator/scripts/* /operator/
+COPY --chown=oracle:root deployment/scripts/* /deployment/
+COPY --chown=oracle:root probes/scripts/* /probes/
 COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
 COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
-  CMD /operator/livenessProbe.sh
+  CMD /probes/livenessProbe.sh
 
-WORKDIR /operator/
+WORKDIR /deployment/
 
-CMD ["/operator/operator.sh"]
+CMD ["/deployment/operator.sh"]

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.util.Streams;
@@ -20,6 +21,8 @@ import io.kubernetes.client.util.Streams;
  * Class for executing shell commands from java.
  */
 public class ExecCommand {
+
+  public static final int COMMAND_WAIT_TIMEOUT = 1800;
 
   public static ExecResult exec(String command) throws IOException, InterruptedException {
     return exec(command, false, null);
@@ -82,7 +85,8 @@ public class ExecCommand {
         out.start();
       }
 
-      p.waitFor();
+      // TODO - Make the command wait timeout value configurable
+      p.waitFor(COMMAND_WAIT_TIMEOUT, TimeUnit.SECONDS);
 
       // we need to join the thread before we read the stdout so that the saved stdout is complete
       if (out != null) {

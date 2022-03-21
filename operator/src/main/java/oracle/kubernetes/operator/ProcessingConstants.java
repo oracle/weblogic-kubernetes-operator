@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 public interface ProcessingConstants {
 
   String MAIN_COMPONENT_NAME = "main";
+  String DELEGATE_COMPONENT_NAME = "delegate";
   String DOMAIN_COMPONENT_NAME = "domain";
   String FIBER_COMPONENT_NAME = "fiber";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
@@ -50,9 +51,11 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
-  String INTROSPECTION_ERROR = "Introspection Error: ";
-
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
 
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
+
+  String WEBHOOK = "Webhook";
+
+  String COMPATIBILITY_MODE = "compatibility-mode-";
 }

@@ -208,7 +208,9 @@ spec:
       WL-Proxy-Client-IP: "" # Removes
       WL-Proxy-SSL: "" # Removes
       WL-Proxy-SSL: "true" # Adds
-    sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -244,7 +246,9 @@ spec:
   replacePathRegex:
     regex: ^/domain1(.*)
     replacement: /$1
-  sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -280,4 +284,6 @@ spec:
   replacePathRegex:
     regex: ^/domain2(.*)
     replacement: /$1
-  sslRedirect: true
+  redirectScheme:
+    scheme: https
+    permanent: true

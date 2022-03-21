@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
 
@@ -26,11 +26,11 @@ class InMemoryDatabaseTest {
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
 
-  private final InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
+  private final InMemoryDatabase<V1Ingress, V1IngressList> database =
       new InMemoryDatabase<>() {
         @Override
-        NetworkingV1beta1IngressList createList(List<NetworkingV1beta1Ingress> items) {
-          return new NetworkingV1beta1IngressList().items(items);
+        V1IngressList createList(List<V1Ingress> items) {
+          return new V1IngressList().items(items);
         }
       };
 
@@ -50,7 +50,7 @@ class InMemoryDatabaseTest {
 
     try {
       database.create(
-          new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
+          new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
     } catch (InMemoryDatabaseException e) {
@@ -58,16 +58,16 @@ class InMemoryDatabaseTest {
     }
   }
 
-  private NetworkingV1beta1Ingress createItem(String name, String namespace) {
-    NetworkingV1beta1Ingress item =
-        new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(namespace).name(name));
+  private V1Ingress createItem(String name, String namespace) {
+    V1Ingress item =
+        new V1Ingress().metadata(new V1ObjectMeta().namespace(namespace).name(name));
     database.create(item, keys().namespace(namespace).map());
     return item;
   }
 
   @Test
   void afterItemCreated_canRetrieveIt() {
-    NetworkingV1beta1Ingress item = createItem(NAME1, NS1);
+    V1Ingress item = createItem(NAME1, NS1);
 
     assertThat(database.read(keys().name(NAME1).namespace(NS1).map()), equalTo(item));
   }
@@ -76,7 +76,7 @@ class InMemoryDatabaseTest {
   void whenItemAbsent_replaceThrowsException() {
     try {
       database.replace(
-          new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
+          new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
     } catch (InMemoryDatabaseException e) {
@@ -88,8 +88,8 @@ class InMemoryDatabaseTest {
   void afterReplaceItem_canRetrieveNewItem() {
     createItem(NAME1, NS1).kind("old item");
 
-    NetworkingV1beta1Ingress replacement =
-        new NetworkingV1beta1Ingress()
+    V1Ingress replacement =
+        new V1Ingress()
             .metadata(new V1ObjectMeta().namespace(NS1).name(NAME1))
             .kind("new item");
     database.replace(replacement, keys().namespace(NS1).map());
@@ -118,9 +118,9 @@ class InMemoryDatabaseTest {
 
   @Test
   void afterItemsCreated_canListMatches() {
-    NetworkingV1beta1Ingress item1 = createItem(NAME1, NS1);
-    NetworkingV1beta1Ingress item2 = createItem(NAME2, NS1);
-    NetworkingV1beta1Ingress item3 = createItem(NAME1, NS2);
+    V1Ingress item1 = createItem(NAME1, NS1);
+    V1Ingress item2 = createItem(NAME2, NS1);
+    V1Ingress item3 = createItem(NAME1, NS2);
 
     assertThat(
         database.list(keys().namespace(NS1).map()).getItems(), containsInAnyOrder(item1, item2));

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
@@ -51,6 +52,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -173,11 +175,31 @@ public class JobStepContext extends BasePodStepContext {
   // ----------------------- step methods ------------------------------
 
   List<V1Volume> getAdditionalVolumes() {
-    return getDomain().getSpec().getAdditionalVolumes();
+    List<V1Volume> volumes = getDomain().getSpec().getAdditionalVolumes();
+    getServerSpec().getAdditionalVolumes().stream().forEach(volume -> addVolumeIfMissing(volume, volumes));
+    return volumes;
+  }
+
+  private void addVolumeIfMissing(V1Volume volume, List<V1Volume> volumes) {
+    if (!volumes.contains(volume) && volume.getName().startsWith(COMPATIBILITY_MODE)) {
+      volumes.add(volume);
+    }
   }
 
   List<V1VolumeMount> getAdditionalVolumeMounts() {
-    return getDomain().getSpec().getAdditionalVolumeMounts();
+    List<V1VolumeMount> volumeMounts = getDomain().getSpec().getAdditionalVolumeMounts();
+    getServerSpec().getAdditionalVolumeMounts().stream().forEach(mount -> addVolumeMountIfMissing(mount, volumeMounts));
+    return volumeMounts;
+  }
+
+  private void addVolumeMountIfMissing(V1VolumeMount mount, List<V1VolumeMount> volumeMounts) {
+    if (!volumeMounts.contains(mount) && mount.getName().startsWith(COMPATIBILITY_MODE)) {
+      volumeMounts.add(mount);
+    }
+  }
+
+  private List<V1Container> getAdditionalInitContainers() {
+    return getServerSpec().getInitContainers();
   }
 
   /**
@@ -337,8 +359,7 @@ public class JobStepContext extends BasePodStepContext {
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
-    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
-            addAuxiliaryImageInitContainers(podTemplateSpec.getSpec(), auxiliaryImages));
+    addInitContainers(podTemplateSpec.getSpec(), tuningParameters);
     Optional.ofNullable(getAuxiliaryImages())
             .ifPresent(p -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume()));
 
@@ -361,13 +382,28 @@ public class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  protected void addAuxiliaryImageInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
-    Optional.ofNullable(auxiliaryImages).ifPresent(cl -> addInitContainers(podSpec, cl));
+  protected void addInitContainers(V1PodSpec podSpec, TuningParameters tuningParameters) {
+    List<V1Container> initContainers = new ArrayList<>();
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
+    initContainers.addAll(getAdditionalInitContainers().stream()
+            .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
+            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+    podSpec.initContainers(initContainers);
   }
 
-  private void addInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+  private void addInitContainers(List<V1Container> initContainers, List<AuxiliaryImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-        podSpec.addInitContainersItem(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+            initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+  }
+
+  protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+      getEnvironmentVariables(tuningParameters).stream()
+              .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+    }
+    return initContainerEnvVars;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {

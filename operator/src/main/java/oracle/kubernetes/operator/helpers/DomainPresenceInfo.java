@@ -242,7 +242,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @return a pod stream
    */
   public Stream<V1Pod> getServerPods() {
-    return getActiveServers().values().stream().map(this::getPod);
+    return getActiveServers().values().stream().map(this::getPod).filter(Objects::nonNull);
   }
 
   private V1Pod getPod(ServerKubernetesObjects sko) {

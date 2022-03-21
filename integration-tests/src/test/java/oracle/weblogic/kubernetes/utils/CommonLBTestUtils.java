@@ -436,7 +436,7 @@ public class CommonLBTestUtils {
         HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
         getLogger().info("Clicking login button");
         HtmlPage home = submit.click();
-        if (home.asText().contains("Persistent Stores")) {
+        if (home.asNormalizedText().contains("Persistent Stores")) {
           getLogger().info("Console login passed");
           adminAccessible = true;
           break;

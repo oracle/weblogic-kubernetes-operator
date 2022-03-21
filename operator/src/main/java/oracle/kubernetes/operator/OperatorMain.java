@@ -3,19 +3,12 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,131 +17,82 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.CrdHelper;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.OperatorRestServer;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
-import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.Container;
-import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.operator.work.Engine;
-import oracle.kubernetes.operator.work.Fiber;
-import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /** A Kubernetes Operator for WebLogic. */
-public class Main {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  static final String GIT_BUILD_VERSION_KEY = "git.build.version";
-  static final String GIT_BRANCH_KEY = "git.branch";
-  static final String GIT_COMMIT_KEY = "git.commit.id.abbrev";
-  static final String GIT_BUILD_TIME_KEY = "git.build.time";
-
-  private static final Container container = new Container();
-  private static final ThreadFactory threadFactory = new WrappedThreadFactory();
-  private static final ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService("operator", container);
-  private static final AtomicReference<OffsetDateTime> lastFullRecheck =
-      new AtomicReference<>(SystemClock.now());
-  private static final Semaphore shutdownSignal = new Semaphore(0);
-  private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
+public class OperatorMain extends BaseMain {
 
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
-  private boolean warnedOfCrdAbsence;
-  private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
+  private static final NextStepFactory NEXT_STEP_FACTORY = OperatorMain::createInitializeInternalIdentityStep;
 
-  private static String getConfiguredServiceAccount() {
-    return TuningParameters.getInstance().get("serviceaccount");
-  }
-
-  static {
-    try {
-      // suppress System.err since we catch all necessary output with Logger
-      OutputStream output = new FileOutputStream("/dev/null");
-      PrintStream nullOut = new PrintStream(output);
-      System.setErr(nullOut);
-
-      ClientPool.initialize(threadFactory);
-
-      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
-    } catch (IOException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-      throw new RuntimeException(e);
-    }
-  }
+  /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
+  private static final long CRD_DETECTION_DELAY = 10;
 
   static {
     container
-        .getComponents()
-        .put(
-            ProcessingConstants.MAIN_COMPONENT_NAME,
-            Component.createFor(
-                ScheduledExecutorService.class,
-                wrappedExecutorService,
-                TuningParameters.class,
-                  TuningParameters.getInstance(),
-                ThreadFactory.class,
-                threadFactory));
+            .getComponents()
+            .put(
+                    ProcessingConstants.MAIN_COMPONENT_NAME,
+                    Component.createFor(
+                            ScheduledExecutorService.class,
+                            wrappedExecutorService,
+                            TuningParameters.class,
+                            TuningParameters.getInstance(),
+                            ThreadFactory.class,
+                            threadFactory));
+  }
+
+
+  private static String getConfiguredServiceAccount() {
+    return TuningParameters.getInstance().get("serviceaccount");
   }
 
   Object getOperatorNamespaceEventWatcher() {
     return operatorNamespaceEventWatcher;
   }
 
-  static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
+  static class MainDelegateImpl extends CoreDelegateImpl implements MainDelegate, DomainProcessorDelegate {
 
     private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
     private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
 
-    private final String buildVersion;
-    private final String operatorImpl;
-    private final String operatorBuildTime;
-    private final SemanticVersion productVersion;
-    private final KubernetesVersion kubernetesVersion;
-    private final Engine engine;
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces;
     private final AtomicReference<V1CustomResourceDefinition> crdRefernce;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
-      buildVersion = getBuildVersion(buildProps);
-      operatorImpl = getBranch(buildProps) + "." + getCommit(buildProps);
-      operatorBuildTime = getBuildTime(buildProps);
+      super(buildProps, scheduledExecutorService);
 
-      productVersion = new SemanticVersion(buildVersion);
-      kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
-
-      engine = new Engine(scheduledExecutorService);
       domainProcessor = new DomainProcessorImpl(this, productVersion);
 
       domainNamespaces = new DomainNamespaces(productVersion);
@@ -158,28 +102,10 @@ public class Main {
       crdRefernce = new AtomicReference<>();
     }
 
-    private static String getBuildVersion(Properties buildProps) {
-      return Optional.ofNullable(buildProps.getProperty(GIT_BUILD_VERSION_KEY)).orElse("1.0");
-    }
 
-    private static String getBranch(Properties buildProps) {
-      return getBuildProperty(buildProps, GIT_BRANCH_KEY);
-    }
-
-    private static String getCommit(Properties buildProps) {
-      return getBuildProperty(buildProps, GIT_COMMIT_KEY);
-    }
-
-    private static String getBuildTime(Properties buildProps) {
-      return getBuildProperty(buildProps, GIT_BUILD_TIME_KEY);
-    }
-
-    private static String getBuildProperty(Properties buildProps, String key) {
-      return Optional.ofNullable(buildProps.getProperty(key)).orElse("unknown");
-    }
-
+    @SuppressWarnings("SameParameterValue")
     private void logStartup(LoggingFacade loggingFacade) {
-      loggingFacade.info(MessageKeys.OPERATOR_STARTED, buildVersion, operatorImpl, operatorBuildTime);
+      loggingFacade.info(MessageKeys.OPERATOR_STARTED, buildVersion, deploymentImpl, deploymentBuildTime);
       Optional.ofNullable(TuningParameters.getInstance().getFeatureGates().getEnabledFeatures())
           .ifPresent(ef -> loggingFacade.info(MessageKeys.ENABLED_FEATURES, ef));
       loggingFacade.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
@@ -193,29 +119,8 @@ public class Main {
     }
 
     @Override
-    public @Nonnull SemanticVersion getProductVersion() {
-      return productVersion;
-    }
-
-    @Override
     public String getPrincipal() {
       return principal;
-    }
-
-    @Override
-    public void runSteps(Step firstStep) {
-      runSteps(new Packet(), firstStep, null);
-    }
-
-    @Override
-    public void runSteps(Packet packet, Step firstStep) {
-      runSteps(packet, firstStep, null);
-    }
-
-    @Override
-    public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
-      Fiber f = engine.createFiber();
-      f.start(firstStep, packet, andThenDo(completionAction));
     }
 
     @Override
@@ -226,11 +131,6 @@ public class Main {
     @Override
     public DomainNamespaces getDomainNamespaces() {
       return domainNamespaces;
-    }
-
-    @Override
-    public KubernetesVersion getKubernetesVersion() {
-      return kubernetesVersion;
     }
 
     @Override
@@ -254,8 +154,8 @@ public class Main {
     }
 
     @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-      return engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    public boolean mayRetry(@NotNull DomainPresenceInfo domainPresenceInfo) {
+      return true;
     }
 
     @Override
@@ -270,13 +170,13 @@ public class Main {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    Main main = createMain(getBuildProperties());
+    OperatorMain operatorMain = createMain(getBuildProperties());
 
     try {
-      main.startOperator(main::completeBegin);
+      operatorMain.startDeployment(operatorMain::completeBegin);
 
       // now we just wait until the pod is terminated
-      main.waitForDeath();
+      operatorMain.waitForDeath();
 
       // stop the REST server
       stopRestServer();
@@ -285,51 +185,32 @@ public class Main {
     }
   }
 
-  /**
-   * Return the build properties generated by the git-commit-id-plugin.
-   */
-  static Properties getBuildProperties() {
-    try (final InputStream stream = Main.class.getResourceAsStream("/version.properties")) {
-      Properties buildProps = new Properties();
-      buildProps.load(stream);
-      return buildProps;
-    } catch (IOException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-      return null;
-    }
-  }
-
-  static @Nonnull Main createMain(Properties buildProps) {
+  static @Nonnull OperatorMain createMain(Properties buildProps) {
     final MainDelegateImpl delegate = new MainDelegateImpl(buildProps, wrappedExecutorService);
 
     delegate.logStartup(LOGGER);
-    return new Main(delegate);
+    return new OperatorMain(delegate);
   }
 
   DomainNamespaces getDomainNamespaces() {
     return delegate.getDomainNamespaces();
   }
 
-  Main(MainDelegate delegate) {
+  OperatorMain(MainDelegate delegate) {
+    super(delegate);
     this.delegate = delegate;
     stuckPodProcessing = new StuckPodProcessing(delegate);
   }
 
-  void startOperator(Runnable completionAction) {
-    try {
-      delegate.runSteps(new Packet(), createStartupSteps(), completionAction);
-    } catch (Throwable e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-    }
+  @Override
+  Step createStartupSteps() {
+
+    return NEXT_STEP_FACTORY.createInternalInitializationStep(
+        delegate, Namespaces.getSelection(new StartupStepsVisitor()));
   }
 
-  private Step createStartupSteps() {
-
-    return NEXT_STEP_FACTORY.createInternalInitializationStep(Namespaces.getSelection(new StartupStepsVisitor()));
-  }
-
-  private static Step createInitializeInternalIdentityStep(Step next) {
-    return new InitializeInternalIdentityStep(next);
+  private static Step createInitializeInternalIdentityStep(MainDelegate delegate, Step next) {
+    return new InitializeInternalIdentityStep(delegate, next);
   }
 
   private Step createOperatorNamespaceEventListStep() {
@@ -387,7 +268,7 @@ public class Main {
   private void completeBegin() {
     try {
       // start the REST server
-      startRestServer(delegate.getPrincipal());
+      startRestServer();
 
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
@@ -413,10 +294,6 @@ public class Main {
     return namespaceWatcher;
   }
 
-  private static NullCompletionCallback andThenDo(Runnable completionAction) {
-    return new NullCompletionCallback(completionAction);
-  }
-
   Runnable recheckDomains() {
     return () -> delegate.runSteps(createDomainRecheckSteps());
   }
@@ -424,7 +301,6 @@ public class Main {
   Runnable checkStuckPods() {
     return () -> getDomainNamespaces().getNamespaces().forEach(stuckPodProcessing::checkStuckPods);
   }
-
 
   Step createDomainRecheckSteps() {
     return createDomainRecheckSteps(OffsetDateTime.now());
@@ -442,7 +318,6 @@ public class Main {
     final DomainRecheck domainRecheck = new DomainRecheck(delegate, isFullRecheck);
     return Step.chain(
         domainRecheck.createOperatorNamespaceReview(),
-        CrdHelper.createDomainCrdStep(delegate),
         createCRDPresenceCheck(),
         domainRecheck.createReadNamespacesStep());
   }
@@ -458,36 +333,62 @@ public class Main {
 
     @Override
     public NextAction apply(Packet packet) {
-      V1CustomResourceDefinition existingCrd = delegate.getCrdReference().get();
-      if (existingCrd != null) {
-        warnedOfCrdAbsence = false;
-        return doNext(packet);
-      }
-      return doNext(new CallBuilder().listDomainAsync(getOperatorNamespace(),
-          new CrdPresenceResponseStep(getNext())), packet);
+      return doNext(new CallBuilder().readCustomResourceDefinitionAsync(
+              KubernetesConstants.CRD_NAME, createReadResponseStep(getNext())), packet);
     }
   }
 
-  // on failure, aborts the processing.
-  class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
+  // If CRD read succeeds, wait until the CRD has webhook.
+  // Otherwise if CRD read fails due to permissions error, list the domains to indirectly check if the CRD is installed.
+  ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
+    return new ReadResponseStep(next);
+  }
+
+  class ReadResponseStep extends DefaultResponseStep<V1CustomResourceDefinition> {
+    ReadResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(
+            Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      V1CustomResourceDefinition existingCrd = callResponse.getResult();
+
+      if (!existingCrdContainsConversionWebhook(existingCrd)) {
+        LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
+        return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);
+      } else {
+        return doNext(packet);
+      }
+    }
+
+    private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
+      return Optional.ofNullable(existingCrd)
+            .map(V1CustomResourceDefinition::getSpec)
+            .map(V1CustomResourceDefinitionSpec::getConversion)
+            .map(c -> c.getStrategy().equalsIgnoreCase(WEBHOOK))
+            .orElse(false);
+    }
+
+    @Override
+    protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
+      return isNotAuthorizedOrForbidden(callResponse)
+              ? doNext(new CallBuilder().listDomainAsync(getOperatorNamespace(),
+                new CrdPresenceResponseStep(getNext())), packet) : super.onFailureNoRetry(packet, callResponse);
+    }
+  }
+
+  // on failure, waits for the CRD to be installed.
+  private class CrdPresenceResponseStep extends DefaultResponseStep<DomainList> {
 
     CrdPresenceResponseStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<DomainList> callResponse) {
-      warnedOfCrdAbsence = false;
-      return super.onSuccess(packet, callResponse);
-    }
-
-    @Override
     public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
-      if (!warnedOfCrdAbsence) {
-        LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
-        warnedOfCrdAbsence = true;
-      }
-      return doNext(null, packet);
+      LOGGER.info(MessageKeys.WAIT_FOR_CRD_INSTALLATION, CRD_DETECTION_DELAY);
+      return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.SECONDS);
     }
   }
 
@@ -500,10 +401,13 @@ public class Main {
     return Namespaces.SelectionStrategy.Dedicated.equals(Namespaces.getSelectionStrategy());
   }
 
-  private void startRestServer(String principal)
+  @Override
+  protected void startRestServer()
       throws Exception {
-    RestServer.create(new RestConfigImpl(principal, delegate.getDomainNamespaces()::getNamespaces));
-    RestServer.getInstance().start(container);
+    OperatorRestServer.create(
+        new RestConfigImpl(delegate.getPrincipal(), delegate.getDomainNamespaces()::getNamespaces,
+                new Certificates(delegate)));
+    OperatorRestServer.getInstance().start(container);
   }
 
   // -----------------------------------------------------------------------------
@@ -514,35 +418,17 @@ public class Main {
   // -----------------------------------------------------------------------------
 
   private static void stopRestServer() {
-    RestServer.getInstance().stop();
-    RestServer.destroy();
+    OperatorRestServer.getInstance().stop();
+    OperatorRestServer.destroy();
   }
 
-  private static void markReadyAndStartLivenessThread() {
-    try {
-      OperatorReady.create();
-
-      LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
-      // every five seconds we need to update the last modified time on the liveness file
-      wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
-    } catch (IOException io) {
-      LOGGER.severe(MessageKeys.EXCEPTION, io);
-    }
+  @Override
+  protected void logStartingLivenessMessage() {
+    LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
   }
 
-  private void waitForDeath() {
-    Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
-
-    try {
-      shutdownSignal.acquire();
-    } catch (InterruptedException ignore) {
-      Thread.currentThread().interrupt();
-    }
-
-    stopAllWatchers();
-  }
-
-  private void stopAllWatchers() {
+  @Override
+  protected void stopAllWatchers() {
     delegate.getDomainNamespaces().stopAllWatchers();
   }
 
@@ -586,54 +472,8 @@ public class Main {
     }
   }
 
-  static Packet createPacketWithLoggingContext(String ns) {
-    Packet packet = new Packet();
-    packet.getComponents().put(
-        LoggingContext.LOGGING_CONTEXT_KEY,
-        Component.createFor(new LoggingContext().namespace(ns)));
-    return packet;
-  }
-
-  private static class WrappedThreadFactory implements ThreadFactory {
-    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
-
-    @Override
-    public Thread newThread(@Nonnull Runnable r) {
-      return delegate.newThread(
-          () -> {
-            ContainerResolver.getDefault().enterContainer(container);
-            r.run();
-          });
-    }
-  }
-
-  private static class NullCompletionCallback implements CompletionCallback {
-    private final Runnable completionAction;
-
-    NullCompletionCallback(Runnable completionAction) {
-      this.completionAction = completionAction;
-    }
-
-    @Override
-    public void onCompletion(Packet packet) {
-      if (completionAction != null) {
-        completionAction.run();
-      }
-    }
-
-    @Override
-    public void onThrowable(Packet packet, Throwable throwable) {
-      if (throwable instanceof UnrecoverableCallException) {
-        ((UnrecoverableCallException) throwable).log();
-      } else {
-        LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-      }
-    }
-  }
-
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createInternalInitializationStep(Step next);
+    Step createInternalInitializationStep(MainDelegate delegate, Step next);
   }
-
 }

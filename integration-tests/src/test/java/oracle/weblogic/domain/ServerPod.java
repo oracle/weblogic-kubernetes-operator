@@ -115,6 +115,11 @@ public class ServerPod {
       "Container-level security attributes. Will override any matching pod-level attributes.")
   private V1SecurityContext containerSecurityContext;
 
+  @ApiModelProperty(
+      "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
+          + "before it considers the pod failed. Defaults to 1800 seconds.")
+  private long maxReadyWaitTimeSeconds = 1800L;
+
   @ApiModelProperty("Additional volumes to be created in the server pod.")
   private List<V1Volume> volumes = new ArrayList<>();
 
@@ -583,6 +588,24 @@ public class ServerPod {
 
   public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     this.containerSecurityContext = containerSecurityContext;
+  }
+
+  public ServerPod maxReadyWaitTimeSeconds(
+      long maximumReadyWaitTimeSeconds) {
+    this.maxReadyWaitTimeSeconds = maximumReadyWaitTimeSeconds;
+    return this;
+  }
+
+  public long maxReadyWaitTimeSeconds() {
+    return this.maxReadyWaitTimeSeconds;
+  }
+
+  public long getMaxReadyWaitTimeSeconds() {
+    return this.maxReadyWaitTimeSeconds;
+  }
+
+  public void setMaxReadyWaitTimeSeconds(long maxReadyWaitTimeSeconds) {
+    this.maxReadyWaitTimeSeconds = maxReadyWaitTimeSeconds;
   }
 
   public ServerPod volumes(List<V1Volume> volumes) {

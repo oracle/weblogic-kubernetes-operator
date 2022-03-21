@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.ServerStatus;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
@@ -165,7 +166,7 @@ public class TestAssertions {
   public static Callable<Boolean> domainDoesNotExist(String domainUid, String domainVersion, String namespace) {
     return () -> !Domain.doesDomainExist(domainUid, domainVersion, namespace);
   }
-  
+
   /**
    * Check if a WebLogic custom resource domain object exists in specified
    * namespace.
@@ -543,6 +544,50 @@ public class TestAssertions {
   }
 
   /**
+   * Check the staus of the given server in domain status.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param serverName name of the server
+   * @param podPhase phase of the server pod
+   * @param podReadyStatus status of the pod Ready condition
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusServerStatusHasExpectedPodStatus(String domainUid,
+                                                                             String domainNamespace,
+                                                                             String serverName,
+                                                                             String podPhase,
+                                                                             String podReadyStatus) {
+    LoggingFacade logger = getLogger();
+
+    return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<ServerStatus> serverStatusList = domain.getStatus().getServers();
+        logger.info(Yaml.dump(serverStatusList));
+        for (ServerStatus server : serverStatusList) {
+          if (server.getPodPhase().equalsIgnoreCase(podPhase)
+              && server.getPodReady().equalsIgnoreCase(podReadyStatus)) {
+            return true;
+          } else {
+            logger.info("serverStatus={0}", server);
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+
+  /**
    * Check if a loadbalancer pod is ready.
    *
    * @param domainUid id of the WebLogic domain custom resource domain
@@ -829,6 +874,20 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
     return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+
+  /**
+   * Check whether persistent volume with pvName not exists.
+   *
+   * @param pvName name of the persistent volume
+   * @param labelSelector labelselector for pv
+   * @return true if pv not exists otherwise false
+   */
+  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
+    return () -> {
+      return !PersistentVolume.pvExists(pvName, labelSelector).call();
+    };
   }
 
   /**

@@ -536,6 +536,14 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline);
 
   /**
+   * Add the maximum server pod wait time.
+   *
+   * @param waitTime the wait time value to be set to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withMaxReadyWaitTimeSeconds(long waitTime);
+
+  /**
    * Add WDT model config map for the domain resource.
    *
    * @param configmap the configmap for WDT model

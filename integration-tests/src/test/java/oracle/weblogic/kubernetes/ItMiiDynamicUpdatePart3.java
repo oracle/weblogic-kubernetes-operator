@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -46,6 +47,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResour
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -67,6 +71,7 @@ class ItMiiDynamicUpdatePart3 {
   private static final String domainUid = "mii-dynamic-update3";
   public static Path pathToChangReadsYaml = null;
   static LoggingFacade logger = null;
+  private static String operatorPodName = null;
 
   /**
    * Install Operator.
@@ -87,6 +92,10 @@ class ItMiiDynamicUpdatePart3 {
         + "        \"admin-server\":\n"
         + "            ScatteredReadsEnabled: true";
     assertDoesNotThrow(() -> Files.write(pathToChangReadsYaml, yamlToChangeReads.getBytes()));
+
+    operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, helper.opNamespace),
+            "Can't get operator's pod name");
   }
 
   /**
@@ -161,6 +170,7 @@ class ItMiiDynamicUpdatePart3 {
         + "      ListenPort: 7003";
     assertDoesNotThrow(() -> Files.write(pathToChangeListenPortYaml, yamlToChangeListenPort.getBytes()));
 
+    OffsetDateTime timestamp = now();
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(pathToChangeListenPortYaml.toString()), withStandardRetryPolicy);
@@ -169,8 +179,12 @@ class ItMiiDynamicUpdatePart3 {
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created and failed
-    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+    logger.info("verifying the introspector failed and operator pod log contains the expected error msg");
+    checkPodLogContainsString(helper.opNamespace, operatorPodName, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(helper.opNamespace, helper.domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
@@ -215,8 +229,8 @@ class ItMiiDynamicUpdatePart3 {
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created and failed
-    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+    logger.info("verifying the introspector failed and operator pod log contains the expected error msg");
+    checkPodLogContainsString(helper.opNamespace, operatorPodName, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,

@@ -119,6 +119,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withNodeName(String nodeName);
 
+  ServerConfigurator withMaximumReadyWaitTimeSeconds(long waitTime);
+
   ServerConfigurator withSchedulerName(String schedulerName);
 
   ServerConfigurator withRuntimeClassName(String runtimeClassName);

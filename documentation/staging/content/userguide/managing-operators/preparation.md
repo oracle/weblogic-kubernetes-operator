@@ -13,10 +13,8 @@ A Kubernetes cluster can host multiple operators, but no more than one per names
 Before installing an operator, ensure that each of these prerequisite requirements is met:
 
 1. [Check environment](#check-environment)
-1. [Download the operator source, if needed](#download-the-operator-source-if-needed)
 1. [Set up the operator Helm chart access](#set-up-the-operator-helm-chart-access)
 1. [Inspect the operator Helm chart](#inspect-the-operator-helm-chart)
-1. [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)
 1. [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account)
 1. [Prepare operator image](#prepare-operator-image)
    - [Locating an operator image](#locating-an-operator-image)
@@ -31,6 +29,9 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 1. [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
 1. [Choose a Helm release name](#choose-a-helm-release-name)
 1. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options)
+1. Special use cases:
+   - [How to download the Helm chart if Internet access is not available](#how-to-download-the-helm-chart-if-internet-access-is-not-available)
+   - [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd)
 
 #### Check environment
 
@@ -54,29 +55,6 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 1. Optionally, enable [Istio]({{< relref "/userguide/istio/istio.md" >}}).
 
-#### Download the operator source, if needed
-
-Downloading the operator source is required if:
-
-- You plan to provide local file-based access to the operator Helm chart
-  (see [Set up the operator Helm chart access](#set-up-the-operator-helm-chart-access)).
-- You need to manually install the CRD
-  (see [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)).
-
-Otherwise, you can skip this step.
-
-To download and unpack the operator source into `/tmp/weblogic-kubernetes-operator`:
-
-   ```text
-   $ cd /tmp
-   ```
-   ```text
-   $ git clone \
-     --branch v{{< latestVersion >}} \
-     https://github.com/oracle/weblogic-kubernetes-operator.git
-   ```
-
-**Note:** We use `/tmp` as an example directory; you can use a different location.
 
 #### Set up the operator Helm chart access
 
@@ -86,25 +64,9 @@ The operator Helm chart includes:
 - Helm configuration value settings for fine tuning operator behavior.
 - Commands for deploying (installing) or undeploying the operator.
 
-You can set up access to the operator Helm chart using either a _file-based approach_
-or a _GitHub chart repository approach_:
+You can set up access to the operator Helm chart using the GitHub chart repository.
 
-##### _File-based approach_
-
-- This approach uses the local file-based version of the operator Helm chart
-  that is located in the operator
-  source `kubernetes/charts/weblogic-operator` directory.
-- To set up this option, get the operator source.
-  See [Download the operator source, if needed](#download-the-operator-source-if-needed).
-- To use this option:
-  - `cd /tmp/weblogic-kubernetes-operator`
-    (or `cd` to wherever you have downloaded the operator source).
-  - Use `kubernetes/charts/weblogic-operator` in your Helm
-    commands to specify the chart location.
-
-##### _GitHub chart repository approach_
-
-- This approach uses the GitHub chart repository version of the operator Helm chart
+- Use the GitHub chart repository version of the operator Helm chart
   that is located at `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   or in a custom repository that you control.
 - To set up your Helm installation so that it can access the
@@ -122,21 +84,25 @@ or a _GitHub chart repository approach_:
   NAME                 URL
   weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
   ```
-- To use this option assuming you have named
+- For example, assuming you have named
   your repository `weblogic-operator`, simply
   use `weblogic-operator/weblogic-operator` in your Helm
   commands when specifying the chart location.
+
+- To list the versions of the operator that you can install from the Helm chart repository:
+
+  ```text
+  $ helm search repo weblogic-operator/weblogic-operator --versions
+  ```
+
+- For a specified version of the Helm chart, with `helm pull` and `helm install`, use the `--version <value>` option
+  to choose the version that you want, with the `latest` value being the default.
 
 #### Inspect the operator Helm chart
 
 You can find out the configuration values that the operator Helm chart supports,
 as well as the default values, using the `helm inspect` command.
 
-- Here's an example of using `helm inspect`
-  with the local file-based operator Helm chart:
-  ```text
-  $ cd /tmp/weblogic-kubernetes-operator
-  ```
   ```text
   $ helm inspect values kubernetes/charts/weblogic-operator
   ```
@@ -145,6 +111,12 @@ as well as the default values, using the `helm inspect` command.
   ```text
   $ helm inspect values weblogic-operator/weblogic-operator
   ```
+- Here's an example of using `helm inspect`
+  with the local file-based operator Helm chart:
+  ```text
+  $ cd /tmp/weblogic-kubernetes-operator
+  ```
+
 
 Alternatively, you can view most of the configuration values
 and their defaults in the operator source in the
@@ -156,60 +128,6 @@ section of the operator Configuration Reference.
 
 Helm commands are explained in more detail here, see
 [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
-
-#### Manually install the Domain resource custom resource definition (CRD), if needed
-
-**What is a Domain CRD?**
-
-The Domain resource type is defined by a Kubernetes CustomResourceDefinition (CRD) resource.
-The domain CRD provides Kubernetes with the schema for operator domain resources
-and there must be one domain CRD installed in each Kubernetes cluster that hosts the operator.
-If you install multiple operators in the same Kubernetes cluster, then they all
-share the same domain CRD.
-
-**When does a Domain CRD need to be manually installed?**
-
-Typically, the operator automatically installs the CRD for the Domain type when the operator first starts.
-However, if the operator lacks sufficient permission to install it,
-then you may choose to manually install the CRD in advance by using one of the provided YAML files.
-Manually installing the CRD in advance allows you to run the operator without giving it privilege
-(through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources.
-This may be necessary in environments where the operator cannot have cluster-scoped security privileges,
-such as on OpenShift when running the operator with a `Dedicated` namespace strategy.
-See [Choose a security strategy](#choose-a-security-strategy).
-
-**How to manually install a Domain CRD.**
-
-To manually install the CRD, first [download the operator source](#download-the-operator-source-if-needed),
-and, assuming you have installed the operator source into the `/tmp` directory:
-
-```text
-$ cd /tmp/weblogic-kubernetes-operator
-```
-
-```text
-$ kubectl create -f kubernetes/crd/domain-crd.yaml
-```
-
-**How to check if a Domain CRD has been installed.**
-
-After the CustomResourceDefinition is installed,
-either by the operator or using the previous `create` command,
-you can verify that the CRD is installed correctly using:
-
-```text
-$ kubectl get crd domains.weblogic.oracle
-```
-
-or by calling:
-
-```text
-$ kubectl explain domain.spec
-```
-
-The `kubectl explain` call should succeed
-and list the domain resource's `domain.spec` attributes
-that are defined in the CRD.
 
 #### Prepare an operator namespace and service account
 
@@ -377,7 +295,7 @@ See [Ensuring the operator has permission to manage a namespace]({{< relref "/us
 **Note**: You will need to manually install the operator CRD
 because `enableClusterRoleBinding` is not set to `true`
 and installation of the CRD requires cluster role binding privileges.
-See [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed).
+See [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd).
 
 ##### _Local namespace only with cluster role binding disabled_
 
@@ -391,7 +309,7 @@ If you want to limit the operator so that it can access only resources in its lo
 - You will need to manually install the operator CRD
   because `enableClusterRoleBinding` is not set to `true`
   and installing the CRD requires cluster role binding privileges.
-  See [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed).
+  See [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd).
 
 This may be necessary in environments where the operator cannot have cluster-scoped privileges,
 such as may happen on OpenShift platforms when running the operator with a `Dedicated` namespace strategy.
@@ -414,10 +332,10 @@ For reference, see [WebLogic domain management]({{<relref "/userguide/managing-o
 
 #### Choose a Helm release name
 
-The operator requires Helm for installation, 
+The operator requires Helm for installation,
 and Helm requires that each installed operator
-be assigned a release name. Helm release names 
-can be the same if they are deployed to 
+be assigned a release name. Helm release names
+can be the same if they are deployed to
 different namespaces, but must
 be unique within a particular namespace.
 
@@ -437,3 +355,88 @@ the operator REST API,
 setting operator pod labels,
 setting operator pod annotations,
 and Istio.
+
+### Special use cases
+
+If applicable, please review the following special use cases.
+
+#### How to download the Helm chart if Internet access is not available
+
+At a high-level, you use `helm pull` to download a released version of the Helm chart and move it to the machine with no Internet access,
+so that then you can run `helm install` to install the operator.  
+
+The steps are:
+1. On a machine with Internet access, to download the chart to the current directory, run:
+```text
+$ helm pull weblogic-operator --repo https://oracle.github.io/weblogic-kubernetes-operator/charts --destination .
+```
+For a specified version of the Helm chart, with `helm pull` and `helm install`, use the `--version <value>` option
+to choose the version that you want, with the `latest` value being the default. To list the versions of the
+operator that you can install from the Helm chart repository, run:
+```text
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+$ helm search repo weblogic-operator/weblogic-operator --versions
+```
+2. Move the resulting `weblogic-operator-<version>.tgz` file to the machine without Internet access on which you want to install the WebLogic Kubernetes Operator.
+3. Run `$ tar zxf weblogic-operator-<version>.tgz`. This puts the Helm chart files in a local directory `./weblogic-operator`.
+4. To create the namespace where the operator will be installed, run `$ kubectl create namespace weblogic-operator`.
+{{% notice note %}}
+Creating a dedicated namespace for the operator is the most common approach, but is not always correct or sufficient. For details,
+see the prerequisite steps starting with Step 3. [Inspect the operator Helm chart](#inspect-the-operator-helm-chart).
+Be sure to follow all the previously detailed prerequisite steps, ending at Step 10. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options).
+{{% /notice %}}
+5. To install the operator, run `$ helm install weblogic-operator ./weblogic-operator --namespace weblogic-operator`.
+
+
+#### How to manually install the Domain resource custom resource definition (CRD)
+
+The Domain resource type is defined by a Kubernetes CustomResourceDefinition (CRD) resource.
+The domain CRD provides Kubernetes with the schema for operator domain resources
+and there must be one domain CRD installed in each Kubernetes cluster that hosts the operator.
+If you install multiple operators in the same Kubernetes cluster, then they all
+share the same domain CRD.
+
+**When does a Domain CRD need to be manually installed?**
+
+Typically, the operator automatically installs the CRD for the Domain type when the operator first starts.
+However, if the operator lacks sufficient permission to install it,
+then you may choose to manually install the CRD in advance by using one of the provided YAML files.
+Manually installing the CRD in advance allows you to run the operator without giving it privilege
+(through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources.
+This may be necessary in environments where the operator cannot have cluster-scoped security privileges,
+such as on OpenShift when running the operator with a `Dedicated` namespace strategy.
+See [Choose a security strategy](#choose-a-security-strategy).
+
+**How to manually install a Domain CRD.**
+
+To manually install the CRD, first [download the operator source]({{< relref "/developerguide/requirements#obtaining-the-operator-source-code" >}}).
+
+Assuming you have installed the operator source into the `/tmp` directory:
+
+```text
+$ cd /tmp/weblogic-kubernetes-operator
+```
+
+```text
+$ kubectl create -f kubernetes/crd/domain-crd.yaml
+```
+
+**How to check if a Domain CRD has been installed.**
+
+After the CustomResourceDefinition is installed,
+either by the operator or using the previous `create` command,
+you can verify that the CRD is installed correctly using:
+
+```text
+$ kubectl get crd domains.weblogic.oracle
+```
+
+or by calling:
+
+```text
+$ kubectl explain domain.spec
+```
+
+The `kubectl explain` call should succeed
+and list the domain resource's `domain.spec` attributes
+that are defined in the CRD.

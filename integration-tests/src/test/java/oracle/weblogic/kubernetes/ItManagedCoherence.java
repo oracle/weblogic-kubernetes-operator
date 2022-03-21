@@ -164,7 +164,7 @@ class ItManagedCoherence {
       final String cluster1IngressHost = createRouteForOKD(cluster1HostName, domainNamespace);
       final String cluster2IngressHost = createRouteForOKD(cluster2HostName, domainNamespace);
 
-      
+
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
           -> coherenceCacheTest(cluster1IngressHost), "Test Coherence cache failed");
@@ -183,7 +183,7 @@ class ItManagedCoherence {
       // get ingress service Nodeport
       String ingressServiceName = traefikHelmParams.getReleaseName();
       String traefikNamespace = traefikHelmParams.getNamespace();
-      
+
       int ingressServiceNodePort = assertDoesNotThrow(()
               -> getServiceNodePort(traefikNamespace, ingressServiceName, "web"),
           "Getting Ingress Service node port failed");

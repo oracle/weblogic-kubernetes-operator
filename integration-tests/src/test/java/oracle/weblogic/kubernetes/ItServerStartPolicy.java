@@ -18,11 +18,13 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -43,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedSer
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.verifyExecuteResult;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -499,11 +502,9 @@ class ItServerStartPolicy {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-    logger.info("operator pod log: {0}", operatorPodLog);
-    assertTrue(operatorPodLog.contains("WARNING"));
-    assertTrue(operatorPodLog.contains(
-        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
+    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
   }
 
   /**
@@ -572,11 +573,16 @@ class ItServerStartPolicy {
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
           "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-      checkPodReadyAndServiceExists(
+
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(),
           adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
-      checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), serverPodName, domainUid, domainNamespace);
       logger.info("(re)Started [" + serverName + "] on admin server restart");
     } finally {
       // restart admin server
@@ -585,7 +591,9 @@ class ItServerStartPolicy {
           "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
     }
   }
 }

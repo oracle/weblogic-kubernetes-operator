@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,10 +15,14 @@ import oracle.kubernetes.operator.logging.MessageKeys;
  * This task maintains the "liveness" indicator so that Kubernetes knows the Operator is still
  * alive.
  */
-public class OperatorLiveness implements Runnable {
+public class DeploymentLiveness implements Runnable {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private final File livenessFile = new File("/operator/.alive");
+  private final File livenessFile;
+
+  public DeploymentLiveness(CoreDelegate delegate) {
+    livenessFile = new File(delegate.getProbesHome(), ".alive");
+  }
 
   @Override
   public void run() {

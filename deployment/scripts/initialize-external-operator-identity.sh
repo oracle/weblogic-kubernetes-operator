@@ -12,11 +12,11 @@ fi
 
 EXTERNAL_CERT="externalOperatorCert"
 EXTERNAL_KEY="externalOperatorKey"
-OPERATOR_DIR="/operator"
-EXTERNAL_IDENTITY_DIR="${OPERATOR_DIR}/external-identity"
+DEPLOYMENT_DIR="/deployment"
+EXTERNAL_IDENTITY_DIR="${DEPLOYMENT_DIR}/external-identity"
 NAMESPACE=`cat /var/run/secrets/kubernetes.io/serviceaccount/namespace`
-OPERATOR_CONFIG_DIR=${OPERATOR_DIR}/config
-OPERATOR_SECRETS_DIR=${OPERATOR_DIR}/secrets
+OPERATOR_CONFIG_DIR=${DEPLOYMENT_DIR}/config
+OPERATOR_SECRETS_DIR=${DEPLOYMENT_DIR}/secrets
 
 # the operator runtime expects the external operator cert and private key to be in these files:
 EXTERNAL_CERT_PEM="${EXTERNAL_IDENTITY_DIR}/${EXTERNAL_CERT}"

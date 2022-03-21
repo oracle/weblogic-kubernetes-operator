@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.SslUtils.generateJksStores;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -49,14 +50,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies usage of CustomIdentityCustomTrust on PV.
  * Create an MII domain with an attached persistent volume.
  * Configure custom identity and custom trust on server template
- * Don't explicitly set the SSL port on the server template. 
+ * Don't explicitly set the SSL port on the server template.
  * The default will be set to 8100.
- * Put the IdentityKeyStore.jks  and TrustKeyStore.jks on /shared directory 
- *  after administration server pod is started so that it can be accessible 
+ * Put the IdentityKeyStore.jks  and TrustKeyStore.jks on /shared directory
+ *  after administration server pod is started so that it can be accessible
  *  from all managed server pods
- * Once all servers are started get the JNDI initial context using cluster 
+ * Once all servers are started get the JNDI initial context using cluster
  *  service URL with t3s protocol.
- * Repeat the same after scaling the cluster 
+ * Repeat the same after scaling the cluster
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -68,8 +69,8 @@ class ItMiiCustomSslStore {
   private static String domainNamespace = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-custom-ssl";
-  private static String pvName = domainUid + "-pv"; 
-  private static String pvcName = domainUid + "-pvc"; 
+  private static final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+  private static final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
@@ -78,7 +79,7 @@ class ItMiiCustomSslStore {
   /**
    * Install Operator.
    * Create domain resource definition.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
@@ -93,7 +94,7 @@ class ItMiiCustomSslStore {
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
- 
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
@@ -102,11 +103,11 @@ class ItMiiCustomSslStore {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create secret for admin credential with special characters
-    // the resultant password is ##W%*}!"'"`']\\\\//1$$~x 
+    // the resultant password is ##W%*}!"'"`']\\\\//1$$~x
     // let the user name be something other than weblogic say wlsadmin
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,
             "wlsadmin", "##W%*}!\"'\"`']\\\\//1$$~x", domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
@@ -151,7 +152,7 @@ class ItMiiCustomSslStore {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    // Generate JKS Keystore using openssl before 
+    // Generate JKS Keystore using openssl before
     // managed server services and pods are ready
     generateJksStores();
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
@@ -177,7 +178,7 @@ class ItMiiCustomSslStore {
   @Test
   @DisplayName("Verify JNDI Context can be accessed using t3s cluster URL")
   void testMiiGetCustomSSLContext() {
-   
+
     // build the standalone Client on Admin pod after rolling restart
     String destLocation = "/u01/SslTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
@@ -185,7 +186,7 @@ class ItMiiCustomSslStore {
         Paths.get(RESOURCE_DIR, "ssl", "SslTestClient.java"),
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
-    
+
     runClientOnAdminPod();
 
     boolean psuccess = assertDoesNotThrow(() ->

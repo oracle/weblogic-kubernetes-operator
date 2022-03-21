@@ -93,13 +93,15 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -153,6 +155,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final KubernetesExecFactoryFake execFactoryFake = new KubernetesExecFactoryFake();
@@ -404,6 +407,7 @@ class DomainProcessorTest {
                 PASSWORD_KEY, "password".getBytes()));
   }
 
+  @SuppressWarnings("HttpUrlsUsage")
   private void defineOKResponse(@Nonnull String serverName, int port) {
     final String url = "http://" + UID + "-" + serverName + "." + NS + ":" + port;
     httpSupport.defineResponse(createExpectedRequest(url), createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
@@ -902,38 +906,40 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobTimedOut_failureCountIncremented() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
-    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    establishPreviousIntrospection(null);
-    jobStatus = createTimedOutStatus();
-    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    runMakeRight_withIntrospectionTimeout();
 
     assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
   }
 
-  @Test
-  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+  private void runMakeRight_withIntrospectionTimeout() throws JsonProcessingException {
+    consoleHandlerMemento.ignoringLoggedExceptions(JobWatcher.DeadlineExceededException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+
     establishPreviousIntrospection(null);
     jobStatus = createTimedOutStatus();
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processorDelegate.setMayRetry(true);
+    testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
+
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+  }
+
+  private void assignUid(V1Job job) {
+    Optional.ofNullable(job).map(V1Job::getMetadata).ifPresent(m -> m.setUid(Long.toString(++uidNum)));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
+    runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 
-    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainFailedAbortedEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
   }
 
   @Test
   void whenIntrospectionJobTimedOut_activeDeadlineIncremented() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
-    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    establishPreviousIntrospection(null);
-    jobStatus = createTimedOutStatus();
-    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 
@@ -1036,8 +1042,8 @@ class DomainProcessorTest {
 
   private void setJobPodInitContainerStatusImagePullError() {
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().initContainerStatuses(
-            Arrays.asList(new V1ContainerStatus().state(new V1ContainerState().waiting(
-                    new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image"))))));
+          List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
+                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image"))))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
@@ -1144,10 +1150,14 @@ class DomainProcessorTest {
     //one introspector pod, one admin server pod and two managed server pods
     assertThat(runningPods.size(), equalTo(4));
     for (V1Pod pod: runningPods) {
-      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+      if (isNotIntrospectorPod(pod)) {
         assertThat(getServerPodIntrospectionVersion(pod), equalTo(OLD_INTROSPECTION_STATE));
       }
     }
+  }
+
+  private boolean isNotIntrospectorPod(V1Pod pod) {
+    return !pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix());
   }
 
   @Test
@@ -1162,7 +1172,7 @@ class DomainProcessorTest {
     //one introspector pod, one admin server pod and two managed server pods
     assertThat(runningPods.size(), equalTo(4));
     for (V1Pod pod: runningPods) {
-      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+      if (isNotIntrospectorPod(pod)) {
         assertThat(getServerPodIntrospectionVersion(pod), equalTo(NEW_INTROSPECTION_STATE));
       }
     }
@@ -1181,7 +1191,7 @@ class DomainProcessorTest {
     //one introspector pod, one admin server pod and three managed server pods
     assertThat(runningPods.size(), equalTo(5));
     for (V1Pod pod: runningPods) {
-      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+      if (isNotIntrospectorPod(pod)) {
         assertThat(getServerPodIntrospectionVersion(pod), equalTo("after-scaleup"));
       }
     }
@@ -1200,7 +1210,7 @@ class DomainProcessorTest {
     //one introspector pod, one admin server pod and one managed server pod
     assertThat(runningPods.size(), equalTo(3));
     for (V1Pod pod: runningPods) {
-      if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
+      if (isNotIntrospectorPod(pod)) {
         assertThat(getServerPodIntrospectionVersion(pod), equalTo("after-scaledown"));
       }
     }
@@ -1565,7 +1575,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+  void whenIstioDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1700,13 +1710,14 @@ class DomainProcessorTest {
     defineServerResources(serverName, CLUSTER);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void defineServerResources(String serverName, String clusterName) {
     testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName, clusterName));
   }
 
   /**/
   private V1Pod createServerPod(String serverName, String clusterName) {
-    Packet packet = new Packet();
+    Packet packet = new Packet().with(processorDelegate);
     packet
           .getComponents()
           .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(new DomainPresenceInfo(domain)));
@@ -1822,36 +1833,34 @@ class DomainProcessorTest {
   }
 
   private Integer getContainerReadinessPort(List<V1Pod> pods, String podName) {
-    for (V1Pod pod : pods) {
-      if (pod.getMetadata().getName().equals(podName)) {
-        return Optional.ofNullable(pod)
-            .map(V1Pod::getSpec)
-            .map(V1PodSpec::getContainers)
-            .flatMap(c -> c.stream().findFirst())
-            .map(V1Container::getReadinessProbe)
-            .map(V1Probe::getHttpGet)
-            .map(V1HTTPGetAction::getPort)
-            .map(IntOrString::getIntValue)
-            .orElse(null);
-      }
-    }
-    return null;
+    return pods.stream()
+          .filter(pod -> isNamedPod(pod, podName))
+          .findFirst()
+          .map(V1Pod::getSpec)
+          .map(V1PodSpec::getContainers)
+          .flatMap(c -> c.stream().findFirst())
+          .map(V1Container::getReadinessProbe)
+          .map(V1Probe::getHttpGet)
+          .map(V1HTTPGetAction::getPort)
+          .map(IntOrString::getIntValue)
+          .orElse(null);
+  }
+
+  private boolean isNamedPod(V1Pod pod, String name) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).stream().anyMatch(name::equals);
   }
 
   private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
-    for (V1Pod pod : pods) {
-      if (pod.getMetadata().getName().equals(podName)) {
-        return Optional.ofNullable(pod)
-            .map(V1Pod::getSpec)
-            .map(V1PodSpec::getContainers)
-            .flatMap(c -> c.stream().findFirst())
-            .map(V1Container::getReadinessProbe)
-            .map(V1Probe::getHttpGet)
-            .map(V1HTTPGetAction::getScheme)
-            .orElse(null);
-      }
-    }
-    return null;
+    return pods.stream()
+          .filter(pod -> isNamedPod(pod, podName))
+          .findFirst()
+          .map(V1Pod::getSpec)
+          .map(V1PodSpec::getContainers)
+          .flatMap(c -> c.stream().findFirst())
+          .map(V1Container::getReadinessProbe)
+          .map(V1Probe::getHttpGet)
+          .map(V1HTTPGetAction::getScheme)
+          .orElse(null);
   }
 
   private void defineDuplicateServerNames() {
@@ -1901,17 +1910,13 @@ class DomainProcessorTest {
     domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 
-    for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
+    for (int numRetries = 0; numRetries < DomainPresence.getFailureRetryMaxCount(); numRetries++) {
       processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
       time += DomainPresence.getDomainPresenceFailureRetrySeconds();
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
     assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainFailedAbortedEvent), is(false));
-  }
-
-  private void addFailedCondition(DomainStatus status) {
-    status.addCondition(new DomainCondition(Failed).withStatus("True").withReason(Kubernetes));
   }
 
   private List<CoreV1Event> getEvents() {

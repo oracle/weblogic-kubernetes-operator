@@ -24,8 +24,8 @@ import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -68,7 +68,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
@@ -82,8 +81,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
-
 /**
  * Verify Prometheus, Grafana, Webhook, Coordinator are installed and running
  * Verify the monitoring exporter installed in model in image domain can generate the WebLogic metrics.
@@ -94,7 +91,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItMonitoringExporterWebApp {
 
-
   // domain constants
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
@@ -103,7 +99,7 @@ class ItMonitoringExporterWebApp {
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
-  private static HelmParams nginxHelmParams = null;
+  private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
   private static List<String> ingressHost1List = null;
@@ -193,7 +189,7 @@ class ItMonitoringExporterWebApp {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
@@ -242,8 +238,10 @@ class ItMonitoringExporterWebApp {
       String adminServerPodName = domain1Uid + "-admin-server";
       String clusterService = domain1Uid + "-cluster-cluster-1";
       if (!OKD) {
-        ingressHost1List =
-            createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+        String ingressClassName = nginxHelmParams.getIngressClassName();
+        ingressHost1List
+            = createIngressForDomainAndVerify(domain1Uid, domain1Namespace, 0, clusterNameMsPortMap,
+                false, ingressClassName, false, 0);
         verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
         // Need to expose the admin server external service to access the console in OKD cluster only
       } else {
@@ -436,7 +434,6 @@ class ItMonitoringExporterWebApp {
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
-      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -448,7 +445,7 @@ class ItMonitoringExporterWebApp {
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
     if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
           .as("Test uninstallNginx1 returns true")
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
@@ -478,8 +475,8 @@ class ItMonitoringExporterWebApp {
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
-    assertTrue((page.asText()).contains(expectedErrorMsg));
-    assertTrue(!(page.asText()).contains("Error 500--Internal Server Error"));
+    assertTrue((page.asNormalizedText()).contains(expectedErrorMsg));
+    assertTrue(!(page.asNormalizedText()).contains("Error 500--Internal Server Error"));
   }
 
   private void changeConfigNegativeAuth(
@@ -512,7 +509,7 @@ class ItMonitoringExporterWebApp {
       page1 = webClient.getPage(exporterUrl);
     }
     assertNotNull(page1, "can't retrieve exporter dashboard page");
-    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
+    assertTrue((page1.asNormalizedText()).contains("This is the WebLogic Monitoring Exporter."));
 
     // Get the form that we are dealing with and within that form,
     // find the submit button and the field that we want to change.Generated form for cluster had
@@ -545,7 +542,7 @@ class ItMonitoringExporterWebApp {
     try {
       page2 = button.click();
       assertNotNull(page2, "can't reach page after submit");
-      assertFalse((page2.asText()).contains("Error 500--Internal Server Error"),
+      assertFalse((page2.asNormalizedText()).contains("Error 500--Internal Server Error"),
           "page returns Error 500--Internal Server Error");
     } catch (ClassCastException ex) {
       logger.info(" Can't generate html page, collecting the error ");
@@ -585,15 +582,16 @@ class ItMonitoringExporterWebApp {
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
     assertNotNull(page, "Failed to replace configuration");
 
-    assertTrue(page.asText().contains("JVMRuntime"),
+    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
-    assertFalse(page.asText().contains("WebAppComponentRuntime"),
+    assertFalse(page.asNormalizedText().contains("WebAppComponentRuntime"),
         "Page contains unexpected WebAppComponentRuntime configuration");
     if (!OKD) {
       //needs 20 secs to fetch the metrics to prometheus
       Thread.sleep(20 * 1000);
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
+      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22"
+              + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
           cluster1Name + "-managed-server1", hostPortPrometheus);
     }
 
@@ -608,10 +606,11 @@ class ItMonitoringExporterWebApp {
 
     // run append
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_webapp.yaml");
-    assertTrue(page.asText().contains("WebAppComponentRuntime"),
+    assertTrue(page.asNormalizedText().contains("WebAppComponentRuntime"),
             "Page does not contain expected WebAppComponentRuntime configuration");
     // check previous config is there
-    assertTrue(page.asText().contains("JVMRuntime"), "Page does not contain expected JVMRuntime configuration");
+    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
+        "Page does not contain expected JVMRuntime configuration");
     if (!OKD) {
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
@@ -627,8 +626,8 @@ class ItMonitoringExporterWebApp {
   private void replaceOneAttributeValueAsArrayConfiguration() throws Exception {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yaml");
-    assertTrue(page.asText().contains("values: invocationTotalCount"));
-    assertFalse(page.asText().contains("reloadTotal"));
+    assertTrue(page.asNormalizedText().contains("values: invocationTotalCount"));
+    assertFalse(page.asNormalizedText().contains("reloadTotal"));
   }
 
   /**
@@ -641,9 +640,9 @@ class ItMonitoringExporterWebApp {
           throws Exception {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yaml");
-    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    assertTrue(page.asNormalizedText().contains("values: invocationTotalCount"));
     page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_twoattribs.yaml");
-    assertTrue(page.asText().contains("values: [invocationTotalCount, executionTimeAverage]"));
+    assertTrue(page.asNormalizedText().contains("values: [invocationTotalCount, executionTimeAverage]"));
   }
 
   /**
@@ -665,10 +664,10 @@ class ItMonitoringExporterWebApp {
   private void appendWithEmptyConfiguration() throws Exception {
     HtmlPage originalPage = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
     assertNotNull(originalPage, "Failed to replace configuration");
-    assertTrue(originalPage.asText().contains("JVMRuntime"),
+    assertTrue(originalPage.asNormalizedText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertTrue(originalPage.asText().equals(page.asText()));
+    assertTrue(originalPage.asNormalizedText().equals(page.asNormalizedText()));
   }
 
   /**
@@ -753,7 +752,7 @@ class ItMonitoringExporterWebApp {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml");
     assertNotNull(page);
-    assertFalse(page.asText().contains("metricsNameSnakeCase"));
+    assertFalse(page.asNormalizedText().contains("metricsNameSnakeCase"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
       checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
@@ -770,7 +769,7 @@ class ItMonitoringExporterWebApp {
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
-    assertFalse(page.asText().contains("restPort"));
+    assertFalse(page.asNormalizedText().contains("restPort"));
     if (!OKD) {
       //needs 20 secs to fetch the metrics to prometheus
       Thread.sleep(20 * 1000);
@@ -792,8 +791,8 @@ class ItMonitoringExporterWebApp {
     HtmlPage page =
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml");
     assertNotNull(page);
-    logger.info("page - " + page.asText());
-    assertTrue(page.asText().contains("domainQualifier"));
+    logger.info("page - " + page.asNormalizedText());
+    assertTrue(page.asNormalizedText().contains("domainQualifier"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
       checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus);
@@ -897,7 +896,7 @@ class ItMonitoringExporterWebApp {
       logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
       return false;
     } catch (IOException ioex) {
-      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      logger.severe("Got IOException while copying file to admin pod {0}", (Object) ioex.getStackTrace());
       return false;
     }
 
