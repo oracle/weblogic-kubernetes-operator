@@ -65,6 +65,7 @@ If the namespace already exists, then Helm will use it. These are standard Helm 
 Similarly, you may override the default `serviceAccount` configuration value
 to specify a service account in the operator's namespace that the operator will use.
 If not specified, then it defaults to `default` (the namespace's default service account).
+For common use cases, the namespace `default` service account is sufficient.
 If you want to use a different service account (recommended),
 then you must create the operator's namespace
 and the service account before installing the operator Helm chart
@@ -77,17 +78,12 @@ For example, using Helm 3.x, with the following settings:
 |Helm release name|`sample-weblogic-operator` (you may choose any name)|
 |Helm chart repo location|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
 |`namespace`|`sample-weblogic-operator-ns`|
-|`serviceAccount`|`sample-weblogic-operator-sa`|
 |`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
 |`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
 |`domainNamespaceLabelSelector`|`weblogic-operator\=enabled` (the label and expected value for the label)|
 
 ```text
 $ kubectl create namespace sample-weblogic-operator-ns
-```
-
-```text
-$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
 Access the operator Helm chart using this format: `helm repo add <helm-repo-name> <helm-repo-url>`
 ```text
@@ -100,14 +96,13 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
   ```
 
 - For a specified version of the Helm chart and operator, use the `--version <value>` option with `helm install`
-  to choose the version that you want, with the `latest` value being the default. 
+  to choose the version that you want, with the `latest` value being the default.
 
 Install the operator using this format: `helm install <helm-release-name> <helm-repo-name>/weblogic-operator ...`
 ```text
 $ helm install sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
@@ -118,7 +113,6 @@ Or, instead of using the previous `helm install` command,
 create a YAML file named `custom-values.yaml` with the following contents:
 
 ```
-serviceAcount: "sample-weblogic-operator-sa"
 enableClusterRoleBinding: true
 domainNamespaceSelectionStrategy: LabelSelector
 domainNamespaceLabelSelector: "weblogic-operator=enabled"
