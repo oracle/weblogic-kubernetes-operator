@@ -57,7 +57,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   private final FiberTestSupport testSupport = new FiberTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Domain domain =
-      new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
+      new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec().withDomainUid(UID));
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
