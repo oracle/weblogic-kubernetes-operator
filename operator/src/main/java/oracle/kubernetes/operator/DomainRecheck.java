@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
@@ -36,7 +37,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
+import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -212,7 +213,7 @@ class DomainRecheck {
   }
 
   private Step startNamespaceSteps(String ns) {
-    try (LoggingContext ignored =
+    try (ThreadLoggingContext ignored =
              setThreadContext().namespace(ns)) {
       return Step.chain(
           createNamespaceReview(ns),
@@ -289,7 +290,7 @@ class DomainRecheck {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (String ns : domainNamespaces) {
-          try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
+          try (ThreadLoggingContext ignored = setThreadContext().namespace(ns)) {
             startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.copy()));
           }
         }
