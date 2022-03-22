@@ -32,26 +32,31 @@ class TrustAllX509ExtendedTrustManager extends X509ExtendedTrustManager {
   @Override
   public void checkClientTrusted(
       X509Certificate[] certs, String authType) {
+    // no-op
   }
 
   @Override
   public void checkClientTrusted(
       X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+    // no-op
   }
 
   @Override
   public void checkClientTrusted(
       X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+    // no-op
   }
 
   @Override
   public void checkServerTrusted(
       X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+    // no-op
   }
 
   @Override
   public void checkServerTrusted(
       X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+    // no-op
   }
 
   @Override

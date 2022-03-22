@@ -181,7 +181,7 @@ class ItIstioSessionMigration {
             "After the primary server stopped, another server should become the new primary server"),
         () -> assertEquals(origSessionCreateTime, sessionCreateTime,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server"),
-        () -> assertEquals(count, SESSION_STATE,
+        () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
 

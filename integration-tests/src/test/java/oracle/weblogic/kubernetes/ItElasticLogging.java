@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -153,13 +154,13 @@ class ItElasticLogging {
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
-    assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
+    assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
-    assertTrue(kibanaParams != null, "Failed to install Kibana");
+    assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -430,16 +431,16 @@ class ItElasticLogging {
 
     logger.info("Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
-      assertTrue(kibanaParams != null, "Failed to install Kibana");
+      assertNotNull(kibanaParams, "Failed to install Kibana");
       assertTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        assertTrue(failedCount == 0, "Total failed count should be 0!");
+        assertEquals(0, failedCount, "Total failed count should be 0!");
         logger.info("Total failed count: " + failedCount);
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
     } else {
-      assertTrue(count == 0, "Total count of logs should be zero!");
+      assertEquals(0, count, "Total count of logs should be zero!");
     }
   }
 

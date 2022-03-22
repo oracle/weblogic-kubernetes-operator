@@ -26,7 +26,8 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
 /** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain extends BaseMain {
   private boolean warnedOfCrdAbsence;
-  private static final NextStepFactory NEXT_STEP_FACTORY = ConversionWebhookMain::createInitializeWebhookIdentityStep;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static NextStepFactory nextStepFactory = ConversionWebhookMain::createInitializeWebhookIdentityStep;
 
   static class ConversionWebhookMainDelegateImpl extends CoreDelegateImpl {
     public ConversionWebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
@@ -75,7 +76,7 @@ public class ConversionWebhookMain extends BaseMain {
 
   @Override
   protected Step createStartupSteps() {
-    return NEXT_STEP_FACTORY.createInitializationStep(delegate, CrdHelper.createDomainCrdStep(
+    return nextStepFactory.createInitializationStep(delegate, CrdHelper.createDomainCrdStep(
             delegate.getKubernetesVersion(), delegate.getProductVersion(), new Certificates(delegate)));
   }
 
@@ -149,10 +150,6 @@ public class ConversionWebhookMain extends BaseMain {
   @Override
   protected void logStartingLivenessMessage() {
     LOGGER.info(MessageKeys.STARTING_WEBHOOK_LIVENESS_THREAD);
-  }
-
-  @Override
-  void stopAllWatchers() {
   }
 
   // an interface to provide a hook for unit testing.

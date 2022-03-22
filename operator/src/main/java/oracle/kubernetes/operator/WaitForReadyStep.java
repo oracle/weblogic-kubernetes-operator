@@ -35,7 +35,7 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
-  static NextStepFactory NEXT_STEP_FACTORY = WaitForReadyStep::createMakeDomainRightStep;
+  static NextStepFactory nextStepFactory = WaitForReadyStep::createMakeDomainRightStep;
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
                                            DomainPresenceInfo info, Step next) {

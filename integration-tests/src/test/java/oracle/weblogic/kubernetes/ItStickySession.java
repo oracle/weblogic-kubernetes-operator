@@ -604,7 +604,7 @@ class ItStickySession {
             "HTTP connections should be sticky to the server " + serverName1),
         () -> assertEquals(sessionId1, sessionId2,
             "HTTP session ID should be same for all HTTP connections " + sessionId1),
-        () -> assertEquals(count, SESSION_STATE,
+        () -> assertEquals(SESSION_STATE, count,
             "HTTP session state should equels " + SESSION_STATE)
     );
 

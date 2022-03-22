@@ -53,7 +53,8 @@ public class OperatorMain extends BaseMain {
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
-  private static final NextStepFactory NEXT_STEP_FACTORY = OperatorMain::createInitializeInternalIdentityStep;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static NextStepFactory nextStepFactory = OperatorMain::createInitializeInternalIdentityStep;
 
   /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
   private static final long CRD_DETECTION_DELAY = 10;
@@ -205,7 +206,7 @@ public class OperatorMain extends BaseMain {
   @Override
   Step createStartupSteps() {
 
-    return NEXT_STEP_FACTORY.createInternalInitializationStep(
+    return nextStepFactory.createInternalInitializationStep(
         delegate, Namespaces.getSelection(new StartupStepsVisitor()));
   }
 

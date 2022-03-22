@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -367,7 +368,7 @@ class ItMiiAuxiliaryImageCluster {
     ExecResult result = readFilesInPod(domainNamespace, adminServerPodName, fileName);
 
     logger.info("readFilesInPod returned: {0}", result.toString());
-    assertFalse(result.exitValue() == 0, String.format("Failed to read file %s. Error is: %s",
+    assertNotEquals(0, result.exitValue(), String.format("Failed to read file %s. Error is: %s",
         fileName, result.stderr()));
     assertTrue(result.toString().contains("No such file or directory"),
         String.format("File %s should not exists in the admin pod", fileName));
@@ -377,7 +378,7 @@ class ItMiiAuxiliaryImageCluster {
       result = readFilesInPod(domainNamespace, managedServerPrefix + i, fileName);
 
       logger.info("readFilesInPod returned: {0}", result.toString());
-      assertTrue(result.exitValue() == 0, String.format("Failed to read file %s. Error is: %s",
+      assertEquals(0, result.exitValue(), String.format("Failed to read file %s. Error is: %s",
           fileName, result.stderr()));
       assertTrue(result.stdout().contains(fileContent),
           String.format("The content %s read from file %s is not same as given one %s in managed server pod %s",

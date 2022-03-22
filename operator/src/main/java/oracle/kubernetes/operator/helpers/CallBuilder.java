@@ -97,9 +97,9 @@ public class CallBuilder {
         }
       };
 
-  private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
+  private static SynchronousCallDispatcher dispatcher = DEFAULT_DISPATCHER;
   private static final AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
-  private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
+  private static AsyncRequestStepFactory stepFactory = DEFAULT_STEP_FACTORY;
   private ClientPool helper;
   private final Boolean allowWatchBookmarks = false;
   private final String dryRun = null;
@@ -467,23 +467,23 @@ public class CallBuilder {
   /* Pods */
 
   static SynchronousCallDispatcher setCallDispatcher(SynchronousCallDispatcher newDispatcher) {
-    SynchronousCallDispatcher oldDispatcher = DISPATCHER;
-    DISPATCHER = newDispatcher;
+    SynchronousCallDispatcher oldDispatcher = dispatcher;
+    dispatcher = newDispatcher;
     return oldDispatcher;
   }
 
   static void resetCallDispatcher() {
-    DISPATCHER = DEFAULT_DISPATCHER;
+    dispatcher = DEFAULT_DISPATCHER;
   }
 
   static AsyncRequestStepFactory setStepFactory(AsyncRequestStepFactory newFactory) {
-    AsyncRequestStepFactory oldFactory = STEP_FACTORY;
-    STEP_FACTORY = newFactory;
+    AsyncRequestStepFactory oldFactory = stepFactory;
+    stepFactory = newFactory;
     return oldFactory;
   }
 
   static void resetStepFactory() {
-    STEP_FACTORY = DEFAULT_STEP_FACTORY;
+    stepFactory = DEFAULT_STEP_FACTORY;
   }
 
   /**
@@ -549,7 +549,7 @@ public class CallBuilder {
 
   private <T> T executeSynchronousCall(
       RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
-    return DISPATCHER.execute(factory, requestParams, helper);
+    return dispatcher.execute(factory, requestParams, helper);
   }
 
   /**
@@ -2027,7 +2027,7 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
-    return STEP_FACTORY.createRequestAsync(
+    return stepFactory.createRequestAsync(
         next,
         requestParams,
         factory,
@@ -2043,7 +2043,7 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
-    return STEP_FACTORY.createRequestAsync(
+    return stepFactory.createRequestAsync(
         next,
         requestParams,
         factory,
@@ -2059,7 +2059,7 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
-    return STEP_FACTORY.createRequestAsync(
+    return stepFactory.createRequestAsync(
         next,
         requestParams,
         factory,

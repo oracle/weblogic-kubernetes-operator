@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdo
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -161,7 +162,7 @@ class ItRemoteConsole {
   void testWlsRemoteConsoleConnectionThroughTraefik() {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-    assertTrue(traefikNodePort != -1,
+    assertNotEquals(-1, traefikNodePort,
         "Could not get the default external service node port");
     logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
@@ -177,7 +178,7 @@ class ItRemoteConsole {
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughNginx() {
 
-    assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
+    assertNotEquals(-1, nginxNodePort, "Could not get the default external service node port");
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
@@ -193,7 +194,7 @@ class ItRemoteConsole {
   void testWlsRemoteConsoleConnectionUsingSSL() {
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
-    assertTrue(sslNodePort != -1,
+    assertNotEquals(-1, sslNodePort,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
 
@@ -324,7 +325,7 @@ class ItRemoteConsole {
   private static void verifyWlsRemoteConsoleConnection() {
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);

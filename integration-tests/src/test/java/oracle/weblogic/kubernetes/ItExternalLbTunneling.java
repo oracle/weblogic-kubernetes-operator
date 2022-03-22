@@ -84,6 +84,8 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -292,7 +294,7 @@ class ItExternalLbTunneling {
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpTunnelingPort =
         getServiceNodePort(traefikNamespace, service, "web");
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Traefik HttpTunnelingPort service node port");
     logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
 
@@ -351,7 +353,7 @@ class ItExternalLbTunneling {
     logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
     int httpTunnelingPort =
         getServiceNodePort(nginxNamespace, service, "http");
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Nginx HttpTunnelingPort service node port");
     logger.info("HttpTunnelingPort for Nginx {0}", httpTunnelingPort);
 
@@ -411,7 +413,7 @@ class ItExternalLbTunneling {
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpsTunnelingPort =
         getServiceNodePort(traefikNamespace, service, "websecure");
-    assertTrue(httpsTunnelingPort != -1,
+    assertNotEquals(-1, httpsTunnelingPort,
         "Could not get the Traefik HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Traefik {0}", httpsTunnelingPort);
     runExtHttpsClient(httpsTunnelingPort, 2, false);
@@ -464,7 +466,7 @@ class ItExternalLbTunneling {
     logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
     int httpsTunnelingPort =
         getServiceNodePort(nginxNamespace, service, "websecure");
-    assertTrue(httpsTunnelingPort != -1,
+    assertNotEquals(-1, httpsTunnelingPort,
         "Could not get the Nginx HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Nginx {0}", httpsTunnelingPort);
     runExtHttpsClient(httpsTunnelingPort, 2, false);
@@ -489,7 +491,7 @@ class ItExternalLbTunneling {
     // By default, when a service is exposed as a route, the endpoint is set to the default port.
     int httpTunnelingPort = getServicePort(
                     domainNamespace, clusterServiceName, "CustomChannel");
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
              "Could not get the cluster custom channel port");
     setTargetPortForRoute(clusterServiceName, domainNamespace, httpTunnelingPort);
     logger.info("Found the administration service nodePort {0}", httpTunnelingPort);
@@ -517,7 +519,7 @@ class ItExternalLbTunneling {
 
     int httpsTunnelingPort = getServicePort(
                     domainNamespace, clusterServiceName, "CustomChannel");
-    assertTrue(httpsTunnelingPort != -1,
+    assertNotEquals(-1, httpsTunnelingPort,
              "Could not get the cluster custom channel port");
     logger.info("Found the administration service nodePort {0}", httpsTunnelingPort);
 
@@ -645,7 +647,7 @@ class ItExternalLbTunneling {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Build JMS Client inside the Admin Server Pod
@@ -671,7 +673,7 @@ class ItExternalLbTunneling {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Run external standalone JMS Client using wlthint3client.jar in classpath.
