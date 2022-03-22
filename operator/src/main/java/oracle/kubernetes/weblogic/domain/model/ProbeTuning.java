@@ -35,9 +35,6 @@ public class ProbeTuning {
   @Range(minimum = 1)
   private Integer successThreshold = null;
 
-  public ProbeTuning() {
-  }
-
   void copyValues(ProbeTuning fromProbe) {
     if (initialDelaySeconds == null) {
       initialDelaySeconds(fromProbe.initialDelaySeconds);

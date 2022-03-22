@@ -15,7 +15,7 @@ public class SystemClockTestSupport {
 
   public static Memento installClock() throws NoSuchFieldException {
     clock = new TestSystemClock();
-    return StaticStubSupport.install(SystemClock.class, "DELEGATE", clock);
+    return StaticStubSupport.install(SystemClock.class, "delegate", clock);
   }
 
   public static Matcher<OffsetDateTime> isDuringTest() {

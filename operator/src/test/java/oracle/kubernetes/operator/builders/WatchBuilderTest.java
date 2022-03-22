@@ -249,7 +249,7 @@ class WatchBuilderTest {
 
     static Memento install() throws NoSuchFieldException {
       queue = new ArrayDeque<>();
-      return StaticStubSupport.install(ClientPool.class, "SINGLETON", new ClientPoolStub());
+      return StaticStubSupport.install(ClientPool.class, "singleton", new ClientPoolStub());
     }
 
     static Collection<ApiClient> getPooledClients() {

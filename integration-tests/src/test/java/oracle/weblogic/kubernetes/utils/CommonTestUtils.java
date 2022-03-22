@@ -45,7 +45,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -760,9 +763,9 @@ public class CommonTestUtils {
   public static String getDockerExtraArgs() {
     StringBuffer extraArgs = new StringBuffer("");
 
-    String httpsproxy = Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
-    String httpproxy = Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
-    String noproxy = Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
+    String httpsproxy = HTTPS_PROXY;
+    String httpproxy = HTTP_PROXY;
+    String noproxy = NO_PROXY;
     LoggingFacade logger = getLogger();
     logger.info(" httpsproxy : " + httpsproxy);
     String proxyHost = "";
@@ -1246,5 +1249,49 @@ public class CommonTestUtils {
         adminServiceNodePort,
         resourcePath);
     logger.info("Found the " + resourcePath + " configuration");
+  }
+
+  /**
+   * Returns the java system property value, converting an empty string to null.
+   *
+   * @param propertyName the Java system property name
+   * @return the actual property value, or null
+   */
+  public static String getNonEmptySystemProperty(String propertyName) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue != null && propertyValue.isEmpty()) {
+      propertyValue = null;
+    }
+    return propertyValue;
+  }
+
+  /**
+   * Returns the java system property value or the default.
+   * Any an empty string in the actual value is treated as null so that the default is returned.
+   *
+   * @param propertyName the Java system property name
+   * @param defaultValue the value to return is the property
+   * @return the actual property value or the default value
+   */
+  public static String getNonEmptySystemProperty(String propertyName, String defaultValue) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue == null || propertyValue.isEmpty()) {
+      propertyValue = defaultValue;
+    }
+    return propertyValue;
+  }
+
+  /**
+   * Returns the Kind Repo value with a trailing slash.
+   *
+   * @param propertyName the name used to retrieve the Kind Repo value
+   * @return the Kind Repo value with a trailing slash
+   */
+  public static String getKindRepoValue(String propertyName) {
+    String propertyValue = getNonEmptySystemProperty(propertyName);
+    if (propertyValue != null && !propertyValue.endsWith("/")) {
+      propertyValue += "/";
+    }
+    return propertyValue;
   }
 }

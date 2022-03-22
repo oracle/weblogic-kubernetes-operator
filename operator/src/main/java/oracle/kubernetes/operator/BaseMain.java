@@ -132,7 +132,9 @@ public abstract class BaseMain {
 
   abstract void logStartingLivenessMessage();
 
-  abstract void stopAllWatchers();
+  void stopAllWatchers() {
+    // no-op
+  }
 
   void waitForDeath() {
     Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));

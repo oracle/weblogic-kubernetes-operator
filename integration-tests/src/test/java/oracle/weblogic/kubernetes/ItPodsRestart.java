@@ -170,14 +170,14 @@ class ItPodsRestart {
 
     // verify if cpu limit was set then the new value should be different than the original value
     if (limits.get("cpu") != null) {
-      assertNotEquals(limits.get("cpu").getNumber().compareTo(cpuLimit), 0,
+      assertNotEquals(0, limits.get("cpu").getNumber().compareTo(cpuLimit),
           String.format("server pod compute resources cpu limit is already set to %s, set cpu limit to "
               + "a different value", cpuLimit));
     }
 
     // verify if cpu request was set then the new value should be different than the original value
     if (requests.get("cpu") != null) {
-      assertNotEquals(requests.get("cpu").getNumber().compareTo(cpuRequest), 0,
+      assertNotEquals(0, requests.get("cpu").getNumber().compareTo(cpuRequest),
           String.format("server pod compute resources cpu request is already set to %s, set cpu request to "
               + "a different value", cpuRequest));
     }
@@ -208,7 +208,7 @@ class ItPodsRestart {
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
     assertNotNull(limits.get("cpu"), domain1 + "/spec/serverPod/resources/limits/cpu is null");
-    assertEquals(limits.get("cpu").getNumber().compareTo(cpuLimit), 0,
+    assertEquals(0, limits.get("cpu").getNumber().compareTo(cpuLimit),
         String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
             cpuLimit, limits.get("cpu").getNumber()));
 
@@ -223,7 +223,7 @@ class ItPodsRestart {
     // verify the server pod resources requests got updated
     logger.info("Checking that the server pod resources cpu request is updated correctly");
     assertNotNull(requests.get("cpu"), domain1 + "/spec/serverPod/resources/requests/cpu is null");
-    assertEquals(requests.get("cpu").getNumber().compareTo(cpuRequest), 0,
+    assertEquals(0, requests.get("cpu").getNumber().compareTo(cpuRequest),
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber()));
 
@@ -452,7 +452,7 @@ class ItPodsRestart {
 
     //verify the runAsUser in the new patched domain
     logger.info("In the new patched domain runAsUser is: {0}", runAsUserNew);
-    assertEquals(runAsUserNew.compareTo(runAsUser), 0,
+    assertEquals(0, runAsUserNew.compareTo(runAsUser),
         String.format("podSecurityContext runAsUser was not updated correctly, set runAsUser to %s, got %s",
             runAsUser, runAsUserNew));
 

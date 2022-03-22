@@ -96,7 +96,7 @@ class RestBackendImplTest {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(
-        StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
+        StaticStubSupport.install(RestBackendImpl.class, "instance", new TopologyRetrieverStub()));
 
     testSupport.defineResources(namespace, domain1, domain2);
     testSupport.doOnCreate(TOKEN_REVIEW, r -> authenticate((V1TokenReview) r));

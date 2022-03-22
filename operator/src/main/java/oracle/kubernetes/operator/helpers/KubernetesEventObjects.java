@@ -16,9 +16,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class KubernetesEventObjects {
   private final Map<EventIdentifier, CoreV1Event> events = new ConcurrentHashMap<>();
 
-  public KubernetesEventObjects() {
-  }
-
   public int size() {
     return events.size();
   }

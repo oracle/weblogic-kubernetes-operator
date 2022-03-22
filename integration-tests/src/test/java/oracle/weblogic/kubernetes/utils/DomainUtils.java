@@ -67,8 +67,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -688,21 +690,21 @@ public class DomainUtils {
             .name("WDT_DIR")
             .value("/u01/shared/wdt"))
         .addEnvItem(new V1EnvVar()
-            .name("http_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(HTTPS_PROXY));
+            .value("/u01/shared/domains/" + domainUid));
+
+    if (HTTP_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("http_proxy").value(HTTP_PROXY));
+    }
+    if (HTTPS_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("https_proxy").value(HTTPS_PROXY));
+    }
+    if (NO_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("no_proxy").value(HTTPS_PROXY));
+    }
 
     getLogger().info("Running a Kubernetes job to create the domain");
-    createDomainJob(pvName, pvcName,
-        domainScriptConfigMapName, namespace, jobCreationContainer);
+    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
   }
 
   /**

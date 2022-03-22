@@ -10,7 +10,7 @@ public abstract class SystemClock {
 
   // Leave as non-final; unit tests may replace this value
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static SystemClock DELEGATE = new SystemClock() {
+  private static SystemClock delegate = new SystemClock() {
         @Override
         public OffsetDateTime getCurrentTime() {
           return OffsetDateTime.now();
@@ -23,7 +23,7 @@ public abstract class SystemClock {
    * @return a time instance
    */
   public static OffsetDateTime now() {
-    return DELEGATE.getCurrentTime();
+    return delegate.getCurrentTime();
   }
 
   /**

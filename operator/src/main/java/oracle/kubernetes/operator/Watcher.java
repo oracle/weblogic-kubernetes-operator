@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -19,10 +19,10 @@ import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
@@ -35,9 +35,6 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
  * @param <T> The type of the object to be watched.
  */
 abstract class Watcher<T> {
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
-  private static WatcherStarter STARTER = Watcher::startAsynchronousWatch;
-
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String IGNORED = "0";
@@ -45,6 +42,10 @@ abstract class Watcher<T> {
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
+
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
+  private static WatcherStarter starter = Watcher::startAsynchronousWatch;
+
   private String resourceVersion;
   private final AtomicBoolean stopping;
   private WatchListener<T> listener;
@@ -109,7 +110,7 @@ abstract class Watcher<T> {
 
   /** Kick off the watcher processing that runs in a separate thread. */
   void start(ThreadFactory factory) {
-    thread = STARTER.startWatcher(factory, this::doWatch);
+    thread = starter.startWatcher(factory, this::doWatch);
   }
 
   public static Thread startAsynchronousWatch(ThreadFactory factory, Runnable doWatch) {
@@ -173,8 +174,8 @@ abstract class Watcher<T> {
           continue;
         }
 
-        try (LoggingContext ignored =
-                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
+        try (ThreadLoggingContext ignored =
+                 ThreadLoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {

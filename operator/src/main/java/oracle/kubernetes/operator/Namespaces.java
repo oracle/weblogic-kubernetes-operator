@@ -23,10 +23,10 @@ import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -331,7 +331,7 @@ public class Namespaces {
 
     private void validateConfiguredNamespace(String namespace) {
       if (isNoLongerActiveDomainNamespace(namespace)) {
-        try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(namespace)) {
+        try (ThreadLoggingContext ignored = ThreadLoggingContext.setThreadContext().namespace(namespace)) {
           LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, namespace);
         }
       }

@@ -85,21 +85,14 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
-import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
@@ -120,7 +113,8 @@ public class DomainStatusUpdater {
   }
 
   public interface StepWithRetryCount {
-    Step trackingRetries(@Nullable V1Job introspectorJob);
+    @SuppressWarnings("unused")
+    Step forIntrospection(@Nullable V1Job introspectorJob);
   }
 
   /**
@@ -197,14 +191,6 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to create a failure condition.
-   */
-  @SuppressWarnings("unchecked")
-  public static <S extends Step & StepWithRetryCount> S createFailedStep(DomainFailureReason reason, String message) {
-    return (S) new FailureStep(reason, message);
-  }
-
-  /**
    * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
    * and to generate DOMAIN_FAILED event.
    *
@@ -219,7 +205,7 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailureSteps(Kubernetes, failure.getMessage());
+    return new FailureStep(Kubernetes, failure.getMessage());
   }
 
   /**
@@ -227,12 +213,8 @@ public class DomainStatusUpdater {
    *
    * @param throwable Throwable that caused failure
    */
-  static Step createInternalFailureSteps(Throwable throwable, V1Job domainIntrospectorJob) {
-    String message = throwable.getMessage() == null ? throwable.toString() : throwable.getMessage();
-
-    return Step.chain(
-        new FailureStep(Internal, message).trackingRetries(domainIntrospectorJob),
-        createFailureCountStep(domainIntrospectorJob));
+  static Step createInternalFailureSteps(Throwable throwable) {
+    return new FailureStep(Internal, throwable);
   }
 
   /**
@@ -241,7 +223,7 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createServerPodFailureSteps(String message) {
-    return createFailureSteps(ServerPod, message);
+    return new FailureStep(ServerPod, message);
   }
 
   /**
@@ -250,7 +232,7 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createDomainInvalidFailureSteps(String message) {
-    return createFailureSteps(DomainInvalid, message);
+    return new FailureStep(DomainInvalid, message);
   }
 
   /**
@@ -268,17 +250,18 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createTopologyMismatchFailureSteps(String message) {
-    return createFailureSteps(TopologyMismatch, message);
+    return new FailureStep(TopologyMismatch, message);
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
+   * and to generate DOMAIN_FAILED event.
    *
-   * @param reason the failure category
-   * @param message a fuller description of the problem
+   * @param throwable               the exception that describes the problem
+   * @param domainIntrospectorJob Domain introspector job
    */
-  public static Step createFailureSteps(@Nonnull DomainFailureReason reason, String message) {
-    return createFailedStep(reason, message);
+  public static Step createIntrospectionFailureSteps(Throwable throwable, V1Job domainIntrospectorJob) {
+    return new FailureStep(Introspection, throwable).forIntrospection(domainIntrospectorJob);
   }
 
   /**
@@ -288,10 +271,8 @@ public class DomainStatusUpdater {
    * @param message               a fuller description of the problem
    * @param domainIntrospectorJob Domain introspector job
    */
-  public static Step createIntrospectionFailureSteps(String message,
-                                                     V1Job domainIntrospectorJob) {
-    return Step.chain(new FailureStep(Introspection, message).trackingRetries(domainIntrospectorJob),
-        createFailureCountStep(domainIntrospectorJob));
+  public static Step createIntrospectionFailureSteps(String message, V1Job domainIntrospectorJob) {
+    return new FailureStep(Introspection, message).forIntrospection(domainIntrospectorJob);
   }
 
   /**
@@ -301,40 +282,7 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createIntrospectionFailureSteps(String message) {
-    return
-        Step.chain(
-            new FailureStep(Introspection, message));
-  }
-
-  public static Step createFailureCountStep(V1Job domainIntrospectorJob) {
-    return new FailureCountStep(domainIntrospectorJob);
-  }
-
-  static class FailureCountStep extends DomainStatusUpdaterStep {
-
-    private final V1Job domainIntrospectorJob;
-
-    public FailureCountStep(V1Job domainIntrospectorJob) {
-      super(null);
-      this.domainIntrospectorJob = domainIntrospectorJob;
-    }
-
-    @Override
-    void modifyStatus(DomainStatus domainStatus) {
-      domainStatus.incrementIntrospectJobFailureCount(getJobUid());
-      addRetryInfoToStatusMessage(domainStatus, getJobUid(), domainStatus.getMessage());
-    }
-
-    @Nullable
-    private String getJobUid() {
-      return Optional.ofNullable(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse(null);
-    }
-
-    private void addRetryInfoToStatusMessage(DomainStatus domainStatus, String jobUid, String message) {
-
-      domainStatus.setMessage(domainStatus.createDomainStatusMessage(jobUid, message));
-    }
-
+    return new FailureStep(Introspection, message);
   }
 
   static class ResetFailureCountStep extends DomainStatusUpdaterStep {
@@ -362,7 +310,8 @@ public class DomainStatusUpdater {
       return new DomainStatusUpdaterContext(packet, this);
     }
 
-    abstract void modifyStatus(DomainStatus domainStatus);
+    void modifyStatus(DomainStatus domainStatus) {
+    }
 
     @Override
     public NextAction apply(Packet packet) {
@@ -431,6 +380,7 @@ public class DomainStatusUpdater {
     private final DomainPresenceInfo info;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
+    private final List<EventData> newEvents = new ArrayList<>();
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
@@ -524,31 +474,27 @@ public class DomainStatusUpdater {
 
     private Step createUpdateSteps(Step next) {
       final List<Step> result = new ArrayList<>();
-      createDomainEvents().stream().map(EventHelper::createEventStep).forEach(result::add);
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
       }
+      createDomainEvents().stream().map(EventHelper::createEventStep).forEach(result::add);
       Optional.ofNullable(next).ifPresent(result::add);
       return result.isEmpty() ? null : Step.chain(result);
     }
 
     @Nonnull
     List<EventData> createDomainEvents() {
-      List<EventData> list = new ArrayList<>();
-      if (hasJustExceededMaxRetryCount()) {
-        list.add(
-            new EventData(EventHelper.EventItem.DOMAIN_FAILED)
-                .failureReason(Aborted)
-                .message(INTROSPECTOR_MAX_ERRORS_EXCEEDED));
-      }
-      return list;
+      newEvents.sort(Comparator.comparing(EventData::getOrdering));
+      return newEvents;
     }
 
-    private boolean hasJustExceededMaxRetryCount() {
-      return getDomain() != null
-            && getStatus() != null
-            && getNewStatus().hasReachedMaximumFailureCount()
-            && !getStatus().hasReachedMaximumFailureCount();
+    void addFailure(DomainStatus status, DomainFailureReason reason, String message) {
+      status.addCondition(new DomainCondition(Failed).withReason(reason).withMessage(message));
+      addDomainEvent(new EventData(DOMAIN_FAILED, message).failureReason(reason));
+    }
+
+    void addDomainEvent(EventData eventData) {
+      newEvents.add(eventData);
     }
 
   }
@@ -611,10 +557,11 @@ public class DomainStatusUpdater {
       @Nonnull
       @Override
       List<EventData> createDomainEvents() {
+        List<EventData> list = super.createDomainEvents();
         Conditions conditions = new Conditions(getNewStatus());
         conditions.apply();
 
-        List<EventData> list = getRemovedConditionEvents(conditions);
+        list.addAll(getRemovedConditionEvents(conditions));
         list.addAll(getNewConditionEvents(conditions));
         list.sort(Comparator.comparing(EventData::getOrdering));
         return list;
@@ -628,6 +575,10 @@ public class DomainStatusUpdater {
             .collect(Collectors.toList());
       }
 
+      private EventData toEvent(DomainCondition newCondition) {
+        return Optional.ofNullable(newCondition.getType().getAddedEvent()).map(EventData::new).orElse(null);
+      }
+
       private List<EventData> getRemovedConditionEvents(@Nonnull  Conditions conditions) {
         return conditions.getRemovedConditions().stream()
             .map(this::toRemovedEvent)
@@ -635,37 +586,8 @@ public class DomainStatusUpdater {
             .collect(Collectors.toList());
       }
 
-      private EventData toEvent(DomainCondition newCondition) {
-        switch (newCondition.getType()) {
-          case Completed:
-            return new EventData(DOMAIN_COMPLETE);
-          case Available:
-            return new EventData(DOMAIN_AVAILABLE);
-          case Failed:
-            if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
-              return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
-            } else if (ServerPod.name().equals(newCondition.getReason())) {
-              return new EventData(DOMAIN_FAILED).failureReason(ServerPod).message(newCondition.getMessage());
-            }
-            return null;
-          default:
-            return null;
-        }
-      }
-
       private EventData toRemovedEvent(DomainCondition removedCondition) {
-        switch (removedCondition.getType()) {
-          case Completed:
-            return new EventData(DOMAIN_INCOMPLETE);
-          case Available:
-            return new EventData(DOMAIN_UNAVAILABLE);
-          case Rolling:
-            return new EventData(DOMAIN_ROLL_COMPLETED);
-          case Failed:
-            return new EventData(DOMAIN_FAILURE_RESOLVED);
-          default:
-            return null;
-        }
+        return Optional.ofNullable(removedCondition.getType().getRemovedEvent()).map(EventData::new).orElse(null);
       }
 
       private void setStatusConditions(DomainStatus status) {
@@ -673,15 +595,9 @@ public class DomainStatusUpdater {
         newConditions.apply();
 
         if (isHasFailedPod()) {
-          status.addCondition(new DomainCondition(Failed)
-              .withStatus(true)
-              .withReason(ServerPod)
-              .withMessage(forPodFailedMessage()));
+          addFailure(status, ServerPod, forPodFailedMessage());
         } else if (hasPodNotReadyInTime()) {
-          status.addCondition(new DomainCondition(Failed)
-              .withStatus(true)
-              .withReason(ServerPod)
-              .withMessage(formatPodNotReadyMessage()));
+          addFailure(status, ServerPod, formatPodNotReadyMessage());
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
@@ -715,6 +631,7 @@ public class DomainStatusUpdater {
 
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
+          this.status.removeConditionsMatching(c -> c.hasType(Failed) && ReplicasTooHigh.name().equals(c.getReason()));
           this.clusterChecks = createClusterChecks();
           conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
           conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
@@ -726,7 +643,6 @@ public class DomainStatusUpdater {
         }
 
         void apply() {
-          status.removeConditionsMatching(c -> c.hasType(Failed) && ReplicasTooHigh.name().equals(c.getReason()));
           conditions.forEach(newCondition -> addCondition(status, newCondition));
         }
 
@@ -804,7 +720,7 @@ public class DomainStatusUpdater {
         private void computeTooManyReplicasFailures() {
           Arrays.stream(clusterChecks)
               .filter(ClusterCheck::hasTooManyReplicas)
-              .forEach(check -> conditions.add(check.createFailureCondition()));
+              .forEach(check -> addFailure(status, ReplicasTooHigh, check.createFailureMessage()));
         }
       }
 
@@ -838,10 +754,6 @@ public class DomainStatusUpdater {
 
         boolean hasTooManyReplicas() {
           return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
-        }
-
-        DomainCondition createFailureCondition() {
-          return new DomainCondition(Failed).withReason(ReplicasTooHigh).withMessage(createFailureMessage());
         }
 
         private boolean isClusterIntentionallyShutDown() {
@@ -1302,7 +1214,7 @@ public class DomainStatusUpdater {
     String jobUid;
 
     @Override
-    public FailureStep trackingRetries(@Nullable V1Job introspectorJob) {
+    public FailureStep forIntrospection(@Nullable V1Job introspectorJob) {
       jobUid = Optional.ofNullable(introspectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse("");
       return this;
     }
@@ -1312,40 +1224,51 @@ public class DomainStatusUpdater {
       this.message = message;
     }
 
+    private FailureStep(DomainFailureReason reason, Throwable throwable) {
+      this.reason = reason;
+      this.message = Optional.ofNullable(throwable.getMessage()).orElse(throwable.toString());
+    }
+
     @Override
     protected String getDetail() {
       return reason.name();
     }
 
     @Override
-    void modifyStatus(DomainStatus s) {
-      s.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(reason).withMessage(message));
-    }
-
-    @Override
     DomainStatusUpdaterContext createContext(Packet packet) {
-      return new FailureStatusUpdaterContext(packet, this, reason, message);
+      return new FailureStatusUpdaterContext(packet, this, reason, message, jobUid);
     }
 
     static class FailureStatusUpdaterContext extends DomainStatusUpdaterContext {
-      private final DomainFailureReason reason;
-      private final String message;
+      private DomainFailureReason reason;
+      private String message;
+      private final String jobUid;
 
       public FailureStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep statusUpdaterStep,
-                                         DomainFailureReason reason, String message) {
+                                         DomainFailureReason reason, String message, String jobUid) {
         super(packet, statusUpdaterStep);
+        this.jobUid = jobUid;
+        this.reason = reason;
+        this.message = message;
+      }
+
+      @Override
+      void modifyStatus(DomainStatus status) {
         if (hasJustGotFatalIntrospectorError(message)) {
           this.reason = Aborted;
           this.message = FATAL_INTROSPECTOR_ERROR_MSG + message;
-        } else {
-          this.reason = reason;
-          this.message = message;
+        } else if (hasJustExceededMaxRetryCount(status)) {
+          this.reason = Aborted;
+        }
+        addFailure(status, reason, message);
+
+        if (jobUid != null) {
+          addRetryInfoToStatusMessage(status, jobUid, status.getMessage());
         }
       }
 
-      @Nonnull
-      List<EventData> createDomainEvents() {
-        return Collections.singletonList(new EventData(DOMAIN_FAILED, message).failureReason(reason));
+      private void addRetryInfoToStatusMessage(DomainStatus domainStatus, String jobUid, String message) {
+        domainStatus.setMessage(domainStatus.createDomainStatusMessage(jobUid, message));
       }
 
       private boolean hasJustGotFatalIntrospectorError(String message) {
@@ -1355,6 +1278,15 @@ public class DomainStatusUpdater {
 
       private boolean isFatalIntrospectorMessage(String statusMessage) {
         return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
+      }
+
+      private boolean hasJustExceededMaxRetryCount(DomainStatus status) {
+        if (jobUid == null || status.hasReachedMaximumFailureCount()) {
+          return false;
+        } else {
+          status.incrementIntrospectJobFailureCount(jobUid);
+          return status.hasReachedMaximumFailureCount();
+        }
       }
 
     }

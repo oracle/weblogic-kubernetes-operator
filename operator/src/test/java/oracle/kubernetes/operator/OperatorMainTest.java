@@ -192,7 +192,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
@@ -1235,7 +1235,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(OperatorMain.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(OperatorMain.class, "nextStepFactory", factory);
     }
 
     @Override

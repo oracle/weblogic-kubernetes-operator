@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -25,7 +25,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -230,14 +233,18 @@ class ItFmwDomainInPVUsingWDT {
             .name("DOMAIN_HOME_DIR")
             .value(DOMAINHOMEPREFIX + domainUid))
         .addEnvItem(new V1EnvVar()
-            .name("http_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
             .name("DOMAIN_TYPE")
             .value("JRF"));
+
+    if (HTTP_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("http_proxy").value(HTTP_PROXY));
+    }
+    if (HTTPS_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("https_proxy").value(HTTPS_PROXY));
+    }
+    if (NO_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("no_proxy").value(NO_PROXY));
+    }
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(FMWINFRA_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,

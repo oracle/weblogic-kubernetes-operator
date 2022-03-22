@@ -25,12 +25,12 @@ public class InMemoryCertificates {
   public static Memento install() throws NoSuchFieldException {
     fileSystem = InMemoryFileSystem.createInstance();
     defineOperatorInternalCertificateFile(INTERNAL_CERT_DATA);
-    return StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath);
+    return StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath);
   }
 
   static Memento installWithoutData() throws NoSuchFieldException {
     fileSystem = InMemoryFileSystem.createInstance();
-    return StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath);
+    return StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath);
   }
 
   static void defineOperatorExternalKeyFile(String contents) {

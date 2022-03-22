@@ -25,10 +25,10 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.ReadHealthStep;
 import oracle.kubernetes.operator.utils.KubernetesExec;
 import oracle.kubernetes.operator.utils.KubernetesExecFactory;
@@ -43,14 +43,17 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Function<Step, Step> stepFactory = ReadHealthStep::createReadHealthStep;
+
   @SuppressWarnings("FieldMayBeFinal") // may be replaced by unit test
-  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
-  private static final Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
+  private static KubernetesExecFactory execFactory = new KubernetesExecFactoryImpl();
 
   private ServerStatusReader() {
   }
@@ -174,10 +177,10 @@ public class ServerStatusReader {
             ApiClient client = helper.take();
 
             try {
-              try (LoggingContext stack =
-                       LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+              try (ThreadLoggingContext stack =
+                       setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
 
-                KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, WLS_CONTAINER_NAME);
+                KubernetesExec kubernetesExec = execFactory.create(client, pod, WLS_CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
                 kubernetesExec.setTty(tty);
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
@@ -202,8 +205,8 @@ public class ServerStatusReader {
             } catch (InterruptedException ignore) {
               Thread.currentThread().interrupt();
             } catch (IOException | ApiException e) {
-              try (LoggingContext stack =
-                       LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+              try (ThreadLoggingContext stack =
+                       setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
                 LOGGER.warning(MessageKeys.EXCEPTION, e);
               }
             } finally {
@@ -213,8 +216,8 @@ public class ServerStatusReader {
               }
             }
 
-            try (LoggingContext stack =
-                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+            try (ThreadLoggingContext stack =
+                     setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
               serverStateMap.put(serverName, state);
@@ -274,7 +277,7 @@ public class ServerStatusReader {
       if (PodHelper.hasReadyStatus(pod)
           || WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
-        return doNext(STEP_FACTORY.apply(getNext()), packet);
+        return doNext(stepFactory.apply(getNext()), packet);
       }
 
       return doNext(packet);

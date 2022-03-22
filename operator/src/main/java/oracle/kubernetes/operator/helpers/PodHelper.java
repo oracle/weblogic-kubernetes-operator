@@ -674,10 +674,6 @@ public class PodHelper {
       na.invoke(retryStep, packet);
       return na;
     }
-
-    @Override
-    public void reset() {
-    }
   }
 
 }
