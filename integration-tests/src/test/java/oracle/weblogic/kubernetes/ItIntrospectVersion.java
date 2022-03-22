@@ -1108,14 +1108,14 @@ class ItIntrospectVersion {
 
     // get introspectVersion after running introspectDomain.sh
     String ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
-    logger.info("introspectVersion after running the script {0}",ivAfter);
+    logger.info("introspectVersion after running the script {0}", ivAfter);
 
     // verify that introspectVersion is changed
     assertEquals(introspectVersion, ivAfter,
-        "introspectVersion must change to  "  + introspectVersion);
+        "introspectVersion must change to  "  + introspectVersion + ", but is " + ivAfter);
 
     assertNotEquals(ivBefore, ivAfter,
-        "introspectVersion should change from " + ivBefore + " to " + ivAfter);
+        "introspectVersion should have changed from " + ivBefore + " to " + ivAfter);
 
     // verify when a domain resource has spec.introspectVersion configured,
     // after a introspectVersion is modified, new server pods have the label
@@ -1142,11 +1142,11 @@ class ItIntrospectVersion {
 
     // get introspectVersion after running introspectDomain.sh
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
-    logger.info("introspectVersion after running the script {0}",ivAfter);
+    logger.info("introspectVersion after running the script {0}", ivAfter);
 
     // verify that introspectVersion is changed
     assertEquals(introspectVersion, ivAfter,
-        "introspectVersion must change to  "  + introspectVersion);
+        "introspectVersion must change to  "  + introspectVersion + ", but is " + ivAfter);
 
     // use introspectDomain.sh to initiate introspection
     // Since the current version is non-numeric the updated version is
