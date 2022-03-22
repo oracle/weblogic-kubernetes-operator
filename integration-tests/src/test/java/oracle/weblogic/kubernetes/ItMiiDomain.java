@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
@@ -724,9 +725,8 @@ class ItMiiDomain {
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
     // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
+    if (WIT_JAVA_HOME != null) {
+      env.put("JAVA_HOME", WIT_JAVA_HOME);
     }
  
     String witTarget = ((OKD) ? "OpenShift" : "Default");

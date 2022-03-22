@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -31,6 +31,9 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -125,19 +128,16 @@ public class ItMiiSampleHelper {
     envMap.put("DO_AI", String.valueOf(imageType == ImageType.AUX));
 
     // kind cluster uses openjdk which is not supported by image tool
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      envMap.put("JAVA_HOME", witJavaHome);
+    if (WIT_JAVA_HOME != null) {
+      envMap.put("JAVA_HOME", WIT_JAVA_HOME);
     }
 
-    String witInstallerUrl = System.getProperty("wit.download.url");
-    if (witInstallerUrl != null) {
-      envMap.put("WIT_INSTALLER_URL", witInstallerUrl);
+    if (WIT_DOWNLOAD_URL != null) {
+      envMap.put("WIT_INSTALLER_URL", WDT_DOWNLOAD_URL);
     }
 
-    String wdtInstallerUrl = System.getProperty("wdt.download.url");
-    if (wdtInstallerUrl != null) {
-      envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
+    if (WDT_DOWNLOAD_URL != null) {
+      envMap.put("WDT_INSTALLER_URL", WDT_DOWNLOAD_URL);
     }
     logger.info("Env. variables to the script {0}", envMap);
 
