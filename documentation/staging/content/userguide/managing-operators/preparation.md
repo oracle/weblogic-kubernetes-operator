@@ -95,7 +95,7 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
   $ helm search repo weblogic-operator/weblogic-operator --versions
   ```
 
-- For a specified version of the Helm chart, with `helm pull` and `helm install`, use the `--version <value>` option
+- For a specified version of the Helm chart and operator, with `helm pull` and `helm install`, use the `--version <value>` option
   to choose the version that you want, with the `latest` value being the default.
 
 #### Inspect the operator Helm chart
