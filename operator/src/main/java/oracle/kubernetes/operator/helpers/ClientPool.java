@@ -76,16 +76,16 @@ public class ClientPool extends Pool<ApiClient> {
     ApiClient client = null;
     LOGGER.fine(MessageKeys.CREATING_API_CLIENT);
     try {
-      ClientFactory factory = null;
+      ClientFactory clientFactory = null;
       Container c = ContainerResolver.getInstance().getContainer();
       if (c != null) {
-        factory = c.getSpi(ClientFactory.class);
+        clientFactory = c.getSpi(ClientFactory.class);
       }
-      if (factory == null) {
-        factory = ClientPool.factory;
+      if (clientFactory == null) {
+        clientFactory = ClientPool.factory;
       }
 
-      client = factory.get();
+      client = clientFactory.get();
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
