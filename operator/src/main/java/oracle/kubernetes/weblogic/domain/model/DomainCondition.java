@@ -55,9 +55,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @NotNull
   private String status = "True";
 
-  @Description("The uid of an introspection job associated with this failed condition")
-  private String introspectionUid;
-
   /**
    * Creates a new domain condition, initialized with its type.
    * @param conditionType the enum that designates the condition type
@@ -74,7 +71,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
-    this.introspectionUid = other.introspectionUid;
   }
 
   /**
@@ -224,14 +220,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type == this.type;
   }
 
-  public String getIntrospectionUid() {
-    return introspectionUid;
-  }
-
-  public void setIntrospectionUid(String introspectionUid) {
-    this.introspectionUid = introspectionUid;
-  }
-
   @Override
   public boolean isPatchableFrom(DomainCondition other) {
     return false; // domain conditions are never patched
@@ -244,7 +232,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
     Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
     Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));
-    Optional.ofNullable(introspectionUid).ifPresent(u -> sb.append(" introspection job UID: ").append(u));
     return sb.toString();
   }
 
@@ -255,7 +242,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message)
         .append(type)
         .append(status)
-        .append(introspectionUid)
         .toHashCode();
   }
 
@@ -273,7 +259,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message, rhs.message)
         .append(type, rhs.type)
         .append(status, rhs.status)
-        .append(introspectionUid, rhs.introspectionUid)
         .isEquals();
   }
 
@@ -292,7 +277,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .withStringField("message", DomainCondition::getMessage)
         .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)
-        .withStringField("introspectionUid", DomainCondition::getIntrospectionUid)
         .withEnumField("type", DomainCondition::getType);
 
   static ObjectPatch<DomainCondition> getObjectPatch() {
