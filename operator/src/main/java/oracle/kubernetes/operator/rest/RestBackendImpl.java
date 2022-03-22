@@ -59,7 +59,7 @@ public class RestBackendImpl implements RestBackend {
   private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
-  private static TopologyRetriever INSTANCE =
+  private static TopologyRetriever instance =
       (String ns, String domainUid) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
         if (s != null) {
@@ -381,7 +381,7 @@ public class RestBackendImpl implements RestBackend {
    */
   WlsDomainConfig getWlsDomainConfig(String domainUid) {
     for (String ns : domainNamespaces.get()) {
-      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUid);
+      WlsDomainConfig config = instance.getWlsDomainConfig(ns, domainUid);
       if (config != null) {
         return config;
       }

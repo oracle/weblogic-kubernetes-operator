@@ -23,7 +23,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   public static final int DEFAULT_CALL_LIMIT = 50;
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static TuningParameters INSTANCE = null;
+
+  private static TuningParameters instance = null;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private MainTuning main = null;
@@ -38,20 +39,20 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   }
 
   static synchronized TuningParameters initializeInstance(ScheduledExecutorService executorService, File mountPoint) {
-    if (INSTANCE == null) {
+    if (instance == null) {
       final TuningParametersImpl impl = new TuningParametersImpl(executorService);
-      INSTANCE = impl;
+      instance = impl;
       impl.scheduleUpdates(mountPoint, TuningParametersImpl::updateTuningParameters);
     }
-    return INSTANCE;
+    return instance;
   }
 
   public static synchronized TuningParameters getInstance() {
-    return INSTANCE;
+    return instance;
   }
 
   private static void updateTuningParameters() {
-    ((TuningParametersImpl) INSTANCE).update();
+    ((TuningParametersImpl) instance).update();
   }
 
   private void update() {

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,7 @@ public class DomainUpgradeUtils {
 
   public static final String API_VERSION_V9 = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
-  private volatile int containerIndex = 0;
+  private AtomicInteger containerIndex = new AtomicInteger(0);
 
   public ConversionReviewModel readConversionReview(String resourceName) {
     return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
@@ -173,7 +174,7 @@ public class DomainUpgradeUtils {
 
   private void convertAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes) {
     Map<String, Object> serverPod = getServerPod(spec);
-    Optional.ofNullable(serverPod).map(sp -> getAuxiliaryImages(sp)).ifPresent(auxiliaryImages ->
+    Optional.ofNullable(serverPod).map(this::getAuxiliaryImages).ifPresent(auxiliaryImages ->
             addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes));
     Optional.ofNullable(serverPod).ifPresent(cs -> cs.remove("auxiliaryImages"));
   }
@@ -195,9 +196,10 @@ public class DomainUpgradeUtils {
     addEmptyDirVolume(serverPod, auxiliaryImageVolumes);
     List<Object> initContainers = new ArrayList<>();
     for (Object auxiliaryImage : auxiliaryImages) {
-      initContainers.add(createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage, containerIndex,
+      initContainers.add(
+          createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage, containerIndex.get(),
               auxiliaryImageVolumes));
-      containerIndex++;
+      containerIndex.addAndGet(1);
     }
     serverPod.put("initContainers", initContainers);
     auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, (Map<String, Object>)ai, auxiliaryImageVolumes));

@@ -41,7 +41,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
    have additional help or samples that are specific to the operator,
    or are subject to limitations, special tuning requirements,
    special licensing requirements, or restrictions.
-   See [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for details.
+   See [Supported environments]({{< relref "userguide/platforms/environments.md" >}}) for details.
 
 1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}).
 

@@ -222,8 +222,8 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
-      return Optional.ofNullable(certificates).map(c -> c.getWebhookCertificateData())
-              .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
+      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
+              .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
@@ -114,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -258,7 +260,7 @@ class ItMiiDomain {
     int sslPort = getServicePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
-    assertTrue(sslNodePort != -1,
+    assertNotEquals(-1, sslNodePort,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
@@ -275,7 +277,7 @@ class ItMiiDomain {
     
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
@@ -724,9 +726,8 @@ class ItMiiDomain {
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
     // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
+    if (WIT_JAVA_HOME != null) {
+      env.put("JAVA_HOME", WIT_JAVA_HOME);
     }
  
     String witTarget = ((OKD) ? "OpenShift" : "Default");

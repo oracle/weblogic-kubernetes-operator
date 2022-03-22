@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
@@ -120,6 +121,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -588,7 +590,7 @@ class ItKubernetesEvents {
 
     //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
-    assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
+    assertEquals("/shared/logs/logHome", domain1.getSpec().getLogHome(), "logHome is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -652,7 +654,7 @@ class ItKubernetesEvents {
     //print out includeServerOutInPodLog in the new patched domain
     logger.info("In the new patched domain includeServerOutInPodLog is: {0}",
         domain1.getSpec().includeServerOutInPodLog());
-    assertTrue(domain1.getSpec().includeServerOutInPodLog() != includeLogInPod,
+    assertNotEquals(includeLogInPod, domain1.getSpec().includeServerOutInPodLog(),
         "includeServerOutInPodLog is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
@@ -929,9 +931,7 @@ class ItKubernetesEvents {
    */
   @AfterAll
   public static void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
       deletePersistentVolumeClaim(domainNamespace1, "sample-pvc");
       deletePersistentVolume("sample-pv");
     }

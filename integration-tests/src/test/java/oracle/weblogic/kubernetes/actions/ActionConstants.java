@@ -3,9 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions;
 
-import java.util.Optional;
-
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_BASE;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 
 public interface ActionConstants {
 
@@ -38,19 +37,21 @@ public interface ActionConstants {
   public static final String WIT = "WIT";
   public static final String WDT = "WDT";
 
+  public static final String WIT_JAVA_HOME = getNonEmptySystemProperty("wko.it.wit.java.home");
   public static final String WIT_DOWNLOAD_URL_DEFAULT
       = "https://github.com/oracle/weblogic-image-tool/releases/latest";
   public static final String WIT_DOWNLOAD_URL
-      = System.getProperty("wit.download.url", WIT_DOWNLOAD_URL_DEFAULT);
+      = getNonEmptySystemProperty("wko.it.wit.download.url", WIT_DOWNLOAD_URL_DEFAULT);
   public static final String WIT_DOWNLOAD_FILENAME_DEFAULT = "imagetool.zip";
 
-  public static final String WDT_DOWNLOAD_URL_BASE
-      = "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-";
-  public static final String WDT_DOWNLOAD_URL_DEFAULT
-      = "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
-  public static final String WDT_DOWNLOAD_URL
-      = System.getProperty("wdt.download.url", WDT_DOWNLOAD_URL_DEFAULT);
-  public static final String WDT_VERSION    = System.getProperty("wdt.version", "latest");
+  public static final String WDT_DOWNLOAD_URL_BASE =
+      "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-";
+  public static final String WDT_DOWNLOAD_URL_DEFAULT =
+      "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
+  public static final String WDT_DOWNLOAD_URL =
+      getNonEmptySystemProperty("wko.it.wdt.download.url", WDT_DOWNLOAD_URL_DEFAULT);
+  public static final String WDT_VERSION =
+      getNonEmptySystemProperty("wko.it.wdt.version", "latest");
   public static final String WDT_DOWNLOAD_FILENAME_DEFAULT = "weblogic-deploy.zip";
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
@@ -65,25 +66,26 @@ public interface ActionConstants {
   public static final String REMOTECONSOLE_DOWNLOAD_URL_DEFAULT =
       "https://github.com/oracle/weblogic-remote-console/releases/latest";
   public static final String REMOTECONSOLE_DOWNLOAD_URL
-      =  System.getProperty("remoteconsole.download.url", REMOTECONSOLE_DOWNLOAD_URL_DEFAULT);
-  public static final String REMOTECONSOLE_VERSION  = System.getProperty("remoteconsole.version", "1.1.0");
+      =  getNonEmptySystemProperty("wko.it.remoteconsole.download.url", REMOTECONSOLE_DOWNLOAD_URL_DEFAULT);
+  public static final String REMOTECONSOLE_VERSION =
+      getNonEmptySystemProperty("remoteconsole.version", "1.1.0");
   public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
   public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 
-  public static final String WLE_VERSION =
-      Optional.ofNullable(System.getenv("WLE_VERSION")).orElse("latest");
+  public static final String WLE_VERSION = getNonEmptySystemProperty("wko.it.wle.version", "latest");
   public static final String WLE_DOWNLOAD_URL_DEFAULT
       = "https://github.com/oracle/weblogic-logging-exporter/releases/" + WLE_VERSION;
   public static final String WLE_DOWNLOAD_URL
-      = System.getProperty("wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
+      = getNonEmptySystemProperty("wko.it.wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
   public static final String WLE_DOWNLOAD_FILENAME_DEFAULT =
-      Optional.ofNullable(System.getenv("WLE_FILE_NAME")).orElse("weblogic-logging-exporter.jar");
-  public static final String SNAKE_VERSION    = System.getProperty("snake.version", "1.27");
+      getNonEmptySystemProperty("wko.it.wle.file.name", "weblogic-logging-exporter.jar");
+  public static final String SNAKE_VERSION =
+      getNonEmptySystemProperty("wko.it.snake.version", "1.27");
   public static final String SNAKE_DOWNLOAD_FILENAME_DEFAULT = "snakeyaml-" + SNAKE_VERSION + ".jar";
   public static final String SNAKE_DOWNLOAD_URL_DEFAULT
       = "https://repo1.maven.org/maven2/org/yaml/snakeyaml/" + SNAKE_VERSION + "/" + SNAKE_DOWNLOAD_FILENAME_DEFAULT;
   public static final String SNAKE_DOWNLOAD_URL
-      = System.getProperty("snake.download.url", SNAKE_DOWNLOAD_URL_DEFAULT);
+      = getNonEmptySystemProperty("wko.it.snake.download.url", SNAKE_DOWNLOAD_URL_DEFAULT);
   public static final String SNAKE_DOWNLOADED_FILENAME = "snakeyaml.jar";
 
   // ------------ WLDF RBAC constants ------------------------------------------

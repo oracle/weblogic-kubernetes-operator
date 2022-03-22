@@ -18,6 +18,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
@@ -197,9 +198,8 @@ public class AuxiliaryImageUtils {
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
     // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
+    if (WIT_JAVA_HOME != null) {
+      env.put("JAVA_HOME", WIT_JAVA_HOME);
     }
 
     String witTarget = ((OKD) ? "OpenShift" : "Default");

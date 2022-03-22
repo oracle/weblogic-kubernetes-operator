@@ -92,6 +92,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
@@ -231,7 +232,7 @@ class DomainProcessorTest {
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
     mementos.add(execFactoryFake.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "makeRightFiberGates", makeRightFiberGates));
@@ -935,6 +936,15 @@ class DomainProcessorTest {
     executeScheduledRetry();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOut_createFailureWithAbortedReason() throws Exception {
+    runMakeRight_withIntrospectionTimeout();
+
+    executeScheduledRetry();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withReason(Aborted));
   }
 
   @Test

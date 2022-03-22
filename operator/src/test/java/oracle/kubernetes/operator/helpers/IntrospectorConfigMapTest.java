@@ -93,7 +93,7 @@ class IntrospectorConfigMapTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
-    mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "DATA_LIMIT", TEST_DATA_LIMIT));
+    mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "dataLimit", TEST_DATA_LIMIT));
 
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);

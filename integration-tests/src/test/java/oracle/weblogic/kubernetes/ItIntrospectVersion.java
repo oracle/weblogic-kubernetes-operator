@@ -123,7 +123,6 @@ import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1109,14 +1108,14 @@ class ItIntrospectVersion {
 
     // get introspectVersion after running introspectDomain.sh
     String ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
-    logger.info("introspectVersion after running the script {0}",ivAfter);
+    logger.info("introspectVersion after running the script {0}", ivAfter);
 
     // verify that introspectVersion is changed
-    assertTrue(ivAfter.equals(introspectVersion),
-        "introspectVersion must change to  "  + introspectVersion);
+    assertEquals(introspectVersion, ivAfter,
+        "introspectVersion must change to  "  + introspectVersion + ", but is " + ivAfter);
 
-    assertFalse(ivAfter.equals(ivBefore),
-        "introspectVersion should change from " + ivBefore + " to " + ivAfter);
+    assertNotEquals(ivBefore, ivAfter,
+        "introspectVersion should have changed from " + ivBefore + " to " + ivAfter);
 
     // verify when a domain resource has spec.introspectVersion configured,
     // after a introspectVersion is modified, new server pods have the label
@@ -1143,11 +1142,11 @@ class ItIntrospectVersion {
 
     // get introspectVersion after running introspectDomain.sh
     ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
-    logger.info("introspectVersion after running the script {0}",ivAfter);
+    logger.info("introspectVersion after running the script {0}", ivAfter);
 
     // verify that introspectVersion is changed
-    assertTrue(ivAfter.equals(introspectVersion),
-        "introspectVersion must change to  "  + introspectVersion);
+    assertEquals(introspectVersion, ivAfter,
+        "introspectVersion must change to  "  + introspectVersion + ", but is " + ivAfter);
 
     // use introspectDomain.sh to initiate introspection
     // Since the current version is non-numeric the updated version is
@@ -1165,7 +1164,7 @@ class ItIntrospectVersion {
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
     // verify that introspectVersion is changed
-    assertTrue(ivAfter.equals("1"), "introspectVersion must change to 1");
+    assertEquals("1", ivAfter, "introspectVersion must change to 1");
 
     // use introspectDomain.sh to initiate introspection
     // Since the current version is 1, the updated version must be set to 2
@@ -1182,7 +1181,7 @@ class ItIntrospectVersion {
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
     // verify that introspectVersion is changed
-    assertTrue(ivAfter.equals("2"), "introspectVersion must change to 2");
+    assertEquals("2", ivAfter, "introspectVersion must change to 2");
 
     // use introspectDomain.sh to initiate introspection
     // with an explicit introspection with -i parameter
@@ -1200,7 +1199,7 @@ class ItIntrospectVersion {
     logger.info("introspectVersion after running the script {0}",ivAfter);
 
     // verify that introspectVersion is changed
-    assertTrue(ivAfter.equals("101"), "introspectVersion must change to 101");
+    assertEquals("101", ivAfter, "introspectVersion must change to 101");
 
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(introDomainNamespace, pods);
@@ -1318,7 +1317,7 @@ class ItIntrospectVersion {
         logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
         logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
 
-        assertTrue(entry.getValue().equals(introspectVersion),
+        assertEquals(introspectVersion, entry.getValue(),
             "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
       }
     }

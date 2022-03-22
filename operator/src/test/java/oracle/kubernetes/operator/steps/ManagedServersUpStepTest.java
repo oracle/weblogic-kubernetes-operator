@@ -816,7 +816,7 @@ class ManagedServersUpStepTest {
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(ManagedServersUpStep.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(ManagedServersUpStep.class, "nextStepFactory", factory);
     }
 
     static Collection<String> getServers() {

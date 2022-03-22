@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
 public class ClientFactoryStub implements ClientFactory {
 
   public static Memento install() throws NoSuchFieldException {
-    return StaticStubSupport.install(ClientPool.class, "FACTORY", new ClientFactoryStub());
+    return StaticStubSupport.install(ClientPool.class, "factory", new ClientFactoryStub());
   }
 
   @Override
