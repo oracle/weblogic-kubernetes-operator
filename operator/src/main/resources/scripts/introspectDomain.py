@@ -1808,7 +1808,7 @@ class SitConfigGenerator(Generator):
 
     self.writeln("<d:log" + logaction + ">")
     self.indent()
-    if self.getDomainLogHomeLayout() == 'Flat':
+    if self.env.getDomainLogHomeLayout() == 'Flat':
       self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
     else:
       if not isDomainBean:
@@ -1880,7 +1880,7 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:web-server-log>")
       self.indent()
       # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
-      if self.getDomainLogHomeLayout() == 'Flat':
+      if self.env.getDomainLogHomeLayout() == 'Flat':
         self.writeln("<d:file-name f:combine-mode=\"replace\">"
                      + logs_dir + "/" + name + "_access.log</d:file-name>")
       else:

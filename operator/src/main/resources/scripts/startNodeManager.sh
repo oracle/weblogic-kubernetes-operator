@@ -98,7 +98,7 @@ else
   # setup ".out" location for a WL server
   serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
   if [ -z ${LOG_HOME_LAYOUT} ] || [ "ByServers" = ${LOG_HOME_LAYOUT} ] ; then
-    serverLogHome="${serverLogHome/servers/${SERVER_NAME}/logs"
+    serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
   fi
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
