@@ -1,3 +1,6 @@
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+//
 def kind_k8s_map = [
      '0.8': [
          '1.18.2':  'kindest/node:v1.18.2@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f',
@@ -275,11 +278,6 @@ pipeline {
                           doGenerateSubmoduleConfigurations: false,
                           extensions: [], submoduleCfg: [],
                           userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
-//                cleanWs()
-//                checkout([$class: 'GitSCM', branches: [[name: params.commit_sha]],
-//                          doGenerateSubmoduleConfigurations: false,
-//                          extensions: [], submoduleCfg: [],
-//                          userRemoteConfigs: scm.userRemoteConfigs ])
             }
         }
 
