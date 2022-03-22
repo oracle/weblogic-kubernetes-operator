@@ -41,9 +41,6 @@ public class WatchBuilder {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
   private static WatchFactory factory = new WatchFactoryImpl();
 
-  public WatchBuilder() {
-  }
-
   /**
    * Creates a web hook object to track service calls.
    *

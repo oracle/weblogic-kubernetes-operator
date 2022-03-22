@@ -152,10 +152,6 @@ public class ConversionWebhookMain extends BaseMain {
     LOGGER.info(MessageKeys.STARTING_WEBHOOK_LIVENESS_THREAD);
   }
 
-  @Override
-  void stopAllWatchers() {
-  }
-
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
     Step createInitializationStep(CoreDelegate delegate, Step next);
