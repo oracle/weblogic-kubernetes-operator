@@ -125,7 +125,7 @@ class EventHelperTest {
   void setUp() throws Exception {
     mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
     mementos.add(TuningParametersStub.install());

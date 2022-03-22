@@ -19,8 +19,9 @@ public class AnnotationHelper {
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static final boolean DEBUG = false;
   private static final String HASHED_STRING = "hashedString";
+
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<Object, String> HASH_FUNCTION = o -> DigestUtils.sha256Hex(Yaml.dump(o));
+  private static Function<Object, String> hashFunction = o -> DigestUtils.sha256Hex(Yaml.dump(o));
 
   /**
    * Marks metadata with annotations that let Prometheus know how to retrieve metrics from the
@@ -66,7 +67,7 @@ public class AnnotationHelper {
   }
 
   static String createHash(Object objectToHash) {
-    return HASH_FUNCTION.apply(objectToHash);
+    return hashFunction.apply(objectToHash);
   }
 
   static String getHash(KubernetesObject kubernetesObject) {

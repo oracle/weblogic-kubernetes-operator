@@ -36,10 +36,10 @@ public class WatchBuilder {
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
-  private static WatchFactory FACTORY = new WatchFactoryImpl();
-
   private final CallParamsImpl callParams = new CallParamsImpl();
+
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
+  private static WatchFactory factory = new WatchFactoryImpl();
 
   public WatchBuilder() {
   }
@@ -52,7 +52,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1Service> createServiceWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
+    return factory.createWatch(callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
   }
 
   /**
@@ -63,7 +63,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1beta1PodDisruptionBudget> createPodDisruptionBudgetWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(callParams, V1beta1PodDisruptionBudget.class,
+    return factory.createWatch(callParams, V1beta1PodDisruptionBudget.class,
         new ListPodDisruptionBudgetCall(namespace));
   }
 
@@ -75,7 +75,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1Pod> createPodWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams, V1Pod.class, new ListPodCall(namespace));
   }
 
@@ -87,7 +87,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1Job> createJobWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams, V1Job.class, new ListJobCall(namespace));
   }
 
@@ -99,7 +99,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<CoreV1Event> createEventWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams, CoreV1Event.class, new ListEventCall(namespace));
   }
 
@@ -111,7 +111,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<Domain> createDomainWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams, Domain.class, new ListDomainsCall(namespace));
   }
 
@@ -123,7 +123,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams,
         V1ConfigMap.class,
         new ListNamespacedConfigMapCall(namespace));
@@ -136,7 +136,7 @@ public class WatchBuilder {
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
   public Watchable<V1Namespace> createNamespacesWatch() throws ApiException {
-    return FACTORY.createWatch(
+    return factory.createWatch(
         callParams,
         V1Namespace.class,
         new ListNamespaceCall());

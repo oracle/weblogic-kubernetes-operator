@@ -228,7 +228,7 @@ class CallBuilderTest {
     static Memento installSync(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
       PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
-      Memento memento = StaticStubSupport.install(CallBuilder.class, "DISPATCHER", dispatcher);
+      Memento memento = StaticStubSupport.install(CallBuilder.class, "dispatcher", dispatcher);
       dispatcher.setUnderlyingSyncDispatcher(memento.getOriginalValue());
       return memento;
     }
@@ -236,7 +236,7 @@ class CallBuilderTest {
     static Memento installAsync(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
       PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
-      Memento memento = StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", dispatcher);
+      Memento memento = StaticStubSupport.install(CallBuilder.class, "stepFactory", dispatcher);
       dispatcher.setUnderlyingAsyncRequestStepFactory(memento.getOriginalValue());
       return memento;
     }

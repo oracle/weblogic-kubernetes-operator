@@ -26,9 +26,9 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static ClientFactory FACTORY = new DefaultClientFactory();
+  private static ClientFactory factory = new DefaultClientFactory();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static ClientPool SINGLETON = new ClientPool();
+  private static ClientPool singleton = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
@@ -51,7 +51,7 @@ public class ClientPool extends Pool<ApiClient> {
   }
 
   public static ClientPool getInstance() {
-    return SINGLETON;
+    return singleton;
   }
 
   @Override
@@ -82,7 +82,7 @@ public class ClientPool extends Pool<ApiClient> {
         factory = c.getSpi(ClientFactory.class);
       }
       if (factory == null) {
-        factory = FACTORY;
+        factory = ClientPool.factory;
       }
 
       client = factory.get();

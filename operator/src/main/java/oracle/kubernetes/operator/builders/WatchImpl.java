@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
  */
 public class WatchImpl<T> implements Watchable<T> {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // non-final to allow unit testing
-  private static WatchFactory<?> FACTORY = WatchImpl::createWatch;
+  private static WatchFactory<?> factory = WatchImpl::createWatch;
 
   private ApiClient client;
   private final Watchable<T> impl;
@@ -30,7 +30,7 @@ public class WatchImpl<T> implements Watchable<T> {
   @SuppressWarnings("unchecked")
   WatchImpl(CallParams callParams, Class<?> responseBodyType, BiFunction<ApiClient, CallParams, Call> function) {
     client = ClientPool.getInstance().take();
-    impl = (Watchable<T>) FACTORY.createWatch(client, function.apply(client, callParams), getType(responseBodyType));
+    impl = (Watchable<T>) factory.createWatch(client, function.apply(client, callParams), getType(responseBodyType));
   }
 
   private static <W> Watchable<W> createWatch(ApiClient client, Call call, Type type) {
