@@ -14,7 +14,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 
-import static oracle.kubernetes.operator.ProcessingConstants.DELAGTE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
 
 public interface CoreDelegate extends PacketComponent {
 
@@ -22,7 +22,9 @@ public interface CoreDelegate extends PacketComponent {
 
   KubernetesVersion getKubernetesVersion();
 
-  File getOperatorHome();
+  File getDeploymentHome();
+
+  File getProbesHome();
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);
@@ -35,7 +37,7 @@ public interface CoreDelegate extends PacketComponent {
   void runStepsInternal(Packet packet, Step firstStep, Runnable completionAction);
 
   default void addToPacket(Packet packet) {
-    packet.getComponents().put(DELAGTE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
+    packet.getComponents().put(DELEGATE_COMPONENT_NAME, Component.createFor(CoreDelegate.class, this));
   }
 
   ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);

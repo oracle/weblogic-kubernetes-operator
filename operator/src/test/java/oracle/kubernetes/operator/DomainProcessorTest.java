@@ -155,6 +155,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final KubernetesExecFactoryFake execFactoryFake = new KubernetesExecFactoryFake();
@@ -905,24 +906,31 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobTimedOut_failureCountIncremented() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
-    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    establishPreviousIntrospection(null);
-    jobStatus = createTimedOutStatus();
-    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    runMakeRight_withIntrospectionTimeout();
 
     assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
   }
 
-  @Test
-  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+  private void runMakeRight_withIntrospectionTimeout() throws JsonProcessingException {
+    consoleHandlerMemento.ignoringLoggedExceptions(JobWatcher.DeadlineExceededException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+
     establishPreviousIntrospection(null);
     jobStatus = createTimedOutStatus();
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processorDelegate.setMayRetry(true);
+    testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
+
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+  }
+
+  private void assignUid(V1Job job) {
+    Optional.ofNullable(job).map(V1Job::getMetadata).ifPresent(m -> m.setUid(Long.toString(++uidNum)));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
+    runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 
@@ -931,12 +939,7 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobTimedOut_activeDeadlineIncremented() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
-    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    establishPreviousIntrospection(null);
-    jobStatus = createTimedOutStatus();
-    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 

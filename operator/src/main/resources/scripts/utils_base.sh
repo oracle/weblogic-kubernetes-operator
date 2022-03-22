@@ -266,6 +266,7 @@ createFolder() {
 initAuxiliaryImage() {
   local copyWdtInstallFiles=true
   local copyModelFiles=true
+  local cpOut=""
 
   local sourceWdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
   if [ "${sourceWdtInstallHome}" != "NONE" ]; then
@@ -293,7 +294,7 @@ initAuxiliaryImage() {
         "don't want to have an install copy. Exiting."
         return 1
       fi
-      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* \
+      cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* \
                                           ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy \
                                           2>&1)
       if [ $? -ne 0 ]; then
@@ -322,7 +323,7 @@ initAuxiliaryImage() {
     fi
     if [ "${copyModelFiles}" == "true" ]; then
       createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
-      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* \
+      cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* \
                                           ${AUXILIARY_IMAGE_TARGET_PATH}/models \
                                           2>&1)
       if [ $? -ne 0 ]; then
@@ -354,6 +355,37 @@ checkSourceWDTInstallDirExistsAndNotEmpty() {
         "or set 'sourceWDTInstallHome' to 'None' for this image."
       return 1
     fi
+  fi
+}
+
+#
+# initCompatibilityModeInitContainersWithLegacyAuxImages
+#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the compatibility mode init container
+#            with legacy auxiliary image. If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error
+#            message and returns. If the command execution fails, it logs error message with failure details.
+#            Otherwise it logs a success message with details.
+#            See also 'auxImage.sh'.
+#            See also checkCompatibilityModeInitContainersWithLegacyAuxImages in 'utils.sh'.
+#
+initCompatibilityModeInitContainersWithLegacyAuxImages() {
+
+  if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
+    trace SEVERE "Compatibility Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
+                "container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. Exiting."
+    return
+  fi
+
+  trace FINE "Compatibility Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
+             "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
+  traceDirs before $AUXILIARY_IMAGE_PATH
+
+  trace FINE "Compatibility Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
+  results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)
+  if [ $? -ne 0 ]; then
+    trace SEVERE "Compatibility Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' execution failed in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE' " \
+                "with AUXILIARY_IMAGE_PATH=$AUXILIARY_IMAGE_PATH. Error -> '$results' ."
+  else
+    trace FINE "Compatibility Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' executed successfully. Output -> '$results'."
   fi
 }
 

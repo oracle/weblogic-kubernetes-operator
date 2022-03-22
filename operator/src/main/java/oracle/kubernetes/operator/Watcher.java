@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -19,10 +19,10 @@ import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
@@ -173,8 +173,8 @@ abstract class Watcher<T> {
           continue;
         }
 
-        try (LoggingContext ignored =
-                 LoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
+        try (ThreadLoggingContext ignored =
+                 ThreadLoggingContext.setThreadContext().namespace(getNamespace()).domainUid(getDomainUid(item))) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {

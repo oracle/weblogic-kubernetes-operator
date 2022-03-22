@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderI
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -66,6 +68,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
@@ -86,9 +89,14 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MODEL_SOURCE_HOME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_WDT_INSTALL_SOURCE_HOME;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImage;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImageVolume;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyDomainMap;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -100,6 +108,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -141,6 +150,9 @@ class DomainIntrospectorJobTest {
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   private static final String JOB_UID = "FAILED_JOB";
   private static final String JOB_NAME = UID + "-introspector";
+  public static final String TEST_VOLUME_NAME = "test";
+  private static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
+
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -151,6 +163,8 @@ class DomainIntrospectorJobTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
+
   private boolean jobDeleted;
 
   public DomainIntrospectorJobTest() {
@@ -421,13 +435,12 @@ class DomainIntrospectorJobTest {
   @NotNull
   private List<AuxiliaryImage> getAuxiliaryImages(String...images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(new AuxiliaryImage().image(image)));
+    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(getAuxiliaryImage(image)));
     return auxiliaryImageList;
   }
 
   @NotNull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
-    //return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
     return new AuxiliaryImage().image(image);
   }
 
@@ -961,6 +974,159 @@ class DomainIntrospectorJobTest {
     final DomainStatus status = new DomainStatus();
     status.withIntrospectJobFailureCount(failureCount);
     return status;
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    List<V1Container> podTemplateInitContainers = getPodTemplateInitContainers(job);
+
+    assertThat(
+            podTemplateInitContainers,
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
+                    .mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, null, "Memory");
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH,
+            "100G", null);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "ALWAYS");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
+    try {
+      testSupport.addDomainPresenceInfo(new DomainPresenceInfo(
+              conversionUtils.readDomain(conversionUtils.convertDomain(new Yaml().dump(map)))));
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
+    }
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
+            CUSTOM_COMMAND_SCRIPT);
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage))));
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  void whenJobCreatedWithMultipleLegacyAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+            DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image2:v1", "IfNotPresent");
+
+    convertDomainWithLegacyAuxImages(
+            createLegacyDomainMap(
+                    PodHelperTestBase.createDomainSpecMap(
+                            Collections.singletonList(auxiliaryImageVolume),
+                            Arrays.asList(auxiliaryImage, auxiliaryImage2))));
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image2:v1",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(4));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
+                    .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   // create job

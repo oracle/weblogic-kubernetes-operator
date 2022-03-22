@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
@@ -43,6 +44,7 @@ import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
+import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 
 /**
@@ -390,8 +392,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logTimeout() {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext ignored =
-             LoggingContext.setThreadContext()
+    try (ThreadLoggingContext ignored =
+             setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
       LOGGER.finer(
@@ -412,8 +414,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext ignored =
-             LoggingContext.setThreadContext()
+    try (ThreadLoggingContext ignored =
+             setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
       LOGGER.finer(
@@ -429,8 +431,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext ignored =
-             LoggingContext.setThreadContext()
+    try (ThreadLoggingContext ignored =
+             setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
       LOGGER.fine(

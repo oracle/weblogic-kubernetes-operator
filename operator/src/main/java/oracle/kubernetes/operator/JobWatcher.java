@@ -340,12 +340,17 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
   }
 
-  static class DeadlineExceededException extends Exception {
+  static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
     final V1Job job;
 
     DeadlineExceededException(V1Job job) {
       super();
       this.job = job;
+    }
+
+    @Override
+    public V1Job getIntrospectionJob() {
+      return job;
     }
 
     public String toString() {
