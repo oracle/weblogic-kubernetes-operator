@@ -10,7 +10,7 @@ import com.meterware.simplestub.StaticStubSupport;
 
 public class UnitTestHash implements Function<Object, String> {
   public static Memento install() throws NoSuchFieldException {
-    return StaticStubSupport.install(AnnotationHelper.class, "HASH_FUNCTION", new UnitTestHash());
+    return StaticStubSupport.install(AnnotationHelper.class, "hashFunction", new UnitTestHash());
   }
 
   @Override

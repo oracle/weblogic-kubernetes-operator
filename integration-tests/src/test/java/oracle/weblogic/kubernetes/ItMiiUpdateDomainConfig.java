@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -758,7 +759,7 @@ class ItMiiUpdateDomainConfig {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Run standalone JMS Client in the pod using wlthint3client.jar in classpath.

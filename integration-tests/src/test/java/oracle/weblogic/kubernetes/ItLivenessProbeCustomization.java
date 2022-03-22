@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -196,7 +197,7 @@ class ItLivenessProbeCustomization {
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
             managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
-        assertTrue(afterRestartCount - beforeRestartCount == 1,
+        assertEquals(1, afterRestartCount - beforeRestartCount,
             String.format("Liveness probe did not start the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
       }
@@ -239,7 +240,7 @@ class ItLivenessProbeCustomization {
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
             managedServerPodName, domainNamespace));
         logger.info("restart count is: {0}", restartCount);
-        assertTrue(restartCount == 1,
+        assertEquals(1, restartCount,
             String.format("Liveness probe starts the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
       }
@@ -266,12 +267,12 @@ class ItLivenessProbeCustomization {
     // get the original failureThreshold of livenessProbe
     Integer failureThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getFailureThreshold();
     logger.info("Original livenessProbe failureThreshold is: {0}", failureThreshold);
-    assertTrue(failureThreshold.intValue() == 1, "The original livenessProbe failureThreshold is not 1");
+    assertEquals(1, failureThreshold.intValue(), "The original livenessProbe failureThreshold is not 1");
 
     // get the original successThreshold of livenessProbe
     Integer successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
     logger.info("Original livenessProbe successThreshold is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 1, "The original livenessProbe successThreshold is not 1");
+    assertEquals(1, successThreshold.intValue(), "The original livenessProbe successThreshold is not 1");
 
     // get the original admin server pod and managed server pods creation time
     OffsetDateTime adminPodCreationTime =
@@ -325,7 +326,7 @@ class ItLivenessProbeCustomization {
     // get the failureThreshold of livenessProbe after patch
     failureThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getFailureThreshold();
     logger.info("livenessProbe failureThreshold after patch is: {0}", failureThreshold);
-    assertTrue(failureThreshold.intValue() == 3, "The livenessProbe failureThreshold after patch is not 3");
+    assertEquals(3, failureThreshold.intValue(), "The livenessProbe failureThreshold after patch is not 3");
 
     // verify the failureThreshold behavior of livenessProbe
     // copy temp file to pod and verify the restartCount only happens after 1m 30 second
@@ -367,7 +368,7 @@ class ItLivenessProbeCustomization {
                 String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
-        assertTrue(beforeRestartCount == afterDelayRestartCount, "The pod was restarted after 45s, "
+        assertEquals(beforeRestartCount, afterDelayRestartCount, "The pod was restarted after 45s, "
             + "it should restart after that");
 
         String expectedStr = "Hello World, you have reached server "
@@ -381,7 +382,7 @@ class ItLivenessProbeCustomization {
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
                 managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
-        assertTrue(afterRestartCount - beforeRestartCount == 1,
+        assertEquals(1, afterRestartCount - beforeRestartCount,
             String.format("Liveness probe did not start the container in pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
       }
@@ -461,12 +462,12 @@ class ItLivenessProbeCustomization {
     // get the original failureThreshold of readinessProbe
     Integer failureThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getFailureThreshold();
     logger.info("Original readinessProbe failureThreshold is: {0}", failureThreshold);
-    assertTrue(failureThreshold.intValue() == 1, "The original readinessProbe failureThreshold is not 1");
+    assertEquals(1, failureThreshold.intValue(), "The original readinessProbe failureThreshold is not 1");
 
     // get the original successThreshold of readinessProbe
     Integer successThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getSuccessThreshold();
     logger.info("Original readinessProbe successThreshold is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 1, "The original readinessProbe successThreshold is not 1");
+    assertEquals(1, successThreshold.intValue(), "The original readinessProbe successThreshold is not 1");
 
     // get the original admin server pod and managed server pods creation time
     OffsetDateTime adminPodCreationTime =
@@ -520,12 +521,12 @@ class ItLivenessProbeCustomization {
     // get the failureThreshold of readinessProbe after patch
     failureThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getFailureThreshold();
     logger.info("The readinessProbe failureThreshold after patch is: {0}", failureThreshold);
-    assertTrue(failureThreshold.intValue() == 3, "The readinessProbe failureThreshold after patch is not 3");
+    assertEquals(3, failureThreshold.intValue(), "The readinessProbe failureThreshold after patch is not 3");
 
     // get the successThreshold of readinessProbe
     successThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getSuccessThreshold();
     logger.info("readinessProbe successThreshold after patch is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 3, "The readinessProbe successThreshold after patch is not 3");
+    assertEquals(3, successThreshold.intValue(), "The readinessProbe successThreshold after patch is not 3");
 
     // patch the domain to the original state
     // get the original admin server pod and managed server pods creation time

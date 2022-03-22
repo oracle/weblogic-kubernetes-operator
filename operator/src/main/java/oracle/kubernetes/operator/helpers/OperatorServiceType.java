@@ -105,9 +105,11 @@ public enum OperatorServiceType {
   }
 
   void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
+    // no-op
   }
 
   void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
+    // no-op
   }
 
   /**

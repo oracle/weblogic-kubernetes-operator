@@ -238,7 +238,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
             if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
               LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
               removeCallback(resource, callback);
-              return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, getNext()), packet);
+              return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
             }
           }
 
@@ -258,7 +258,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
             LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
             removeCallback(resource, callback);
             // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
-            return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, getNext()), packet);
+            return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
           }
         }
 

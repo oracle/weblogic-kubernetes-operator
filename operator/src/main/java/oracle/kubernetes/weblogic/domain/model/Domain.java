@@ -656,7 +656,7 @@ public class Domain implements KubernetesObject {
    */
   public static boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
     return Optional.ofNullable(domainSpec.getAdminServer())
-            .map(admin -> admin.isAdminChannelPortForwardingEnabled()).orElse(true);
+            .map(AdminServer::isAdminChannelPortForwardingEnabled).orElse(true);
   }
 
   public int getIstioReadinessPort() {
@@ -1108,18 +1108,15 @@ public class Domain implements KubernetesObject {
     }
 
     private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
-      getAdminServerSpec().getAdditionalVolumeMounts().forEach(volumeMount ->
-              verifyMountPathForAuxiliaryImagesNotUsed(volumeMount));
+      getAdminServerSpec().getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed);
       getSpec().getClusters().forEach(cluster ->
-              cluster.getAdditionalVolumeMounts().forEach(volumeMount ->
-                      verifyMountPathForAuxiliaryImagesNotUsed(volumeMount)));
+              cluster.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
       getSpec().getManagedServers().forEach(managedServer ->
-              managedServer.getAdditionalVolumeMounts().forEach(volumeMount ->
-                      verifyMountPathForAuxiliaryImagesNotUsed(volumeMount)));
+              managedServer.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
     }
 
     private void verifyMountPathForAuxiliaryImagesNotUsed(V1VolumeMount volumeMount) {
-      Optional.ofNullable(getSpec().getModel()).map(m -> m.getAuxiliaryImages())
+      Optional.ofNullable(getSpec().getModel()).map(Model::getAuxiliaryImages)
               .ifPresent(ai -> {
                 if (volumeMount.getMountPath().equals(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)) {
                   failures.add(DomainValidationMessages.mountPathForAuxiliaryImageAlreadyInUse());
@@ -1128,12 +1125,12 @@ public class Domain implements KubernetesObject {
     }
 
     private void whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
-      Optional.ofNullable(getSpec().getModel()).map(m -> m.getAuxiliaryImages()).ifPresent(
-              auxiliaryImages -> verifyWDTInstallHome(auxiliaryImages));
+      Optional.ofNullable(getSpec().getModel()).map(Model::getAuxiliaryImages).ifPresent(
+          this::verifyWDTInstallHome);
     }
 
     private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
-      if (auxiliaryImages.stream().filter(ai -> isWDTInstallHomeSetAndNotNone(ai)).count() > 1) {
+      if (auxiliaryImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
         failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
       }
     }

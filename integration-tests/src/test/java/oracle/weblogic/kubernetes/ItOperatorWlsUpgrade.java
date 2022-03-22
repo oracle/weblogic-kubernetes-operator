@@ -87,6 +87,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -318,7 +319,7 @@ class ItOperatorWlsUpgrade {
 
     int externalRestHttpsPort = getServiceNodePort(
         opNamespace, "external-weblogic-operator-svc");
-    assertTrue(externalRestHttpsPort != -1,
+    assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
