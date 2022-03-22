@@ -57,6 +57,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -73,6 +75,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.STAGE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
@@ -254,7 +257,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           List<String> images = new ArrayList<>();
           images.add(operatorImage);
           // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
-          if (System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS") == null) {
+          if (!SKIP_BUILD_IMAGES_IF_EXISTS) {
             images.add(miiBasicImage);
             images.add(wdtBasicImage);
           }
@@ -327,8 +330,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   public void close() {
     LoggingFacade logger = getLogger();
     // check SKIP_CLEANUP environment variable to skip cleanup
-    if (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
+    if (SKIP_CLEANUP) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
       if (!OKD) {
@@ -527,9 +529,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
       // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
       // the next JDK 14 versions are released.
-      String witJavaHome = System.getenv("WIT_JAVA_HOME");
-      if (witJavaHome != null) {
-        env.put("JAVA_HOME", witJavaHome);
+      if (WIT_JAVA_HOME != null) {
+        env.put("JAVA_HOME", WIT_JAVA_HOME);
       }
 
       String witTarget = ((OKD) ? "OpenShift" : "Default");
