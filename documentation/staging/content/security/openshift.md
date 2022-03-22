@@ -8,7 +8,7 @@ description: "OpenShift information for the operator."
 #### Security requirements to run WebLogic in OpenShift
 
 WebLogic Kubernetes Operator images starting with version 3.1 and
-WebLogic Server images obtained from Oracle Container Registry after August 2020
+WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020
 have an `oracle` user with UID 1000 with the default group set to `root`.
 
 Here is an excerpt from a standard WebLogic [Dockerfile](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/dockerfiles/12.2.1.4/Dockerfile.generic#L89)
@@ -37,7 +37,7 @@ Specifically, you need to make sure the following directories have `root` as the
 group, and that the group read, write and execute permissions are set (enabled):
 
 * For the operator, `/operator` and `/logs`.
-* For WebLogic Server images, `/u01` (or the ultimate parent directory of your
+* For WebLogic Server and Fusion Middleware Infrastructure images, `/u01` (or the ultimate parent directory of your
   Oracle Home and domain if you put them in different locations).
 
 If your OpenShift environment has a different default security context constraint,
