@@ -232,7 +232,7 @@ class ItOperatorWlsUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "auxiliary.domain.template.v8.yaml");
+        "upgrade", "aux.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));

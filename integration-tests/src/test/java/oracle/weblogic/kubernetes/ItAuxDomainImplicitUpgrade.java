@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,12 +25,14 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -37,19 +40,28 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+// import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+// import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
+// import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+// import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -63,7 +75,6 @@ class ItAuxDomainImplicitUpgrade {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
-  private String domainUid = "domain1";
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -131,6 +142,7 @@ class ItAuxDomainImplicitUpgrade {
     String modelOnlyImageTag = "model-only-image";
     String wdtOnlyImageTag = "wdt-only-image";
     String configOnlyImageTag = "config-only-image";
+    String domainUid = "domain1";
 
     String modelOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  modelOnlyImageTag;
     String wdtOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  wdtOnlyImageTag;
@@ -181,7 +193,7 @@ class ItAuxDomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "auxiliary.domain.template.v8.yaml");
+        "upgrade", "aux.muti.images.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -246,7 +258,237 @@ class ItAuxDomainImplicitUpgrade {
           managedServerPrefix + index,
           domainNamespace);
     }
+    deleteDomainResource(domainNamespace, domainUid);
   }
+
+  /**
+   * Negative Test to create domain without WDT binary.
+   * Check the error message is in domain events and operator pod log.
+   */
+  @Test
+  @DisplayName("Negative Test to create domain without WDT binary")
+  void testErrorPathV8DomainMissingWDTBinary() {
+
+    final String domainUid = "domain2";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    String missingWdtTag = "missing-wdtbinary-image";
+    String missingWdtImage = MII_AUXILIARY_IMAGE_NAME + ":" +  missingWdtTag;
+
+    //In case the previous test failed, ensure the created domain in the 
+    //same namespace is deleted.
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(missingWdtTag)
+            .modelFiles(modelList)
+            .wdtVersion("NONE");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, missingWdtTag, witParams);
+
+    // Generate a v8 version of domain.yaml file from a template file 
+    // replacing domain namespace, domain uid, base image and aux image
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("AUX_IMAGE", missingWdtImage);
+    templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+    templateMap.put("API_VERSION", "v8");
+    Path srcDomainFile = Paths.get(RESOURCE_DIR,
+        "upgrade", "aux.single.image.template.yaml");
+    Path targetDomainFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDomainFile.toString(),
+        "domain.yaml", templateMap));
+    logger.info("Generated Domain Resource file {0}", targetDomainFile);
+
+    OffsetDateTime timestamp = now();
+
+    // run kubectl to create the domain
+    logger.info("Run kubectl to create the domain");
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+
+    // check the introspector pod log contains the expected error message
+    String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
+        + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
+        + "which is currently set to '/auxiliary/weblogic-deploy'";
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    logger.info("Auxiliary Image Error(missing wdt) reported in operator log");
+
+    // check the domain event contains the expected error message
+    // checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, 
+    //    domainUid, DOMAIN_FAILED, "Warning", timestamp, expectedErrorMsg);
+    // logger.info("DOMAIN_FAILED Event is captured");
+
+    // delete domain1
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  /**
+   * Negative Test to create domain without domain model file.
+   * The auxiliary image contains only sparse JMS config.
+   * Check the error message is in domain events and operator pod log
+   */
+  @Test
+  @DisplayName("Negative Test to create domain without model file")
+  void testErrorPathV8DomainMissingDomainConfig() {
+
+    final String domainUid = "domain3";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    String missingModelTag = "missing-model-image";
+    String missingModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + missingModelTag;
+
+    //In case the previous test failed, ensure the created domain in the 
+    //same namespace is deleted.
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(missingModelTag)
+            .modelFiles(modelList)
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, missingModelTag, witParams);
+
+    // Generate a v8 version of domain.yaml file from a template file 
+    // replacing domain namespace, domain uid, base image and aux image
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("AUX_IMAGE", missingModelImage);
+    templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+    templateMap.put("API_VERSION", "v8");
+    Path srcDomainFile = Paths.get(RESOURCE_DIR,
+        "upgrade", "aux.single.image.template.yaml");
+    Path targetDomainFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDomainFile.toString(),
+        "domain.yaml", templateMap));
+    logger.info("Generated Domain Resource file {0}", targetDomainFile);
+
+    OffsetDateTime timestamp = now();
+
+    // run kubectl to create the domain
+    logger.info("Run kubectl to create the domain");
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+
+    // check the introspector pod log contains the expected error message
+    String expectedErrorMsg =
+        "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    logger.info("Auxiliary Image Error(missing model) reported in operator log");
+
+    // check the domain event contains the expected error message
+    // checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, 
+    //   domainUid, DOMAIN_FAILED, "Warning", timestamp, expectedErrorMsg);
+    // logger.info("DOMAIN_FAILED Event is captured");
+
+    // delete domain1
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  /**
+   * Negative Test to create domain with model file with wrong permission.
+   * Check the error message is in domain events and operator pod log
+   */
+  @Test
+  @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
+  void testErrorPathV8DomaineFilePermission() {
+
+    final String domainUid = "domain4";
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    String permModelTag = "perm-model-image";
+    String permModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + permModelTag;
+
+    //In case the previous test failed, ensure the created domain in the 
+    //same namespace is deleted.
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(permModelTag)
+            .modelFiles(modelList)
+            .additionalBuildCommands(RESOURCE_DIR + "/auxiliaryimage/addBuildCommand.txt")
+            .wdtVersion("latest");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, permModelTag, witParams);
+
+    // Generate a v8 version of domain.yaml file from a template file 
+    // replacing domain namespace, domain uid, base image and aux image
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("AUX_IMAGE", permModelImage);
+    templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+    templateMap.put("API_VERSION", "v8");
+    Path srcDomainFile = Paths.get(RESOURCE_DIR,
+        "upgrade", "aux.single.image.template.yaml");
+    Path targetDomainFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDomainFile.toString(),
+        "domain.yaml", templateMap));
+    logger.info("Generated Domain Resource file {0}", targetDomainFile);
+
+    OffsetDateTime timestamp = now();
+
+    // run kubectl to create the domain
+    logger.info("Run kubectl to create the domain");
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+            + Paths.get(WORK_DIR + "/domain.yaml").toString());
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+
+    // check the introspector pod log contains the expected error message
+    String expectedErrorMsg = "cp: can't open '/auxiliary/models/multi-model-one-ds.20.yaml': "
+        + "Permission denied";
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    logger.info("Auxiliary Image Error(permission issue model) reported in operator log");
+
+    // check the domain event contains the expected error message
+    // checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, 
+    //   domainUid, DOMAIN_FAILED, "Warning", timestamp, expectedErrorMsg);
+    // logger.info("DOMAIN_FAILED Event is captured");
+
+    // delete domain1
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
 
   /**
    * Check Configured JMS Resource.
