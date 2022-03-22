@@ -65,8 +65,8 @@ and [Installation and upgrade]({{< relref "/userguide/managing-operators/install
 ### Useful Helm operations
 
 - You can find out the configuration values that the operator Helm chart supports,
-  as well as the default values, using the `helm inspect` command.
-  - Here's an example of using `helm inspect`
+  as well as the default values, using the `helm show` command.
+  - Here's an example of using `helm show`
     with the local file based operator Helm chart
     assuming the operator source code is in
     `/tmp/weblogic-kubernetes-operator`.
@@ -74,13 +74,13 @@ and [Installation and upgrade]({{< relref "/userguide/managing-operators/install
     $ cd /tmp/weblogic-kubernetes-operator
     ```
     ```text
-    $ helm inspect values kubernetes/charts/weblogic-operator
+    $ helm show values kubernetes/charts/weblogic-operator
     ```
-  - Here's an example of using `helm inspect`
+  - Here's an example of using `helm show`
     with a GitHub chart repository based operator Helm chart
     where the repository is named `weblogic-operator`:
     ```text
-    $ helm inspect values weblogic-operator/weblogic-operator
+    $ helm show values weblogic-operator/weblogic-operator
     ```
   Alternatively, you can view most of the configuration values
   and their defaults in the operator source in the
@@ -191,7 +191,7 @@ See [Ensuring the operator has permission to manage a namespace]({{< relref "/us
 Specifies the container image containing the operator code.
 
 Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`
-or similar (based on the default in your Helm chart, see `helm inspect`
+or similar (based on the default in your Helm chart, see `helm show`
 in [Useful Helm operations](#useful-helm-operations)).
 
 Example:
@@ -506,11 +506,11 @@ elasticSearchPort: 9201
 ```
 
 ##### `createLogStashConfigMap`
-Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`. 
+Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
 The ConfigMap contains the Logstash pipeline configuration for the Logstash container running in the operator pod.
 If set to `true`, a ConfigMap will be created during `helm install` using the `logstash.conf` file in the `kubernetes/samples/charts/weblogic-operator` directory.
 Set `createLogStashConfigMap` to `false` if the ConfigMap already exists in the operator's namespace with the Logstash configuration provided by the customer.
-This parameter is ignored if `elkIntegrationEnabled` is false. 
+This parameter is ignored if `elkIntegrationEnabled` is false.
 
 Defaults to `true`.
 

@@ -88,6 +88,13 @@ Each version of the Helm chart defaults to using an image from the matching vers
 ```text
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
 ```
+- To get information about the operator Helm chart, use the `helm show` command. For example,
+using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
+```text
+$ helm show chart weblogic-operator/weblogic-operator
+$ helm show values weblogic-operator/weblogic-operator
+```
+
 - To list the versions of the operator that you can install from the Helm chart repository:
 
   ```text

@@ -101,17 +101,17 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
 #### Inspect the operator Helm chart
 
 You can find out the configuration values that the operator Helm chart supports,
-as well as the default values, using the `helm inspect` command.
+as well as the default values, using the `helm show` command.
 
   ```text
-  $ helm inspect values kubernetes/charts/weblogic-operator
+  $ helm show values kubernetes/charts/weblogic-operator
   ```
-- Here's an example of using `helm inspect`
+- Here's an example of using `helm show`
   with a GitHub chart repository-based operator Helm chart:
   ```text
-  $ helm inspect values weblogic-operator/weblogic-operator
+  $ helm show values weblogic-operator/weblogic-operator
   ```
-- Here's an example of using `helm inspect`
+- Here's an example of using `helm show`
   with the local file-based operator Helm chart:
   ```text
   $ cd /tmp/weblogic-kubernetes-operator
