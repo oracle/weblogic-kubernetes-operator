@@ -18,11 +18,62 @@
 
     <properties>
         <skipITs>false</skipITs>
-        <wdt.version>latest</wdt.version>
-        <wdt.download.url>https://github.com/oracle/weblogic-deploy-tooling/releases/latest</wdt.download.url>
-        <wit.download.url>https://github.com/oracle/weblogic-image-tool/releases/latest</wit.download.url>
-        <includes-failsafe>**/It*</includes-failsafe>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- integration tests configuration -->
+        <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
+        <wko.it.domain.version>${env.DOMAIN_VERSION}</wko.it.domain.version>
+        <wko.it.kind.repo>${env.KIND_REPO}</wko.it.kind.repo>
+        <wko.it.ocir.registry>${env.OCIR_REGISTRY}</wko.it.ocir.registry>
+        <wko.it.repo.registry>${env.REPO_REGISTRY}</wko.it.repo.registry>
+        <wko.it.base.images.repo>${env.BASE_IMAGES_REPO}</wko.it.base.images.repo>
+        <wko.it.weblogic.image.name>${env.WEBLOGIC_IMAGE_NAME}</wko.it.weblogic.image.name>
+        <wko.it.weblogic.image.tag>${env.WEBLOGIC_IMAGE_TAG}</wko.it.weblogic.image.tag>
+        <wko.it.fmwinfra.image.name>${env.FMWINFRA_IMAGE_NAME}</wko.it.fmwinfra.image.name>
+        <wko.it.fmwinfra.image.tag>${env.FMWINFRA_IMAGE_TAG}</wko.it.fmwinfra.image.tag>
+        <wko.it.db.image.name>${env.DB_IMAGE_NAME}</wko.it.db.image.name>
+        <wko.it.db.image.tag>${env.DB_IMAGE_TAG}</wko.it.db.image.tag>
+        <wko.it.jenkins.build.id>${env.BUILD_ID}</wko.it.jenkins.build.id>
+        <wko.it.jenkins.branch.name>${env.BRANCH_NAME}</wko.it.jenkins.branch.name>
+        <wko.it.k8s.nodeport.host>${env.K8S_NODEPORT_HOST}</wko.it.k8s.nodeport.host>
+        <wko.it.k8s.nodeport.hostname>${env.K8S_NODEPORT_HOSTNAME}</wko.it.k8s.nodeport.hostname>
+        <wko.it.result.root>${env.RESULT_ROOT}</wko.it.result.root>
+        <wko.it.pv.root>${env.PV_ROOT}</wko.it.pv.root>
+        <wko.it.apache.image.name>${env.APACHE_IMAGE_NAME}</wko.it.apache.image.name>
+        <wko.it.apache.image.tag>${env.APACHE_IMAGE_TAG}</wko.it.apache.image.tag>
+        <wko.it.fluentd.image.version>${env.FLUENTD_IMAGE_VERSION}</wko.it.fluentd.image.version>
+        <wko.it.skip.build.images.if.exists>${env.SKIP_BUILD_IMAGES_IF_EXISTS}</wko.it.skip.build.images.if.exists>
+        <wko.it.wdt.test.version>${env.WDT_TEST_VERSION}</wko.it.wdt.test.version>
+        <wko.it.monitoring.exporter.webapp.version>${env.MONITORING_EXPORTER_WEBAPP_VERSION}</wko.it.monitoring.exporter.webapp.version>
+        <wko.it.monitoring.exporter.branch>${env.MONITORING_EXPORTER_BRANCH}</wko.it.monitoring.exporter.branch>
+        <wko.it.prometheus.chart.version>${env.PROMETHEUS_CHART_VERSION}</wko.it.prometheus.chart.version>
+        <wko.it.grafana.chart.version>${env.GRAFANA_CHART_VERSION}</wko.it.grafana.chart.version>
+        <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
+        <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
+        <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
+        <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
+        <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
+        <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
+        <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
+        <wko.it.wdt.version>${wdt.version}</wko.it.wdt.version>
+        <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
+        <wko.it.wit.download.url>${wit.download.url}</wko.it.wit.download.url>
+        <wko.it.remoteconsole.download.url>${remoteconsole.download.url}</wko.it.remoteconsole.download.url>
+        <wko.it.wle.version>${env.WLE_VERSION}</wko.it.wle.version>
+        <wko.it.wle.download.url>${wle.download.url}</wko.it.wle.download.url>
+        <wko.it.wle.file.name>${env.WLE_FILE_NAME}</wko.it.wle.file.name>
+        <wko.it.snake.version>${snake.version}</wko.it.snake.version>
+        <wko.it.snake.download.url>${snake.download.url}</wko.it.snake.download.url>
+        <wko.it.collect.logs.on.success>${env.COLLECT_LOGS_ON_SUCCESS}</wko.it.collect.logs.on.success>
+        <wko.it.sleep.seconds.after.failure>${env.SLEEP_SECONDS_AFTER_FAILURE}</wko.it.sleep.seconds.after.failure>
+        <wko.it.wit.java.home>${env.WIT_JAVA_HOME}</wko.it.wit.java.home>
+        <wko.it.weblogic.image_tags>${env.WEBLOGIC_IMAGE_TAGS}</wko.it.weblogic.image_tags>
+        <wko.it.k8s.nodeport.host1>${env.K8S_NODEPORT_HOST1}</wko.it.k8s.nodeport.host1>
+        <wko.it.k8s.nodeport.host2>${env.K8S_NODEPORT_HOST2}</wko.it.k8s.nodeport.host2>
+        <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
+        <wko.it.image.name.operator>${env.IMAGE_NAME_OPERATOR}</wko.it.image.name.operator>
+        <wko.it.image.tag.operator>${env.IMAGE_TAG_OPERATOR}</wko.it.image.tag.operator>
+        <includes-failsafe>**/It*</includes-failsafe>
     </properties>
 
     <dependencies>
@@ -74,6 +125,47 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-required-environment-variables-are-set</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${wko.it.skip.enforcer.rules}</skip>
+                            <rules>
+                                <requireEnvironmentVariable>
+                                    <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
+                                    <variableName>TWO_CLUSTERS</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the OCIR_USERNAME environment variable to specify the OCIR username to use for pulling/pushing images.</message>
+                                    <variableName>OCIR_USERNAME</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the OCIR_PASSWORD environment variable to specify the OCIR password to use for pulling/pushing images.</message>
+                                    <variableName>OCIR_PASSWORD</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the OCIR_EMAIL environment variable to specify the OCIR user's email address to use for creating the image pull secret.</message>
+                                    <variableName>OCIR_EMAIL</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the OCR_USERNAME environment variable to specify the OCR username to use for pulling images.</message>
+                                    <variableName>OCR_USERNAME</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
+                                    <variableName>OCR_PASSWORD</variableName>
+                                </requireEnvironmentVariable>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
@@ -89,7 +181,6 @@
                         <exclude/>
                     </excludes>
                 </configuration>
-
                 <executions>
                     <execution>
                         <id>integration-tests</id>
@@ -100,11 +191,60 @@
                         <configuration>
                             <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
-                                <java.util.logging.SimpleFormatter.format>&lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
+                                <java.util.logging.SimpleFormatter.format>
+                                    &lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
                                 </java.util.logging.SimpleFormatter.format>
-                                <wdt.version>${wdt.version}</wdt.version>
-                                <wdt.download.url>${wdt.download.url}</wdt.download.url>
-                                <wit.download.url>${wit.download.url}</wit.download.url>
+                                <wko.it.skip.cleanup>${wko.it.skip.cleanup}</wko.it.skip.cleanup>
+                                <wko.it.domain.version>${wko.it.domain.version}</wko.it.domain.version>
+                                <wko.it.kind.repo>${wko.it.kind.repo}</wko.it.kind.repo>
+                                <wko.it.ocir.registry>${wko.it.ocir.registry}</wko.it.ocir.registry>
+                                <wko.it.repo.registry>${wko.it.repo.registry}</wko.it.repo.registry>
+                                <wko.it.base.images.repo>${wko.it.base.images.repo}</wko.it.base.images.repo>
+                                <wko.it.weblogic.image.name>${wko.it.weblogic.image.name}</wko.it.weblogic.image.name>
+                                <wko.it.weblogic.image.tag>${wko.it.weblogic.image.tag}</wko.it.weblogic.image.tag>
+                                <wko.it.fmwinfra.image.name>${wko.it.fmwinfra.image.name}</wko.it.fmwinfra.image.name>
+                                <wko.it.fmwinfra.image.tag>${wko.it.fmwinfra.image.tag}</wko.it.fmwinfra.image.tag>
+                                <wko.it.db.image.name>${wko.it.db.image.name}</wko.it.db.image.name>
+                                <wko.it.db.image.tag>${wko.it.db.image.tag}</wko.it.db.image.tag>
+                                <wko.it.jenkins.build.id>${wko.it.jenkins.build.id}</wko.it.jenkins.build.id>
+                                <wko.it.jenkins.branch.name>${wko.it.jenkins.branch.name}</wko.it.jenkins.branch.name>
+                                <wko.it.k8s.nodeport.host>${wko.it.k8s.nodeport.host}</wko.it.k8s.nodeport.host>
+                                <wko.it.k8s.nodeport.hostname>${wko.it.k8s.nodeport.hostname}</wko.it.k8s.nodeport.hostname>
+                                <wko.it.result.root>${wko.it.result.root}</wko.it.result.root>
+                                <wko.it.pv.root>${wko.it.pv.root}</wko.it.pv.root>
+                                <wko.it.apache.image.name>${wko.it.apache.image.name}</wko.it.apache.image.name>
+                                <wko.it.apache.image.tag>${wko.it.apache.image.tag}</wko.it.apache.image.tag>
+                                <wko.it.fluentd.image.version>${wko.it.fluentd.image.version}</wko.it.fluentd.image.version>
+                                <wko.it.skip.build.images.if.exists>${wko.it.skip.build.images.if.exists}</wko.it.skip.build.images.if.exists>
+                                <wko.it.wdt.test.version>${wko.it.wdt.test.version}</wko.it.wdt.test.version>
+                                <wko.it.monitoring.exporter.webapp.version>${wko.it.monitoring.exporter.webapp.version}</wko.it.monitoring.exporter.webapp.version>
+                                <wko.it.prometheus.chart.version>${wko.it.prometheus.chart.version}</wko.it.prometheus.chart.version>
+                                <wko.it.grafana.chart.version>${wko.it.grafana.chart.version}</wko.it.grafana.chart.version>
+                                <wko.it.istio.version>${wko.it.istio.version}</wko.it.istio.version>
+                                <wko.it.oke.cluster>${wko.it.oke.cluster}</wko.it.oke.cluster>
+                                <wko.it.nfs.server>${wko.it.nfs.server}</wko.it.nfs.server>
+                                <wko.it.fss.dir>${wko.it.fss.dir}</wko.it.fss.dir>
+                                <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
+                                <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
+                                <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
+                                <wko.it.wdt.version>${wko.it.wdt.version}</wko.it.wdt.version>
+                                <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>
+                                <wko.it.wit.download.url>${wko.it.wit.download.url}</wko.it.wit.download.url>
+                                <wko.it.remoteconsole.download.url>${wko.it.remoteconsole.download.url}</wko.it.remoteconsole.download.url>
+                                <wko.it.wle.version>${wko.it.wle.version}</wko.it.wle.version>
+                                <wko.it.wle.download.url>${wko.it.wle.download.url}</wko.it.wle.download.url>
+                                <wko.it.wle.file.name>${wko.it.wle.file.name}</wko.it.wle.file.name>
+                                <wko.it.snake.version>${wko.it.snake.version}</wko.it.snake.version>
+                                <wko.it.snake.download.url>${wko.it.snake.download.url}</wko.it.snake.download.url>
+                                <wko.it.collect.logs.on.success>${wko.it.collect.logs.on.success}</wko.it.collect.logs.on.success>
+                                <wko.it.sleep.seconds.after.failure>${wko.it.sleep.seconds.after.failure}</wko.it.sleep.seconds.after.failure>
+                                <wko.it.wit.java.home>${wko.it.wit.java.home}</wko.it.wit.java.home>
+                                <wko.it.weblogic.image_tags>${wko.it.weblogic.image_tags}</wko.it.weblogic.image_tags>
+                                <wko.it.k8s.nodeport.host1>${wko.it.k8s.nodeport.host1}</wko.it.k8s.nodeport.host1>
+                                <wko.it.k8s.nodeport.host2>${wko.it.k8s.nodeport.host2}</wko.it.k8s.nodeport.host2>
+                                <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
+                                <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
+                                <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>

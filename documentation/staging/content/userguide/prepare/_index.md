@@ -5,7 +5,7 @@ weight: 4
 description: "Follow these steps to set up your environment."
 ---
 
-1. Fulfill the [operator prerequisite]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported platforms]({{< relref "userguide/platforms/environments.md" >}}) requirements.
+1. Fulfill the [operator prerequisite]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "userguide/platforms/environments.md" >}}) requirements.
 
 1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}).
 

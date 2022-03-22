@@ -806,7 +806,7 @@ public class EventHelper {
 
     @Override
     public String toString() {
-      return "EventData: " + eventItem;
+      return "EventData: " + eventItem + "; with reason: " + failureReason;
     }
 
     /**

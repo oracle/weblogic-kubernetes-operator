@@ -92,6 +92,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
@@ -935,6 +936,15 @@ class DomainProcessorTest {
     executeScheduledRetry();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOut_createFailureWithAbortedReason() throws Exception {
+    runMakeRight_withIntrospectionTimeout();
+
+    executeScheduledRetry();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withReason(Aborted));
   }
 
   @Test

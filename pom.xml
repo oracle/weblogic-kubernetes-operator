@@ -61,6 +61,7 @@
             <release>11</release>
             <compilerArgs>
               <arg>-Xpkginfo:always</arg>
+              <arg>-Xlint:all</arg>
             </compilerArgs>
           </configuration>
         </plugin>
@@ -353,6 +354,7 @@
       <id>integration-tests</id>
       <properties>
         <src-integration-test>${project.basedir}/src/integration-test/java</src-integration-test>
+        <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
       </properties>
       <build>
         <plugins>
@@ -636,6 +638,7 @@
     <htmlunit-version>2.59.0</htmlunit-version>
     <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
+    <wko.it.skip.enforcer.rules>true</wko.it.skip.enforcer.rules>
   </properties>
 
 </project>
