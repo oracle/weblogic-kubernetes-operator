@@ -43,9 +43,6 @@ public class Shutdown {
           + " Defaults to false.")
   private Boolean waitForAllSessions;
 
-  public Shutdown() {
-  }
-
   void copyValues(Shutdown fromShutdown) {
     if (shutdownType == null) {
       shutdownType(fromShutdown.shutdownType);

@@ -102,7 +102,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
+  private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
   // map namespace to map of uid to processing.
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
@@ -127,24 +127,24 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
-    return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
+    return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
   static void cleanupNamespace(String namespace) {
-    DOMAINS.remove(namespace);
+    domains.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
     statusUpdaters.remove((namespace));
   }
 
   static void registerDomainPresenceInfo(DomainPresenceInfo info) {
-    DOMAINS
+    domains
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
           .put(info.getDomainUid(), info);
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
-    Optional.ofNullable(DOMAINS.get(ns)).map(m -> m.remove(domainUid));
+    Optional.ofNullable(domains.get(ns)).map(m -> m.remove(domainUid));
   }
 
   private static void unregisterEventK8SObject(String ns, String domainUid) {
@@ -261,7 +261,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return;
     }
 
-    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
+    Optional.ofNullable(domains.get(event.getMetadata().getNamespace()))
           .map(m -> m.get(domainUid))
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
@@ -382,7 +382,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-    return Optional.ofNullable(DOMAINS.get(namespace)).orElse(Collections.emptyMap())
+    return Optional.ofNullable(domains.get(namespace)).orElse(Collections.emptyMap())
         .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
   }
 
@@ -1413,7 +1413,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private class DomainPresenceInfoStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
-        Optional.ofNullable(DOMAINS.get(getNamespace()))
+        Optional.ofNullable(domains.get(getNamespace()))
             .map(n -> n.get(getDomainUid()))
             .ifPresent(i -> i.addToPacket(packet));
 

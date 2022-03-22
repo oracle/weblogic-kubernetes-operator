@@ -30,5 +30,7 @@ public interface RetryStrategy {
    * Called when retry count, or other statistics, should be reset, such as when partial list was
    * returned and new request for next portion of list (continue) is invoked.
    */
-  void reset();
+  default void reset() {
+    // no-op
+  }
 }

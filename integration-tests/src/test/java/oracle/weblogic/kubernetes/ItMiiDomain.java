@@ -115,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -259,7 +260,7 @@ class ItMiiDomain {
     int sslPort = getServicePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
-    assertTrue(sslNodePort != -1,
+    assertNotEquals(-1, sslNodePort,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
@@ -276,7 +277,7 @@ class ItMiiDomain {
     
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);

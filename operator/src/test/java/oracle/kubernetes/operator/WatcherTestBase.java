@@ -265,7 +265,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     private static TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {
-      return StaticStubSupport.install(WaitForReadyStep.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(WaitForReadyStep.class, "nextStepFactory", factory);
     }
 
     @Override

@@ -56,7 +56,7 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
     requestParameters = new ArrayList<>();
     exceptionOnNext = null;
 
-    return StaticStubSupport.install(WatchImpl.class, "FACTORY", factory);
+    return StaticStubSupport.install(WatchImpl.class, "factory", factory);
   }
 
   /**

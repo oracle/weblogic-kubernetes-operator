@@ -24,7 +24,7 @@ class KubernetesExecFactoryFake implements KubernetesExecFactory {
 
   @NotNull
   public Memento install() throws NoSuchFieldException {
-    return StaticStubSupport.install(ServerStatusReader.class, "EXEC_FACTORY", this);
+    return StaticStubSupport.install(ServerStatusReader.class, "execFactory", this);
   }
 
   void defineResponse(String serverName, String response) {

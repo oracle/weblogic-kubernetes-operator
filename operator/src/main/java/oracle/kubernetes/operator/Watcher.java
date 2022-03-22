@@ -35,9 +35,6 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
  * @param <T> The type of the object to be watched.
  */
 abstract class Watcher<T> {
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
-  private static WatcherStarter STARTER = Watcher::startAsynchronousWatch;
-
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String IGNORED = "0";
@@ -45,6 +42,10 @@ abstract class Watcher<T> {
 
   private final AtomicBoolean isDraining = new AtomicBoolean(false);
   private final WatchTuning tuning;
+
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
+  private static WatcherStarter starter = Watcher::startAsynchronousWatch;
+
   private String resourceVersion;
   private final AtomicBoolean stopping;
   private WatchListener<T> listener;
@@ -109,7 +110,7 @@ abstract class Watcher<T> {
 
   /** Kick off the watcher processing that runs in a separate thread. */
   void start(ThreadFactory factory) {
-    thread = STARTER.startWatcher(factory, this::doWatch);
+    thread = starter.startWatcher(factory, this::doWatch);
   }
 
   public static Thread startAsynchronousWatch(ThreadFactory factory, Runnable doWatch) {
