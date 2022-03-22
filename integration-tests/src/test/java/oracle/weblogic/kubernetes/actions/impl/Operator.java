@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.util.Optional;
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -12,10 +10,11 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
-import static oracle.weblogic.kubernetes.TestConstants.BRANCH_NAME_FROM_JENKINS;
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR_FOR_JENKINS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
@@ -63,21 +62,15 @@ public class Operator {
    * @return image name
    */
   public static String getImageName() {
-    String image = "";
-    String imageName = Optional.ofNullable(System.getenv("IMAGE_NAME_OPERATOR"))
-        .orElse(IMAGE_NAME_OPERATOR);
+    String imageName = IMAGE_NAME_OPERATOR;
+    String imageTag = "";
     // use branch name and build id for Jenkins runs in image tag
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       imageName = DOMAIN_IMAGES_REPO + imageName;
     }
     String branchName = "";
     if (!BUILD_ID.isEmpty()) {
-      branchName = BRANCH_NAME_FROM_JENKINS;
-      // Ensure that the branch name can be used as a part of Docker tag by replacing illegal characters
-      branchName = branchName.codePoints()
-          .map(cp -> Character.isLetterOrDigit(cp) ? cp : '-')
-          .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-          .toString();
+      imageTag = IMAGE_TAG_OPERATOR_FOR_JENKINS;
     } else  {
       // Remove all non-alphanumeric character(s) in the branch name 
       // e.g. replace release/3.x.y with release3xy
@@ -90,11 +83,9 @@ public class Operator {
           .execute()) {
         branchName = params.stdout();
       }
+      imageTag = IMAGE_TAG_OPERATOR != null ? IMAGE_TAG_OPERATOR : branchName + BUILD_ID;
     }
-    String imageTag = Optional.ofNullable(System.getenv("IMAGE_TAG_OPERATOR"))
-        .orElse(branchName + BUILD_ID);
-    image = imageName + ":" + imageTag;
-    return image;
+    return imageName + ":" + imageTag;
   }
 
   /**
