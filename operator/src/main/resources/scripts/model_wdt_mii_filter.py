@@ -69,6 +69,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -107,6 +108,9 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def getDomainLogHomeLayout(self):
+    return self.LOG_HOME_LAYOUT
 
   def getDataHome(self):
     return self.DATA_HOME
@@ -279,10 +283,14 @@ def customizeLog(name, topologyOrServer, isDomainLog=False):
   if 'Log' not in topologyOrServer:
     topologyOrServer['Log'] = {}
 
-  if isDomainLog:
-    topologyOrServer['Log']['FileName'] = "%s/%s.log" % (logs_dir, name)
+  if env.getDomainLogHomeLayout() == "Flat":
+    topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
   else:
-    topologyOrServer['Log']['FileName'] = "%s/servers/%s/logs/%s.log" % (logs_dir, name, name)
+    if isDomainLog:
+      topologyOrServer['Log']['FileName'] = "%s/%s.log" % (logs_dir, name)
+    else:
+      topologyOrServer['Log']['FileName'] = "%s/servers/%s/logs/%s.log" % (logs_dir, name, name)
+
 
 def customizeCustomFileStores(model):
   customizeFileStores(model['resources'])
@@ -759,8 +767,10 @@ def customizeAccessLog(name, server):
     web_server_log = web_server['WebServerLog']
     if 'FileName' not in web_server_log:
       web_server_log['FileName'] = {}
-
-    web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)
+    if env.getDomainLogHomeLayout() == "Flat":
+      web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
+    else:
+      web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)
 
 
 def getLogOrNone(config):

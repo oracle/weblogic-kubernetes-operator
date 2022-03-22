@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -166,6 +167,17 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLogHome(String logHome) {
     getDomainSpec().setLogHome(logHome);
+    return this;
+  }
+
+  /**
+   * Sets the log home layout value.
+   *
+   * @param logHomeLayout the log home layout value
+   * @return this object
+   */
+  public DomainConfigurator withLogHomeLayout(LogHomeLayoutType logHomeLayout) {
+    getDomainSpec().setLogHomeLayout(logHomeLayout);
     return this;
   }
 

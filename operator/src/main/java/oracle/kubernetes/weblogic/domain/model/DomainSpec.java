@@ -23,6 +23,7 @@ import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -104,6 +105,19 @@ public class DomainSpec extends BaseConfiguration {
           + "Default is `/shared/logs/DOMAIN-UID`. "
           + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
+
+  /**
+   * The log files layout under logHome.
+   *   Flat - all files is in one directory
+   *   ByServers - log files are organized under loghome/servers/server name/logs.
+   * */
+  @Description(
+      "Control how the log files under logHome is organized. "
+        + "Flat - all files are under the logHome root directory. "
+        + "ByServers (default) - domain log file and introspector.out are at the logHome root level, all other files "
+        + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
+  private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.ByServers;
+
 
   /**
    * Whether the log home is enabled.
@@ -584,6 +598,19 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setLogHome(String logHome) {
     this.logHome = Optional.ofNullable(logHome).map(this::validatePath).orElse(null);
+  }
+
+  /**
+   * Log Home Layout.
+   *
+   * @return The logHomeLayout value.
+   */
+  LogHomeLayoutType getLogHomeLayout() {
+    return logHomeLayout;
+  }
+
+  public void setLogHomeLayout(LogHomeLayoutType logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
   }
 
   private String validatePath(String s) {

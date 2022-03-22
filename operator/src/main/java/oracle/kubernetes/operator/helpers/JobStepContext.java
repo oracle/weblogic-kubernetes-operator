@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -280,6 +281,10 @@ public class JobStepContext extends BasePodStepContext {
 
   String getEffectiveLogHome() {
     return getDomain().getEffectiveLogHome();
+  }
+
+  LogHomeLayoutType getLogHomeLayout() {
+    return getDomain().getLogHomeLayout();
   }
 
   String getIncludeServerOutInPodLog() {
@@ -647,6 +652,9 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    if (getLogHomeLayout() == LogHomeLayoutType.Flat) {
+      addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
+    }
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
     addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());

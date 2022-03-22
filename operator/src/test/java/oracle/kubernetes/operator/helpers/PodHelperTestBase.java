@@ -63,6 +63,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -1474,6 +1475,16 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
+  }
+
+  @Test
+  void whenPodCreated_withLogHomeLayoutSpecified_hasLogHomeLayoutEnvVariable() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.Flat);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.Flat.toString()));
   }
 
   @Test
