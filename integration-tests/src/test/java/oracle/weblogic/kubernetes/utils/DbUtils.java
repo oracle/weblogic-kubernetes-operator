@@ -705,7 +705,7 @@ public class DbUtils {
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
     replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
-        "image: container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
+        "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
     createOcirRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
