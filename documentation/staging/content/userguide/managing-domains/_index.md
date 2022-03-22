@@ -33,7 +33,7 @@ Be aware of the following important considerations for WebLogic domains running 
   A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
+  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
