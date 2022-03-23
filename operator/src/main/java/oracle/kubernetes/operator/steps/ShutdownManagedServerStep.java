@@ -68,26 +68,6 @@ public class ShutdownManagedServerStep extends Step {
     return new ShutdownManagedServerStep(next, serverName, pod);
   }
 
-  private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
-    String shutdownString = isGracefulShutdown ? "shutdown" : "forceShutdown";
-    return "/management/weblogic/latest/serverRuntime/" + shutdownString;
-  }
-
-  private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
-      Boolean ignoreSessions, Long timeout, Boolean waitForAllSessions) {
-    if (!isGracefulShutdown) {
-      return "{}";
-    }
-
-    return "{  \"ignoreSessions\": "
-        + ignoreSessions
-        + ", \"timeout\": "
-        + timeout
-        + ", \"waitForAllSessions\": "
-        + waitForAllSessions
-        + "}";
-  }
-
   @Override
   public NextAction apply(Packet packet) {
     LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
@@ -114,6 +94,27 @@ public class ShutdownManagedServerStep extends Step {
     ShutdownManagedServerProcessing(Packet packet, @Nonnull V1Service service, V1Pod pod) {
       super(packet, service, pod);
       initializeRequestPayloadParameters();
+    }
+
+    private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
+      String shutdownString = isGracefulShutdown ? "shutdown" : "forceShutdown";
+      return "/management/weblogic/latest/serverRuntime/" + shutdownString;
+    }
+
+    private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
+                                                          Boolean ignoreSessions, Long timeout,
+                                                          Boolean waitForAllSessions) {
+      if (!isGracefulShutdown) {
+        return "{}";
+      }
+
+      return "{  \"ignoreSessions\": "
+          + ignoreSessions
+          + ", \"timeout\": "
+          + timeout
+          + ", \"waitForAllSessions\": "
+          + waitForAllSessions
+          + "}";
     }
 
     private HttpRequest createRequest() {
@@ -155,9 +156,9 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private String getEnvValue(List<V1EnvVar> vars, String name) {
-      for (V1EnvVar var : vars) {
-        if (var.getName().equals(name)) {
-          return var.getValue();
+      for (V1EnvVar envVar : vars) {
+        if (envVar.getName().equals(name)) {
+          return envVar.getValue();
         }
       }
       return null;
@@ -353,7 +354,7 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(packet);
     }
 
-    private HttpResponse getResponse(Packet packet) {
+    private HttpResponse<?> getResponse(Packet packet) {
       return packet.getSpi(HttpResponse.class);
     }
 

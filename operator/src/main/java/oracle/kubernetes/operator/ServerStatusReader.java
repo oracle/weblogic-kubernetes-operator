@@ -64,21 +64,6 @@ public class ServerStatusReader {
   }
 
   /**
-   * Creates asynchronous step to read WebLogic server state from a particular pod.
-   *
-   * @param info the domain presence
-   * @param pod The pod
-   * @param serverName Server name
-   * @param timeoutSeconds Timeout in seconds
-   * @return Created step
-   */
-  private static Step createServerStatusReaderStep(
-      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
-    return new ServerStatusReaderStep(
-        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
-  }
-
-  /**
    * Asynchronous step to set Domain status to indicate WebLogic server status.
    *
    * @param timeoutSeconds Timeout in seconds
@@ -119,6 +104,21 @@ public class ServerStatusReader {
       }
     }
 
+    /**
+     * Creates asynchronous step to read WebLogic server state from a particular pod.
+     *
+     * @param info the domain presence
+     * @param pod The pod
+     * @param serverName Server name
+     * @param timeoutSeconds Timeout in seconds
+     * @return Created step
+     */
+    private static Step createServerStatusReaderStep(
+        DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
+      return new ServerStatusReaderStep(
+          info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
+    }
+
     private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
       return new StepAndPacket(
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
@@ -151,13 +151,11 @@ public class ServerStatusReader {
       LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
-          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
-        if (SystemClock.now()
-            .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
-          String state = lastKnownStatus.getStatus();
-          serverStateMap.put(serverName, state);
-          return doNext(packet);
-        }
+          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck
+          && SystemClock.now().isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
+        String state = lastKnownStatus.getStatus();
+        serverStateMap.put(serverName, state);
+        return doNext(packet);
       }
 
       if (PodHelper.hasReadyStatus(pod)) {
