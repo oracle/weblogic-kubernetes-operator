@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,9 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-
-import static oracle.kubernetes.operator.utils.CommonUtils.getGsonBuilder;
+import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 
 public class DomainValidationBaseTest {
 
@@ -77,16 +79,16 @@ public class DomainValidationBaseTest {
     }
   }
 
-  public static Domain readDomain(String resourceName) throws IOException {
+  public Domain readDomain(String resourceName) throws IOException {
     return readDomain(resourceName, false);
   }
 
-  public static Domain readDomain(String resourceName, boolean isFile) throws IOException {
+  public Domain readDomain(String resourceName, boolean isFile) throws IOException {
     String json = jsonFromYaml(resourceName, isFile);
     return getGsonBuilder().fromJson(json, Domain.class);
   }
 
-  private static String jsonFromYaml(String resourceName, boolean isFile) throws IOException {
+  private String jsonFromYaml(String resourceName, boolean isFile) throws IOException {
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
     Object obj;
     if (isFile) {
@@ -97,5 +99,11 @@ public class DomainValidationBaseTest {
 
     ObjectMapper jsonWriter = new ObjectMapper();
     return jsonWriter.writeValueAsString(obj);
+  }
+
+  private Gson getGsonBuilder() {
+    return new GsonBuilder()
+            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
+            .create();
   }
 }

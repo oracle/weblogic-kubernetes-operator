@@ -3,12 +3,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.time.OffsetDateTime;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
-
 import static oracle.kubernetes.operator.CommonConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.CommonConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.CommonConstants.LATEST_IMAGE_SUFFIX;
@@ -37,12 +31,4 @@ public class CommonUtils {
     return value.toLowerCase().replace('_', '-');
   }
 
-  /**
-   * Returns the Gson builder with type adapter for OffsetDateTime.
-   */
-  public static Gson getGsonBuilder() {
-    return new GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            .create();
-  }
 }

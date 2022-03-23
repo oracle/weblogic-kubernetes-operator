@@ -3,15 +3,19 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
+import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ConversionRequest;
@@ -19,8 +23,6 @@ import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.Result;
 import oracle.kubernetes.operator.utils.SchemaConversionUtils;
-
-import static oracle.kubernetes.operator.utils.CommonUtils.getGsonBuilder;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -74,7 +76,7 @@ public class ConversionWebhookResource extends BaseResource {
             .map(ConversionRequest::getUid).orElse(null);
   }
 
-  public ConversionReviewModel readConversionReview(String resourceName) {
+  private ConversionReviewModel readConversionReview(String resourceName) {
     return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
   }
 
@@ -83,7 +85,7 @@ public class ConversionWebhookResource extends BaseResource {
    * @param conversionRequest The request to be converted.
    * @return ConversionResponse The response to the conversion request.
    */
-  public ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
+  private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
     List<Object> convertedDomains = new ArrayList<>();
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
 
@@ -98,7 +100,13 @@ public class ConversionWebhookResource extends BaseResource {
             .convertedObjects(convertedDomains);
   }
 
-  public String writeConversionReview(ConversionReviewModel conversionReviewModel) {
+  private String writeConversionReview(ConversionReviewModel conversionReviewModel) {
     return getGsonBuilder().toJson(conversionReviewModel, ConversionReviewModel.class);
+  }
+
+  private Gson getGsonBuilder() {
+    return new GsonBuilder()
+            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
+            .create();
   }
 }

@@ -40,30 +40,31 @@ public class DomainUpgrader {
    *
    */
   public static void main(String[] args) {
-    final DomainUpgrader converter = parseCommandLine(args);
+    final DomainUpgrader domainUpgrader = parseCommandLine(args);
 
-    File inputFile = new File(converter.inputFileName);
-    File outputDir = new File(converter.outputDir);
-    File outputFile = new File(converter.outputDir + "/" + converter.outputFileName);
+    File inputFile = new File(domainUpgrader.inputFileName);
+    File outputDir = new File(domainUpgrader.outputDir);
+    File outputFile = new File(domainUpgrader.outputDir + "/" + domainUpgrader.outputFileName);
 
     if (!inputFile.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT, converter.inputFileName));
+      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT,
+              domainUpgrader.inputFileName));
     }
 
     if (!outputDir.exists()) {
       throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NON_EXISTENT, outputDir));
     }
 
-    if (outputFile.exists() && !converter.overwriteExistingFile) {
+    if (outputFile.exists() && !domainUpgrader.overwriteExistingFile) {
       throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getName()));
     }
 
-    convertDomain(converter);
+    convertDomain(domainUpgrader);
   }
 
-  private static void convertDomain(DomainUpgrader converter) {
-    try (Writer writer = Files.newBufferedWriter(Path.of(converter.outputDir + "/" + converter.outputFileName))) {
-      writer.write(schemaConversionUtils.convertDomainSchema(Files.readString(Path.of(converter.inputFileName))));
+  private static void convertDomain(DomainUpgrader upgrader) {
+    try (Writer writer = Files.newBufferedWriter(Path.of(upgrader.outputDir + "/" + upgrader.outputFileName))) {
+      writer.write(schemaConversionUtils.convertDomainSchema(Files.readString(Path.of(upgrader.inputFileName))));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
