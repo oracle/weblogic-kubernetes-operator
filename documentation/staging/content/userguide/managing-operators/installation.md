@@ -39,7 +39,7 @@ Minimally you should specify:
 - The Helm chart location
 - The operator namespace
 - The platform (if required)
-- The name space selection settings.
+- The name space selection settings
 
 A typical Helm release name is `weblogic-operator`.
 The operator samples and documentation
@@ -181,29 +181,29 @@ You can upgrade a 3.x operator while the operator's domain resources are deploye
 
 #### Upgrading a 3.x operator
 
-The following instructions will be applicable to upgrade operators within the 3.x releases,
+The following instructions will be applicable to upgrade operators
 as additional versions are released.
 
 When upgrading the operator:
 
+- Use `helm repo add` to supply a new version of the Helm chart.
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
-- Supply a new Helm chart that corresponds to the image.
+
 
 For example:
 
 ```text
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 $ helm upgrade sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --reuse-values \
   --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
   --namespace sample-weblogic-operator-ns \
-  --wait \
-  sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator
+  --wait
 ```
 
-Upgrading a 3.x operator within the 3.x releases will _not_ automatically roll
+Upgrading a 3.x operator will _not_ automatically roll
 any running WebLogic Server instances created by the original operator. It
 is not necessary and such instances will continue to run without interruption
 during the upgrade.
