@@ -12,7 +12,6 @@ description: "How to install, upgrade, and uninstall the operator."
 - [Set up domain namespaces](#set-up-domain-namespaces)
 - [Update a running operator](#update-a-running-operator)
 - [Upgrade the operator](#upgrade-the-operator)
-  - [Upgrading a 3.x operator](#upgrading-a-3x-operator)
 - [Uninstall the operator](#uninstall-the-operator)
 - [Installation sample](#installation-sample)
 
@@ -179,8 +178,6 @@ Example updates:
 
 You can upgrade a 3.x operator while the operator's domain resources are deployed and running.
 
-#### Upgrading a 3.x operator
-
 The following instructions will be applicable to upgrade operators
 as additional versions are released.
 
@@ -190,6 +187,9 @@ When upgrading the operator:
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
 
+This is because, even with a new version of the Helm chart,
+`--reuse-values` will retain the previous image value from when it was installed.  To upgrade,
+you must override the image value to use the new operator image version.
 
 For example:
 
@@ -213,7 +213,7 @@ during the upgrade.
 {{% notice note %}}
 If you uninstall an operator, then any domains that it is managing will continue running;
 however, any changes to a domain resource that was managed by the operator
-will not be be detected or automatically handled, and, if you
+will not be detected or automatically handled, and, if you
 want to clean up such a domain, then you will need to manually delete
 all of the domain's resources (domain, pods, services, and such).
 {{% /notice %}}
