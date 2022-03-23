@@ -238,6 +238,7 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
+
   /**
    * The maximum ready wait time.
    *
@@ -246,6 +247,67 @@ class ServerPod extends KubernetesResource {
   @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
       + "before it considers the pod failed. Defaults to 1800 seconds.")
   private Long maxReadyWaitTimeSeconds = 1800L;
+
+
+  /**
+   * The Fluentd configuration.
+   *
+   */
+  @Description("Automatic fluentd sidcar injection. If "
+    + "specified, the operator "
+    + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
+    + "WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, "
+    + "will not be affected until they are restarted. When any given server "
+    + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will "
+    + "have the fluentd sidecar or not, as appropriate")
+  private FluentdSpecification fluentdSpecification;
+
+  private FluentdConfiguration fluentdConfiguration;
+
+  public FluentdSpecification getFluentdSpecification() {
+    return fluentdSpecification;
+  }
+
+  FluentdConfiguration getFluentdConfiguration() {
+    return Optional.ofNullable(fluentdSpecification).map(FluentdSpecification::getConfiguration).orElse(null);
+  }
+
+  void createFluentdConfiguration(String yaml) {
+    if (fluentdConfiguration == null) {
+      fluentdConfiguration = new FluentdConfiguration();
+    }
+
+    fluentdSpecification.createConfiguration(yaml);
+  }
+
+  String getFluentdImage() {
+    return fluentdSpecification == null ? null : fluentdSpecification.getImage();
+  }
+
+  String getFluentdImagePullPolicy() {
+    return fluentdSpecification == null ? null : fluentdSpecification.getImagePullPolicy();
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param imageName the name of the docker image
+   */
+  public void setFluentdImage(String imageName) {
+    assert fluentdSpecification != null : "May not set image without configuration";
+
+    fluentdSpecification.setImage(imageName);
+  }
+
+  /**
+   * Specifies the pull policy for the fluentd image.
+   * @param pullPolicy a Kubernetes pull policy
+   */
+  public void setFluentdImagePullPolicy(String pullPolicy) {
+    assert fluentdSpecification != null : "May not set image pull policy without configuration";
+
+    fluentdSpecification.setImagePullPolicy(pullPolicy);
+  }
+
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -810,7 +872,6 @@ class ServerPod extends KubernetesResource {
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
-        .append("resources", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .append("initContainers", initContainers)
