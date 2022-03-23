@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 88c7ac43694c6ec693d8d66a210fcd6861c6de6e4972047f15b541349901512d
+    weblogic.sha256: ccba65c72537d8324372ffe85a02867bc7dfcbbfbb93dda11e52a439ac3242da
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11859,10 +11859,6 @@ spec:
                     message:
                       description: Human-readable message indicating details about
                         last transition.
-                      type: string
-                    introspectionUid:
-                      description: The uid of an introspection job associated with
-                        this failed condition
                       type: string
                     lastProbeTime:
                       format: date-time

@@ -157,9 +157,10 @@ public class SchemaConversionUtils {
     addEmptyDirVolume(serverPod, auxiliaryImageVolumes);
     List<Object> initContainers = new ArrayList<>();
     for (Object auxiliaryImage : auxiliaryImages) {
-      initContainers.add(createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage,
-              containerIndex.get(), auxiliaryImageVolumes));
-      containerIndex.incrementAndGet();
+      initContainers.add(
+          createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage, containerIndex.get(),
+              auxiliaryImageVolumes));
+      containerIndex.addAndGet(1);
     }
     serverPod.put("initContainers", initContainers);
     auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, (Map<String, Object>)ai, auxiliaryImageVolumes));

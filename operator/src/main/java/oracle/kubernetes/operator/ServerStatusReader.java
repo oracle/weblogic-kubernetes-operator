@@ -49,9 +49,11 @@ import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadC
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Function<Step, Step> stepFactory = ReadHealthStep::createReadHealthStep;
+
   @SuppressWarnings("FieldMayBeFinal") // may be replaced by unit test
-  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
-  private static final Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
+  private static KubernetesExecFactory execFactory = new KubernetesExecFactoryImpl();
 
   private ServerStatusReader() {
   }
@@ -178,7 +180,7 @@ public class ServerStatusReader {
               try (ThreadLoggingContext stack =
                        setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
 
-                KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, WLS_CONTAINER_NAME);
+                KubernetesExec kubernetesExec = execFactory.create(client, pod, WLS_CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
                 kubernetesExec.setTty(tty);
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
@@ -275,7 +277,7 @@ public class ServerStatusReader {
       if (PodHelper.hasReadyStatus(pod)
           || WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
-        return doNext(STEP_FACTORY.apply(getNext()), packet);
+        return doNext(stepFactory.apply(getNext()), packet);
       }
 
       return doNext(packet);

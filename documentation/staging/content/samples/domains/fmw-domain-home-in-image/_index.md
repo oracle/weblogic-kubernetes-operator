@@ -101,7 +101,7 @@ The script will perform the following steps:
   this image contains sensitive information about the domain, including keys and
   credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
+  [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.

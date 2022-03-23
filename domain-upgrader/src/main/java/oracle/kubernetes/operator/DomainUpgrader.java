@@ -23,6 +23,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FilenameUtils;
 
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UPGRADE_SUCCESS;
+
 public class DomainUpgrader {
 
   private static final CommonLoggingFacade LOGGER =
@@ -60,6 +62,7 @@ public class DomainUpgrader {
     }
 
     convertDomain(domainUpgrader);
+    LOGGER.info(DOMAIN_UPGRADE_SUCCESS, outputFile.getName());
   }
 
   private static void convertDomain(DomainUpgrader upgrader) {

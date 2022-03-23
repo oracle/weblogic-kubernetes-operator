@@ -77,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAnd
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -667,7 +668,7 @@ class ItMonitoringExporterWebApp {
     assertTrue(originalPage.asNormalizedText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
     HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertTrue(originalPage.asNormalizedText().equals(page.asNormalizedText()));
+    assertEquals(originalPage.asNormalizedText(), page.asNormalizedText());
   }
 
   /**

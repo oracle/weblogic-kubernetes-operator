@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -88,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpassw
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -461,9 +463,7 @@ class ItDBOperator {
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
       deleteHostPathProvisioner(dbNamespace);
       uninstallDBOperator(dbNamespace);
@@ -630,7 +630,7 @@ class ItDBOperator {
     ecmd.append(" /u01/leasing.ddl");
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(namespace, wlPodName,
         null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+    assertEquals(0, execResult.exitValue(), "Could not create the Leasing Table");
   }
 
   /**

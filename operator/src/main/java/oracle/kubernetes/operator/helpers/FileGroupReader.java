@@ -114,6 +114,7 @@ class FileGroupReader {
 
     @Override
     public void close() {
+      // no-op
     }
   }
 

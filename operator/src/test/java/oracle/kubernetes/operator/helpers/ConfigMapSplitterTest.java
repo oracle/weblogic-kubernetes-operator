@@ -43,7 +43,7 @@ class ConfigMapSplitterTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "DATA_LIMIT", TEST_DATA_LIMIT));
+    mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "dataLimit", TEST_DATA_LIMIT));
   }
 
   @AfterEach

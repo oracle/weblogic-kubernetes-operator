@@ -473,7 +473,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
     Optional.ofNullable(productVersion)
-          .ifPresent(productVersion -> result.put(LabelConstants.OPERATOR_VERSION, productVersion));
+          .ifPresent(pv -> result.put(LabelConstants.OPERATOR_VERSION, pv));
 
     if (addRestartRequiredLabel) {
       result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
@@ -559,9 +559,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean isLegacyAuxImageOperatorVersion(V1Pod currentPod) {
-    boolean result = Optional.ofNullable(currentPod.getMetadata()).map(m -> m.getLabels())
-            .map(l -> l.get(OPERATOR_VERSION)).map(v -> isLegacyAuxImageOperatorVersion(v)).orElse(false);
-    return result;
+    return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
+            .map(l -> l.get(OPERATOR_VERSION)).map(this::isLegacyAuxImageOperatorVersion).orElse(false);
   }
 
   private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
@@ -608,15 +607,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
     V1PodSpec podSpec = pod.getSpec();
-    List<V1Container> convertedInitContainers = new ArrayList();
+    List<V1Container> convertedInitContainers = new ArrayList<>();
     podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i));
     podSpec.initContainers(convertedInitContainers);
 
-    List<V1Container> convertedContainers = new ArrayList();
+    List<V1Container> convertedContainers = new ArrayList<>();
     podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
     podSpec.containers(convertedContainers);
 
-    List<V1Volume> convertedVolumes = new ArrayList();
+    List<V1Volume> convertedVolumes = new ArrayList<>();
     podSpec.getVolumes().forEach(i -> adjustVolumeName(convertedVolumes, i));
     podSpec.volumes(convertedVolumes);
     pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
@@ -627,9 +626,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1EnvVar> env = container.getEnv();
     List<V1EnvVar> newEnv = new ArrayList<>();
     env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
-            .map(e -> e.getValue()).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
+        .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
 
-    List<V1VolumeMount> convertedVolumeMounts = new ArrayList();
+    List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
     container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
     convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
             .volumeMounts(convertedVolumeMounts));
@@ -771,7 +770,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
-    if (shutdown.getWaitForAllSessions() != Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) {
+    if (!shutdown.getWaitForAllSessions().equals(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS)) {
       addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS",
               String.valueOf(shutdown.getWaitForAllSessions()));
     }
@@ -895,6 +894,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
+  @Override
   protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
     V1Container v1Container = super.createPrimaryContainer(tuningParameters)
             .ports(getContainerPorts())
@@ -985,7 +985,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      if (auxiliaryImages.size() > 0) {
+      if (!auxiliaryImages.isEmpty()) {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
       }
     });
@@ -1161,6 +1161,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       super(next);
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }
@@ -1245,6 +1246,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       super(next);
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }
@@ -1296,6 +1298,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.pod = pod;
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }

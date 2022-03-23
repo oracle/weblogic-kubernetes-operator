@@ -402,11 +402,13 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
       getEnvironmentVariables(tuningParameters).stream()
-              .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+              .forEach(envVar -> addIfMissing(initContainerEnvVars,
+                  envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
     }
     return initContainerEnvVars;
   }
 
+  @Override
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
@@ -476,6 +478,7 @@ public class JobStepContext extends BasePodStepContext {
             .secret(getRuntimeEncryptionSecretVolume()));
   }
 
+  @Override
   protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
     V1Container container = super.createPrimaryContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
@@ -682,8 +685,8 @@ public class JobStepContext extends BasePodStepContext {
     // check. To prevent a false trip of the circuit breaker, the list must be the
     // same regardless of whether domainTopology == null.
     StringBuilder sb = new StringBuilder(vars.size() * 32);
-    for (V1EnvVar var : vars) {
-      sb.append(var.getName()).append(',');
+    for (V1EnvVar envVar : vars) {
+      sb.append(envVar.getName()).append(',');
     }
     sb.deleteCharAt(sb.length() - 1);
     addEnvVar(vars, "OPERATOR_ENVVAR_NAMES", sb.toString());
@@ -707,7 +710,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addAuxImagePathEnv(List<AuxiliaryImage> auxiliaryImages, List<V1EnvVar> vars) {
-    if (auxiliaryImages.size() > 0) {
+    if (!auxiliaryImages.isEmpty()) {
       addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
     }
   }

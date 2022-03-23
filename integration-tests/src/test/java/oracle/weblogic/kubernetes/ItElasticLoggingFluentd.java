@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -93,6 +94,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -167,13 +169,13 @@ class ItElasticLoggingFluentd {
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
-    assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
+    assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
-    assertTrue(kibanaParams != null, "Failed to install Kibana");
+    assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -226,9 +228,7 @@ class ItElasticLoggingFluentd {
    */
   @AfterAll
   void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
 
       elasticsearchParams = new LoggingExporterParams()
           .elasticsearchName(ELASTICSEARCH_NAME)
@@ -281,7 +281,7 @@ class ItElasticLoggingFluentd {
 
     logger.info("Total count of logs: " + count);
     assertTrue(count > 0, "Total count of logs should be more than 0!");
-    assertTrue(failedCount == 0, "Total failed count should be 0!");
+    assertEquals(0, failedCount, "Total failed count should be 0!");
     logger.info("Total failed count: " + failedCount);
 
     logger.info("Query logs of serverName={0} succeeded", adminServerPodName);

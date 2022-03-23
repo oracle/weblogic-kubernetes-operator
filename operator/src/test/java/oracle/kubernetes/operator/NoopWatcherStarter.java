@@ -12,7 +12,7 @@ import com.meterware.simplestub.StaticStubSupport;
 public class NoopWatcherStarter implements WatcherStarter {
 
   public static Memento install() throws NoSuchFieldException {
-    return StaticStubSupport.install(Watcher.class, "STARTER", new NoopWatcherStarter());
+    return StaticStubSupport.install(Watcher.class, "starter", new NoopWatcherStarter());
   }
   
   @Override

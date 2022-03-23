@@ -25,14 +25,10 @@ public class CommonLoggingFactory {
    * @return a PlatformLogger object for the caller to use
    */
   public static synchronized CommonLoggingFacade getLogger(String name, String resourceBundleName) {
+    return facade.computeIfAbsent(resourceBundleName, clf -> getCommonLoggingFacade(name, resourceBundleName));
+  }
 
-    CommonLoggingFacade lf = facade.get(resourceBundleName);
-    if (lf == null) {
-      Logger logger = Logger.getLogger(name, resourceBundleName);
-      lf = new CommonLoggingFacade(logger);
-      facade.put(resourceBundleName, lf);
-    }
-
-    return lf;
+  private static CommonLoggingFacade getCommonLoggingFacade(String name, String resourceBundleName) {
+    return new CommonLoggingFacade(Logger.getLogger(name, resourceBundleName));
   }
 }

@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -562,9 +563,7 @@ class ItIstioDBOperator {
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
       deleteHostPathProvisioner(dbNamespace);
       uninstallDBOperator(dbNamespace);
@@ -726,7 +725,7 @@ class ItIstioDBOperator {
     ecmd.append(" /u01/leasing.ddl");
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(namespace, wlPodName,
         null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+    assertEquals(0, execResult.exitValue(), "Could not create the Leasing Table");
   }
 
   private int enableIstio(String clusterName, String domainUid, String namespace, String adminServerPodName) {

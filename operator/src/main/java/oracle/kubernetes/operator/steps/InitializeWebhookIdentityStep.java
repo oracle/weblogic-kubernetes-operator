@@ -143,7 +143,7 @@ public class InitializeWebhookIdentityStep extends Step {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
-      Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(s -> s.getData()).orElse(new HashMap<>());
+      Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(V1Secret::getData).orElse(new HashMap<>());
       if (existingSecret == null) {
         return doNext(createSecret(getNext(), webhookIdentity), packet);
       } else if (identityExists(data)) {

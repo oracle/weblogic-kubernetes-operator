@@ -65,7 +65,7 @@ class ServicePresenceTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", domains));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(UnitTestHash.install());
 
     domains.put(NS, ImmutableMap.of(UID, info));

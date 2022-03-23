@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -77,9 +78,9 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
-    map.put(FIBER, getFiber());
-    map.put(DOMAIN_NAMESPACE, getNamespace(fiberObject));
-    map.put(DOMAIN_UID, getDomainUid(fiberObject));
+    Optional.ofNullable(getFiber()).ifPresent(f -> map.put(FIBER, f));
+    Optional.ofNullable(getNamespace(fiberObject)).ifPresent(namespace -> map.put(DOMAIN_NAMESPACE, namespace));
+    Optional.ofNullable(getDomainUid(fiberObject)).ifPresent(uid -> map.put(DOMAIN_UID, uid));
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
