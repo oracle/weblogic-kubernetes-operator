@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpassw
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -629,7 +630,7 @@ class ItDBOperator {
     ecmd.append(" /u01/leasing.ddl");
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(namespace, wlPodName,
         null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+    assertEquals(0, execResult.exitValue(), "Could not create the Leasing Table");
   }
 
   /**

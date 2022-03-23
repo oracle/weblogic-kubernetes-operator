@@ -121,6 +121,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -589,7 +590,7 @@ class ItKubernetesEvents {
 
     //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
-    assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
+    assertEquals("/shared/logs/logHome", domain1.getSpec().getLogHome(), "logHome is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -653,7 +654,7 @@ class ItKubernetesEvents {
     //print out includeServerOutInPodLog in the new patched domain
     logger.info("In the new patched domain includeServerOutInPodLog is: {0}",
         domain1.getSpec().includeServerOutInPodLog());
-    assertTrue(domain1.getSpec().includeServerOutInPodLog() != includeLogInPod,
+    assertNotEquals(includeLogInPod, domain1.getSpec().includeServerOutInPodLog(),
         "includeServerOutInPodLog is not updated");
 
     // verify the server pods are rolling restarted and back to ready state

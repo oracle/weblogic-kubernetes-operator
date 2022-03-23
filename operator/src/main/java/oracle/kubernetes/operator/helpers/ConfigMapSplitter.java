@@ -25,7 +25,7 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
 
   // not private or local so that unit tests can set it.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal", "FieldCanBeLocal"})
-  private static int DATA_LIMIT = 900_000;
+  private static int dataLimit = 900_000;
 
   private final BiFunction<Map<String, String>, Integer, T> factory;
 
@@ -68,7 +68,7 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
 
   private void startSplitResult() {
     current = new HashMap<>();
-    remainingRoom = DATA_LIMIT;
+    remainingRoom = dataLimit;
   }
 
   /**

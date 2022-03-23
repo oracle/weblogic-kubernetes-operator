@@ -48,7 +48,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   public static Memento install() throws NoSuchFieldException {
     namedParameters = new HashMap<>();
     return StaticStubSupport.install(
-        TuningParametersImpl.class, "INSTANCE", createStrictStub(TuningParametersStub.class));
+        TuningParametersImpl.class, "instance", createStrictStub(TuningParametersStub.class));
   }
 
   @Override

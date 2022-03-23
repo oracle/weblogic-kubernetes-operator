@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -211,7 +212,7 @@ class ItProductionSecureMode {
   void testVerifyProductionSecureMode() {
     int defaultAdminPort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
-    assertTrue(defaultAdminPort != -1,
+    assertNotEquals(-1, defaultAdminPort,
           "Could not get the default-admin external service node port");    
     logger.info("Found the administration service nodePort {0}", defaultAdminPort);
 
@@ -285,7 +286,7 @@ class ItProductionSecureMode {
   
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort == -1,
+    assertEquals(-1, nodePort,
           "Default external service node port service must not be available");
     logger.info("Default service nodePort is not available as expected");
   }

@@ -112,7 +112,7 @@ class CrdHelperTest {
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
-    mementos.add(StaticStubSupport.install(Certificates.class, "GET_PATH", getInMemoryPath));
+    mementos.add(StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath));
     mementos.add(TuningParametersStub.install());
 
     defaultCrd = defineDefaultCrd();

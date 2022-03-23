@@ -106,6 +106,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -443,6 +444,34 @@ class ItOperatorWlsUpgrade {
       }
     }
     reManageCluster();
+    
+    // check CRD version is updated
+    logger.info("Checking CRD version");
+    testUntil(
+        checkCrdVersion(),
+        logger,
+        "the CRD version to be updated to latest");
+
+    // check domain status conditions
+    checkDomainStatus(domainNamespace);
+
+    int externalRestHttpsPort = getServiceNodePort(
+        opNamespace, "external-weblogic-operator-svc");
+    assertNotEquals(-1, externalRestHttpsPort,
+        "Could not get the Operator external service node port");
+    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+
+    // check domain can be managed from the operator by scaling the cluster
+    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
+        managedServerPodNamePrefix, replicaCount, 3,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", null, null);
+
+    scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
+        managedServerPodNamePrefix, replicaCount, 2,
+        true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", null, null);
+
     restartDomain(domainUid, domainNamespace);
   }
 

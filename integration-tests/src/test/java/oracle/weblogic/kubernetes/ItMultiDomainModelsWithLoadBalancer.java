@@ -121,6 +121,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -547,7 +548,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, serverName, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
         String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
             execResult.stderr(), execResult.stdout()));
     logger.info("File permissions changed inside pod");
@@ -563,7 +564,7 @@ class ItMultiDomainModelsWithLoadBalancer {
               serverName, domainNamespace));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
-      assertTrue(execResult.exitValue() == 0,
+      assertEquals(0, execResult.exitValue(),
           String.format("Failed to execute kill server inside pod, stderr %s stdout %s", destLocation,
               execResult.stderr(), execResult.stdout()));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
@@ -584,7 +585,7 @@ class ItMultiDomainModelsWithLoadBalancer {
             getContainerRestartCount(domainNamespace, null, serverName, null),
         String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
             serverName, domainNamespace));
-    assertTrue(afterRestartCount - beforeRestartCount == 1,
+    assertEquals(1,afterRestartCount - beforeRestartCount,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
             serverName, domainNamespace));
 

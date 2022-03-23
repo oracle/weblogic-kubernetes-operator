@@ -75,7 +75,7 @@ class IntrospectionStatusTest {
     consoleHandlerMemento = TestUtils.silenceOperatorLogger();
     mementos.add(consoleHandlerMemento);
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", presenceInfoMap));
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 

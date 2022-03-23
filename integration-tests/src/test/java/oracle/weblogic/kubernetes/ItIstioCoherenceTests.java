@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -153,7 +154,7 @@ class ItIstioCoherenceTests {
             serverName, domainNamespace));
 
     assertAll("Check that the cache loaded successfully",
-        () -> assertTrue(execResult1.exitValue() == 0, "Failed to load the cache"),
+        () -> assertEquals(0, execResult1.exitValue(), "Failed to load the cache"),
         () -> assertTrue(execResult1.stdout().contains(successMarker), "Failed to load the cache")
     );
 
@@ -174,7 +175,7 @@ class ItIstioCoherenceTests {
             serverName, domainNamespace));
 
     assertAll("Check that the cache loaded successfully",
-        () -> assertTrue(execResult1.exitValue() == 0, "Failed to validate the cache"),
+        () -> assertEquals(0, execResult1.exitValue(), "Failed to validate the cache"),
         () -> assertTrue(execResult2.stdout().contains(successMarker), "Failed to validate the cache")
     );
 

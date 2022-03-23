@@ -71,6 +71,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -312,7 +313,7 @@ class ItLiftAndShiftFromOnPremDomain {
       createTraefikIngressRoutingRules(domainNamespace);
     
       traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-      assertTrue(traefikNodePort != -1,
+      assertNotEquals(-1, traefikNodePort,
           "Could not get the default external service node port");
       logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
       logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);

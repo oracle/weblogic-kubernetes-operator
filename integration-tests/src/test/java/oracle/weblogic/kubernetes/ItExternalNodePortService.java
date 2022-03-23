@@ -69,6 +69,8 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -239,7 +241,7 @@ class ItExternalNodePortService {
     String clusterSvcRouteHost = createRouteForOKD(serviceName, domainNamespace);
     int httpTunnelingPort =
         getServiceNodePort(domainNamespace, serviceName, portName);
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Http TunnelingPort service node port");
     logger.info("HttpTunnelingPort for NodePort Service {0}", httpTunnelingPort);
 
@@ -295,7 +297,7 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Build JMS Client inside the Admin Server Pod
@@ -321,7 +323,7 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Run external standalone JMS Client using wlthint3client.jar in classpath.
