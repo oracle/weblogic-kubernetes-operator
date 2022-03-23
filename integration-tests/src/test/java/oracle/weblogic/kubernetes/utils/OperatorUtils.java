@@ -19,6 +19,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
@@ -329,6 +330,11 @@ public class OperatorUtils {
     }
     if (domainPresenceFailureRetrySeconds > 0) {
       opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
+    }
+
+    // If running on OKD cluster, we need to specify the target
+    if (OKD) {
+      opParams.kubernetesPlatform("OpenShift");
     }
 
     // install operator
