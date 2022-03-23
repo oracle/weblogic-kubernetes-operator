@@ -11,6 +11,8 @@
 
   <modules>
     <module>operator</module>
+    <module>common</module>
+    <module>domain-upgrader</module>
     <module>swagger-generator</module>
     <module>integration-tests</module>
     <module>kubernetes</module>

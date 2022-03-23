@@ -12,7 +12,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.utils.CommonUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -87,7 +87,7 @@ public class MonitoringExporterSpecification {
   }
 
   String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+    return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
   void setImagePullPolicy(@Nullable String imagePullPolicy) {

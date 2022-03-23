@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -21,12 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.work.Fiber;
-import oracle.kubernetes.operator.work.Packet;
 
 /** Custom log formatter to format log messages in JSON format. */
-public class LoggingFormatter extends Formatter {
+public abstract class LoggingFormatter<T> extends Formatter {
   private static final Map<String, List<String>> PLACEHOLDER = new HashMap<>();
 
   private static final String LOG_LEVEL = "level";
@@ -48,6 +44,8 @@ public class LoggingFormatter extends Formatter {
 
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
+  T fiber = null;
+
   @Override
   public String format(LogRecord record) {
     String sourceClassName = "";
@@ -63,7 +61,7 @@ public class LoggingFormatter extends Formatter {
 
     // the toString() format for the model classes is inappropriate for our logs
     // so, replace with the JSON serialization
-    JSON j = LoggingFactory.getJson();
+    JSON j = CommonLoggingFactory.getJson();
     if (j != null) {
       Object[] parameters = record.getParameters();
       if (parameters != null) {
@@ -109,11 +107,11 @@ public class LoggingFormatter extends Formatter {
     long rawTime = record.getMillis();
     final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()));
     long thread = Thread.currentThread().getId();
-    Fiber fiber = Fiber.getCurrentIfSet();
+    fiber = getCurrentFiberIfSet();
 
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
-    map.put(FIBER, fiber != null ? fiber.toString() : "");
+    map.put(FIBER, getFiber());
     map.put(DOMAIN_NAMESPACE, getNamespace(fiber));
     map.put(DOMAIN_UID, getDomainUid(fiber));
     map.put(LOG_LEVEL, level);
@@ -147,61 +145,12 @@ public class LoggingFormatter extends Formatter {
     return json + "\n";
   }
 
-  /**
-   * Get the domain UID associated with the current log message.
-   * Check the fiber that is currently being used to execute the step that initiates the log.
-   * If there is no fiber associated with this log, check the ThreadLocal.
-   *
-   * @param fiber The current Fiber
-   * @return the domain UID or empty string
-   */
-  private String getDomainUid(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(this::getDomainPresenceInfo)
-          .map(DomainPresenceInfo::getDomainUid)
-          .orElse(getDomainUidFromLoggingContext(fiber));
-  }
+  abstract T getCurrentFiberIfSet();
 
-  private String getDomainUidFromLoggingContext(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-        .map(Fiber::getPacket)
-        .map(p -> p.getSpi(LoggingContext.class))
-        .map(LoggingContext::domainUid)
-        .orElse(getDomainUidFromThreadContext());
-  }
+  abstract String getFiber();
 
-  private String getDomainUidFromThreadContext() {
-    return ThreadLoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
-  }
+  abstract String getNamespace(T fiber);
 
-  private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class);
-  }
-
-  /**
-   * Get the namespace associated with the current log message.
-   * Check the fiber that is currently being used to execute the step that initiate the log.
-   * If there is no fiber associated with this log, check the ThreadLocal.
-   *
-   * @param fiber The current Fiber
-   * @return the namespace or empty string
-   */
-  private String getNamespace(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(this::getDomainPresenceInfo)
-          .map(DomainPresenceInfo::getNamespace)
-          .orElse(getNamespaceFromLoggingContext(fiber));
-  }
-
-  private String getNamespaceFromLoggingContext(Fiber fiber) {
-    return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(p -> p.getSpi(LoggingContext.class))
-          .or(ThreadLoggingContext::optionalContext)
-          .map(LoggingContext::namespace)
-          .orElse("");
-  }
+  abstract String getDomainUid(T fiber);
 
 }

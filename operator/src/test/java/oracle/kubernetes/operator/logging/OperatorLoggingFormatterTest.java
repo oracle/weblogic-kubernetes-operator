@@ -25,10 +25,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class LoggingFormatterTest {
+class OperatorLoggingFormatterTest {
 
   private final LogRecord logRecord = new LogRecord(Level.INFO, "A simple one");
-  private final LoggingFormatter formatter = new LoggingFormatter();
+  private final OperatorLoggingFormatter formatter = new OperatorLoggingFormatter();
   private final FiberTestSupport testSupport = new FiberTestSupport();
 
   @Test

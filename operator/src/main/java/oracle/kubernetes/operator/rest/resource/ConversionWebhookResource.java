@@ -3,6 +3,9 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
@@ -15,7 +18,9 @@ import oracle.kubernetes.operator.rest.model.ConversionRequest;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.Result;
-import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
+import oracle.kubernetes.operator.utils.SchemaConversionUtils;
+
+import static oracle.kubernetes.operator.utils.CommonUtils.getGsonBuilder;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -27,7 +32,6 @@ public class ConversionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String FAILED_STATUS = "Failed";
-  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
 
   /** Construct a ConversionWebhookResource. */
   public ConversionWebhookResource() {
@@ -50,8 +54,8 @@ public class ConversionWebhookResource extends BaseResource {
     LOGGER.entering(href());
 
     try {
-      conversionReview = conversionUtils.readConversionReview(body);
-      conversionResponse = conversionUtils.createConversionResponse(conversionReview.getRequest());
+      conversionReview = readConversionReview(body);
+      conversionResponse = createConversionResponse(conversionReview.getRequest());
     } catch (Throwable t) {
       conversionResponse = new ConversionResponse()
               .uid(getUid(conversionReview))
@@ -59,7 +63,7 @@ public class ConversionWebhookResource extends BaseResource {
                       .message("Exception: " + t.getMessage()));
     }
     LOGGER.exiting(conversionResponse);
-    return conversionUtils.writeConversionReview(new ConversionReviewModel()
+    return writeConversionReview(new ConversionReviewModel()
             .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
             .kind(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getKind).orElse(null))
             .response(conversionResponse));
@@ -68,5 +72,33 @@ public class ConversionWebhookResource extends BaseResource {
   private String getUid(ConversionReviewModel conversionReview) {
     return Optional.ofNullable(conversionReview).map(ConversionReviewModel::getRequest)
             .map(ConversionRequest::getUid).orElse(null);
+  }
+
+  public ConversionReviewModel readConversionReview(String resourceName) {
+    return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
+  }
+
+  /**
+   * Create the conversion review response.
+   * @param conversionRequest The request to be converted.
+   * @return ConversionResponse The response to the conversion request.
+   */
+  public ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
+    List<Object> convertedDomains = new ArrayList<>();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    conversionRequest.getObjects()
+            .forEach(domain -> convertedDomains.add(
+                    schemaConversionUtils.convertDomainSchema(
+                            (Map<String,Object>) domain, conversionRequest.getDesiredAPIVersion())));
+
+    return new ConversionResponse()
+            .uid(conversionRequest.getUid())
+            .result(new Result().status("Success"))
+            .convertedObjects(convertedDomains);
+  }
+
+  public String writeConversionReview(ConversionReviewModel conversionReviewModel) {
+    return getGsonBuilder().toJson(conversionReviewModel, ConversionReviewModel.class);
   }
 }

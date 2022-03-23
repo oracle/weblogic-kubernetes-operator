@@ -17,7 +17,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.utils.DomainUpgradeUtils.API_VERSION_V9;
+import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V9;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V8_AUX_IMAGE30_YAML;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML;
@@ -26,7 +26,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V9_C
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainUpgradeUtilsTest {
+class SchemaConversionUtilsTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -42,18 +42,19 @@ class DomainUpgradeUtilsTest {
 
   @Test
   void testV8DomainUpgradeWithLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
 
-    Object convertedDomain = domainUpgradeUtils.convertDomain(readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML), API_VERSION_V9);
+    Object convertedDomain = schemaConversionUtils.convertDomainSchema(
+            readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML), API_VERSION_V9);
     Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     assertThat(convertedDomain, equalTo(expectedDomain));
   }
 
   @Test
   void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
 
-    Object convertedDomain = domainUpgradeUtils.convertDomain(
+    Object convertedDomain = schemaConversionUtils.convertDomainSchema(
             readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML), API_VERSION_V9);
     Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_SERVER_SCOPED_LEGACY_AUX_IMAGE_YAML);
     assertThat(convertedDomain, equalTo(expectedDomain));

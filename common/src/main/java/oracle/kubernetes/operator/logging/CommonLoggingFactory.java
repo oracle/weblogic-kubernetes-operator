@@ -9,16 +9,15 @@ import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.JSON;
 
-
 /** A factory to create Loggers. */
-public class LoggingFactory {
+public class CommonLoggingFactory {
 
   // map from resourceBundleName to facade
-  private static final Map<String, LoggingFacade> facade = new HashMap<>();
+  private static final Map<String, CommonLoggingFacade> facade = new HashMap<>();
 
   private static final JSON json = new JSON();
 
-  private LoggingFactory() {
+  private CommonLoggingFactory() {
     // hide implicit public constructor
   }
 
@@ -33,12 +32,12 @@ public class LoggingFactory {
    * @param resourceBundleName the resource bundle to use with this logger
    * @return a PlatformLogger object for the caller to use
    */
-  public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
+  public static synchronized CommonLoggingFacade getLogger(String name, String resourceBundleName) {
 
-    LoggingFacade lf = facade.get(resourceBundleName);
+    CommonLoggingFacade lf = facade.get(resourceBundleName);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);
-      lf = new LoggingFacade(logger);
+      lf = new CommonLoggingFacade(logger);
       facade.put(resourceBundleName, lf);
     }
 

@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,77 +11,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.model.ConversionRequest;
-import oracle.kubernetes.operator.rest.model.ConversionResponse;
-import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
-import oracle.kubernetes.operator.rest.model.GsonOffsetDateTime;
-import oracle.kubernetes.operator.rest.model.Result;
+import oracle.kubernetes.operator.CommonConstants;
+import oracle.kubernetes.operator.logging.BaseLoggingFacade;
+import oracle.kubernetes.operator.logging.CommonLoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
-import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V8;
+import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V9;
+import static oracle.kubernetes.operator.CommonConstants.COMPATIBILITY_MODE;
 
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
-public class DomainUpgradeUtils {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
+public class SchemaConversionUtils {
+  private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
 
-  public static final String API_VERSION_V9 = "weblogic.oracle/v9";
-  public static final String API_VERSION_V8 = "weblogic.oracle/v8";
-  private volatile int containerIndex = 0;
-
-  public ConversionReviewModel readConversionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
-  }
+  private AtomicInteger containerIndex = new AtomicInteger(0);
 
   /**
-   * Create the conversion review response.
-   * @param conversionRequest The request to be converted.
-   * @return ConversionResponse The response to the conversion request.
-   */
-  public ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
-    List<Object> convertedDomains = new ArrayList<>();
-
-    conversionRequest.getObjects()
-            .forEach(domain -> convertedDomains.add(
-                    convertDomain((Map<String,Object>) domain, conversionRequest.getDesiredAPIVersion())));
-
-    return new ConversionResponse()
-            .uid(conversionRequest.getUid())
-            .result(new Result().status("Success"))
-            .convertedObjects(convertedDomains);
-  }
-
-  public String writeConversionReview(ConversionReviewModel conversionReviewModel) {
-    return getGsonBuilder().toJson(conversionReviewModel, ConversionReviewModel.class);
-  }
-
-  /**
-   * Convert the domain to desired API version.
+   * Convert the domain schema to desired API version.
    * @param domain Domain to be converted.
    * @return Domain The converted domain.
    */
-  public Object convertDomain(Map<String, Object> domain, String desiredAPIVersion) {
+  public Object convertDomainSchema(Map<String, Object> domain, String desiredAPIVersion) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
       return domain;
@@ -101,27 +59,27 @@ public class DomainUpgradeUtils {
   }
 
   /**
-   * Convert the domain to desired API version.
+   * Convert the domain schema to desired API version.
    * @param domainYaml Domain yaml to be converted.
    * @return Domain String containing the converted domain yaml.
    */
-  public String convertDomain(String domainYaml) {
-    return convertDomain(domainYaml, API_VERSION_V9);
+  public String convertDomainSchema(String domainYaml) {
+    return convertDomainSchema(domainYaml, API_VERSION_V9);
   }
 
   /**
-   * Convert the domain to desired API version.
+   * Convert the domain schema to desired API version.
    * @param domainYaml Domain yaml to be converted.
    * @param desiredApiVersion Desired API version.
    * @return Domain String containing the domain yaml.
    */
-  public String convertDomain(String domainYaml, String desiredApiVersion) {
+  public String convertDomainSchema(String domainYaml, String desiredApiVersion) {
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);
     Yaml yaml = new Yaml(options);
     Object domain = yaml.load(domainYaml);
-    return yaml.dump(convertDomain((Map<String, Object>) domain, desiredApiVersion));
+    return yaml.dump(convertDomainSchema((Map<String, Object>) domain, desiredApiVersion));
   }
 
   private void adjustAdminPortForwardingDefault(Map<String, Object> spec, String apiVersion) {
@@ -195,9 +153,9 @@ public class DomainUpgradeUtils {
     addEmptyDirVolume(serverPod, auxiliaryImageVolumes);
     List<Object> initContainers = new ArrayList<>();
     for (Object auxiliaryImage : auxiliaryImages) {
-      initContainers.add(createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage, containerIndex,
-              auxiliaryImageVolumes));
-      containerIndex++;
+      initContainers.add(createInitContainerForAuxiliaryImage((Map<String, Object>) auxiliaryImage,
+              containerIndex.get(), auxiliaryImageVolumes));
+      containerIndex.incrementAndGet();
     }
     serverPod.put("initContainers", initContainers);
     auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, (Map<String, Object>)ai, auxiliaryImageVolumes));
@@ -274,8 +232,8 @@ public class DomainUpgradeUtils {
 
   private Map<String, String> getScriptsVolumeMount() {
     Map<String, String> volumeMount = new LinkedHashMap<>();
-    volumeMount.put("name", oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME);
-    volumeMount.put("mountPath", oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH);
+    volumeMount.put("name", CommonConstants.SCRIPTS_VOLUME);
+    volumeMount.put("mountPath", CommonConstants.SCRIPTS_MOUNTS_PATH);
     return volumeMount;
   }
 
@@ -284,7 +242,7 @@ public class DomainUpgradeUtils {
   }
 
   public static String getDNS1123auxiliaryImageVolumeName(Object name) {
-    return toDns1123LegalName(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
+    return CommonUtils.toDns1123LegalName(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
   }
 
   private void addVolumeMount(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
@@ -321,7 +279,7 @@ public class DomainUpgradeUtils {
 
   private Object getImagePullPolicy(Map<String, Object> auxiliaryImage) {
     return Optional.ofNullable(auxiliaryImage.get("imagePullPolicy")).orElse(
-            KubernetesUtils.getInferredImagePullPolicy((String) auxiliaryImage.get("image")));
+            CommonUtils.getInferredImagePullPolicy((String) auxiliaryImage.get("image")));
   }
 
   private List<Object> createEnv(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes, String name) {
@@ -348,59 +306,5 @@ public class DomainUpgradeUtils {
     envVar.put("name", name);
     envVar.put("value", value);
     vars.add(envVar);
-  }
-
-  @NotNull
-  Gson getGsonBuilder() {
-    return new GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            .create();
-  }
-
-  public Domain readDomain(String resourceName) throws IOException {
-    return readDomain(resourceName, false);
-  }
-
-  public Domain readDomain(String resourceName, boolean isFile) throws IOException {
-    String json = jsonFromYaml(resourceName, isFile);
-    return getGsonBuilder().fromJson(json, Domain.class);
-  }
-
-  private String jsonFromYaml(String resourceName, boolean isFile) throws IOException {
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    Object obj;
-    if (isFile) {
-      obj = yamlReader.readValue(new File(resourceName), Object.class);
-    } else {
-      obj = yamlReader.readValue(resourceName, Object.class);
-    }
-
-    ObjectMapper jsonWriter = new ObjectMapper();
-    return jsonWriter.writeValueAsString(obj);
-  }
-
-  public String writeDomain(Domain domain) throws IOException {
-    return writeDomain(domain, null, false);
-  }
-
-  public String writeDomain(Domain domain, String resourceName) throws IOException {
-    return writeDomain(domain, resourceName, true);
-  }
-
-  public String writeDomain(Domain domain, String resourceName, boolean toFile) throws IOException {
-    String jsonInString = getGsonBuilder().toJson(domain);
-    return jsonToYaml(resourceName, jsonInString, toFile);
-  }
-
-  private String jsonToYaml(String resourceName, String jsonString, boolean toFile) throws IOException {
-    String yamlStr;
-    JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
-    if (toFile) {
-      new YAMLMapper().writeValue(new File(resourceName),jsonNodeTree);
-      yamlStr = jsonNodeTree.asText();
-    } else {
-      yamlStr = new YAMLMapper().writeValueAsString(jsonNodeTree);
-    }
-    return yamlStr;
   }
 }

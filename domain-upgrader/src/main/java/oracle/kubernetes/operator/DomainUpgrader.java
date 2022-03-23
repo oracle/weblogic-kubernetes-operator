@@ -10,9 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
+import oracle.kubernetes.operator.logging.CommonLoggingFacade;
+import oracle.kubernetes.operator.logging.CommonLoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.SchemaConversionUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -22,18 +23,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FilenameUtils;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.INPUT_FILE_NON_EXISTENT;
-import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_DIRECTORY;
-import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NAME;
-import static oracle.kubernetes.operator.logging.MessageKeys.OUTPUT_FILE_NON_EXISTENT;
-import static oracle.kubernetes.operator.logging.MessageKeys.OVERWRITE_EXISTING_OUTPUT_FILE;
-import static oracle.kubernetes.operator.logging.MessageKeys.PRINT_HELP;
+public class DomainUpgrader {
 
-public class DomainCustomResourceConverter {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("DomainResourceConverter", "Operator");
-  private static final DomainUpgradeUtils domainUpgradeUtils = new DomainUpgradeUtils();
+  private static final CommonLoggingFacade LOGGER =
+          CommonLoggingFactory.getLogger("DomainUpgrader", "Operator");
+  private static SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
 
   String inputFileName;
   String outputDir;
@@ -46,30 +40,30 @@ public class DomainCustomResourceConverter {
    *
    */
   public static void main(String[] args) {
-    final DomainCustomResourceConverter converter = parseCommandLine(args);
+    final DomainUpgrader converter = parseCommandLine(args);
 
     File inputFile = new File(converter.inputFileName);
     File outputDir = new File(converter.outputDir);
     File outputFile = new File(converter.outputDir + "/" + converter.outputFileName);
 
     if (!inputFile.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(INPUT_FILE_NON_EXISTENT, converter.inputFileName));
+      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT, converter.inputFileName));
     }
 
     if (!outputDir.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_NON_EXISTENT, outputDir));
+      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NON_EXISTENT, outputDir));
     }
 
     if (outputFile.exists() && !converter.overwriteExistingFile) {
-      throw new RuntimeException(LOGGER.formatMessage(OUTPUT_FILE_EXISTS, outputFile.getName()));
+      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getName()));
     }
 
     convertDomain(converter);
   }
 
-  private static void convertDomain(DomainCustomResourceConverter converter) {
+  private static void convertDomain(DomainUpgrader converter) {
     try (Writer writer = Files.newBufferedWriter(Path.of(converter.outputDir + "/" + converter.outputFileName))) {
-      writer.write(domainUpgradeUtils.convertDomain(Files.readString(Path.of(converter.inputFileName))));
+      writer.write(schemaConversionUtils.convertDomainSchema(Files.readString(Path.of(converter.inputFileName))));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -79,9 +73,10 @@ public class DomainCustomResourceConverter {
    * Constructs an instances of Domain resource converter with given arguments.
    * @param outputDir Name of the output directory.
    * @param outputFileName Name of the output file.
+   * @param overwriteExistingFile Option to overwrite existing file.
    * @param inputFileName Name of the input file.
    */
-  public DomainCustomResourceConverter(
+  public DomainUpgrader(
           String outputDir,
           String outputFileName,
           Boolean overwriteExistingFile,
@@ -95,21 +90,21 @@ public class DomainCustomResourceConverter {
     this.overwriteExistingFile = overwriteExistingFile;
   }
 
-  private static DomainCustomResourceConverter parseCommandLine(String[] args) {
+  private static DomainUpgrader parseCommandLine(String[] args) {
     CommandLineParser parser = new DefaultParser();
     Options options = new Options();
 
-    Option helpOpt = new Option("h", "help", false, LOGGER.formatMessage(PRINT_HELP));
+    Option helpOpt = new Option("h", "help", false, LOGGER.formatMessage(MessageKeys.PRINT_HELP));
     options.addOption(helpOpt);
 
-    Option outputDir = new Option("d", "outputDir", true, LOGGER.formatMessage(OUTPUT_DIRECTORY));
+    Option outputDir = new Option("d", "outputDir", true, LOGGER.formatMessage(MessageKeys.OUTPUT_DIRECTORY));
     options.addOption(outputDir);
 
-    Option outputFile = new Option("f", "outputFile", true, LOGGER.formatMessage(OUTPUT_FILE_NAME));
+    Option outputFile = new Option("f", "outputFile", true, LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NAME));
     options.addOption(outputFile);
 
     Option overwriteExistingFile = new Option("o", "overwriteExistingFile", false,
-            LOGGER.formatMessage(OVERWRITE_EXISTING_OUTPUT_FILE));
+            LOGGER.formatMessage(MessageKeys.OVERWRITE_EXISTING_OUTPUT_FILE));
     options.addOption(overwriteExistingFile);
 
     try {
@@ -120,7 +115,7 @@ public class DomainCustomResourceConverter {
       if (cli.getArgs().length < 1) {
         printHelpAndExit(options);
       }
-      return new DomainCustomResourceConverter(cli.getOptionValue("d"), cli.getOptionValue("f"),
+      return new DomainUpgrader(cli.getOptionValue("d"), cli.getOptionValue("f"),
               cli.hasOption("o"), cli.getArgs()[0]);
     } catch (ParseException e) {
       throw new RuntimeException(e);
@@ -130,8 +125,7 @@ public class DomainCustomResourceConverter {
   private static void printHelpAndExit(Options options) {
     HelpFormatter help = new HelpFormatter();
     help.printHelp(120, "Converts V8 or earlier domain custom resource yaml to V9 or a future version."
-                    + "\n       java -cp <operator-jar> "
-                    + "oracle.kubernetes.operator.DomainCustomResourceConverter "
+                    + "\n       java -jar domain-upgrader.jar "
                     + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-o --overwriteExistingFile] "
                     + "[-h --help]",
             "", options, "");

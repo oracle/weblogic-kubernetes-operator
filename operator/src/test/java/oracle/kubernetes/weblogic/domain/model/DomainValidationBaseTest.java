@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +13,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+
+import static oracle.kubernetes.operator.utils.CommonUtils.getGsonBuilder;
 
 public class DomainValidationBaseTest {
 
@@ -69,5 +75,27 @@ public class DomainValidationBaseTest {
     boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {
       return Objects.equals(name, m.getName()) && Objects.equals(namespace, m.getNamespace());
     }
+  }
+
+  public static Domain readDomain(String resourceName) throws IOException {
+    return readDomain(resourceName, false);
+  }
+
+  public static Domain readDomain(String resourceName, boolean isFile) throws IOException {
+    String json = jsonFromYaml(resourceName, isFile);
+    return getGsonBuilder().fromJson(json, Domain.class);
+  }
+
+  private static String jsonFromYaml(String resourceName, boolean isFile) throws IOException {
+    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+    Object obj;
+    if (isFile) {
+      obj = yamlReader.readValue(new File(resourceName), Object.class);
+    } else {
+      obj = yamlReader.readValue(resourceName, Object.class);
+    }
+
+    ObjectMapper jsonWriter = new ObjectMapper();
+    return jsonWriter.writeValueAsString(obj);
   }
 }
