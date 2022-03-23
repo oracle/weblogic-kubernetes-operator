@@ -50,7 +50,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V3;
@@ -261,7 +260,7 @@ class ItMiiDomain {
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + " https://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -272,13 +271,14 @@ class ItMiiDomain {
 
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
+    hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     if (!WEBLOGIC_SLIM) {
       String curlCmd2 = "curl -s --show-error --noproxy '*' "
-          + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+          + " http://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default nodeport curl command {0}", curlCmd2);
       assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
