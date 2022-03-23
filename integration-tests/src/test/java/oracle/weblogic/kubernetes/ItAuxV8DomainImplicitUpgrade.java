@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -81,6 +82,7 @@ class ItAuxV8DomainImplicitUpgrade {
   private static String adminSecretName;
   private static String encryptionSecretName;
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
+  private boolean foundCompatiblityContainer = false;
 
   /**
    * Install Operator.
@@ -137,6 +139,8 @@ class ItAuxV8DomainImplicitUpgrade {
    * Here the webhook infra started in Operator namespace should implicitly 
    *  upgrade the domain resource to native k8s format with initContainer 
    *  configuration in ServerPod section and start the domain 
+   * Check the upgraded domain schema for a Compatiblity InitContainer in 
+   * Spec/ServerPod section of the domain resource
    */
   @Test
   @DisplayName("Test implicit upgrade of v8 version of Auxiliary Domain")
@@ -250,6 +254,22 @@ class ItAuxV8DomainImplicitUpgrade {
           managedServerPrefix + index,
           domainNamespace);
     }
+
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain, "Got null domain resource");
+    List<V1Container> containerList = domain.getSpec().getServerPod().getInitContainers();
+    assertNotNull(containerList, "/spec/serverPod/InitContainers is null");
+    containerList.forEach(container -> {
+      logger.info("The Init Container name is: {0} ", container.getName());  
+      if (container.getName().equalsIgnoreCase("compatibility-mode-operator-aux-container1")) {
+        logger.info("The Compatiblity Init Container found");  
+        foundCompatiblityContainer = true;
+      }
+    }
+    );
+    assertTrue(foundCompatiblityContainer, "The Compatiblity Init Container NOT found");  
     deleteDomainResource(domainNamespace, domainUid);
   }
 
