@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.logging;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,9 +15,6 @@ import java.util.logging.LogRecord;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.JSON;
-import io.swagger.annotations.ApiModel;
 
 /** Custom log formatter to format log messages in JSON format. */
 public abstract class BaseLoggingFormatter<T> extends Formatter {
@@ -59,49 +54,19 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
       sourceClassName = record.getLoggerName();
     }
 
-    // the toString() format for the model classes is inappropriate for our logs
-    // so, replace with the JSON serialization
-    JSON j = CommonLoggingFactory.getJson();
-    if (j != null) {
-      Object[] parameters = record.getParameters();
-      if (parameters != null) {
-        for (int i = 0; i < parameters.length; i++) {
-          Object pi = parameters[i];
-          if (pi != null) {
-            if (pi.getClass().getAnnotation(ApiModel.class) != null
-                || pi.getClass().getName().startsWith("oracle.kubernetes.weblogic.domain.")) {
-              // this is a model object
-              parameters[i] = j.serialize(pi);
-            }
-          }
-        }
-      }
-    }
+    serializeModelClassesWithJSON(record);
 
     final String message = formatMessage(record);
     String code = "";
     Map<String, List<String>> headers = PLACEHOLDER;
     String body = "";
     String throwable = "";
-    if (record.getThrown() != null) {
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      pw.println();
-      record.getThrown().printStackTrace(pw);
-      pw.close();
-      throwable = sw.toString();
-      if (record.getThrown() instanceof ApiException) {
-        ApiException ae = (ApiException) record.getThrown();
-        code = String.valueOf(ae.getCode());
-        if (ae.getResponseHeaders() != null) {
-          headers = ae.getResponseHeaders();
-        }
-        String rb = ae.getResponseBody();
-        if (rb != null) {
-          body = rb;
-        }
-      }
-    }
+    ThrowableProcessing throwableProcessing = new ThrowableProcessing(record, code, headers, body, throwable);
+    throwableProcessing.invoke();
+    code = throwableProcessing.getCode();
+    headers = throwableProcessing.getHeaders();
+    body = throwableProcessing.getBody();
+    throwable = throwableProcessing.getThrowable();
     String level = record.getLevel().getLocalizedName();
     Map<String, Object> map = new LinkedHashMap<>();
     long rawTime = record.getMillis();
@@ -145,6 +110,8 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     return json + "\n";
   }
 
+  abstract void serializeModelClassesWithJSON(LogRecord record);
+
   abstract T getCurrentFiberIfSet();
 
   abstract String getFiber();
@@ -153,4 +120,43 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   abstract String getDomainUid(T fiber);
 
+  abstract void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing);
+
+  class ThrowableProcessing {
+    LogRecord record;
+    String code;
+    Map<String, List<String>> headers;
+    String body;
+    String throwable;
+
+    public ThrowableProcessing(LogRecord record, String code, Map<String, List<String>> headers, String body,
+                               String throwable) {
+      this.record = record;
+      this.code = code;
+      this.headers = headers;
+      this.body = body;
+      this.throwable = throwable;
+    }
+
+    public String getCode() {
+      return code;
+    }
+
+    public Map<String, List<String>> getHeaders() {
+      return headers;
+    }
+
+    public String getBody() {
+      return body;
+    }
+
+    public String getThrowable() {
+      return throwable;
+    }
+
+    private void invoke() {
+      processThrowable(record, this);
+    }
+
+  }
 }

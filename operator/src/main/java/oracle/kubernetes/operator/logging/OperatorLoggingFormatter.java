@@ -3,8 +3,14 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
+import java.util.logging.LogRecord;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
+import io.swagger.annotations.ApiModel;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
@@ -77,5 +83,50 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
             .or(ThreadLoggingContext::optionalContext)
             .map(LoggingContext::namespace)
             .orElse("");
+  }
+
+  @Override
+  void serializeModelClassesWithJSON(LogRecord record) {
+    // the toString() format for the model classes is inappropriate for our logs
+    // so, replace with the JSON serialization
+    JSON j = LoggingFactory.getJson();
+    if (j != null) {
+      Object[] parameters = record.getParameters();
+      if (parameters != null) {
+        for (int i = 0; i < parameters.length; i++) {
+          Object pi = parameters[i];
+          if (pi != null) {
+            if (pi.getClass().getAnnotation(ApiModel.class) != null
+                    || pi.getClass().getName().startsWith("oracle.kubernetes.weblogic.domain.")) {
+              // this is a model object
+              parameters[i] = j.serialize(pi);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing) {
+    if (record.getThrown() != null) {
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      pw.println();
+      record.getThrown().printStackTrace(pw);
+      pw.close();
+      throwableProcessing.throwable = sw.toString();
+      if (record.getThrown() instanceof ApiException) {
+        ApiException ae = (ApiException) record.getThrown();
+        throwableProcessing.code = String.valueOf(ae.getCode());
+        if (ae.getResponseHeaders() != null) {
+          throwableProcessing.headers = ae.getResponseHeaders();
+        }
+        String rb = ae.getResponseBody();
+        if (rb != null) {
+          throwableProcessing.body = rb;
+        }
+      }
+    }
   }
 }

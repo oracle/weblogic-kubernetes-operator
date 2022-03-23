@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.util.logging.LogRecord;
+
 /** Common log formatter to format log messages in JSON format. */
 public class CommonLoggingFormatter extends BaseLoggingFormatter {
 
@@ -17,12 +19,20 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter {
   }
 
   @Override
-  protected String getDomainUid(Object fiber) {
+  String getDomainUid(Object fiber) {
     return null;
+  }
+
+  @Override
+  void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing) {
   }
 
   @Override
   String getNamespace(Object fiber) {
     return null;
+  }
+
+  @Override
+  void serializeModelClassesWithJSON(LogRecord record) {
   }
 }

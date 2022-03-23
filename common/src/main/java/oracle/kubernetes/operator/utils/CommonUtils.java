@@ -8,7 +8,6 @@ import java.time.OffsetDateTime;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.CommonConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.CommonConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
@@ -41,7 +40,6 @@ public class CommonUtils {
   /**
    * Returns the Gson builder with type adapter for OffsetDateTime.
    */
-  @NotNull
   public static Gson getGsonBuilder() {
     return new GsonBuilder()
             .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())

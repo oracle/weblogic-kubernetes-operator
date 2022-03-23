@@ -7,22 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.kubernetes.client.openapi.JSON;
-
 /** A factory to create Loggers. */
 public class CommonLoggingFactory {
 
   // map from resourceBundleName to facade
   private static final Map<String, CommonLoggingFacade> facade = new HashMap<>();
 
-  private static final JSON json = new JSON();
-
   private CommonLoggingFactory() {
     // hide implicit public constructor
-  }
-
-  public static JSON getJson() {
-    return json;
   }
 
   /**
