@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /** Centralized base logging for the operator and the domain upgrade tool. */
 public abstract class BaseLoggingFacade {
 
-  public static final String TRACE = "OWLS-KO-TRACE: ";
+  public static final String TRACE_PREFIX = "OWLS-KO-TRACE: ";
   protected static final String CLASS = BaseLoggingFacade.class.getName();
   private final Logger logger;
 
@@ -22,7 +22,7 @@ public abstract class BaseLoggingFacade {
    * Construct logging facade.
    * @param logger logger
    */
-  public BaseLoggingFacade(Logger logger) {
+  protected BaseLoggingFacade(Logger logger) {
     this.logger = logger;
 
     final Logger parentLogger = Logger.getAnonymousLogger().getParent();
@@ -579,7 +579,7 @@ public abstract class BaseLoggingFacade {
    * @param msg the message to log
    */
   public void trace(String msg) {
-    finer(TRACE + msg);
+    finer(TRACE_PREFIX + msg);
   }
 
   /**
@@ -589,7 +589,7 @@ public abstract class BaseLoggingFacade {
    * @param args parameters to the trace message
    */
   public void trace(String msg, Object... args) {
-    finer(TRACE + msg, args);
+    finer(TRACE_PREFIX + msg, args);
   }
 
   /**

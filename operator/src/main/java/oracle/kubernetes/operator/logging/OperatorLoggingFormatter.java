@@ -25,7 +25,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
 
   @Override
   String getFiber() {
-    return fiber != null ? fiber.toString() : "";
+    return fiberObject != null ? fiberObject.toString() : "";
   }
 
   /**
@@ -36,7 +36,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
    * @return the domain UID or empty string
    */
   @Override
-  protected String getDomainUid(Fiber fiber) {
+  String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
             .map(Fiber::getPacket)
             .map(this::getDomainPresenceInfo)
@@ -86,38 +86,40 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   }
 
   @Override
-  void serializeModelClassesWithJSON(LogRecord record) {
+  void serializeModelObjectsWithJSON(LogRecord logRecord) {
     // the toString() format for the model classes is inappropriate for our logs
     // so, replace with the JSON serialization
     JSON j = LoggingFactory.getJson();
     if (j != null) {
-      Object[] parameters = record.getParameters();
+      Object[] parameters = logRecord.getParameters();
       if (parameters != null) {
         for (int i = 0; i < parameters.length; i++) {
           Object pi = parameters[i];
-          if (pi != null) {
-            if (pi.getClass().getAnnotation(ApiModel.class) != null
-                    || pi.getClass().getName().startsWith("oracle.kubernetes.weblogic.domain.")) {
-              // this is a model object
-              parameters[i] = j.serialize(pi);
-            }
+          if ((pi != null) && (isModelObject(pi))) {
+            // this is a model object
+            parameters[i] = j.serialize(pi);
           }
         }
       }
     }
   }
 
+  private boolean isModelObject(Object pi) {
+    return pi.getClass().getAnnotation(ApiModel.class) != null
+            || pi.getClass().getName().startsWith("oracle.kubernetes.weblogic.domain.");
+  }
+
   @Override
-  void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing) {
-    if (record.getThrown() != null) {
+  void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
+    if (logRecord.getThrown() != null) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       pw.println();
-      record.getThrown().printStackTrace(pw);
+      logRecord.getThrown().printStackTrace(pw);
       pw.close();
       throwableProcessing.throwable = sw.toString();
-      if (record.getThrown() instanceof ApiException) {
-        ApiException ae = (ApiException) record.getThrown();
+      if (logRecord.getThrown() instanceof ApiException) {
+        ApiException ae = (ApiException) logRecord.getThrown();
         throwableProcessing.code = String.valueOf(ae.getCode());
         if (ae.getResponseHeaders() != null) {
           throwableProcessing.headers = ae.getResponseHeaders();

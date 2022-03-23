@@ -5,6 +5,10 @@ package oracle.kubernetes.operator.helpers;
 
 public class AuxiliaryImageEnvVars {
 
+  private AuxiliaryImageEnvVars() {
+    //not called
+  }
+
   /** The auxiliary image path. */
   public static final String AUXILIARY_IMAGE_PATH = "AUXILIARY_IMAGE_PATH";
 

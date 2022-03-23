@@ -9,6 +9,10 @@ import static oracle.kubernetes.operator.CommonConstants.LATEST_IMAGE_SUFFIX;
 
 public class CommonUtils {
 
+  private CommonUtils() {
+    //not called
+  }
+
   /**
    * Returns the image pull policy to use by default, for the specified image.
    * @param imageName the image name to test

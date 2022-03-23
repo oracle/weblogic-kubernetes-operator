@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,14 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 
-public class DomainValidationBaseTest {
+public class DomainValidationTestBase extends DomainTestUtils {
 
   protected static final String SECRET_NAME = "mysecret";
   protected static final String OVERRIDES_CM_NAME_IMAGE = "overrides-cm-image";
@@ -79,31 +71,4 @@ public class DomainValidationBaseTest {
     }
   }
 
-  public Domain readDomain(String resourceName) throws IOException {
-    return readDomain(resourceName, false);
-  }
-
-  public Domain readDomain(String resourceName, boolean isFile) throws IOException {
-    String json = jsonFromYaml(resourceName, isFile);
-    return getGsonBuilder().fromJson(json, Domain.class);
-  }
-
-  private String jsonFromYaml(String resourceName, boolean isFile) throws IOException {
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    Object obj;
-    if (isFile) {
-      obj = yamlReader.readValue(new File(resourceName), Object.class);
-    } else {
-      obj = yamlReader.readValue(resourceName, Object.class);
-    }
-
-    ObjectMapper jsonWriter = new ObjectMapper();
-    return jsonWriter.writeValueAsString(obj);
-  }
-
-  private Gson getGsonBuilder() {
-    return new GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            .create();
-  }
 }

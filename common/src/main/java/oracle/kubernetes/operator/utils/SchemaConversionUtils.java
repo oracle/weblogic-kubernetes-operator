@@ -34,6 +34,10 @@ import static oracle.kubernetes.operator.CommonConstants.COMPATIBILITY_MODE;
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
 public class SchemaConversionUtils {
   private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
+  public static final String VOLUME_MOUNTS = "volumeMounts";
+  public static final String VOLUME = "volume";
+  public static final String MOUNT_PATH = "mountPath";
+  public static final String IMAGE = "image";
 
   private AtomicInteger containerIndex = new AtomicInteger(0);
 
@@ -87,7 +91,7 @@ public class SchemaConversionUtils {
     Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
             .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
     if ((adminChannelPortForwardingEnabled == null) && (API_VERSION_V8.equals(apiVersion))) {
-      Optional.ofNullable(adminServerSpec).map(as -> as.put("adminChannelPortForwardingEnabled", false));
+      Optional.ofNullable(adminServerSpec).ifPresent(as -> as.put("adminChannelPortForwardingEnabled", false));
     }
   }
 
@@ -110,7 +114,7 @@ public class SchemaConversionUtils {
   }
 
   private boolean hasType(Map<String, Object> condition) {
-    return Optional.ofNullable(condition.get("type")).map(type -> "Progressing".equals(type)).orElse(false);
+    return Optional.ofNullable(condition.get("type")).map("Progressing"::equals).orElse(false);
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
@@ -131,7 +135,7 @@ public class SchemaConversionUtils {
 
   private void convertAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes) {
     Map<String, Object> serverPod = getServerPod(spec);
-    Optional.ofNullable(serverPod).map(sp -> getAuxiliaryImages(sp)).ifPresent(auxiliaryImages ->
+    Optional.ofNullable(serverPod).map(this::getAuxiliaryImages).ifPresent(auxiliaryImages ->
             addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes));
     Optional.ofNullable(serverPod).ifPresent(cs -> cs.remove("auxiliaryImages"));
   }
@@ -217,28 +221,28 @@ public class SchemaConversionUtils {
 
   private void addVolumeMountIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
                                        String mountPath) {
-    if (Optional.ofNullable(serverPod.get("volumeMounts")).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
+    if (Optional.ofNullable(serverPod.get(VOLUME_MOUNTS)).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
           volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
-      serverPod.put("volumeMounts", Collections.singletonList(getVolumeMount(auxiliaryImage, mountPath)));
+      serverPod.put(VOLUME_MOUNTS, Collections.singletonList(getVolumeMount(auxiliaryImage, mountPath)));
     }
   }
 
   private Object getVolumeMount(Map auxiliaryImage, String mountPath) {
     Map<String, String> volumeMount = new LinkedHashMap<>();
-    volumeMount.put("name", getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get("volume")));
-    volumeMount.put("mountPath", mountPath);
+    volumeMount.put("name", getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get(VOLUME)));
+    volumeMount.put(MOUNT_PATH, mountPath);
     return volumeMount;
   }
 
   private Map<String, String> getScriptsVolumeMount() {
     Map<String, String> volumeMount = new LinkedHashMap<>();
     volumeMount.put("name", CommonConstants.SCRIPTS_VOLUME);
-    volumeMount.put("mountPath", CommonConstants.SCRIPTS_MOUNTS_PATH);
+    volumeMount.put(MOUNT_PATH, CommonConstants.SCRIPTS_MOUNTS_PATH);
     return volumeMount;
   }
 
   private boolean hasMatchingVolumeMountName(Object volumeMount, Map<String, Object> auxiliaryImage) {
-    return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get("volume")).equals(((Map)volumeMount).get("name"));
+    return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get(VOLUME)).equals(((Map)volumeMount).get("name"));
   }
 
   public static String getDNS1123auxiliaryImageVolumeName(Object name) {
@@ -256,11 +260,11 @@ public class SchemaConversionUtils {
   private String getMountPath(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes) {
     return auxiliaryImageVolumes.stream().filter(
           auxiliaryImageVolume -> hasMatchingVolumeName((Map)auxiliaryImageVolume, auxiliaryImage)).findFirst()
-          .map(aiv -> (String)((Map<String, Object>) aiv).get("mountPath")).orElse(null);
+          .map(aiv -> (String)((Map<String, Object>) aiv).get(MOUNT_PATH)).orElse(null);
   }
 
   private boolean hasMatchingVolumeName(Map<String, Object> auxiliaryImageVolume, Map<String, Object> auxiliaryImage) {
-    return Optional.ofNullable(auxiliaryImage.get("volume"))
+    return Optional.ofNullable(auxiliaryImage.get(VOLUME))
             .map(v -> v.equals(auxiliaryImageVolume.get("name"))).orElse(false);
   }
 
@@ -268,18 +272,18 @@ public class SchemaConversionUtils {
                                                    List<Object> auxiliaryImageVolumes) {
     Map<String, Object> container = new LinkedHashMap<>();
     container.put("name", COMPATIBILITY_MODE + getName(index));
-    container.put("image", auxiliaryImage.get("image"));
+    container.put(IMAGE, auxiliaryImage.get(IMAGE));
     container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
     container.put("imagePullPolicy", getImagePullPolicy(auxiliaryImage));
     container.put("env", createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)));
-    container.put("volumeMounts", Arrays.asList(getVolumeMount(auxiliaryImage, AUXILIARY_IMAGE_TARGET_PATH),
+    container.put(VOLUME_MOUNTS, Arrays.asList(getVolumeMount(auxiliaryImage, AUXILIARY_IMAGE_TARGET_PATH),
             getScriptsVolumeMount()));
     return container;
   }
 
   private Object getImagePullPolicy(Map<String, Object> auxiliaryImage) {
     return Optional.ofNullable(auxiliaryImage.get("imagePullPolicy")).orElse(
-            CommonUtils.getInferredImagePullPolicy((String) auxiliaryImage.get("image")));
+            CommonUtils.getInferredImagePullPolicy((String) auxiliaryImage.get(IMAGE)));
   }
 
   private List<Object> createEnv(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes, String name) {
@@ -287,7 +291,7 @@ public class SchemaConversionUtils {
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, getMountPath(auxiliaryImage, auxiliaryImageVolumes));
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, getCommand(auxiliaryImage));
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, (String)auxiliaryImage.get("image"));
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, (String)auxiliaryImage.get(IMAGE));
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name);
     return vars;
   }

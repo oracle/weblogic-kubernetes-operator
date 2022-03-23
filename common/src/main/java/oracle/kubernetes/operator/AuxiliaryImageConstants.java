@@ -3,7 +3,12 @@
 
 package oracle.kubernetes.operator;
 
-public class AuxiliaryImageConstants {
+public final class AuxiliaryImageConstants {
+
+  private AuxiliaryImageConstants() {
+    //not called
+  }
+
   public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";
   public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "aux-image-volume-";
   public static final String AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/auxImage.sh";

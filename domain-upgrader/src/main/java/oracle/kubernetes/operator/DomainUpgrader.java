@@ -32,7 +32,7 @@ public class DomainUpgrader {
   String inputFileName;
   String outputDir;
   String outputFileName;
-  Boolean overwriteExistingFile;
+  boolean overwriteExistingFile;
 
   /**
    * Entry point of the DomainResourceConverter.
@@ -44,19 +44,19 @@ public class DomainUpgrader {
 
     File inputFile = new File(domainUpgrader.inputFileName);
     File outputDir = new File(domainUpgrader.outputDir);
-    File outputFile = new File(domainUpgrader.outputDir + "/" + domainUpgrader.outputFileName);
+    File outputFile = new File(domainUpgrader.outputDir + File.separator + domainUpgrader.outputFileName);
 
     if (!inputFile.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT,
+      throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.INPUT_FILE_NON_EXISTENT,
               domainUpgrader.inputFileName));
     }
 
     if (!outputDir.exists()) {
-      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NON_EXISTENT, outputDir));
+      throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_NON_EXISTENT, outputDir));
     }
 
     if (outputFile.exists() && !domainUpgrader.overwriteExistingFile) {
-      throw new RuntimeException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getName()));
+      throw new DomainUpgraderException(LOGGER.formatMessage(MessageKeys.OUTPUT_FILE_EXISTS, outputFile.getName()));
     }
 
     convertDomain(domainUpgrader);
@@ -66,7 +66,7 @@ public class DomainUpgrader {
     try (Writer writer = Files.newBufferedWriter(Path.of(upgrader.outputDir + "/" + upgrader.outputFileName))) {
       writer.write(schemaConversionUtils.convertDomainSchema(Files.readString(Path.of(upgrader.inputFileName))));
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new DomainUpgraderException(e);
     }
   }
 
@@ -80,7 +80,7 @@ public class DomainUpgrader {
   public DomainUpgrader(
           String outputDir,
           String outputFileName,
-          Boolean overwriteExistingFile,
+          boolean overwriteExistingFile,
           String inputFileName) {
     this.outputDir = Optional.ofNullable(outputDir).orElse(new File(inputFileName).getParent());
     String inputFileNameBase = FilenameUtils.getBaseName(inputFileName);
@@ -119,7 +119,7 @@ public class DomainUpgrader {
       return new DomainUpgrader(cli.getOptionValue("d"), cli.getOptionValue("f"),
               cli.hasOption("o"), cli.getArgs()[0]);
     } catch (ParseException e) {
-      throw new RuntimeException(e);
+      throw new DomainUpgraderException(e);
     }
   }
 
@@ -131,5 +131,16 @@ public class DomainUpgrader {
                     + "[-h --help]",
             "", options, "");
     System.exit(1);
+  }
+
+  private static class DomainUpgraderException extends RuntimeException {
+
+    public DomainUpgraderException(String message) {
+      super(message);
+    }
+
+    public DomainUpgraderException(Exception e) {
+      super(e);
+    }
   }
 }

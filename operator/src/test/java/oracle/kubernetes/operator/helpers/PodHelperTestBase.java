@@ -86,7 +86,7 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.junit.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
@@ -179,7 +179,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
-public abstract class PodHelperTestBase extends DomainValidationBaseTest {
+public abstract class PodHelperTestBase extends DomainValidationTestBase {
   public static final String EXPORTER_IMAGE = "monexp:latest";
   public static final String CUSTOM_WDT_INSTALL_SOURCE_HOME = "/myaux/weblogic-deploy";
   public static final String CUSTOM_MODEL_SOURCE_HOME = "/myaux/models";

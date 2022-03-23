@@ -62,7 +62,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
+import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -128,7 +128,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
-class DomainIntrospectorJobTest extends DomainValidationBaseTest {
+class DomainIntrospectorJobTest extends DomainTestUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";

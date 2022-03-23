@@ -58,11 +58,11 @@ public class ConversionWebhookResource extends BaseResource {
     try {
       conversionReview = readConversionReview(body);
       conversionResponse = createConversionResponse(conversionReview.getRequest());
-    } catch (Throwable t) {
+    } catch (Exception e) {
       conversionResponse = new ConversionResponse()
               .uid(getUid(conversionReview))
               .result(new Result().status(FAILED_STATUS)
-                      .message("Exception: " + t.getMessage()));
+                      .message("Exception: " + e.getMessage()));
     }
     LOGGER.exiting(conversionResponse);
     return writeConversionReview(new ConversionReviewModel()

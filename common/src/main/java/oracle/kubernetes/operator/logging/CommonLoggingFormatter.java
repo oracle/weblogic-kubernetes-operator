@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.logging;
 import java.util.logging.LogRecord;
 
 /** Common log formatter to format log messages in JSON format. */
-public class CommonLoggingFormatter extends BaseLoggingFormatter {
+public class CommonLoggingFormatter extends BaseLoggingFormatter<Object> {
 
   @Override
   Object getCurrentFiberIfSet() {
@@ -24,7 +24,8 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter {
   }
 
   @Override
-  void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing) {
+  void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
+    // no op
   }
 
   @Override
@@ -33,6 +34,7 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter {
   }
 
   @Override
-  void serializeModelClassesWithJSON(LogRecord record) {
+  void serializeModelObjectsWithJSON(LogRecord logRecord) {
+    // no op
   }
 }

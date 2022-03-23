@@ -84,10 +84,6 @@ public class AuxiliaryImage {
             .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
   }
 
-  public void setSourceWDTInstallHome() {
-    this.sourceWDTInstallHome = sourceWDTInstallHome;
-  }
-
   public AuxiliaryImage sourceWDTInstallHome(String sourceWDTInstallHome) {
     this.sourceWDTInstallHome = sourceWDTInstallHome;
     return this;

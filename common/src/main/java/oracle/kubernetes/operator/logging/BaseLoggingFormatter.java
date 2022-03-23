@@ -39,57 +39,58 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-  T fiber = null;
+  T fiberObject = null;
 
   @Override
-  public String format(LogRecord record) {
+  public String format(LogRecord logRecord) {
     String sourceClassName = "";
     String sourceMethodName = "";
-    if (record.getSourceClassName() != null) {
-      sourceClassName = record.getSourceClassName();
-      if (record.getSourceMethodName() != null) {
-        sourceMethodName = record.getSourceMethodName();
+    if (logRecord.getSourceClassName() != null) {
+      sourceClassName = logRecord.getSourceClassName();
+      if (logRecord.getSourceMethodName() != null) {
+        sourceMethodName = logRecord.getSourceMethodName();
       }
     } else {
-      sourceClassName = record.getLoggerName();
+      sourceClassName = logRecord.getLoggerName();
     }
 
-    serializeModelClassesWithJSON(record);
+    serializeModelObjectsWithJSON(logRecord);
 
-    final String message = formatMessage(record);
+    final String message = formatMessage(logRecord);
     String code = "";
     Map<String, List<String>> headers = PLACEHOLDER;
     String body = "";
     String throwable = "";
-    ThrowableProcessing throwableProcessing = new ThrowableProcessing(record, code, headers, body, throwable);
+    ThrowableProcessing throwableProcessing = new ThrowableProcessing(logRecord, code, headers, body, throwable);
     throwableProcessing.invoke();
     code = throwableProcessing.getCode();
     headers = throwableProcessing.getHeaders();
     body = throwableProcessing.getBody();
     throwable = throwableProcessing.getThrowable();
-    String level = record.getLevel().getLocalizedName();
+    String level = logRecord.getLevel().getLocalizedName();
     Map<String, Object> map = new LinkedHashMap<>();
-    long rawTime = record.getMillis();
-    final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()));
+    long rawTime = logRecord.getMillis();
+    final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(logRecord.getInstant(),
+            ZoneId.systemDefault()));
     long thread = Thread.currentThread().getId();
-    fiber = getCurrentFiberIfSet();
+    fiberObject = getCurrentFiberIfSet();
 
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
     map.put(FIBER, getFiber());
-    map.put(DOMAIN_NAMESPACE, getNamespace(fiber));
-    map.put(DOMAIN_UID, getDomainUid(fiber));
+    map.put(DOMAIN_NAMESPACE, getNamespace(fiberObject));
+    map.put(DOMAIN_UID, getDomainUid(fiberObject));
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
     map.put(TIME_IN_MILLIS, rawTime);
     // if message or throwable have new lines in them, we need to replace with JSON newline control
     // character \n
-    map.put(MESSAGE, message != null ? message.replaceAll("\n", "\\\n") : "");
-    map.put(EXCEPTION, throwable.replaceAll("\n", "\\\n"));
+    map.put(MESSAGE, message != null ? message.replace("\n", "\\\n") : "");
+    map.put(EXCEPTION, throwable.replace("\n", "\\\n"));
     map.put(RESPONSE_CODE, code);
     map.put(RESPONSE_HEADERS, headers);
-    map.put(RESPONSE_BODY, body.replaceAll("\n", "\\\n"));
+    map.put(RESPONSE_BODY, body.replace("\n", "\\\n"));
     String json = "";
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -110,7 +111,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     return json + "\n";
   }
 
-  abstract void serializeModelClassesWithJSON(LogRecord record);
+  abstract void serializeModelObjectsWithJSON(LogRecord logRecord);
 
   abstract T getCurrentFiberIfSet();
 
@@ -120,42 +121,42 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   abstract String getDomainUid(T fiber);
 
-  abstract void processThrowable(LogRecord record, ThrowableProcessing throwableProcessing);
+  abstract void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing);
 
   class ThrowableProcessing {
-    LogRecord record;
+    LogRecord logRecord;
     String code;
     Map<String, List<String>> headers;
     String body;
     String throwable;
 
-    public ThrowableProcessing(LogRecord record, String code, Map<String, List<String>> headers, String body,
+    private ThrowableProcessing(LogRecord logRecord, String code, Map<String, List<String>> headers, String body,
                                String throwable) {
-      this.record = record;
+      this.logRecord = logRecord;
       this.code = code;
       this.headers = headers;
       this.body = body;
       this.throwable = throwable;
     }
 
-    public String getCode() {
+    private String getCode() {
       return code;
     }
 
-    public Map<String, List<String>> getHeaders() {
+    private Map<String, List<String>> getHeaders() {
       return headers;
     }
 
-    public String getBody() {
+    private String getBody() {
       return body;
     }
 
-    public String getThrowable() {
+    private String getThrowable() {
       return throwable;
     }
 
     private void invoke() {
-      processThrowable(record, this);
+      processThrowable(logRecord, this);
     }
 
   }

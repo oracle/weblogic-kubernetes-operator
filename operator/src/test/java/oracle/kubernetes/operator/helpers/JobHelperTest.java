@@ -51,7 +51,7 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
@@ -109,7 +109,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class JobHelperTest extends DomainValidationBaseTest {
+class JobHelperTest extends DomainValidationTestBase {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   protected static final String LONG_RESOURCE_NAME

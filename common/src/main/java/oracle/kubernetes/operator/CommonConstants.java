@@ -3,18 +3,21 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.ImagePullPolicy;
-
 public class CommonConstants {
-  public static String COMPATIBILITY_MODE = "compatibility-mode-";
+
+  private CommonConstants() {
+    //not called
+  }
+
+  public static final String COMPATIBILITY_MODE = "compatibility-mode-";
   public static final String API_VERSION_V9 = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
 
-  public static String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
-  public static String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
+  public static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
+  public static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
 
-  public static String LATEST_IMAGE_SUFFIX = ":latest";
-  public static String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
-  public static String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
+  public static final String LATEST_IMAGE_SUFFIX = ":latest";
+  public static final String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
+  public static final String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
 
 }
