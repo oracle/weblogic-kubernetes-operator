@@ -16,9 +16,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.CommonConstants;
+import oracle.kubernetes.operator.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.logging.BaseLoggingFacade;
 import oracle.kubernetes.operator.logging.CommonLoggingFactory;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 

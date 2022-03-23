@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.JSON;
 
-
 /** A factory to create Loggers. */
 public class LoggingFactory {
 

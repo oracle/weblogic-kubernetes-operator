@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.util.logging.Formatter;
 import java.util.logging.Logger;
 
 /** Centralized logging for the operator. */
@@ -18,7 +19,7 @@ public class CommonLoggingFacade extends BaseLoggingFacade {
   }
 
   @Override
-  LoggingFormatter getLoggingFormatter() {
+  Formatter getLoggingFormatter() {
     return new CommonLoggingFormatter();
   }
 }

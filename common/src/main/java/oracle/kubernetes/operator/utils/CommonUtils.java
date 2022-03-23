@@ -7,7 +7,7 @@ import java.time.OffsetDateTime;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import oracle.kubernetes.operator.GsonOffsetDateTime;
+import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.CommonConstants.ALWAYS_IMAGEPULLPOLICY;

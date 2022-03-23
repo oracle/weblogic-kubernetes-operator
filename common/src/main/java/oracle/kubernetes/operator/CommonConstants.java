@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.ImagePullPolicy;
+
 public class CommonConstants {
   public static String COMPATIBILITY_MODE = "compatibility-mode-";
   public static final String API_VERSION_V9 = "weblogic.oracle/v9";

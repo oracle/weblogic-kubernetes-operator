@@ -10,7 +10,7 @@ import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 
 /** Custom log formatter to format log messages in JSON format. */
-public class OperatorLoggingFormatter extends LoggingFormatter<Fiber> {
+public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
 
   @Override
   Fiber getCurrentFiberIfSet() {

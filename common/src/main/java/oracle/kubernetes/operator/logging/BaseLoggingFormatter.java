@@ -22,7 +22,7 @@ import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
 
 /** Custom log formatter to format log messages in JSON format. */
-public abstract class LoggingFormatter<T> extends Formatter {
+public abstract class BaseLoggingFormatter<T> extends Formatter {
   private static final Map<String, List<String>> PLACEHOLDER = new HashMap<>();
 
   private static final String LOG_LEVEL = "level";
@@ -138,7 +138,7 @@ public abstract class LoggingFormatter<T> extends Formatter {
           tmp,
           dateString,
           level,
-          LoggingFormatter.class.getName(),
+          BaseLoggingFormatter.class.getName(),
           rawTime,
           e.getLocalizedMessage());
     }
