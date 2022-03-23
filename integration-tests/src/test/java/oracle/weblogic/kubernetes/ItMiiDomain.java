@@ -41,6 +41,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -62,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -78,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -86,11 +89,15 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -98,6 +105,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -155,14 +163,14 @@ class ItMiiDomain {
   }
 
   /**
-   * Create a WebLogic domain with SSL enabled in WebLogic configuration by 
+   * Create a WebLogic domain with SSL enabled in WebLogic configuration by
    * configuring an additional configmap to the domain resource.
    * Add two channels to the domain resource with name `default-secure` and `default`.
-   * Make sure the pre-packaged application in domain image gets deployed to 
-   * the cluster and accessible from all the managed server pods 
+   * Make sure the pre-packaged application in domain image gets deployed to
+   * the cluster and accessible from all the managed server pods
    * Make sure two external NodePort services are created in domain namespace.
-   * Make sure WebLogic console is accessible through both 
-   *   `default-secure` service and `default` service.  
+   * Make sure WebLogic console is accessible through both
+   *   `default-secure` service and `default` service.
    */
   @Test
   @Order(1)
@@ -182,7 +190,7 @@ class ItMiiDomain {
     String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    
+
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
@@ -197,7 +205,7 @@ class ItMiiDomain {
         + "         Enabled: true \n"
         + "         ListenPort: '7008' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
-     
+
     // create the domain object
     Domain domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
@@ -220,6 +228,14 @@ class ItMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+
+    // Need to expose the admin server external service to access the console in OKD cluster only
+    // We will create one route for sslport and another for default port
+    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
+                    domainNamespace, "domain1-admin-server-sslport-ext");
+    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
+    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+
     // check and wait for the application to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -229,14 +245,20 @@ class ItMiiDomain {
           "sample-war/index.jsp",
           MII_APP_RESPONSE_V1 + i);
     }
- 
+
     logger.info("All the servers in Domain {0} are running and application is available", domainUid);
 
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
-    assertTrue(sslNodePort != -1,
+    // In OKD cluster, we need to set the target port of the route to be the ssl port
+    // By default, when a service is exposed as a route, the endpoint is set to the default port.
+    int sslPort = getServicePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
+    assertNotEquals(-1, sslNodePort,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
           + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
@@ -247,7 +269,7 @@ class ItMiiDomain {
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-    
+
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
@@ -271,6 +293,7 @@ class ItMiiDomain {
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";
@@ -325,18 +348,18 @@ class ItMiiDomain {
   @Order(3)
   @DisplayName("Update the sample-app application to version 2")
   void testPatchAppV2() {
-    
-    // application in the new image contains what is in the original application directory sample-app, 
+
+    // application in the new image contains what is in the original application directory sample-app,
     // plus the replacements or/and additions in the second application directory sample-app-2.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
-    
+
     Thread accountingThread = null;
     List<Integer> appAvailability = new ArrayList<Integer>();
-    
+
     logger.info("Start a thread to keep track of the application's availability");
     // start a new thread to collect the availability data of the application while the
     // main thread performs patching operation, and checking of the results.
@@ -352,7 +375,7 @@ class ItMiiDomain {
                   "sample-war/index.jsp");
             });
     accountingThread.start();
-   
+
     try {
       logger.info("Check that V1 application is still running");
       for (int i = 1; i <= replicaCount; i++) {
@@ -363,7 +386,7 @@ class ItMiiDomain {
             "sample-war/index.jsp",
             MII_APP_RESPONSE_V1 + i);
       }
- 
+
       logger.info("Check that the version 2 application is NOT running");
       for (int i = 1; i <= replicaCount; i++) {
         quickCheckAppNotRunning(
@@ -371,9 +394,9 @@ class ItMiiDomain {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            MII_APP_RESPONSE_V2 + i);   
+            MII_APP_RESPONSE_V2 + i);
       }
- 
+
       logger.info("Create a new image with application V2");
       miiImagePatchAppV2 = updateImageWithAppV2Patch(
           String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-patch-app-v2"),
@@ -382,7 +405,7 @@ class ItMiiDomain {
       // push the image to a registry to make the test work in multi node cluster
       pushImageIfNeeded(miiImagePatchAppV2);
 
-      // patch the domain resource with the new image and verify that the domain resource is patched, 
+      // patch the domain resource with the new image and verify that the domain resource is patched,
       // and all server pods are patched as well.
       logger.info("Patch domain resource with image {0}, and verify the results", miiImagePatchAppV2);
       patchAndVerify(
@@ -401,7 +424,7 @@ class ItMiiDomain {
             "8001",
             "sample-war/index.jsp",
             MII_APP_RESPONSE_V2 + i);
-      } 
+      }
     } finally {
       mainThreadDone = true;
       if (accountingThread != null) {
@@ -414,13 +437,13 @@ class ItMiiDomain {
         // check the application availability data that we have collected, and see if
         // the application has been available all the time since the beginning of this test method
         logger.info("Verify that V2 application was available when domain {0} was being patched with image {1}",
-            domainUid, miiImagePatchAppV2); 
+            domainUid, miiImagePatchAppV2);
         assertTrue(appAlwaysAvailable(appAvailability),
             String.format("Application V2 was not always available when domain %s was being patched with image %s",
                 domainUid, miiImagePatchAppV2));
       }
     }
-    
+
     logger.info("The version 2 application has been deployed correctly on all server pods");
   }
 
@@ -428,7 +451,7 @@ class ItMiiDomain {
   @Order(4)
   @DisplayName("Update the domain with another application")
   void testAddSecondApp() {
-    
+
     // the existing application is the combination of what are in appDir1 and appDir2 as in test case number 4,
     // the second application is in appDir3.
     final String appDir1 = "sample-app";
@@ -457,20 +480,20 @@ class ItMiiDomain {
           "sample-war-3/index.jsp",
           MII_APP_RESPONSE_V3 + i);
     }
-   
+
     logger.info("Create a new image that contains the additional application");
     miiImageAddSecondApp = updateImageWithSampleApp3(
         String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         MII_TWO_APP_WDT_MODEL_FILE);
-    
+
     // push the image to a registry to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
-   
-    // patch the domain resource with the new image and verify that the domain resource is patched, 
+
+    // patch the domain resource with the new image and verify that the domain resource is patched,
     // and all server pods are patched as well.
-    logger.info("Patch the domain with image {0}, and verify the results", miiImageAddSecondApp); 
+    logger.info("Patch the domain with image {0}, and verify the results", miiImageAddSecondApp);
     patchAndVerify(
         domainUid,
         domainNamespace,
@@ -478,7 +501,7 @@ class ItMiiDomain {
         managedServerPrefix,
         replicaCount,
         miiImageAddSecondApp);
-    
+
     logger.info("Check and wait for the new application to become ready");
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -488,7 +511,7 @@ class ItMiiDomain {
           "sample-war-3/index.jsp",
           MII_APP_RESPONSE_V3 + i);
     }
- 
+
     logger.info("Check and wait for the original application V2 to become ready");
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -543,7 +566,7 @@ class ItMiiDomain {
       assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
     }
 
-    // push image 
+    // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry", image);
       assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
@@ -562,9 +585,9 @@ class ItMiiDomain {
       List<String> appDirList
   ) {
     logger.info("Build the model file list that contains {0}", MII_BASIC_WDT_MODEL_FILE);
-    List<String> modelList = 
+    List<String> modelList =
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, MII_BASIC_WDT_MODEL_FILE));
-   
+
     logger.info("Build an application archive using what is in {0}", appDirList);
     assertTrue(
         buildAppArchive(
@@ -575,10 +598,10 @@ class ItMiiDomain {
 
     logger.info("Build the archive list that contains {0}",
         String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
-    List<String> archiveList = 
+    List<String> archiveList =
         Collections.singletonList(
             String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
-    
+
     return createImageAndVerify(
       imageName,
       createUniqueImageTag(),
@@ -594,10 +617,10 @@ class ItMiiDomain {
   ) {
     logger.info("Build the model file list that contains {0}", modelFile);
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
- 
+
     String appName1 = appDirList1.get(0);
     String appName2 = appDirList2.get(0);
-    
+
     logger.info("Build the first application archive using what is in {0}", appDirList1);
     assertTrue(
         buildAppArchive(
@@ -606,7 +629,7 @@ class ItMiiDomain {
                 .appName(appName1)),
         String.format("Failed to create application archive for %s",
             appName1));
-    
+
     logger.info("Build the second application archive usingt what is in {0}", appDirList2);
     assertTrue(
         buildAppArchive(
@@ -615,14 +638,14 @@ class ItMiiDomain {
                 .appName(appName2)),
         String.format("Failed to create application archive for %s",
             appName2));
-    
+
     logger.info("Build the archive list with two zip files: {0} and {1}",
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     List<String> archiveList = Arrays.asList(
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
-    
+
     return createImageAndVerify(
       imageName,
       createUniqueImageTag(),
@@ -636,7 +659,7 @@ class ItMiiDomain {
    * [
    *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
    * ]
-   * 
+   *
    * @param domainResourceName name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
    * @param image name of the new image
@@ -646,7 +669,7 @@ class ItMiiDomain {
       String namespace,
       String image
   ) {
-    String patch = 
+    String patch =
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
             image);
     logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
@@ -681,7 +704,9 @@ class ItMiiDomain {
     if (witJavaHome != null) {
       env.put("JAVA_HOME", witJavaHome);
     }
- 
+
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
+
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);
@@ -693,6 +718,7 @@ class ItMiiDomain {
             .modelArchiveFiles(archiveList)
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 
@@ -759,9 +785,9 @@ class ItMiiDomain {
   }
 
   // Create a domain resource with a custom ConfigMap
-  private Domain createDomainResourceWithConfigMap(String domainUid, 
+  private Domain createDomainResourceWithConfigMap(String domainUid,
           String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName, 
+          String repoSecretName, String encryptionSecretName,
           int replicaCount, String miiImage, String configmapName) {
 
     Map keyValueMap = new HashMap<String, String>();
@@ -831,7 +857,7 @@ class ItMiiDomain {
         domainUid, namespace, image);
 
     patchDomainResourceImage(domainUid, namespace, image);
-    
+
     logger.info(
         "Check that domain resource {0} in namespace {1} has been patched with image {2}",
         domainUid, namespace, image);
@@ -868,11 +894,11 @@ class ItMiiDomain {
       String appPath,
       String expectedStr
   ) {
-   
+
     // check if the application is accessible inside of a server pod using standard retry policy
     checkAppIsRunning(withStandardRetryPolicy, namespace, podName, internalPort, appPath, expectedStr);
   }
-  
+
   private void quickCheckAppRunning(
       String namespace,
       String podName,
@@ -892,7 +918,7 @@ class ItMiiDomain {
       String appPath,
       String expectedStr
   ) {
-   
+
     // check if the application is accessible inside of a server pod
     conditionFactory
         .conditionEvaluationListener(
@@ -905,13 +931,13 @@ class ItMiiDomain {
             condition.getRemainingTimeInMS()))
         .until(() -> appAccessibleInPod(
                 namespace,
-                podName, 
-                internalPort, 
-                appPath, 
+                podName,
+                internalPort,
+                appPath,
                 expectedStr));
 
   }
-  
+
   private void quickCheckAppNotRunning(
       String namespace,
       String podName,
@@ -919,7 +945,7 @@ class ItMiiDomain {
       String appPath,
       String expectedStr
   ) {
-   
+
     // check that the application is NOT running inside of a server pod
     withQuickRetryPolicy
         .conditionEvaluationListener(
@@ -931,19 +957,19 @@ class ItMiiDomain {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appNotAccessibleInPod(
-                namespace, 
+                namespace,
                 podName,
-                internalPort, 
-                appPath, 
+                internalPort,
+                appPath,
                 expectedStr));
   }
-   
+
   private void checkDomainPatched(
       String domainUid,
       String namespace,
-      String image 
+      String image
   ) {
-   
+
     // check if the domain resource has been patched with the given image
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -958,14 +984,14 @@ class ItMiiDomain {
                "Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)));
 
   }
-  
+
   private void checkPodImagePatched(
       String domainUid,
       String namespace,
       String podName,
       String image
   ) {
-   
+
     // check if the server pod has been patched with the given image
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -982,7 +1008,7 @@ class ItMiiDomain {
                image,
                namespace)));
   }
-  
+
   private static void collectAppAvailability(
       String namespace,
       List<Integer> appAvailability,
@@ -1018,7 +1044,7 @@ class ItMiiDomain {
       String appPath) {
     return () -> {
       boolean v2AppAvailable = true;
-      
+
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
@@ -1060,7 +1086,7 @@ class ItMiiDomain {
     }
     return true;
   }
- 
+
   // create a ConfigMap with a model that enable SSL on the Administration server
   private static void createModelConfigMap(String configMapName, String model, String domainUid) {
     Map<String, String> labels = new HashMap<>();

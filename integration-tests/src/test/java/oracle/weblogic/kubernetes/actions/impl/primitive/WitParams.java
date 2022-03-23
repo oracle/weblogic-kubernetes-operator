@@ -58,6 +58,9 @@ public class WitParams {
   // Custom WDT model home
   private String wdtModelHome;
 
+  // Custom WDT model home
+  private String target;
+
   // The env variables that are needed for running WIT
   private Map<String, String> env;
 
@@ -238,5 +241,14 @@ public class WitParams {
 
   public String additionalBuildFiles() {
     return additionalBuildFiles;
+  }
+
+  public WitParams target(String target) {
+    this.target = target;
+    return this;
+  }
+
+  public String target() {
+    return target;
   }
 }
