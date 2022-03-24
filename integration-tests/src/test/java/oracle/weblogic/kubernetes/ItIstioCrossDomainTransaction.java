@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -241,8 +242,11 @@ class ItIstioCrossDomainTransaction {
   private static void buildApplicationsAndDomains() {
 
     //build application archive
+    
+    Path targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getSimpleName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "txforward.ear").toFile().exists(),
@@ -251,6 +255,8 @@ class ItIstioCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
+    targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getSimpleName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
@@ -261,8 +267,10 @@ class ItIstioCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
+    targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getSimpleName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
@@ -287,6 +295,8 @@ class ItIstioCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
+    targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getSimpleName() + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
