@@ -42,6 +42,13 @@ public class SchemaGenerator {
 
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
+  private static final String TYPE = "type";
+  private static final String ITEMS = "items";
+  private static final String ARRAY = "array";
+  private static final String STRING = "string";
+  private static final String NUMBER = "number";
+  private static final String BOOLEAN = "boolean";
+
   // A map of classes to their $ref values
   private final Map<Class<?>, String> references = new HashMap<>();
 
@@ -180,9 +187,9 @@ public class SchemaGenerator {
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();
       result.put("definitions", definitions);
-      for (Class<?> type : definedObjects.keySet()) {
-        if (!definedObjects.get(type).equals(EXTERNAL_CLASS)) {
-          definitions.put(getDefinitionKey(type), definedObjects.get(type));
+      for (Map.Entry<Class<?>, Object> entry : definedObjects.entrySet()) {
+        if (!entry.getValue().equals(EXTERNAL_CLASS)) {
+          definitions.put(getDefinitionKey(entry.getKey()), entry.getValue());
         }
       }
     }
@@ -349,54 +356,11 @@ public class SchemaGenerator {
     }
   }
 
-  private void addReferenceIfNeeded(Class<?> type) {
-    if (!isReferenceDefined(type)) {
-      addReference(type);
-    }
-  }
-
-  private void addReference(Class<?> type) {
-    Map<String, Object> definition = new HashMap<>();
-    definedObjects.put(type, definition);
-    references.put(type, "#/definitions/" + getDefinitionKey(type));
-    generateObjectTypeIn(definition, type);
-  }
-
-  private boolean isReferenceDefined(Class<?> type) {
-    return definedObjects.containsKey(type) || addedKubernetesClass(type);
-  }
-
-  private boolean addedKubernetesClass(Class<?> theClass) {
-    if (!theClass.getName().startsWith("io.kubernetes.client")) {
-      return false;
-    }
-
-    for (String externalName : schemaUrls.keySet()) {
-      if (KubernetesApiNames.matches(externalName, theClass)) {
-        String schemaUrl = schemaUrls.get(externalName);
-        definedObjects.put(theClass, EXTERNAL_CLASS);
-        references.put(theClass, schemaUrl + "#/definitions/" + externalName);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private String getReferencePath(Class<?> type) {
-    return references.get(type);
-  }
-
   private String getDefinitionKey(Class<?> type) {
     if (isDateTime(type)) {
       return "DateTime";
     }
     return type.getSimpleName();
-  }
-
-  private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum<?>> enumType) {
-    result.put("type", "string");
-    addEnumValues(result, enumType, "");
   }
 
   private String[] getEnumValues(Class<?> enumType, String qualifier) {
@@ -438,10 +402,10 @@ public class SchemaGenerator {
 
   private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
     if (isDateTime(type)) {
-      result.put("type", "string");
+      result.put(TYPE, STRING);
       result.put("format", "date-time");
     } else {
-      result.put("type", "object");
+      result.put(TYPE, "object");
       if (forbidAdditionalProperties) {
         result.put("additionalProperties", "false");
       }
@@ -525,14 +489,19 @@ public class SchemaGenerator {
       this.field = field;
     }
 
+    private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum<?>> enumType) {
+      result.put(TYPE, STRING);
+      addEnumValues(result, enumType, "");
+    }
+
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) {
-        result.put("type", "boolean");
+        result.put(TYPE, BOOLEAN);
       } else if (isNumeric(type)) {
-        result.put("type", "number");
+        result.put(TYPE, NUMBER);
       } else if (isString(type)) {
-        result.put("type", "string");
+        result.put(TYPE, STRING);
       } else if (type.isEnum()) {
         generateEnumTypeIn(result, (Class<? extends Enum<?>>) type);
       } else if (type.isArray()) {
@@ -552,6 +521,43 @@ public class SchemaGenerator {
       }
     }
 
+    private boolean addedKubernetesClass(Class<?> theClass) {
+      if (!theClass.getName().startsWith("io.kubernetes.client")) {
+        return false;
+      }
+
+      for (Map.Entry<String, String> entry : schemaUrls.entrySet()) {
+        if (KubernetesApiNames.matches(entry.getKey(), theClass)) {
+          definedObjects.put(theClass, EXTERNAL_CLASS);
+          references.put(theClass, entry.getValue() + "#/definitions/" + entry.getKey());
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    private boolean isReferenceDefined(Class<?> type) {
+      return definedObjects.containsKey(type) || addedKubernetesClass(type);
+    }
+
+    private void addReferenceIfNeeded(Class<?> type) {
+      if (!isReferenceDefined(type)) {
+        addReference(type);
+      }
+    }
+
+    private void addReference(Class<?> type) {
+      Map<String, Object> definition = new HashMap<>();
+      definedObjects.put(type, definition);
+      references.put(type, "#/definitions/" + getDefinitionKey(type));
+      generateObjectTypeIn(definition, type);
+    }
+
+    private String getReferencePath(Class<?> type) {
+      return references.get(type);
+    }
+
     private void generateObjectReferenceIn(Map<String, Object> result, Class<?> type) {
       addReferenceIfNeeded(type);
       result.put("$ref", getReferencePath(type));
@@ -559,8 +565,8 @@ public class SchemaGenerator {
 
     private void generateCollectionTypeIn(Map<String, Object> result) {
       Map<String, Object> items = new HashMap<>();
-      result.put("type", "array");
-      result.put("items", items);
+      result.put(TYPE, ARRAY);
+      result.put(ITEMS, items);
       generateTypeIn(items, getGenericComponentType());
     }
 
@@ -576,8 +582,8 @@ public class SchemaGenerator {
 
     private void generateArrayTypeIn(Map<String, Object> result, Class<?> type) {
       Map<String, Object> items = new HashMap<>();
-      result.put("type", "array");
-      result.put("items", items);
+      result.put(TYPE, ARRAY);
+      result.put(ITEMS, items);
       generateTypeIn(items, type.getComponentType());
     }
 
@@ -603,7 +609,7 @@ public class SchemaGenerator {
       final String type = additionalPropertiesTypes.get(mapValueType);
       Map<String, Object> additionalProperties = new HashMap<>();
       if (type != null) {
-        additionalProperties.put("type", type);
+        additionalProperties.put(TYPE, type);
       } else if (mapValueType == null || mapValueType.equals(String.class)) {
         generateTypeIn(additionalProperties, String.class);
       }

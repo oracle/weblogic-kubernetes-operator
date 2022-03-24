@@ -128,7 +128,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("Specifies whether the server .out file will be included in the Pod's log. "
-          + "Defaults to true.")
+      + "Defaults to true.")
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
@@ -147,11 +147,11 @@ public class DomainSpec extends BaseConfiguration {
    * If the script specified by this element value is not found, then it is ignored.
    */
   @Description("Full path of an optional liveness probe custom script for WebLogic Server instance pods. "
-          + "The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the "
-          + "existing script performs its own checks. This element is optional and is for advanced usage only. "
-          + "Its value is not set by default. If the custom script fails with non-zero exit status, "
-          + "then pod will fail the liveness probe and Kubernetes will restart the container. "
-          + "If the script specified by this element value is not found, then it is ignored."
+      + "The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the "
+      + "existing script performs its own checks. This element is optional and is for advanced usage only. "
+      + "Its value is not set by default. If the custom script fails with non-zero exit status, "
+      + "then pod will fail the liveness probe and Kubernetes will restart the container. "
+      + "If the script specified by this element value is not found, then it is ignored."
   )
   private String livenessProbeCustomScript;
 
@@ -228,10 +228,10 @@ public class DomainSpec extends BaseConfiguration {
   private Integer maxClusterConcurrentStartup;
 
   @Description(
-          "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
-                  + "is being partially shut down by lowering its replica count. You can override this default on a "
-                  + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
-                  + "there is no limit. Defaults to 1."
+      "The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it "
+          + "is being partially shut down by lowering its replica count. You can override this default on a "
+          + "per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means "
+          + "there is no limit. Defaults to 1."
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentShutdown;
@@ -378,8 +378,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
-          + "additional Pod content, and which channels or network access points should be exposed using "
-          + "a NodePort Service.")
+      + "additional Pod content, and which channels or network access points should be exposed using "
+      + "a NodePort Service.")
   private AdminServer adminServer;
 
   /**
@@ -388,9 +388,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Lifecycle options for individual Managed Servers, including Java options, environment variables, "
-          + "additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. "
-          + "The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic "
-          + "domain configuration or that matches a dynamic cluster member based on the server template.")
+      + "additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. "
+      + "The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic "
+      + "domain configuration or that matches a dynamic cluster member based on the server template.")
   private final List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -399,9 +399,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
-          + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
-          + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
-          + "WebLogic domain configuration.")
+      + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
+      + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
+      + "WebLogic domain configuration.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
   /**
@@ -770,7 +770,7 @@ public class DomainSpec extends BaseConfiguration {
 
   public Integer getMaxClusterConcurrentShutdown() {
     return Optional.ofNullable(maxClusterConcurrentShutdown)
-            .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN);
+        .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN);
   }
 
   @Nullable
@@ -798,8 +798,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   public OverrideDistributionStrategy getOverrideDistributionStrategy() {
     return Optional.ofNullable(configuration)
-          .map(Configuration::getOverrideDistributionStrategy)
-          .orElse(OverrideDistributionStrategy.DEFAULT);
+        .map(Configuration::getOverrideDistributionStrategy)
+        .orElse(OverrideDistributionStrategy.DEFAULT);
   }
 
   Model getModel() {
@@ -927,17 +927,17 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setModelHome(String modelHome) {
     Optional.ofNullable(configuration)
-            .map(Configuration::getModel).ifPresent(m -> m.setModelHome(modelHome));
+        .map(Configuration::getModel).ifPresent(m -> m.setModelHome(modelHome));
   }
 
   private String getDefaultModelHome() {
     return Optional.ofNullable(getAuxiliaryImages())
-            .map(ai -> getDefaultModelHome(ai))
-            .orElse(DEFAULT_WDT_MODEL_HOME);
+        .map(this::getDefaultModelHome)
+        .orElse(DEFAULT_WDT_MODEL_HOME);
   }
 
   private String getDefaultModelHome(List<AuxiliaryImage> auxiliaryImages) {
-    return auxiliaryImages.size() > 0 ? getAuxiliaryImageVolumeMountPath() + "/models" : DEFAULT_WDT_MODEL_HOME;
+    return !auxiliaryImages.isEmpty() ? getAuxiliaryImageVolumeMountPath() + "/models" : DEFAULT_WDT_MODEL_HOME;
   }
 
   /**
@@ -947,43 +947,43 @@ public class DomainSpec extends BaseConfiguration {
    */
   public String getWdtInstallHome() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(getDefaultWDTInstallHome());
+        .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(getDefaultWDTInstallHome());
   }
 
   public void setWdtInstallHome(String wdtInstallHome) {
     Optional.ofNullable(configuration)
-            .map(Configuration::getModel).ifPresent(m -> m.setWdtInstallHome(wdtInstallHome));
+        .map(Configuration::getModel).ifPresent(m -> m.setWdtInstallHome(wdtInstallHome));
   }
 
   private String getDefaultWDTInstallHome() {
     return Optional.ofNullable(getAuxiliaryImages())
-            .map(ai -> getDefaultWDTInstallHome(ai))
-            .orElse(DEFAULT_WDT_INSTALL_HOME);
+        .map(this::getDefaultWDTInstallHome)
+        .orElse(DEFAULT_WDT_INSTALL_HOME);
   }
 
   private String getDefaultWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
-    return auxiliaryImages.size() > 0 ? getAuxiliaryImageVolumeMountPath() + "/weblogic-deploy"
-            : DEFAULT_WDT_INSTALL_HOME;
+    return !auxiliaryImages.isEmpty() ? getAuxiliaryImageVolumeMountPath() + "/weblogic-deploy"
+        : DEFAULT_WDT_INSTALL_HOME;
   }
 
   List<AuxiliaryImage> getAuxiliaryImages() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
   }
 
   String getAuxiliaryImageVolumeMountPath() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
   }
 
   String getAuxiliaryImageVolumeMedium() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMedium).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMedium).orElse(null);
   }
 
   String getAuxiliaryImageVolumeSizeLimit() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeSizeLimit).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeSizeLimit).orElse(null);
   }
 
   @Override
@@ -1115,55 +1115,12 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  private int getReplicaCountFor(Cluster cluster) {
-    return hasReplicaCount(cluster)
-        ? cluster.getReplicas()
-        : Optional.ofNullable(replicas).orElse(0);
-  }
-
-  private boolean hasReplicaCount(Cluster cluster) {
-    return cluster != null && cluster.getReplicas() != null;
-  }
-
-  private int getMaxUnavailableFor(Cluster cluster) {
-    return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
-  }
-
-  private boolean hasMaxUnavailable(Cluster cluster) {
-    return cluster != null && cluster.getMaxUnavailable() != null;
-  }
-
-  private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-    return hasAllowReplicasBelowMinDynClusterSize(cluster)
-        ? cluster.isAllowReplicasBelowMinDynClusterSize()
-        : isAllowReplicasBelowMinDynClusterSize();
-  }
-
-  private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
-    return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
-  }
-
   public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
     this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
-  private int getMaxConcurrentStartupFor(Cluster cluster) {
-    return hasMaxConcurrentStartup(cluster)
-        ? cluster.getMaxConcurrentStartup()
-        : getMaxClusterConcurrentStartup();
-  }
-
-  private boolean hasMaxConcurrentStartup(Cluster cluster) {
-    return cluster != null && cluster.getMaxConcurrentStartup() != null;
-  }
-
   public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
     this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
-  }
-
-  private int getMaxConcurrentShutdownFor(Cluster cluster) {
-    return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
-            .orElse(getMaxClusterConcurrentShutdown());
   }
 
   public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
@@ -1199,6 +1156,49 @@ public class DomainSpec extends BaseConfiguration {
           getManagedServer(serverName),
           getCluster(clusterName),
           getClusterLimit(clusterName));
+    }
+
+    private boolean hasReplicaCount(Cluster cluster) {
+      return cluster != null && cluster.getReplicas() != null;
+    }
+
+    private boolean hasMaxUnavailable(Cluster cluster) {
+      return cluster != null && cluster.getMaxUnavailable() != null;
+    }
+
+    private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
+      return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
+    }
+
+    private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+      return hasAllowReplicasBelowMinDynClusterSize(cluster)
+          ? cluster.isAllowReplicasBelowMinDynClusterSize()
+          : DomainSpec.this.isAllowReplicasBelowMinDynClusterSize();
+    }
+
+    private boolean hasMaxConcurrentStartup(Cluster cluster) {
+      return cluster != null && cluster.getMaxConcurrentStartup() != null;
+    }
+
+    private int getMaxConcurrentShutdownFor(Cluster cluster) {
+      return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
+          .orElse(getMaxClusterConcurrentShutdown());
+    }
+
+    private int getMaxConcurrentStartupFor(Cluster cluster) {
+      return hasMaxConcurrentStartup(cluster)
+          ? cluster.getMaxConcurrentStartup()
+          : getMaxClusterConcurrentStartup();
+    }
+
+    private int getMaxUnavailableFor(Cluster cluster) {
+      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+    }
+
+    private int getReplicaCountFor(Cluster cluster) {
+      return hasReplicaCount(cluster)
+          ? cluster.getReplicas()
+          : Optional.ofNullable(replicas).orElse(0);
     }
 
     @Override
