@@ -151,6 +151,18 @@ public class InitializeInternalIdentityStep extends Step {
       this.internalOperatorKey = internalOperatorKey;
     }
 
+    private static Step createSecret(Step next, String internalOperatorKey) {
+      return new CallBuilder()
+          .createSecretAsync(getOperatorNamespace(),
+              createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
+    }
+
+    private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
+      return new CallBuilder()
+          .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
+              new DefaultResponseStep<>(next));
+    }
+
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
@@ -162,19 +174,7 @@ public class InitializeInternalIdentityStep extends Step {
     }
   }
 
-  private static Step createSecret(Step next, String internalOperatorKey) {
-    return new CallBuilder()
-            .createSecretAsync(getOperatorNamespace(),
-                    createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
-  }
-
-  private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
-    return new CallBuilder()
-            .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
-                    new DefaultResponseStep<>(next));
-  }
-
-  protected static final V1Secret createModel(V1Secret secret, String internalOperatorKey) {
+  protected static V1Secret createModel(V1Secret secret, String internalOperatorKey) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
       data.put("internalOperatorKey", internalOperatorKey.getBytes());
@@ -187,7 +187,7 @@ public class InitializeInternalIdentityStep extends Step {
   }
 
   private static V1ObjectMeta createMetadata() {
-    Map labels = new HashMap<>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.operatorName", getOperatorNamespace());
     return new V1ObjectMeta().name(OPERATOR_SECRETS).namespace(getOperatorNamespace())
             .labels(labels);
