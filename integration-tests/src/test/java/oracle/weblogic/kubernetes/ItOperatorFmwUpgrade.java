@@ -244,6 +244,15 @@ class ItOperatorFmwUpgrade {
     installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
+  /**
+   * Operator upgrade from 3.3.7 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.3.7 to current")
+  void testOperatorFmwUpgradeFrom337ToCurrent() {
+    installAndUpgradeOperator("3.3.7", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
   private void installAndUpgradeOperator(String operatorVersion,
                                          String externalServiceNameSuffix,
                                          boolean useHelmUpgrade) {
