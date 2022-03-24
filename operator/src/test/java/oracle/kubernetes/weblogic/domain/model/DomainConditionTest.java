@@ -16,7 +16,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -52,14 +51,6 @@ class DomainConditionTest {
     SystemClockTestSupport.increment();
 
     assertThat(oldCondition.equals(new DomainCondition(Available).withStatus("True")), is(true));
-  }
-
-  @Test
-  void failedConditionMayIncludeIntrospectionJobUid() {
-    final DomainCondition condition = new DomainCondition(Failed);
-    condition.setIntrospectionUid("abcde");
-
-    assertThat(condition.getIntrospectionUid(), equalTo("abcde"));
   }
 
   @Test

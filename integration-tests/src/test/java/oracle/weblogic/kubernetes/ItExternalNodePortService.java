@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -68,6 +69,8 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -238,7 +241,7 @@ class ItExternalNodePortService {
     String clusterSvcRouteHost = createRouteForOKD(serviceName, domainNamespace);
     int httpTunnelingPort =
         getServiceNodePort(domainNamespace, serviceName, portName);
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Http TunnelingPort service node port");
     logger.info("HttpTunnelingPort for NodePort Service {0}", httpTunnelingPort);
 
@@ -294,7 +297,7 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Build JMS Client inside the Admin Server Pod
@@ -320,7 +323,7 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Run external standalone JMS Client using wlthint3client.jar in classpath.
@@ -337,9 +340,7 @@ class ItExternalNodePortService {
 
   @AfterAll
   public void tearDownAll() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
       StringBuffer removeNodePort = new StringBuffer("kubectl delete -f ");
       removeNodePort.append(Paths.get(RESULTS_ROOT, "cluster.nodeport.svc.yaml"));
       assertDoesNotThrow(() -> exec(new String(removeNodePort), true));

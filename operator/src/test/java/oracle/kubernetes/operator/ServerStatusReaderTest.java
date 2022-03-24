@@ -58,7 +58,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(execFactory.install());
-    mementos.add(StaticStubSupport.install(ServerStatusReader.class, "STEP_FACTORY", stepFactory));
+    mementos.add(StaticStubSupport.install(ServerStatusReader.class, "stepFactory", stepFactory));
     mementos.add(TuningParametersStub.install());
     mementos.add(ClientFactoryStub.install());
 

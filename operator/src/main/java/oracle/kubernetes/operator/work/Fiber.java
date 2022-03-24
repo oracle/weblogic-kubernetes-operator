@@ -646,6 +646,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   static class NullPacketDumper implements PacketDumper {
     @Override
     public void dump(StringBuilder sb, Packet packet) {
+      // no-op
     }
   }
 

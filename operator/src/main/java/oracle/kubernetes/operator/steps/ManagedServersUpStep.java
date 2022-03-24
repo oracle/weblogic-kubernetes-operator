@@ -43,7 +43,7 @@ public class ManagedServersUpStep extends Step {
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static NextStepFactory NEXT_STEP_FACTORY =
+  private static NextStepFactory nextStepFactory =
       (info, config, factory, next) ->
           scaleDownIfNecessary(info, config, factory, new ClusterServicesStep(next));
 
@@ -115,7 +115,7 @@ public class ManagedServersUpStep extends Step {
     LOGGER.exiting();
 
     return doNext(
-        NEXT_STEP_FACTORY.createServerStep(
+        nextStepFactory.createServerStep(
             info, config, factory, factory.createNextStep(getNext())),
         packet);
   }

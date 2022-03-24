@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -44,27 +44,27 @@ class DomainResourcesValidation {
     return new NamespacedResources.Processors() {
       @Override
       Consumer<V1PodList> getPodListProcessing() {
-        return l -> addPodList(l);
+        return DomainResourcesValidation.this::addPodList;
       }
 
       @Override
       Consumer<V1ServiceList> getServiceListProcessing() {
-        return l -> addServiceList(l);
+        return DomainResourcesValidation.this::addServiceList;
       }
 
       @Override
       Consumer<CoreV1EventList> getOperatorEventListProcessing() {
-        return l -> addOperatorEventList(l);
+        return DomainResourcesValidation.this::addOperatorEventList;
       }
 
       @Override
       Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
-        return l -> addPodDisruptionBudgetList(l);
+        return DomainResourcesValidation.this::addPodDisruptionBudgetList;
       }
 
       @Override
       Consumer<DomainList> getDomainListProcessing() {
-        return l -> addDomainList(l);
+        return DomainResourcesValidation.this::addDomainList;
       }
 
       @Override

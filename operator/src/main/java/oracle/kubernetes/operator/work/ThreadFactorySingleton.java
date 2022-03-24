@@ -9,7 +9,8 @@ import java.util.concurrent.ThreadFactory;
 public class ThreadFactorySingleton {
 
   private static final ThreadFactory DEFAULT_FACTORY = Executors.defaultThreadFactory();
-  private static final ThreadFactory INSTANCE =
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static ThreadFactory instance =
       (r) -> {
         Thread t = DEFAULT_FACTORY.newThread(r);
         if (!t.isDaemon()) {
@@ -19,6 +20,6 @@ public class ThreadFactorySingleton {
       };
 
   public static ThreadFactory getInstance() {
-    return INSTANCE;
+    return instance;
   }
 }

@@ -99,11 +99,10 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
 
 /**
  * Simple JUnit test file used for testing operator usability.
@@ -345,7 +344,7 @@ class ItUsabilityOperatorHelmChart {
       String opExtRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       //check if can still manage domain1
@@ -396,7 +395,7 @@ class ItUsabilityOperatorHelmChart {
           0, op1HelmParams, domain2Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       if (!isDomain2Running) {
@@ -594,7 +593,7 @@ class ItUsabilityOperatorHelmChart {
     HelmParams opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true, true,
         true,null,"deployed", 0, op1HelmParams,  domain1Namespace);
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    assertTrue(externalRestHttpsPort != -1,
+    assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
     String op2ReleaseName = OPERATOR_RELEASE_NAME + "2";
@@ -672,7 +671,7 @@ class ItUsabilityOperatorHelmChart {
       assertNotNull(opHelmParam2, "FAILURE: Helm can't installs operator with empty set for target domainnamespaces ");
 
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
@@ -816,7 +815,7 @@ class ItUsabilityOperatorHelmChart {
       String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
       int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 

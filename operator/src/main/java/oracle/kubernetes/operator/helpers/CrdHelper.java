@@ -143,18 +143,6 @@ public class CrdHelper {
     return new CrdStep(version, productVersion, certificates);
   }
 
-  private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
-    List<ResourceVersion> versions = new ArrayList<>();
-    List<V1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
-    if (vs != null) {
-      for (V1CustomResourceDefinitionVersion vi : vs) {
-        versions.add(new ResourceVersion(vi.getName()));
-      }
-    }
-
-    return versions;
-  }
-
   interface CrdComparator {
     boolean isOutdatedCrd(
         SemanticVersion productVersion, V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
@@ -222,8 +210,8 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
-      return Optional.ofNullable(certificates).map(c -> c.getWebhookCertificateData())
-              .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
+      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
+              .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
@@ -332,30 +320,6 @@ public class CrdHelper {
       return new CreateResponseStep(next);
     }
 
-    private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
-      return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, this.model);
-    }
-
-    private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
-      List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
-      boolean found = false;
-      if (versions != null) {
-        for (V1CustomResourceDefinitionVersion v : versions) {
-          if (KubernetesConstants.DOMAIN_VERSION.equals(v.getName())) {
-            found = true;
-            break;
-          }
-        }
-      }
-
-      return found;
-    }
-
-    private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
-      return existingCrd.getSpec().getConversion() != null
-              && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
-    }
-
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
       for (V1CustomResourceDefinitionVersion version : versions) {
@@ -393,6 +357,30 @@ public class CrdHelper {
     class ReadResponseStep extends DefaultResponseStep<V1CustomResourceDefinition> {
       ReadResponseStep(Step next) {
         super(next);
+      }
+
+      private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
+        return existingCrd.getSpec().getConversion() != null
+            && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
+      }
+
+      private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
+        return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, CrdContext.this.model);
+      }
+
+      private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
+        List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
+        boolean found = false;
+        if (versions != null) {
+          for (V1CustomResourceDefinitionVersion v : versions) {
+            if (KubernetesConstants.DOMAIN_VERSION.equals(v.getName())) {
+              found = true;
+              break;
+            }
+          }
+        }
+
+        return found;
       }
 
       @Override
@@ -476,6 +464,18 @@ public class CrdHelper {
   }
 
   static class CrdComparatorImpl implements CrdComparator {
+    private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
+      List<ResourceVersion> versions = new ArrayList<>();
+      List<V1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
+      if (vs != null) {
+        for (V1CustomResourceDefinitionVersion vi : vs) {
+          versions.add(new ResourceVersion(vi.getName()));
+        }
+      }
+
+      return versions;
+    }
+
     @Override
     public boolean isOutdatedCrd(SemanticVersion productVersion,
                                  V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {

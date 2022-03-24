@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -154,7 +153,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-  private final String ns = "nsrand" + new Random().nextInt(10000);
+  private final String ns = "nsrand" + (((int) (Math.random() * 9999)) + 1);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final OperatorMain operatorMain = new OperatorMain(delegate);
@@ -192,7 +191,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
@@ -1235,7 +1234,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(OperatorMain.class, "NEXT_STEP_FACTORY", factory);
+      return StaticStubSupport.install(OperatorMain.class, "nextStepFactory", factory);
     }
 
     @Override

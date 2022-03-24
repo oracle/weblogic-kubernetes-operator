@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import oracle.kubernetes.operator.IntrospectionStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -51,7 +52,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
-import static oracle.kubernetes.operator.IntrospectionStatus.isImagePullError;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -409,10 +409,6 @@ public class JobHelper {
       }
     }
 
-    private Step createIntrospectorConfigMap() {
-      return ConfigMapHelper.createIntrospectorConfigMapStep(null);
-    }
-
     private class ReadPodLogResponseStep extends ResponseStep<String> {
       public static final String INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
       private StringBuilder logMessage = new StringBuilder();
@@ -634,6 +630,10 @@ public class JobHelper {
         return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
       }
 
+      private Step createIntrospectorConfigMap() {
+        return ConfigMapHelper.createIntrospectorConfigMapStep(null);
+      }
+
       // Returns a chain of steps which read the pod log and create a config map.
       private Step processIntrospectorPodLog(Step next) {
         return Step.chain(readNamedPodLog(), deleteIntrospectorJob(), createIntrospectorConfigMap(), next);
@@ -649,7 +649,7 @@ public class JobHelper {
 
       private boolean hasImagePullError(V1Pod pod) {
         return Optional.ofNullable(getJobPodContainerWaitingReason(pod))
-              .map(reason -> isImagePullError(reason))
+              .map(IntrospectionStatus::isImagePullError)
               .orElse(false);
       }
 
@@ -666,7 +666,7 @@ public class JobHelper {
                         .map(V1ContainerStatus::getState)
                         .map(V1ContainerState::getWaiting).filter(Objects::nonNull)
                         .map(V1ContainerStateWaiting::getReason)
-                        .anyMatch(reason -> isImagePullError(reason)))
+                        .anyMatch(IntrospectionStatus::isImagePullError))
                 .orElse(false);
 
       }

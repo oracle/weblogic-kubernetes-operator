@@ -59,7 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -204,7 +203,7 @@ class ItSessionMigration {
             "After the primary server stopped, another server should become the new primary server"),
         () -> assertEquals(origSessionCreateTime, sessionCreateTime,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server"),
-        () -> assertEquals(count, SESSION_STATE,
+        () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
 
@@ -242,15 +241,15 @@ class ItSessionMigration {
 
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey, myAnnotationValue);
-    assertTrue(myAnnotationValue.equals(annotationValue),
+    assertEquals(annotationValue, myAnnotationValue,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue));
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey2, myAnnotationValue2);
-    assertTrue(myAnnotationValue2.equals(annotationValue2),
+    assertEquals(annotationValue2, myAnnotationValue2,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue2));
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey3, myAnnotationValue3);
-    assertTrue(myAnnotationValue3.equals(annotationValue3),
+    assertEquals(annotationValue3, myAnnotationValue3,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue3));
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -33,6 +33,9 @@ import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
 
+import static oracle.weblogic.kubernetes.TestConstants.COLLECT_LOGS_ON_SUCCESS;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.SLEEP_SECONDS_AFTER_FAILURE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -264,8 +267,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void testSuccessful(ExtensionContext context) {
     printHeader(String.format("Test PASSED %s()", methodName), "+");
-    if (System.getenv("COLLECT_LOGS_ON_SUCCESS") != null
-          && System.getenv("COLLECT_LOGS_ON_SUCCESS").equalsIgnoreCase("true")) {
+    if (COLLECT_LOGS_ON_SUCCESS) {
       collectLogs(context, "test");
     }
   }
@@ -278,8 +280,8 @@ public class IntegrationTestWatcher implements
   @Override
   public void testFailed(ExtensionContext context, Throwable cause) {
     printHeader(String.format("Test FAILED %s()", methodName), "!");
-    if (System.getenv("SLEEP_SECONDS_AFTER_FAILURE") != null) {
-      int sleepSecs = Integer.parseInt(System.getenv("SLEEP_SECONDS_AFTER_FAILURE"));
+    if (SLEEP_SECONDS_AFTER_FAILURE > 0) {
+      int sleepSecs = SLEEP_SECONDS_AFTER_FAILURE;
       getLogger().info("Sleeping for " + sleepSecs + " seconds to keep the env. for debugging");
       try {
         Thread.sleep(sleepSecs * 1000);
@@ -314,8 +316,7 @@ public class IntegrationTestWatcher implements
   public void afterAll(ExtensionContext context) {
     printHeader(String.format("Ending Test Suite %s", className), "+");
     // set SKIP_CLEANUP env. var to skip cleanup, mainly used for debugging in local runs
-    if (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
+    if (SKIP_CLEANUP) {
       getLogger().info("Skipping cleanup after test class");
     } else {
       getLogger().info("Starting cleanup after test class");

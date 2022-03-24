@@ -140,10 +140,23 @@ public class InitializeWebhookIdentityStep extends Step {
       this.webhookIdentity = webhookIdentity;
     }
 
+    private Step createSecret(Step next, WebhookIdentity webhookIdentity) {
+      return new CallBuilder()
+          .createSecretAsync(getWebhookNamespace(),
+              createModel(null, webhookIdentity),
+              new DefaultResponseStep<>(next));
+    }
+
+    private Step replaceSecret(Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
+      return new CallBuilder()
+          .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookIdentity),
+              new ReplaceSecretResponseStep(webhookIdentity, next));
+    }
+
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
       V1Secret existingSecret = callResponse.getResult();
-      Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(s -> s.getData()).orElse(new HashMap<>());
+      Map<String, byte[]> data = Optional.ofNullable(existingSecret).map(V1Secret::getData).orElse(new HashMap<>());
       if (existingSecret == null) {
         return doNext(createSecret(getNext(), webhookIdentity), packet);
       } else if (identityExists(data)) {
@@ -166,19 +179,6 @@ public class InitializeWebhookIdentityStep extends Step {
         throw new RuntimeException(e);
       }
     }
-  }
-
-  private Step createSecret(Step next, WebhookIdentity webhookIdentity) {
-    return new CallBuilder()
-            .createSecretAsync(getWebhookNamespace(),
-                    createModel(null, webhookIdentity),
-                    new DefaultResponseStep<>(next));
-  }
-
-  private Step replaceSecret(Step next, V1Secret secret, WebhookIdentity webhookIdentity) {
-    return new CallBuilder()
-            .replaceSecretAsync(WEBHOOK_SECRETS, getWebhookNamespace(), createModel(secret, webhookIdentity),
-                    new ReplaceSecretResponseStep(webhookIdentity, next));
   }
 
   private class ReplaceSecretResponseStep extends DefaultResponseStep<V1Secret> {
@@ -214,7 +214,7 @@ public class InitializeWebhookIdentityStep extends Step {
   }
 
   private static V1ObjectMeta createMetadata() {
-    Map labels = new HashMap<>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.webhookName", getWebhookNamespace());
     return new V1ObjectMeta().name(WEBHOOK_SECRETS).namespace(getWebhookNamespace())
             .labels(labels);
