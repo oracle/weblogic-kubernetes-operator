@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.LogRecord;
 
 /** Common log formatter to format log messages in JSON format. */
@@ -25,7 +27,14 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter<Object> {
 
   @Override
   void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
-    // no op
+    if (logRecord.getThrown() != null) {
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      pw.println();
+      logRecord.getThrown().printStackTrace(pw);
+      pw.close();
+      throwableProcessing.throwable = sw.toString();
+    }
   }
 
   @Override

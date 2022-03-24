@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.logging;
 import java.util.logging.Formatter;
 import java.util.logging.Logger;
 
-/** Centralized logging for the operator. */
+/** Centralized common logging. */
 public class CommonLoggingFacade extends BaseLoggingFacade {
 
   /**

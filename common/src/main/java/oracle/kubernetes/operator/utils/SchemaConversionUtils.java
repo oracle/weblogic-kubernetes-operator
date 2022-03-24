@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import oracle.kubernetes.operator.AuxiliaryImageConstants;
 import oracle.kubernetes.operator.CommonConstants;
 import oracle.kubernetes.operator.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.logging.BaseLoggingFacade;
@@ -22,13 +23,9 @@ import oracle.kubernetes.operator.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V8;
-import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V9;
 import static oracle.kubernetes.operator.CommonConstants.COMPATIBILITY_MODE;
 
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
@@ -68,7 +65,7 @@ public class SchemaConversionUtils {
    * @return Domain String containing the converted domain yaml.
    */
   public String convertDomainSchema(String domainYaml) {
-    return convertDomainSchema(domainYaml, API_VERSION_V9);
+    return convertDomainSchema(domainYaml, CommonConstants.API_VERSION_V9);
   }
 
   /**
@@ -90,7 +87,7 @@ public class SchemaConversionUtils {
     Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
     Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
             .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
-    if ((adminChannelPortForwardingEnabled == null) && (API_VERSION_V8.equals(apiVersion))) {
+    if ((adminChannelPortForwardingEnabled == null) && (CommonConstants.API_VERSION_V8.equals(apiVersion))) {
       Optional.ofNullable(adminServerSpec).ifPresent(as -> as.put("adminChannelPortForwardingEnabled", false));
     }
   }
@@ -299,11 +296,11 @@ public class SchemaConversionUtils {
 
   private String getCommand(Map<String, Object> auxiliaryImage) {
     return Optional.ofNullable((String) auxiliaryImage.get("command"))
-            .orElse(AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
+            .orElse(AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
   private String getName(int index) {
-    return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
+    return AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
   private void addEnvVar(List<Object> vars, String name, String value) {

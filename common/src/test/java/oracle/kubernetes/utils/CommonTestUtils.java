@@ -10,19 +10,19 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.CommonLoggingFactory;
 
 import static com.meterware.simplestub.Stub.createStub;
 
-public class TestUtils extends BaseTestUtils {
+public class CommonTestUtils extends BaseTestUtils {
   /**
    * Removes the console handlers from the specified logger, in order to silence them during a test.
    *
    * @return a collection of the removed handlers
    */
-  public static ConsoleHandlerMemento silenceOperatorLogger() {
-    Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
-    Arrays.stream(logger.getHandlers()).filter(BaseTestUtils::isTestLogHandler).forEach(BaseTestUtils::rejectCall);
+  public static ConsoleHandlerMemento silenceLogger() {
+    Logger logger = CommonLoggingFactory.getLogger("Common", "Operator").getUnderlyingLogger();
+    Arrays.stream(logger.getHandlers()).filter(CommonTestUtils::isTestLogHandler).forEach(CommonTestUtils::rejectCall);
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
       if (handler instanceof ConsoleHandler) {
@@ -39,5 +39,4 @@ public class TestUtils extends BaseTestUtils {
 
     return new ConsoleHandlerMemento(logger, testHandler, savedHandlers);
   }
-
 }

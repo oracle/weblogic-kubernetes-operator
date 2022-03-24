@@ -73,6 +73,16 @@
             <artifactId>installation-tests</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>domain-upgrader</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

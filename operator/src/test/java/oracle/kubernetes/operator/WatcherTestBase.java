@@ -18,8 +18,8 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.BaseTestUtils;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.utils.TestUtils.ConsoleHandlerMemento;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,7 +80,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     StubWatchFactory.setListener(this);
   }
 
-  protected ConsoleHandlerMemento configureOperatorLogger() {
+  protected BaseTestUtils.ConsoleHandlerMemento configureOperatorLogger() {
     return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException);
   }
 

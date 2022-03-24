@@ -41,7 +41,7 @@ public class DomainUpgrader {
    * @param args The arguments for domain resource converter.
    *
    */
-  public static void main(String[] args) {
+  public static void main(String... args) {
     final DomainUpgrader domainUpgrader = parseCommandLine(args);
 
     File inputFile = new File(domainUpgrader.inputFileName);
@@ -136,7 +136,7 @@ public class DomainUpgrader {
     System.exit(1);
   }
 
-  private static class DomainUpgraderException extends RuntimeException {
+  static class DomainUpgraderException extends RuntimeException {
 
     public DomainUpgraderException(String message) {
       super(message);

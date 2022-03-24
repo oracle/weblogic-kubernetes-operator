@@ -31,7 +31,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
-import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.utils.BaseTestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;
@@ -79,7 +79,7 @@ class RestTest extends JerseyTest {
   @BeforeEach
   public void setupRestTest() throws Exception {
     setUp();
-    mementos.add(TestUtils.silenceJsonPathLogger());
+    mementos.add(BaseTestUtils.silenceJsonPathLogger());
   }
 
   @AfterEach

@@ -15,7 +15,7 @@ import org.hamcrest.Description;
 
 public class LogMatcher
     extends org.hamcrest.TypeSafeDiagnosingMatcher<
-        java.util.Collection<java.util.logging.LogRecord>> {
+        Collection<LogRecord>> {
 
   private String expectedMessage;
   private Level expectedLevel;

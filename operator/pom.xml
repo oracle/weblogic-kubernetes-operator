@@ -420,6 +420,12 @@
       <version>${version}</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>oracle.kubernetes</groupId>
+      <artifactId>common</artifactId>
+      <version>${version}</version>
+      <type>test-jar</type>
+    </dependency>
   </dependencies>
 
   <properties>
