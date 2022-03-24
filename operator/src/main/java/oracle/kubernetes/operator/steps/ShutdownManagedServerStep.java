@@ -97,14 +97,14 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
-      String shutdownString = isGracefulShutdown ? "shutdown" : "forceShutdown";
+      String shutdownString = Boolean.TRUE.equals(isGracefulShutdown) ? "shutdown" : "forceShutdown";
       return "/management/weblogic/latest/serverRuntime/" + shutdownString;
     }
 
     private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
                                                           Boolean ignoreSessions, Long timeout,
                                                           Boolean waitForAllSessions) {
-      if (!isGracefulShutdown) {
+      if (Boolean.FALSE.equals(isGracefulShutdown)) {
         return "{}";
       }
 
@@ -175,24 +175,24 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private Boolean getWaitForAllSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {
-      String waitForAllSessions = getEnvValue(envVarList, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS");
+      String shutdownWaitForAllSessions = getEnvValue(envVarList, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS");
 
-      return waitForAllSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
-              .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) : Boolean.valueOf(waitForAllSessions);
+      return shutdownWaitForAllSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
+              .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) : Boolean.valueOf(shutdownWaitForAllSessions);
     }
 
     private Boolean getIgnoreSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {
-      String ignoreSessions = getEnvValue(envVarList, "SHUTDOWN_IGNORE_SESSIONS");
+      String shutdownIgnoreSessions = getEnvValue(envVarList, "SHUTDOWN_IGNORE_SESSIONS");
 
-      return ignoreSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
-              .orElse(Shutdown.DEFAULT_IGNORESESSIONS) : Boolean.valueOf(ignoreSessions);
+      return shutdownIgnoreSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
+              .orElse(Shutdown.DEFAULT_IGNORESESSIONS) : Boolean.valueOf(shutdownIgnoreSessions);
     }
 
     private Long getTimeout(List<V1EnvVar> envVarList, Shutdown shutdown) {
-      String timeout = getEnvValue(envVarList, "SHUTDOWN_TIMEOUT");
+      String shutdownTimeout = getEnvValue(envVarList, "SHUTDOWN_TIMEOUT");
 
-      return timeout == null ? Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
-              .orElse(Shutdown.DEFAULT_TIMEOUT) : Long.valueOf(timeout);
+      return shutdownTimeout == null ? Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
+              .orElse(Shutdown.DEFAULT_TIMEOUT) : Long.valueOf(shutdownTimeout);
     }
 
     Long getRequestTimeoutSeconds() {
@@ -352,14 +352,6 @@ public class ShutdownManagedServerStep extends Step {
 
       removeShutdownRequestRetryCount(packet);
       return doNext(packet);
-    }
-
-    private HttpResponse<?> getResponse(Packet packet) {
-      return packet.getSpi(HttpResponse.class);
-    }
-
-    private Throwable getThrowableResponse(Packet packet) {
-      return packet.getSpi(Throwable.class);
     }
 
     private static Integer getShutdownRequestRetryCount(Packet packet) {
