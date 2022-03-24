@@ -115,7 +115,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Create a domain using Domain-In-Image or Model-In-Image model with a dynamic cluster.
  * Deploy an application to the cluster in domain and verify the application 
  * can be accessed while the operator is upgraded and after the upgrade.
- * Upgrade operator with latest Operator image build from main branch.
+ * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
  * Scale the cluster in upgraded environment.
  * Restart the entire domain in upgraded environment.
@@ -161,56 +161,56 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.0.4 to latest.
+   * Operator upgrade from 3.0.4 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  @DisplayName("Upgrade Operator from 3.0.4 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom304ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom304ToLatest with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom304ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom304ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.0.4", OLD_DOMAIN_VERSION, OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.1.4 to latest.
+   * Operator upgrade from 3.1.4 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.4 to latest")
+  @DisplayName("Upgrade Operator from 3.1.4 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom314ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom314ToLatest with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom314ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom314ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.1.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.2.5 to latest.
+   * Operator upgrade from 3.2.5 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.5 to latest")
+  @DisplayName("Upgrade Operator from 3.2.5 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom325ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom325ToLatest with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom325ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom325ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.2.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.3.8 to latest.
+   * Operator upgrade from 3.3.8 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.8 to latest")
+  @DisplayName("Upgrade Operator from 3.3.8 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom338ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom338ToLatest with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom338ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom338ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.3.8", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operartor v3.3.8 to latest.
+   * Auxiliary Image Domain upgrade from Operartor v3.3.8 to current.
    */
   @Test
-  @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to latest")
-  void testOperatorWlsAuxDomainUpgradeFrom338ToLatest() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to latest ");
+  @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
 
     installOldOperator("3.3.8");
     createSecrets();
@@ -267,7 +267,7 @@ class ItOperatorWlsUpgrade {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    upgradeOperatorToLatest();
+    upgradeOperatorToCurrent();
     verifyPodsNotRolled(domainNamespace, pods);
     reManageCluster();
   }
@@ -322,8 +322,8 @@ class ItOperatorWlsUpgrade {
 
   }
 
-  // upgrade to operator to latest version 
-  private void upgradeOperatorToLatest() {
+  // upgrade to operator to current version 
+  private void upgradeOperatorToCurrent() {
     latestOperatorImageName = getOperatorImageName();
     HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
@@ -356,7 +356,7 @@ class ItOperatorWlsUpgrade {
     testUntil(
           checkCrdVersion(),
           logger,
-          "the CRD version to be updated to latest");
+          "the CRD version to be updated to current");
     // check domain status conditions
     checkDomainStatus(domainNamespace);
   }
@@ -383,7 +383,7 @@ class ItOperatorWlsUpgrade {
     // create WLS domain and verify
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
-    // upgrade to latest operator
+    // upgrade to current operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
   }
@@ -425,8 +425,8 @@ class ItOperatorWlsUpgrade {
               });
     accountingThread.start();
     try {
-      // upgrade to latest operator
-      upgradeOperatorToLatest();
+      // upgrade to current operator
+      upgradeOperatorToCurrent();
       verifyPodsNotRolled(domainNamespace, pods);
     } finally {
       if (accountingThread != null) {
@@ -450,7 +450,7 @@ class ItOperatorWlsUpgrade {
     testUntil(
         checkCrdVersion(),
         logger,
-        "the CRD version to be updated to latest");
+        "the CRD version to be updated to current");
 
     // check domain status conditions
     checkDomainStatus(domainNamespace);
