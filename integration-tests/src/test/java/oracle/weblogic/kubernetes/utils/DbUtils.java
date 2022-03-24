@@ -62,14 +62,12 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_YAML_URL;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -83,7 +81,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -697,21 +695,22 @@ public class DbUtils {
    * @throws IOException when fails to modify operator yaml file
    */
   public static void installDBOperator(String namespace) throws IOException {
-    Path operatorYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
-    String operatorYamlUrl = DB_OPERATOR_YAML_URL;
+    Path operatorYamlSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "oracle-database-operator.yaml");
+    Path operatorYamlDestFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
 
-    Files.createDirectories(operatorYamlFile.getParent());
-    Files.deleteIfExists(operatorYamlFile);
+    Files.createDirectories(operatorYamlDestFile.getParent());
+    Files.deleteIfExists(operatorYamlDestFile);
+    FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
+    replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
+    replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(),
+        "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
+    createOcirRepoSecret(namespace);
+
     CommandParams params = new CommandParams().defaults();
-    params.command("curl -fL " + operatorYamlUrl + " -o " + operatorYamlFile);
+    params.command("kubectl apply -f " + operatorYamlDestFile);
     boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to download Oracle operator yaml file");
-    replaceStringInFile(operatorYamlFile.toString(), "replicas: 3", "replicas: 1");
-    replaceStringInFile(operatorYamlFile.toString(), "oracle-database-operator-system", namespace);
-
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + operatorYamlFile);
-    response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
     String dbOpPodName = "oracle-database-operator-controller-manager";
@@ -760,7 +759,7 @@ public class DbUtils {
       String namespace) throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    final String DB_IMAGE_19C = OCR_REGISTRY + "/" + OCR_DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
     String hostPath = Paths.get(WORK_DIR, namespace, "oracledatabase").toString();
     String secretName = "db-password";
     String secretKey = "password";
@@ -773,32 +772,27 @@ public class DbUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
-    createOcrRepoSecret(namespace);
+    createOcirRepoSecret(namespace);
 
     createHostPathProvisioner(namespace, hostPath);
-
-    String dbYamlUrl = SIDB_YAML_URL;
 
     Path dbYaml = Paths.get(DOWNLOAD_DIR, namespace, "oracledb.yaml");
     Files.createDirectories(dbYaml.getParent());
     Files.deleteIfExists(dbYaml);
-    CommandParams params = new CommandParams().defaults();
-    params.command("curl -fL " + dbYamlUrl + " -o " + dbYaml.toString());
-    boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to download Oracle database yaml file");
+    FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
 
     replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCIR_SECRET_NAME);
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
-    params = new CommandParams().defaults();
+    CommandParams params = new CommandParams().defaults();
     params.command("kubectl create -f " + dbYaml.toString());
-    response = Command.withParams(params).execute();
+    boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
     checkServiceExists(dbName, namespace);

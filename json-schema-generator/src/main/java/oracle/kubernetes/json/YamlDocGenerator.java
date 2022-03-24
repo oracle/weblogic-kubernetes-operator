@@ -177,16 +177,6 @@ public class YamlDocGenerator {
     referencesNeeded.add(reference);
   }
 
-  private Reference createReference(String referenceString) {
-    if (referenceString == null) {
-      return new NullReference();
-    } else if (referenceString.startsWith(DEFINITION_PREFIX)) {
-      return new LocalReference(referenceString);
-    } else {
-      return new ExternalReference(referenceString);
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private Map<String, Object> subMap(Map<String, Object> schemaMap, String name) {
     return (Map<String, Object>) Optional.ofNullable(schemaMap.get(name)).orElse(new HashMap<>());
@@ -226,6 +216,16 @@ public class YamlDocGenerator {
 
     private String getReference() {
       return createReference(getReferenceString()).getString();
+    }
+
+    private Reference createReference(String referenceString) {
+      if (referenceString == null) {
+        return new NullReference();
+      } else if (referenceString.startsWith(DEFINITION_PREFIX)) {
+        return new LocalReference(referenceString);
+      } else {
+        return new ExternalReference(referenceString);
+      }
     }
 
     private String getReferenceString() {

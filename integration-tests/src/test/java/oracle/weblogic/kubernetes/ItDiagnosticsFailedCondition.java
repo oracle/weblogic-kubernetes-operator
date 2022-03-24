@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -800,8 +799,7 @@ class ItDiagnosticsFailedCondition {
   }
 
   private String getDomainName() {
-    Random random = new Random();
-    return domainUid + random.nextInt();
+    return domainUid + ((int) (Math.random() * Integer.MAX_VALUE));
   }
 
 }

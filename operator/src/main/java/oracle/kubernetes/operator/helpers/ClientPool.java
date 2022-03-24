@@ -39,17 +39,6 @@ public class ClientPool extends Pool<ApiClient> {
     ClientPool.threadFactory = threadFactory;
   }
 
-  private static Runnable wrapRunnable(Runnable r) {
-    return () -> {
-      try {
-        r.run();
-      } catch (Throwable t) {
-        // These will almost always be spurious exceptions
-        LOGGER.finer(MessageKeys.EXCEPTION, t);
-      }
-    };
-  }
-
   public static ClientPool getInstance() {
     return singleton;
   }
@@ -66,7 +55,6 @@ public class ClientPool extends Pool<ApiClient> {
 
   @Override
   public void discard(ApiClient client) {
-    client = null;
     instance.updateAndGet(newClient -> getApiClient());
   }
 
@@ -105,6 +93,17 @@ public class ClientPool extends Pool<ApiClient> {
 
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
+
+    private static Runnable wrapRunnable(Runnable r) {
+      return () -> {
+        try {
+          r.run();
+        } catch (Throwable t) {
+          // These will almost always be spurious exceptions
+          LOGGER.finer(MessageKeys.EXCEPTION, t);
+        }
+      };
+    }
 
     @Override
     public ApiClient get() {
