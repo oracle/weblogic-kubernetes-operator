@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.Random;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -106,6 +105,49 @@ public class EventHelper {
     @Override
     protected String getDetail() {
       return eventData.eventItem.toString();
+    }
+
+    private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
+      return Optional.ofNullable(eventData.failureReason).map(f -> f.getEventSuggestion(info)).orElse("");
+    }
+
+    private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
+      return Optional.ofNullable(eventData.additionalMessage)
+          .orElse(getAdditionalMessageFromFailureReason(eventData, info));
+    }
+
+    private static V1ObjectMeta createMetadata(
+        EventData eventData) {
+      final V1ObjectMeta metadata =
+          new V1ObjectMeta().name(eventData.eventItem.generateEventName(eventData)).namespace(eventData.getNamespace());
+
+      eventData.eventItem.addLabels(metadata, eventData);
+
+      return metadata;
+    }
+
+    private static void addAdditionalMessage(@Nonnull EventData eventData, DomainPresenceInfo info) {
+      eventData.additionalMessage(getAdditionalMessage(eventData, info));
+    }
+
+    private static CoreV1Event createEventModel(
+        Packet packet,
+        EventData eventData) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      EventItem eventItem = eventData.eventItem;
+      eventData.domainPresenceInfo(info);
+      addAdditionalMessage(eventData, info);
+
+      return new CoreV1Event()
+          .metadata(createMetadata(eventData))
+          .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+          .reportingInstance(getOperatorPodName())
+          .lastTimestamp(eventItem.getCurrentTimestamp())
+          .type(eventItem.getType())
+          .reason(eventItem.getReason())
+          .message(eventItem.getMessage(eventData))
+          .involvedObject(eventItem.createInvolvedObject(eventData))
+          .count(1);
     }
 
     @Override
@@ -267,52 +309,8 @@ public class EventHelper {
     }
   }
 
-  private static CoreV1Event createEventModel(
-      Packet packet,
-      EventData eventData) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    EventItem eventItem = eventData.eventItem;
-    eventData.domainPresenceInfo(info);
-    addAdditionalMessage(eventData, info);
-
-    return new CoreV1Event()
-        .metadata(createMetadata(eventData))
-        .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(getOperatorPodName())
-        .lastTimestamp(eventItem.getCurrentTimestamp())
-        .type(eventItem.getType())
-        .reason(eventItem.getReason())
-        .message(eventItem.getMessage(eventData))
-        .involvedObject(eventItem.createInvolvedObject(eventData))
-        .count(1);
-  }
-
-  private static void addAdditionalMessage(@Nonnull EventData eventData, DomainPresenceInfo info) {
-    eventData.additionalMessage(getAdditionalMessage(eventData, info));
-  }
-
-  private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
-    return Optional.ofNullable(eventData.failureReason).map(f -> f.getEventSuggestion(info)).orElse("");
-  }
-
-  private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
-    return Optional.ofNullable(eventData.additionalMessage)
-        .orElse(getAdditionalMessageFromFailureReason(eventData, info));
-  }
-
-  private static V1ObjectMeta createMetadata(
-      EventData eventData) {
-    final V1ObjectMeta metadata =
-        new V1ObjectMeta().name(eventData.eventItem.generateEventName(eventData)).namespace(eventData.getNamespace());
-
-    eventData.eventItem.addLabels(metadata, eventData);
-
-    return metadata;
-  }
-
   private static long generateRandomLong() {
-    Random r = new Random();
-    return Math.abs(r.nextLong());
+    return (long) (Math.random() * Long.MAX_VALUE);
   }
 
   public enum EventItem {
