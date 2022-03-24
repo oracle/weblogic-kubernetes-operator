@@ -36,11 +36,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -181,8 +181,8 @@ class AsyncRequestStepTest {
     testSupport.addDomainPresenceInfo(info);
     sendFailedCallback(HttpURLConnection.HTTP_INTERNAL_ERROR);
 
-    assertThat(domain.getStatus().hasConditionWithType(Failed), is(true));
-    assertThat(domain.getStatus().getReason(), equalTo(Kubernetes.name()));
+    assertThat(domain.getStatus().hasConditionWithType(FAILED), is(true));
+    assertThat(domain.getStatus().getReason(), equalTo(KUBERNETES.label()));
     assertThat(domain.getStatus().getMessage(), allOf(
           containsString(OP_NAME), containsString(RESOURCE_TYPE),
           containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
@@ -222,7 +222,7 @@ class AsyncRequestStepTest {
     sendFailedCallback(0, "explanation1");
 
     assertThat(domain.getStatus().getConditions(), hasSize(1));
-    assertThat(domain.getStatus().getConditions().get(0).getType(), equalTo(Failed));
+    assertThat(domain.getStatus().getConditions().get(0).getType(), equalTo(FAILED));
   }
 
   @Test
@@ -256,13 +256,13 @@ class AsyncRequestStepTest {
   @Test
   void afterMultipleRetriesAndSuccessfulCallback_failureIsRemovedFromStatus() {
     testSupport.addDomainPresenceInfo(info);
-    info.getDomain().getStatus().addCondition(new DomainCondition(Failed).withReason(Introspection));
+    info.getDomain().getStatus().addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION));
     sendMultipleFailedCallbackWithSetTime(0, 2);
 
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
 
-    assertThat(domain, hasCondition(Failed).withReason(Introspection));
-    assertThat(domain, not(hasCondition(Failed).withReason(Kubernetes)));
+    assertThat(domain, hasCondition(FAILED).withReason(INTROSPECTION));
+    assertThat(domain, not(hasCondition(FAILED).withReason(KUBERNETES)));
   }
 
   @Test

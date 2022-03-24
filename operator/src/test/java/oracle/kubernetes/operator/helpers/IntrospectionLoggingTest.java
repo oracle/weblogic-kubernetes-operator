@@ -22,7 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -109,7 +109,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(updatedDomain.getStatus().getMessage(),
             equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
   }
@@ -150,7 +150,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
         equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));

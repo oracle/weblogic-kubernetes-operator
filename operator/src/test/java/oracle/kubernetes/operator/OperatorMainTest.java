@@ -237,7 +237,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void whenOperatorCreatedWithListNamespaceStrategy_logConfiguredNamespaces() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
           String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
 
@@ -250,7 +250,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void whenOperatorCreatedWithDedicatedNamespaceStrategy_logConfiguredNamespaces() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
 
     OperatorMain.createMain(buildProperties);
 
@@ -260,7 +260,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void whenOperatorCreatedWithRegExpNamespaceStrategy_dontLogConfiguredNamespaces() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
 
     OperatorMain.createMain(buildProperties);
 
@@ -270,7 +270,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void whenOperatorCreatedWithLabelSelectorNamespaceStrategy_dontLogConfiguredNamespaces() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, OP_CONFIG_DOMAIN_NAMESPACES);
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
 
     OperatorMain.createMain(buildProperties);
 
@@ -322,7 +322,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenOperatorStartedInDedicatedMode_namespaceWatcherIsNotCreated() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
 
     operatorMain.startDeployment(null);
 
@@ -331,7 +331,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenOperatorStartedInDedicatedMode_operatorNamespaceEventWatcherIsNotCreated() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
 
     operatorMain.startDeployment(null);
 
@@ -398,7 +398,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterMissingCRDdetected_correctionOfTheConditionAllowsProcessingToOccur() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     simulateMissingCRD();
     delegate.hideCRD();
     recheckDomains();
@@ -427,7 +427,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceList_onCreateReadNamespaces_startsNamespaces() {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
           String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
@@ -476,7 +476,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withRegExp_onCreateReadNamespaces_startsNamespaces() {
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
@@ -488,7 +488,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withLabelSelector_onCreateReadNamespaces_startsNamespaces() {
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
@@ -510,7 +510,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void whenConfiguredDomainNamespaceMissing_logWarning() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
@@ -524,7 +524,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void whenNamespacesListedInOneChunk_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM);
@@ -540,7 +540,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void whenNamespacesListedInMultipleChunks_allNamespacesStarted() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
@@ -555,7 +555,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void whenNamespacesListedInMoreThanTwoChunks_allNamespacesStarted() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
     int lastNSNumber = DEFAULT_CALL_LIMIT * 3 + 1;
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS" + lastNSNumber;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(lastNSNumber);
@@ -569,7 +569,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void whenNamespacesListedInMultipleChunks_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
@@ -760,7 +760,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceList_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
         String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
@@ -777,7 +777,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceList_onCreateStartNamespacesStep_startManagingNSEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
 
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2);
@@ -797,7 +797,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   void withNamespaceList_onCreateStartNamespacesStep_foundExpectedLogMessage() {
     logRecords.clear();
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, MessageKeys.BEGIN_MANAGING_NAMESPACE);
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
         String.join(",", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3));
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
@@ -814,7 +814,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceList_onCreateReadNamespaces_whenConfiguredDomainNamespaceMissing_noEventCreated() {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS" + LAST_NAMESPACE_NUM + ",NS" + DEFAULT_CALL_LIMIT;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
@@ -828,7 +828,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void withNamespaceList_onCreateReadNamespaces_whenDomainNamespaceRemoved_nsWatchStoppedEventCreated() {
     domainNamespaces.isStopping("NS3");
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS2";
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(4);
@@ -842,7 +842,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void withNamespaceList_onCreateReadNamespaces_whenDomainNamespaceRemoved_stopManagingNSEventCreated() {
     domainNamespaces.isStopping("NS3");
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS2";
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(4);
@@ -859,7 +859,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     logRecords.clear();
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, MessageKeys.END_MANAGING_NAMESPACE);
     domainNamespaces.isStopping("NS3");
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     String namespaceString = "NS1,NS2";
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(4);
@@ -873,7 +873,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     defineNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
@@ -886,7 +886,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     defineNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
@@ -895,7 +895,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void defineNamespaceListStrategy(String namespaceString) {
-    defineSelectionStrategy(SelectionStrategy.List);
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(4);
   }
@@ -905,7 +905,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     defineNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
@@ -921,7 +921,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     assertThat("Confirmed that the event maps for the namespace are empty before changing strategy",
         eventMapsEmpty("NS1"), is(false));
 
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Confirmed that the event maps for the namespace are empty", eventMapsEmpty("NS1"), is(true));
@@ -929,7 +929,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceLabelSelector_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
@@ -946,7 +946,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceLabelSelector_onCreateStartNamespacesStep_startManagingNSEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
@@ -968,7 +968,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
@@ -983,7 +983,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     domainNamespaces.isStopping("NS3");
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
@@ -1000,7 +1000,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     domainNamespaces.isStopping("NS3");
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
@@ -1010,7 +1010,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceRegExp_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
@@ -1026,7 +1026,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceRegExp_onCreateStartNamespacesStep_startManagingNSEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
@@ -1047,7 +1047,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
@@ -1062,7 +1062,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
@@ -1079,7 +1079,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    defineSelectionStrategy(SelectionStrategy.RegExp);
+    defineSelectionStrategy(SelectionStrategy.REG_EXP);
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
@@ -1088,7 +1088,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_onCreateReadNamespaces_nsWatchStartedEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
@@ -1101,7 +1101,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_onCreateReadNamespaces_startManagingNSEventCreatedWithExpectedMessage() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Found START_MANAGING_NAMESPACE event with expected message for all namespaces",
@@ -1111,7 +1111,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_changeToList_onCreateReadNamespaces_nsWatchStoppedEventCreatedInOpNS() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     defineNamespaceListStrategy("NS1");
@@ -1124,7 +1124,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_changeToList_onCreateReadNamespaces_opNSEventMapIsEmpty() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     assertThat("Confirm that the event maps for the namespace are not empty before change the strategy",
@@ -1151,7 +1151,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_changeToList_onCreateReadNamespaces_nsWatchStartedEventCreated() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     defineNamespaceListStrategy("NS1");
@@ -1164,7 +1164,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void withNamespaceDedicated_changeToList_onCreateReadNamespaces_StartManagingNSEventCreated() {
-    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    defineSelectionStrategy(SelectionStrategy.DEDICATED);
     runCreateReadNamespacesStep();
 
     defineNamespaceListStrategy("NS1");

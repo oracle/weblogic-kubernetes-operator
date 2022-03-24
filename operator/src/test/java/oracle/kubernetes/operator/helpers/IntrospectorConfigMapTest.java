@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
@@ -51,7 +51,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -182,7 +182,7 @@ class IntrospectorConfigMapTest {
 
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
 
-    assertThat(getDomain(), hasCondition(Failed).withReason(DomainInvalid)
+    assertThat(getDomain(), hasCondition(FAILED).withReason(DOMAIN_INVALID)
           .withMessageContaining(perLine("first problem", "second problem")));
   }
 
@@ -377,7 +377,7 @@ class IntrospectorConfigMapTest {
 
   @Test
   void whenDomainIsModelInImage_addImageSpecHashToPacket() {
-    configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
+    configureDomain().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .addToPacket();
@@ -389,7 +389,7 @@ class IntrospectorConfigMapTest {
 
   @Test
   void whenDomainIsModelInImage_dontAddRangesForZipsThatFitInMainConfigMap() {
-    configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
+    configureDomain().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile("domainzip.secure", "abcdefg")

@@ -98,7 +98,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
@@ -728,7 +728,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.Image);
+    configurator.withDomainHomeSourceType(DomainSourceType.IMAGE);
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
@@ -741,7 +741,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
     reportInspectionWasRun();
-    configurator.withDomainHomeSourceType(DomainSourceType.FromModel)
+    configurator.withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
         .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
@@ -1327,7 +1327,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
         .withMessageContaining("create", "pod", NS, "Test this failure"));
   }
 
@@ -1364,7 +1364,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
           .withMessageContaining("create", "pod", NS, getQuotaExceededMessage()));
   }
 
@@ -1946,7 +1946,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   // Mii requires an introspection when bringing up a new pod. To disable that in these tests,
   // we will pretend that the domain is not MII.
   private void disableAutoIntrospectOnNewMiiPods() {
-    domain.getSpec().setDomainHomeSourceType(DomainSourceType.Image);
+    domain.getSpec().setDomainHomeSourceType(DomainSourceType.IMAGE);
   }
 
   @Test
@@ -2010,7 +2010,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES).withMessageContaining("create", "pod", NS));
   }
 
   @Test

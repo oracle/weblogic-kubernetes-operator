@@ -29,8 +29,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
@@ -243,7 +243,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     assertThat(getDomain(),
-          hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+          hasStatus().withReason(KUBERNETES).withMessageContaining("create", "pod", NS));
   }
 
   @Test
@@ -468,7 +468,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
+    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.label()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 
