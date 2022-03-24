@@ -398,7 +398,7 @@ public class ImageUtils {
           .modelArchiveFiles(archiveList)
           .wdtModelOnly(modelType)
           .wdtVersion(WDT_VERSION)
-              .target(witTarget)
+          .target(witTarget)
           .env(env)
           .redirect(true);
 
