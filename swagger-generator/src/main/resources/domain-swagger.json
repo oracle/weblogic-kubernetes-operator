@@ -5,7 +5,7 @@
    "version": "v2"
   },
   "paths": {
-   "/apis/weblogic.oracle/v2/namespaces/{namespace}/domains": {
+   "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains": {
     "get": {
      "description": "list or watch objects of kind Domain",
      "consumes": [
@@ -269,7 +269,7 @@
      }
     ]
    },
-   "/apis/weblogic.oracle/v2/namespaces/{namespace}/domains/{name}": {
+   "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains/{name}": {
     "get": {
      "description": "read the specified Domain",
      "consumes": [
@@ -537,7 +537,7 @@
      }
     ]
    },
-   "/apis/weblogic.oracle/v2/namespaces/{namespace}/domains/{name}/status": {
+   "/apis/weblogic.oracle/v9/namespaces/{namespace}/domains/{name}/status": {
     "get": {
      "description": "read status of the specified Domain",
      "consumes": [
