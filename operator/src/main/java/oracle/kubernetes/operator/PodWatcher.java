@@ -89,39 +89,15 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return watcher;
   }
 
-  private void addOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (modifiedCallbackRegistrations) {
-      modifiedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
-    }
-  }
-
   private @Nonnull Collection<Consumer<V1Pod>> getOnModifiedCallbacks(String podName) {
     synchronized (modifiedCallbackRegistrations) {
       return Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).orElse(Collections.emptyList());
     }
   }
 
-  private void removeOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (modifiedCallbackRegistrations) {
-      Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
-    }
-  }
-
-  private void addOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (deletedCallbackRegistrations) {
-      deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
-    }
-  }
-
   private @Nonnull Collection<Consumer<V1Pod>> getOnDeleteCallbacks(String podName) {
     synchronized (deletedCallbackRegistrations) {
       return Optional.ofNullable(deletedCallbackRegistrations.remove(podName)).orElse(Collections.emptyList());
-    }
-  }
-
-  private void removeOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (deletedCallbackRegistrations) {
-      Optional.ofNullable(deletedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
     }
   }
 
@@ -274,7 +250,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           return Optional.ofNullable(serverName).map(info::getServerPod).orElse(null);
         }
 
-        private boolean isNotFoundOnRead(CallResponse callResponse) {
+        private boolean isNotFoundOnRead(CallResponse<?> callResponse) {
           return callResponse.getResult() == null;
         }
 
@@ -283,7 +259,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         }
       };
     }
-
   }
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
@@ -308,9 +283,21 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return isReady(resource);
     }
 
+    private void addOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        modifiedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
+      }
+    }
+
     @Override
     protected void addCallback(String podName, Consumer<V1Pod> callback) {
       addOnModifiedCallback(podName, callback);
+    }
+
+    private void removeOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
+      }
     }
 
     @Override
@@ -347,9 +334,21 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return result == null;
     }
 
+    private void addOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (deletedCallbackRegistrations) {
+        deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
+      }
+    }
+
     @Override
     protected void addCallback(String podName, Consumer<V1Pod> callback) {
       addOnDeleteCallback(podName, callback);
+    }
+
+    private void removeOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (deletedCallbackRegistrations) {
+        Optional.ofNullable(deletedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
+      }
     }
 
     @Override

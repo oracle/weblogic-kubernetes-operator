@@ -165,10 +165,6 @@ public class ServiceHelper {
     return new ClusterStepContext(null, packet).createModel();
   }
 
-  private static boolean canUseCurrentService(V1Service model, V1Service current) {
-    return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
-  }
-
   /**
    * Create asynchronous step for external, NodePort service.
    *
@@ -550,6 +546,10 @@ public class ServiceHelper {
 
     protected abstract void removeServiceFromRecord();
 
+    private static boolean canUseCurrentService(V1Service model, V1Service current) {
+      return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
+    }
+
     Step verifyService(Step next) {
       V1Service service = getServiceFromRecord();
       if (service == null) {
@@ -758,6 +758,7 @@ public class ServiceHelper {
       config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
+    @Override
     protected V1ServiceSpec createServiceSpec() {
       return super.createServiceSpec()
           .putSelectorItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
@@ -794,6 +795,7 @@ public class ServiceHelper {
       return CLUSTER_IP_TYPE;
     }
 
+    @Override
     protected V1ObjectMeta createMetadata() {
       return super.createMetadata().putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
     }
@@ -958,16 +960,12 @@ public class ServiceHelper {
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
-      if (channel == null && isIstioEnabled()) {
-        if (channelName != null) {
-          String[] tokens = channelName.split("-");
-          if (tokens.length > 0) {
-            if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-                  || "tls".equals(tokens[0])) {
-              int index = channelName.indexOf('-');
-              channel = getChannel(channelName.substring(index + 1));
-            }
-          }
+      if (channel == null && isIstioEnabled() && channelName != null) {
+        String[] tokens = channelName.split("-");
+        if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+              || "tls".equals(tokens[0])) {
+          int index = channelName.indexOf('-');
+          channel = getChannel(channelName.substring(index + 1));
         }
       }
       if (channel == null || internalPort == null) {

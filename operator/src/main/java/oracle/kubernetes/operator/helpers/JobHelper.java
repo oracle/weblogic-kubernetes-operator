@@ -409,10 +409,6 @@ public class JobHelper {
       }
     }
 
-    private Step createIntrospectorConfigMap() {
-      return ConfigMapHelper.createIntrospectorConfigMapStep(null);
-    }
-
     private class ReadPodLogResponseStep extends ResponseStep<String> {
       public static final String INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
       private StringBuilder logMessage = new StringBuilder();
@@ -632,6 +628,10 @@ public class JobHelper {
 
       private String getJobPodStatusReason(V1Pod jobPod) {
         return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
+      }
+
+      private Step createIntrospectorConfigMap() {
+        return ConfigMapHelper.createIntrospectorConfigMapStep(null);
       }
 
       // Returns a chain of steps which read the pod log and create a config map.

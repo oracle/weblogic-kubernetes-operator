@@ -72,14 +72,6 @@ public class ReadHealthStep extends Step {
     return new ReadHealthStep(next);
   }
 
-  private static String getRetrieveHealthSearchPath() {
-    return "/management/weblogic/latest/serverRuntime/search";
-  }
-
-  private static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
-  }
-
   // overallHealthState, healthState
 
   @Override
@@ -102,6 +94,14 @@ public class ReadHealthStep extends Step {
 
     ReadHealthProcessing(Packet packet, @Nonnull V1Service service, V1Pod pod) {
       super(packet, service, pod);
+    }
+
+    private static String getRetrieveHealthSearchPath() {
+      return "/management/weblogic/latest/serverRuntime/search";
+    }
+
+    private static String getRetrieveHealthSearchPayload() {
+      return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
     }
 
     private HttpRequest createRequest() {
@@ -227,6 +227,18 @@ public class ReadHealthStep extends Step {
       }
     }
 
+    @SuppressWarnings("SameParameterValue")
+    private static void decrementIntegerInPacketAtomically(Packet packet, String key) {
+      packet.<AtomicInteger>getValue(key).getAndDecrement();
+    }
+
+    private static void logReadFailure(Packet packet) {
+      LOGGER.info(
+          (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+          MessageKeys.WLS_HEALTH_READ_FAILED,
+          packet.get(ProcessingConstants.SERVER_NAME));
+    }
+
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
       new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
@@ -260,8 +272,68 @@ public class ReadHealthStep extends Step {
               : OVERALL_HEALTH_NOT_AVAILABLE;
       }
 
+      private static Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
+        if (jsonResult == null) {
+          return null;
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(jsonResult);
+
+        JsonNode healthState = null;
+        JsonNode subsystemName = null;
+        JsonNode symptoms = null;
+        JsonNode overallHealthState = root.path("overallHealthState");
+        if (overallHealthState != null) {
+          healthState = overallHealthState.path("state");
+          subsystemName = overallHealthState.path("subsystemName");
+          symptoms = overallHealthState.path("symptoms");
+        }
+        JsonNode activationTime = root.path("activationTime");
+
+        List<String> sym = new ArrayList<>();
+        if (symptoms != null) {
+          Iterator<JsonNode> it = symptoms.elements();
+          while (it.hasNext()) {
+            sym.add(it.next().asText());
+          }
+        }
+
+        String subName = null;
+        if (subsystemName != null) {
+          String s = subsystemName.asText();
+          if (s != null && !"null".equals(s)) {
+            subName = s;
+          }
+        }
+
+        ServerHealth health =
+            new ServerHealth()
+                .withOverallHealth(healthState != null ? healthState.asText() : null)
+                .withActivationTime(
+                    activationTime != null ? OffsetDateTime.ofInstant(
+                        Instant.ofEpochMilli(activationTime.asLong()), ZoneId.of("UTC")) : null);
+        if (subName != null) {
+          health
+              .getSubsystems()
+              .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
+        }
+
+        JsonNode state = root.path("state");
+
+        String stateVal = null;
+        if (state != null) {
+          String s = state.asText();
+          if (s != null && !"null".equals(s)) {
+            stateVal = s;
+          }
+        }
+
+        return new Pair<>(stateVal, health);
+      }
+
       void recordStateAndHealth() throws IOException {
-        Pair<String, ServerHealth> pair = RecordHealthStep.parseServerHealthJson(getResponse().body());
+        Pair<String, ServerHealth> pair = parseServerHealthJson(getResponse().body());
         String state = emptyToNull(pair.getLeft());
         ServerHealth health = pair.getRight();
         recordStateAndHealth(state, health);
@@ -310,77 +382,5 @@ public class ReadHealthStep extends Step {
         return packet;
       }
     }
-
-    private static Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
-      if (jsonResult == null) {
-        return null;
-      }
-
-      ObjectMapper mapper = new ObjectMapper();
-      JsonNode root = mapper.readTree(jsonResult);
-
-      JsonNode healthState = null;
-      JsonNode subsystemName = null;
-      JsonNode symptoms = null;
-      JsonNode overallHealthState = root.path("overallHealthState");
-      if (overallHealthState != null) {
-        healthState = overallHealthState.path("state");
-        subsystemName = overallHealthState.path("subsystemName");
-        symptoms = overallHealthState.path("symptoms");
-      }
-      JsonNode activationTime = root.path("activationTime");
-
-      List<String> sym = new ArrayList<>();
-      if (symptoms != null) {
-        Iterator<JsonNode> it = symptoms.elements();
-        while (it.hasNext()) {
-          sym.add(it.next().asText());
-        }
-      }
-
-      String subName = null;
-      if (subsystemName != null) {
-        String s = subsystemName.asText();
-        if (s != null && !"null".equals(s)) {
-          subName = s;
-        }
-      }
-
-      ServerHealth health =
-          new ServerHealth()
-              .withOverallHealth(healthState != null ? healthState.asText() : null)
-              .withActivationTime(
-                  activationTime != null ? OffsetDateTime.ofInstant(
-                      Instant.ofEpochMilli(activationTime.asLong()), ZoneId.of("UTC")) : null);
-      if (subName != null) {
-        health
-            .getSubsystems()
-            .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
-      }
-
-      JsonNode state = root.path("state");
-
-      String stateVal = null;
-      if (state != null) {
-        String s = state.asText();
-        if (s != null && !"null".equals(s)) {
-          stateVal = s;
-        }
-      }
-
-      return new Pair<>(stateVal, health);
-    }
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static void decrementIntegerInPacketAtomically(Packet packet, String key) {
-    packet.<AtomicInteger>getValue(key).getAndDecrement();
-  }
-
-  private static void logReadFailure(Packet packet) {
-    LOGGER.info(
-          (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
-          MessageKeys.WLS_HEALTH_READ_FAILED,
-          packet.get(ProcessingConstants.SERVER_NAME));
   }
 }

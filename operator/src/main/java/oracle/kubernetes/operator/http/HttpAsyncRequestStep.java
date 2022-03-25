@@ -113,6 +113,14 @@ public class HttpAsyncRequestStep extends Step {
       }
     }
 
+    private String getDomainUIDFromInfo(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse(null);
+    }
+
+    private String getNamespaceFromInfo(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getNamespace).orElse(null);
+    }
+
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       try (ThreadLoggingContext ignored =
@@ -140,14 +148,6 @@ public class HttpAsyncRequestStep extends Step {
       LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
       HttpResponseStep.addToPacket(packet, throwable);
     }
-  }
-
-  private String getDomainUIDFromInfo(DomainPresenceInfo info) {
-    return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse(null);
-  }
-
-  private String getNamespaceFromInfo(DomainPresenceInfo info) {
-    return Optional.ofNullable(info).map(DomainPresenceInfo::getNamespace).orElse(null);
   }
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {

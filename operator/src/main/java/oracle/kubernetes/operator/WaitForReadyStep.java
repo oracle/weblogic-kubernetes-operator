@@ -13,8 +13,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
@@ -31,16 +29,15 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
   static NextStepFactory nextStepFactory = WaitForReadyStep::createMakeDomainRightStep;
 
-  protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+  protected static Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
                                            DomainPresenceInfo info, Step next) {
     return new CallBuilder().readDomainAsync(info.getDomainUid(),
-            info.getNamespace(), new MakeRightDomainStep(callback, null));
+            info.getNamespace(), new MakeRightDomainStep<>(callback, null));
   }
 
   static int getWatchBackstopRecheckDelaySeconds() {
@@ -185,7 +182,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
 
     logWaiting(getResourceName());
-    return doSuspend((fiber) -> resumeWhenReady(packet, fiber));
+    return doSuspend(fiber -> resumeWhenReady(packet, fiber));
   }
 
   // Registers a callback for updates to the specified resource and
@@ -226,6 +223,7 @@ abstract class WaitForReadyStep<T> extends Step {
     return getDomainUidLabel(getMetadata(initialResource));
   }
 
+  @Override
   public String getResourceName() {
     return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
@@ -252,9 +250,9 @@ abstract class WaitForReadyStep<T> extends Step {
 
   static class MakeRightDomainStep<V> extends DefaultResponseStep<V> {
     public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
-    private final WaitForReadyStep.Callback callback;
+    private final WaitForReadyStep<?>.Callback callback;
 
-    MakeRightDomainStep(WaitForReadyStep.Callback callback, Step next) {
+    MakeRightDomainStep(WaitForReadyStep<?>.Callback callback, Step next) {
       super(next);
       this.callback = callback;
     }
@@ -293,6 +291,13 @@ abstract class WaitForReadyStep<T> extends Step {
       }
     }
 
+    private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
+      updatePacket(packet, resource);
+      if (shouldTerminateFiber(resource)) {
+        fiber.terminate(createTerminationException(resource), packet);
+      }
+    }
+
     // The resource has now either completed or failed, so we can continue processing.
     void proceedFromWait(T resource) {
       removeCallback(getResourceName(), this);
@@ -321,16 +326,9 @@ abstract class WaitForReadyStep<T> extends Step {
     }
   }
 
-  private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
-    updatePacket(packet, resource);
-    if (shouldTerminateFiber(resource)) {
-      fiber.terminate(createTerminationException(resource), packet);
-    }
-  }
-
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+    Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
                                                    DomainPresenceInfo info, Step next);
   }
 

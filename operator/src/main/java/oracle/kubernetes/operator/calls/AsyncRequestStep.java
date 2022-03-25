@@ -292,10 +292,71 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     private boolean firstTimeResumed() {
       return didResume.compareAndSet(false, true);
     }
-  }
 
-  private String getOperation() {
-    return this.requestParams.call;
+    private void logTimeout() {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.finer(
+            MessageKeys.ASYNC_TIMEOUT,
+            identityHash(),
+            requestParams.call,
+            requestParams.namespace,
+            requestParams.name,
+            requestParams.body != null
+                ? LoggingFactory.getJson().serialize(requestParams.body)
+                : "",
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
+      }
+    }
+
+    private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.finer(
+            ASYNC_SUCCESS,
+            identityHash(),
+            requestParams.call,
+            result,
+            statusCode,
+            responseHeaders);
+      }
+    }
+
+    private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.fine(
+            MessageKeys.ASYNC_FAILURE,
+            identityHash(),
+            ae.getMessage(),
+            statusCode,
+            responseHeaders,
+            requestParams.call,
+            requestParams.namespace,
+            requestParams.name,
+            requestParams.body != null
+                ? LoggingFactory.getJson().serialize(requestParams.body)
+                : "",
+            fieldSelector,
+            labelSelector,
+            resourceVersion,
+            ae.getResponseBody());
+      }
+    }
   }
 
   @Override
@@ -337,7 +398,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
     return doSuspend(
-        (fiber) -> {
+        fiber -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
             scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
@@ -387,71 +448,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         labelSelector,
         resourceVersion,
         responseBody);
-  }
-
-  private void logTimeout() {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.finer(
-          MessageKeys.ASYNC_TIMEOUT,
-          identityHash(),
-          requestParams.call,
-          requestParams.namespace,
-          requestParams.name,
-          requestParams.body != null
-              ? LoggingFactory.getJson().serialize(requestParams.body)
-              : "",
-          fieldSelector,
-          labelSelector,
-          resourceVersion);
-    }
-  }
-
-  private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.finer(
-          ASYNC_SUCCESS,
-          identityHash(),
-          requestParams.call,
-          result,
-          statusCode,
-          responseHeaders);
-    }
-  }
-
-  private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.fine(
-          MessageKeys.ASYNC_FAILURE,
-          identityHash(),
-          ae.getMessage(),
-          statusCode,
-          responseHeaders,
-          requestParams.call,
-          requestParams.namespace,
-          requestParams.name,
-          requestParams.body != null
-              ? LoggingFactory.getJson().serialize(requestParams.body)
-              : "",
-          fieldSelector,
-          labelSelector,
-          resourceVersion,
-          ae.getResponseBody());
-    }
   }
 
   // creates a unique ID that allows matching requests to responses

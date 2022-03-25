@@ -37,6 +37,7 @@ import oracle.kubernetes.utils.SystemClock;
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
   static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   static final String GIT_BUILD_VERSION_KEY = "git.build.version";
   static final String GIT_BRANCH_KEY = "git.branch";
   static final String GIT_COMMIT_KEY = "git.commit.id.abbrev";

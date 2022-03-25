@@ -49,7 +49,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 /** A Kubernetes Operator for WebLogic. */
 public class OperatorMain extends BaseMain {
 
-  private final MainDelegate delegate;
+  private final MainDelegate mainDelegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
@@ -74,15 +74,15 @@ public class OperatorMain extends BaseMain {
   }
 
 
-  private static String getConfiguredServiceAccount() {
-    return TuningParameters.getInstance().get("serviceaccount");
-  }
-
   Object getOperatorNamespaceEventWatcher() {
     return operatorNamespaceEventWatcher;
   }
 
   static class MainDelegateImpl extends CoreDelegateImpl implements MainDelegate, DomainProcessorDelegate {
+
+    private static String getConfiguredServiceAccount() {
+      return TuningParameters.getInstance().get("serviceaccount");
+    }
 
     private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
     private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
@@ -194,30 +194,24 @@ public class OperatorMain extends BaseMain {
   }
 
   DomainNamespaces getDomainNamespaces() {
-    return delegate.getDomainNamespaces();
+    return mainDelegate.getDomainNamespaces();
   }
 
-  OperatorMain(MainDelegate delegate) {
-    super(delegate);
-    this.delegate = delegate;
-    stuckPodProcessing = new StuckPodProcessing(delegate);
+  OperatorMain(MainDelegate mainDelegate) {
+    super(mainDelegate);
+    this.mainDelegate = mainDelegate;
+    stuckPodProcessing = new StuckPodProcessing(mainDelegate);
   }
 
   @Override
   Step createStartupSteps() {
 
     return nextStepFactory.createInternalInitializationStep(
-        delegate, Namespaces.getSelection(new StartupStepsVisitor()));
+        mainDelegate, Namespaces.getSelection(new StartupStepsVisitor()));
   }
 
   private static Step createInitializeInternalIdentityStep(MainDelegate delegate, Step next) {
     return new InitializeInternalIdentityStep(delegate, next);
-  }
-
-  private Step createOperatorNamespaceEventListStep() {
-    return new CallBuilder()
-        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
-        .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
   private class EventListResponseStep extends ResponseStep<CoreV1EventList> {
@@ -248,6 +242,12 @@ public class OperatorMain extends BaseMain {
       return createDomainRecheckSteps();
     }
 
+    private Step createOperatorNamespaceEventListStep() {
+      return new CallBuilder()
+          .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
+          .listEventAsync(getOperatorNamespace(), new EventListResponseStep(mainDelegate.getDomainProcessor()));
+    }
+
     @Override
     public Step getDefaultSelection() {
       return Step.chain(
@@ -258,6 +258,15 @@ public class OperatorMain extends BaseMain {
   }
 
   private class StartNamespaceWatcherStep extends DefaultResponseStep<V1NamespaceList> {
+
+    private NamespaceWatcher createNamespaceWatcher(String initialResourceVersion) {
+      return NamespaceWatcher.create(
+          threadFactory,
+          initialResourceVersion,
+          TuningParameters.getInstance().getWatchTuning(),
+          OperatorMain.this::dispatchNamespaceWatch,
+          new AtomicBoolean(false));
+    }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
@@ -274,8 +283,8 @@ public class OperatorMain extends BaseMain {
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
       int stuckPodInterval = getStuckPodInterval();
-      delegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
-      delegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
+      mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
       markReadyAndStartLivenessThread();
 
@@ -296,7 +305,7 @@ public class OperatorMain extends BaseMain {
   }
 
   Runnable recheckDomains() {
-    return () -> delegate.runSteps(createDomainRecheckSteps());
+    return () -> mainDelegate.runSteps(createDomainRecheckSteps());
   }
 
   Runnable checkStuckPods() {
@@ -311,12 +320,12 @@ public class OperatorMain extends BaseMain {
     int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
-      delegate.getDomainProcessor().reportSuspendedFibers();
+      mainDelegate.getDomainProcessor().reportSuspendedFibers();
       isFullRecheck = true;
       lastFullRecheck.set(now);
     }
 
-    final DomainRecheck domainRecheck = new DomainRecheck(delegate, isFullRecheck);
+    final DomainRecheck domainRecheck = new DomainRecheck(mainDelegate, isFullRecheck);
     return Step.chain(
         domainRecheck.createOperatorNamespaceReview(),
         createCRDPresenceCheck(),
@@ -406,8 +415,8 @@ public class OperatorMain extends BaseMain {
   protected void startRestServer()
       throws Exception {
     OperatorRestServer.create(
-        new RestConfigImpl(delegate.getPrincipal(), delegate.getDomainNamespaces()::getNamespaces,
-                new Certificates(delegate)));
+        new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
+                new Certificates(mainDelegate)));
     OperatorRestServer.getInstance().start(container);
   }
 
@@ -430,16 +439,7 @@ public class OperatorMain extends BaseMain {
 
   @Override
   protected void stopAllWatchers() {
-    delegate.getDomainNamespaces().stopAllWatchers();
-  }
-
-  private NamespaceWatcher createNamespaceWatcher(String initialResourceVersion) {
-    return NamespaceWatcher.create(
-        threadFactory,
-        initialResourceVersion,
-        TuningParameters.getInstance().getWatchTuning(),
-        this::dispatchNamespaceWatch,
-        new AtomicBoolean(false));
+    mainDelegate.getDomainNamespaces().stopAllWatchers();
   }
 
   void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
@@ -455,15 +455,15 @@ public class OperatorMain extends BaseMain {
           return;
         }
 
-        delegate.runSteps(createPacketWithLoggingContext(ns),
-              new DomainRecheck(delegate, true).createStartNamespacesStep(Collections.singletonList(ns)),
+        mainDelegate.runSteps(createPacketWithLoggingContext(ns),
+              new DomainRecheck(mainDelegate, true).createStartNamespacesStep(Collections.singletonList(ns)),
               null);
         break;
 
       case "DELETED":
         // Mark the namespace as isStopping, which will cause the namespace be stopped
         // the next time when recheckDomains is triggered
-        delegate.getDomainNamespaces().isStopping(ns).set(true);
+        mainDelegate.getDomainNamespaces().isStopping(ns).set(true);
 
         break;
 

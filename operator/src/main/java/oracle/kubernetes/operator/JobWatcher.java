@@ -61,16 +61,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     this.namespace = namespace;
   }
 
-  private void addOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
-    completeCallbackRegistrations.put(jobName, callback);
-  }
-
   private void dispatchCallback(String jobName, V1Job job) {
     Optional.ofNullable(completeCallbackRegistrations.get(jobName)).ifPresent(callback -> callback.accept(job));
-  }
-
-  private void removeOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
-    completeCallbackRegistrations.remove(jobName, callback);
   }
 
   @Override
@@ -124,12 +116,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
         for (V1JobCondition cond : conds) {
-          if ("Complete".equals(cond.getType())) {
-            if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
-              // Job is complete!
-              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
-              return true;
-            }
+          if ("Complete".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+            // Job is complete!
+            LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
+            return true;
           }
         }
       }
@@ -280,9 +270,17 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return job.getMetadata();
     }
 
+    private void addOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+      completeCallbackRegistrations.put(jobName, callback);
+    }
+
     @Override
     void addCallback(String name, Consumer<V1Job> callback) {
       addOnModifiedCallback(name, callback);
+    }
+
+    private void removeOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+      completeCallbackRegistrations.remove(jobName, callback);
     }
 
     @Override
@@ -353,6 +351,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return job;
     }
 
+    @Override
     public String toString() {
       return LOGGER.formatMessage(
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,

@@ -171,10 +171,10 @@ class DomainRecheck {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> domainNamespaces = getNamespacesToStart(callResponse.getResult());
-      Namespaces.getFoundDomainNamespaces(packet).addAll(domainNamespaces);
+      final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getResult());
+      Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
 
-      return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
+      return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
     }
 
     private Step createNextSteps(Set<String> namespacesToStartNow) {
@@ -188,6 +188,10 @@ class DomainRecheck {
         current = Step.chain(nextSteps);
       }
       return current;
+    }
+
+    private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+      return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
     }
 
     private boolean haveExplicitlyConfiguredNamespacesToManage() {
@@ -206,10 +210,6 @@ class DomainRecheck {
 
   Step createStartNamespacesStep(Collection<String> domainNamespaces) {
     return RunInParallel.perNamespace(domainNamespaces, this::startNamespaceSteps);
-  }
-
-  private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
-    return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
   }
 
   private Step startNamespaceSteps(String ns) {

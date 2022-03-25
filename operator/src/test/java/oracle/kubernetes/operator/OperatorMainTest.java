@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -154,7 +153,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-  private final String ns = "nsrand" + new Random().nextInt(10000);
+  private final String ns = "nsrand" + (((int) (Math.random() * 9999)) + 1);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final OperatorMain operatorMain = new OperatorMain(delegate);
