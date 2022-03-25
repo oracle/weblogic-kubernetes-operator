@@ -91,7 +91,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -128,6 +127,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
@@ -1477,7 +1477,7 @@ class DomainProcessorTest {
   void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
-            Arrays.asList(INDEPENDENT_SERVER));
+          List.of(INDEPENDENT_SERVER));
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
     domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -1496,7 +1496,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"

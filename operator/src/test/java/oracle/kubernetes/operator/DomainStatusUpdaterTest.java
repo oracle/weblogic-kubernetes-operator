@@ -28,8 +28,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
@@ -43,6 +43,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -207,7 +208,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenDomainHasFailedCondition_removeFailureStepRemovesIt() {
-    domain.getStatus().addCondition(new DomainCondition(Failed));
+    domain.getStatus().addCondition(new DomainCondition(Failed).withReason(Kubernetes));
 
     testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
 

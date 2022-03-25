@@ -15,6 +15,7 @@ import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -55,6 +56,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @NotNull
   private String status = "True";
 
+  // internal: used to select failure conditions for deletion
+  private volatile boolean marked;
+
   /**
    * Creates a new domain condition, initialized with its type.
    * @param conditionType the enum that designates the condition type
@@ -71,6 +75,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
+    this.marked = other.marked;
   }
 
   /**
@@ -89,17 +94,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    */
   public void setLastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
-  }
-
-  /**
-   * Last time we probed the condition.
-   *
-   * @param lastProbeTime time
-   * @return this
-   */
-  public DomainCondition withLastProbeTime(OffsetDateTime lastProbeTime) {
-    this.lastProbeTime = lastProbeTime;
-    return this;
   }
 
   /**
@@ -220,6 +214,18 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type == this.type;
   }
 
+  boolean isMarked() {
+    return marked;
+  }
+
+  void mark() {
+    this.marked = true;
+  }
+
+  void unMark() {
+    this.marked = false;
+  }
+
   @Override
   public boolean isPatchableFrom(DomainCondition other) {
     return false; // domain conditions are never patched
@@ -269,7 +275,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Override
   public int compareTo(DomainCondition o) {
     return type == o.type
-          ? -(lastTransitionTime.compareTo(o.lastTransitionTime))
+          ? o.lastTransitionTime.compareTo(lastTransitionTime)
           : type.compareTo(o.type);
   }
 
@@ -288,4 +294,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return (newCondition.getType() != getType()) || getType().allowMultipleConditionsWithThisType();
   }
 
+  boolean isSpecifiedFailure(DomainFailureReason reason) {
+    return hasType(Failed) && reason.name().equals(getReason());
+  }
 }

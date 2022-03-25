@@ -17,18 +17,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
+import static oracle.kubernetes.weblogic.domain.model.DomainStatusConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -87,8 +88,37 @@ class DomainStatusTest {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 1"));
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 2"));
 
-    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 1"));
-    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 2"));
+    assertThat(domainStatus, hasCondition(Failed).withMessageContaining("problem 1"));
+    assertThat(domainStatus, hasCondition(Failed).withMessageContaining("problem 2"));
+  }
+
+  @Test
+  void removeFailuresMarkedForRemoval() {
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(DomainInvalid).withMessage("problem 1"));
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(DomainInvalid).withMessage("problem 2"));
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(Kubernetes).withMessage("problem 3"));
+
+    domainStatus.markFailuresForRemoval(DomainInvalid);
+    domainStatus.removeMarkedFailures();
+
+    assertThat(domainStatus, not(hasCondition(Failed).withReason(DomainInvalid)));
+    assertThat(domainStatus, hasCondition(Failed).withReason(Kubernetes).withMessageContaining("problem 3"));
+  }
+
+  @Test
+  void dontRemoveMatchingAddedFailures() {
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(DomainInvalid).withMessage("problem 1"));
+    SystemClockTestSupport.increment();
+    final OffsetDateTime initialTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(DomainInvalid).withMessage("problem 2"));
+
+    SystemClockTestSupport.increment();
+    domainStatus.markFailuresForRemoval(DomainInvalid);
+    domainStatus.addCondition(new DomainCondition(Failed).withReason(DomainInvalid).withMessage("problem 2"));
+    domainStatus.removeMarkedFailures();
+
+    assertThat(domainStatus, not(hasCondition(Failed).withReason(DomainInvalid).withMessageContaining("problem 1")));
+    assertThat(domainStatus, hasCondition(Failed).withReason(DomainInvalid).atTime(initialTime));
   }
 
   @Test
