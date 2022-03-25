@@ -77,9 +77,9 @@ def kind_k8s_map = [
 ]
 
 def _kind_image = null
-def initializeKindImage(knd, k8s) {
+def initializeKindImage(map, knd, k8s) {
     if (knd != null && k8s != null) {
-        def k8s_map = kind_k8s_map.get(knd);
+        def k8s_map = map.get(knd);
         if (k8s_map != null) {
             _kind_image = k8s_map.get(k8s)
         }
@@ -280,7 +280,7 @@ pipeline {
                     ulimit -aH
                 '''
                 script {
-                    _kind_image = initializeKindImage(params.KIND_VERSION, params.KUBE_VERSION)
+                    _kind_image = initializeKindImage(kind_k8s_map, params.KIND_VERSION, params.KUBE_VERSION)
                     echo "Kind Image = ${_kind_image}"
                 }
             }
