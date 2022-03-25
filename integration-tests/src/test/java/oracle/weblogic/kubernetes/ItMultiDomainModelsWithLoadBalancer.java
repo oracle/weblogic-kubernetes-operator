@@ -95,7 +95,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;

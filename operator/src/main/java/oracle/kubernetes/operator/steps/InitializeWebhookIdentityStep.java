@@ -31,8 +31,8 @@ import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
+import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBHOOK_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;

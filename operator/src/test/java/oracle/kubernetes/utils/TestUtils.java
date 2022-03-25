@@ -10,6 +10,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
 import static com.meterware.simplestub.Stub.createStub;

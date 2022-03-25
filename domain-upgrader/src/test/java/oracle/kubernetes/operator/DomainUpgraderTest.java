@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.utils.CommonTestUtils;
+import oracle.kubernetes.common.utils.CommonTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UPGRADE_SUCCESS;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UPGRADE_SUCCESS;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,9 +15,9 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {

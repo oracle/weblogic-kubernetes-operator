@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.utils;
+package oracle.kubernetes.common.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 
 public class BaseTestUtils {
 
-  static boolean isTestLogHandler(Handler handler) {
+  protected static boolean isTestLogHandler(Handler handler) {
     return handler instanceof TestLogHandler;
   }
 
-  static void rejectCall(Handler handler) {
+  protected static void rejectCall(Handler handler) {
     throw new IllegalStateException("silenceOperatorLogger may only called once");
   }
 
@@ -43,7 +43,7 @@ public class BaseTestUtils {
     return new JsonPathLoggerMemento();
   }
 
-  abstract static class TestLogHandler extends Handler {
+  protected abstract static class TestLogHandler extends Handler {
     private static final List<String> ALL_MESSAGES = new ArrayList<>();
     private Throwable throwable;
     private final List<Throwable> ignoredExceptions = new ArrayList<>();
@@ -126,7 +126,11 @@ public class BaseTestUtils {
     // log level could be null, so need a boolean to indicate if we have saved it
     private boolean loggerLevelSaved;
 
-    ConsoleHandlerMemento(Logger logger, TestLogHandler testHandler, List<Handler> savedHandlers) {
+    /**
+     *
+     * Constructs an instance of ConsoleHandlerMemento.
+     */
+    public ConsoleHandlerMemento(Logger logger, TestLogHandler testHandler, List<Handler> savedHandlers) {
       this.logger = logger;
       this.testHandler = testHandler;
       this.savedHandlers = savedHandlers;

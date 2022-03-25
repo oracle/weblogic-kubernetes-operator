@@ -67,7 +67,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
@@ -91,6 +90,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 
 /**
  * Utility class to start DB service and RCU schema.

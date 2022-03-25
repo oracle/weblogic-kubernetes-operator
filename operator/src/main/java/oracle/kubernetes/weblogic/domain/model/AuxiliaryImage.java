@@ -6,10 +6,10 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.ImagePullPolicy;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.utils.CommonUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;

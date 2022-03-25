@@ -32,6 +32,9 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.common.logging.LoggingFilter;
+import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -49,9 +52,6 @@ import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.LoggingFilter;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
@@ -74,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES;
 import static oracle.kubernetes.operator.DomainPresence.getDomainPresenceFailureRetrySeconds;
 import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureSteps;
@@ -90,7 +91,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 public class DomainProcessorImpl implements DomainProcessor {

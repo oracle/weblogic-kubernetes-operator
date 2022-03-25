@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.utils;
+package oracle.kubernetes.common.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,12 +12,11 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.operator.utils.SchemaConversionUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.CommonConstants.API_VERSION_V9;
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -18,19 +18,19 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import static java.util.Collections.emptyList;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_FAILURE;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_POD_FAILURE;
 
 public class IntrospectionStatus {
 

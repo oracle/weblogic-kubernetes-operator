@@ -33,8 +33,8 @@ import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
+import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 

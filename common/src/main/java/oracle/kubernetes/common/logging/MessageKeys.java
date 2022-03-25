@@ -1,7 +1,7 @@
 // Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.logging;
+package oracle.kubernetes.common.logging;
 
 /**
  * Message keys used to look up log messages from the resource bundle. The use of message keys makes

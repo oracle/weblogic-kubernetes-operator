@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.utils;
+package oracle.kubernetes.common.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,18 +15,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import oracle.kubernetes.operator.AuxiliaryImageConstants;
-import oracle.kubernetes.operator.CommonConstants;
-import oracle.kubernetes.operator.helpers.AuxiliaryImageEnvVars;
-import oracle.kubernetes.operator.logging.BaseLoggingFacade;
-import oracle.kubernetes.operator.logging.CommonLoggingFactory;
+import oracle.kubernetes.common.AuxiliaryImageConstants;
+import oracle.kubernetes.common.CommonConstants;
+import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
+import oracle.kubernetes.common.logging.BaseLoggingFacade;
+import oracle.kubernetes.common.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-
-import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
-import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.operator.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.operator.CommonConstants.COMPATIBILITY_MODE;
 
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
 public class SchemaConversionUtils {
@@ -244,7 +239,8 @@ public class SchemaConversionUtils {
   }
 
   public static String getDNS1123auxiliaryImageVolumeName(Object name) {
-    return CommonUtils.toDns1123LegalName(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
+    return CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
+        + AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
   }
 
   private void addVolumeMount(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
@@ -269,13 +265,13 @@ public class SchemaConversionUtils {
   private Map<String, Object> createInitContainerForAuxiliaryImage(Map<String, Object> auxiliaryImage, int index,
                                                    List<Object> auxiliaryImageVolumes) {
     Map<String, Object> container = new LinkedHashMap<>();
-    container.put("name", COMPATIBILITY_MODE + getName(index));
+    container.put("name", CommonConstants.COMPATIBILITY_MODE + getName(index));
     container.put(IMAGE, auxiliaryImage.get(IMAGE));
-    container.put("command", Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
+    container.put("command", Arrays.asList(AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
     container.put("imagePullPolicy", getImagePullPolicy(auxiliaryImage));
     container.put("env", createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)));
-    container.put(VOLUME_MOUNTS, Arrays.asList(getVolumeMount(auxiliaryImage, AUXILIARY_IMAGE_TARGET_PATH),
-            getScriptsVolumeMount()));
+    container.put(VOLUME_MOUNTS, Arrays.asList(getVolumeMount(auxiliaryImage,
+        AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH), getScriptsVolumeMount()));
     return container;
   }
 
@@ -287,10 +283,11 @@ public class SchemaConversionUtils {
   private List<Object> createEnv(Map<String, Object> auxiliaryImage, List<Object> auxiliaryImageVolumes, String name) {
     List<Object> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, getMountPath(auxiliaryImage, auxiliaryImageVolumes));
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH,
+        AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, getCommand(auxiliaryImage));
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, (String)auxiliaryImage.get(IMAGE));
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name);
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, CommonConstants.COMPATIBILITY_MODE + name);
     return vars;
   }
 

@@ -15,6 +15,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -22,7 +23,6 @@ import oracle.kubernetes.operator.rest.model.ConversionRequest;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.Result;
-import oracle.kubernetes.operator.utils.SchemaConversionUtils;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook

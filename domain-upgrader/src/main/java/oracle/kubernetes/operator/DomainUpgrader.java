@@ -10,10 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import oracle.kubernetes.operator.logging.CommonLoggingFacade;
-import oracle.kubernetes.operator.logging.CommonLoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.utils.SchemaConversionUtils;
+import oracle.kubernetes.common.logging.CommonLoggingFacade;
+import oracle.kubernetes.common.logging.CommonLoggingFactory;
+import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -23,7 +23,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FilenameUtils;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UPGRADE_SUCCESS;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UPGRADE_SUCCESS;
 
 public class DomainUpgrader {
 

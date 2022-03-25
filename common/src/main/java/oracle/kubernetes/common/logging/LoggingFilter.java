@@ -1,7 +1,7 @@
 // Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.logging;
+package oracle.kubernetes.common.logging;
 
 /** A filter to control whether a log message should be logged. */
 public interface LoggingFilter {

@@ -1,11 +1,9 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.utils;
+package oracle.kubernetes.common.utils;
 
-import static oracle.kubernetes.operator.CommonConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.CommonConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.CommonConstants.LATEST_IMAGE_SUFFIX;
+import oracle.kubernetes.common.CommonConstants;
 
 public class CommonUtils {
 
@@ -18,11 +16,12 @@ public class CommonUtils {
    * @param imageName the image name to test
    */
   public static String getInferredImagePullPolicy(String imageName) {
-    return useLatestImage(imageName) ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+    return useLatestImage(imageName)
+        ? CommonConstants.ALWAYS_IMAGEPULLPOLICY : CommonConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
   }
 
   private static boolean useLatestImage(String imageName) {
-    return imageName.endsWith(LATEST_IMAGE_SUFFIX);
+    return imageName.endsWith(CommonConstants.LATEST_IMAGE_SUFFIX);
   }
 
   /**

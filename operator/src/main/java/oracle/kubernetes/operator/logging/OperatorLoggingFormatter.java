@@ -11,6 +11,7 @@ import java.util.logging.LogRecord;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
+import oracle.kubernetes.common.logging.BaseLoggingFormatter;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
@@ -19,12 +20,12 @@ import oracle.kubernetes.operator.work.Packet;
 public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
 
   @Override
-  Fiber getCurrentFiberIfSet() {
+  protected Fiber getCurrentFiberIfSet() {
     return Fiber.getCurrentIfSet();
   }
 
   @Override
-  String getFiber() {
+  protected String getFiber() {
     return fiberObject != null ? fiberObject.toString() : "";
   }
 
@@ -36,7 +37,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
    * @return the domain UID or empty string
    */
   @Override
-  String getDomainUid(Fiber fiber) {
+  protected String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
             .map(Fiber::getPacket)
             .map(this::getDomainPresenceInfo)
@@ -68,7 +69,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
    * @return the namespace or empty string
    */
   @Override
-  String getNamespace(Fiber fiber) {
+  protected String getNamespace(Fiber fiber) {
     return Optional.ofNullable(fiber)
             .map(Fiber::getPacket)
             .map(this::getDomainPresenceInfo)
@@ -86,7 +87,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   }
 
   @Override
-  void serializeModelObjectsWithJSON(LogRecord logRecord) {
+  protected void serializeModelObjectsWithJSON(LogRecord logRecord) {
     // the toString() format for the model classes is inappropriate for our logs
     // so, replace with the JSON serialization
     JSON j = LoggingFactory.getJson();
@@ -110,7 +111,7 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   }
 
   @Override
-  void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
+  protected void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
     if (logRecord.getThrown() != null) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);

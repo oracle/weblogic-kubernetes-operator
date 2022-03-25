@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.logging;
+package oracle.kubernetes.common.logging;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -40,7 +40,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-  T fiberObject = null;
+  protected T fiberObject = null;
 
   @Override
   public String format(LogRecord logRecord) {
@@ -112,24 +112,24 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     return json + "\n";
   }
 
-  abstract void serializeModelObjectsWithJSON(LogRecord logRecord);
+  protected abstract void serializeModelObjectsWithJSON(LogRecord logRecord);
 
-  abstract T getCurrentFiberIfSet();
+  protected abstract T getCurrentFiberIfSet();
 
-  abstract String getFiber();
+  protected abstract String getFiber();
 
-  abstract String getNamespace(T fiber);
+  protected abstract String getNamespace(T fiber);
 
-  abstract String getDomainUid(T fiber);
+  protected abstract String getDomainUid(T fiber);
 
-  abstract void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing);
+  protected abstract void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing);
 
-  class ThrowableProcessing {
-    LogRecord logRecord;
-    String code;
-    Map<String, List<String>> headers;
-    String body;
-    String throwable;
+  protected class ThrowableProcessing {
+    public LogRecord logRecord;
+    public String code;
+    public Map<String, List<String>> headers;
+    public String body;
+    public String throwable;
 
     private ThrowableProcessing(LogRecord logRecord, String code, Map<String, List<String>> headers, String body,
                                String throwable) {

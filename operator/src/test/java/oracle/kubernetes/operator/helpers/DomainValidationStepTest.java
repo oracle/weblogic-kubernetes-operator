@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -20,12 +20,12 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
@@ -44,6 +44,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER;
+import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
@@ -55,13 +62,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER;
-import static oracle.kubernetes.operator.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
-import static oracle.kubernetes.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;

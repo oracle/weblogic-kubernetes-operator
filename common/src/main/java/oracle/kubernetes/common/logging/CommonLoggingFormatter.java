@@ -1,7 +1,7 @@
 // Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator.logging;
+package oracle.kubernetes.common.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,22 +11,22 @@ import java.util.logging.LogRecord;
 public class CommonLoggingFormatter extends BaseLoggingFormatter<Object> {
 
   @Override
-  Object getCurrentFiberIfSet() {
+  protected Object getCurrentFiberIfSet() {
     return null;
   }
 
   @Override
-  String getFiber() {
+  protected String getFiber() {
     return null;
   }
 
   @Override
-  String getDomainUid(Object fiber) {
+  protected String getDomainUid(Object fiber) {
     return null;
   }
 
   @Override
-  void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
+  protected void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing) {
     if (logRecord.getThrown() != null) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -38,12 +38,12 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter<Object> {
   }
 
   @Override
-  String getNamespace(Object fiber) {
+  protected String getNamespace(Object fiber) {
     return null;
   }
 
   @Override
-  void serializeModelObjectsWithJSON(LogRecord logRecord) {
+  protected void serializeModelObjectsWithJSON(LogRecord logRecord) {
     // no op
   }
 }

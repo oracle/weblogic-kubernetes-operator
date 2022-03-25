@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -20,14 +20,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.SECRET_DATA_NOT_FOUND;
+import static oracle.kubernetes.common.logging.MessageKeys.SECRET_NOT_FOUND;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.getAuthorizationSource;
-import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_DATA_NOT_FOUND;
-import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_NOT_FOUND;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
