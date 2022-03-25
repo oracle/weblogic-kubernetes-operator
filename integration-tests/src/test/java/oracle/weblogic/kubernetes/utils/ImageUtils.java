@@ -412,6 +412,9 @@ public class ImageUtils {
 
         witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
       }
+      if (OKD) {
+        witParams.target("OpenShift");
+      }
       result = createImage(witParams);
     }
 
