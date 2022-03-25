@@ -174,28 +174,7 @@ public class Domain {
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
 
-    LoggingFacade logger = getLogger();
-
-    String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(nodePort)
-        .append("/console/login/LoginForm.jsp").toString();
-
-    getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
-    final WebClient webClient = new WebClient();
-    final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
-        "connection to the WebLogic admin console failed");
-    HtmlForm form = loginPage.getFormByName("loginData");
-    form.getInputByName("j_username").type(userName);
-    form.getInputByName("j_password").type(password);
-    HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-    getLogger().info("Clicking login button");
-    HtmlPage home = submit.click();
-    assertTrue(home.asText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
-    getLogger().info("Console login passed");
-    return true;
+    return adminNodePortAccessible(nodePort, userName, password, getHostAndPort(null, nodePort));
   }
 
   /**
@@ -212,8 +191,6 @@ public class Domain {
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
       throws IOException {
 
-    LoggingFacade logger = getLogger();
-
     String hostAndPort = getHostAndPort(routeHost, nodePort);
     String consoleUrl = new StringBuffer()
         .append("http://")
@@ -222,7 +199,6 @@ public class Domain {
 
     getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
-    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
         "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
