@@ -55,7 +55,7 @@ You supply the `--namespace` argument from the `helm install` command line
 to specify the namespace in which the operator will be installed.
 If not specified, then it defaults to `default`.
 If the namespace does not already exist, then Helm will automatically create it
-(and will also create a default Kubernetes service account named `-default` in the new namespace),
+(and Kubernetes will create a `default` service account in the new namespace),
 but note that Helm will not remove the namespace or service account when the release is uninstalled.
 If the namespace already exists, then Helm will use it. These are standard Helm behaviors.
 
@@ -88,11 +88,12 @@ Each version of the Helm chart defaults to using an image from the matching vers
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
 ```
 - To get information about the operator Helm chart, use the `helm show` command. For example,
-using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
-```text
-$ helm show chart weblogic-operator/weblogic-operator
-$ helm show values weblogic-operator/weblogic-operator
-```
+  using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
+
+  ```text
+  $ helm show chart weblogic-operator/weblogic-operator
+  $ helm show values weblogic-operator/weblogic-operator
+  ```
 
 - To list the versions of the operator that you can install from the Helm chart repository:
 
@@ -123,7 +124,7 @@ domainNamespaceSelectionStrategy: LabelSelector
 domainNamespaceLabelSelector: "weblogic-operator=enabled"
 ```
 
-and call:
+And call:
 
 ```text
 $ helm install sample-weblogic-operator \
@@ -187,7 +188,7 @@ When upgrading the operator:
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
 
-This is because, even with a new version of the Helm chart,
+This rationale for this is because, even with a new version of the Helm chart,
 `--reuse-values` will retain the previous image value from when it was installed.  To upgrade,
 you must override the image value to use the new operator image version.
 
