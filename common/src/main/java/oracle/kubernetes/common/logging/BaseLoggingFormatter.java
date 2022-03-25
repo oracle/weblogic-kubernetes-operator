@@ -125,11 +125,11 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
   protected abstract void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing);
 
   protected class ThrowableProcessing {
-    public LogRecord logRecord;
-    public String code;
-    public Map<String, List<String>> headers;
-    public String body;
-    public String throwable;
+    private LogRecord logRecord;
+    private String code;
+    private Map<String, List<String>> headers;
+    private String body;
+    private String throwable;
 
     private ThrowableProcessing(LogRecord logRecord, String code, Map<String, List<String>> headers, String body,
                                String throwable) {
@@ -144,16 +144,32 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
       return code;
     }
 
+    public void setCode(String code) {
+      this.code = code;
+    }
+
     private Map<String, List<String>> getHeaders() {
       return headers;
+    }
+
+    public void setHeaders(Map<String, List<String>> headers) {
+      this.headers = headers;
     }
 
     private String getBody() {
       return body;
     }
 
+    public void setBody(String body) {
+      this.body = body;
+    }
+
     private String getThrowable() {
       return throwable;
+    }
+
+    public void setThrowable(String throwable) {
+      this.throwable = throwable;
     }
 
     private void invoke() {

@@ -33,7 +33,7 @@ public class CommonLoggingFormatter extends BaseLoggingFormatter<Object> {
       pw.println();
       logRecord.getThrown().printStackTrace(pw);
       pw.close();
-      throwableProcessing.throwable = sw.toString();
+      throwableProcessing.setThrowable(sw.toString());
     }
   }
 
