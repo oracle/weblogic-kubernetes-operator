@@ -92,7 +92,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -139,10 +138,6 @@ abstract class DomainStatusUpdateTestBase {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
-  }
-
-  Domain getDomain() {
-    return domain;
   }
 
   abstract void processTopology(WlsDomainConfig domainConfig);
@@ -627,10 +622,6 @@ abstract class DomainStatusUpdateTestBase {
     return testSupport.getResources(EVENT);
   }
 
-  private boolean isDomainCompletedEvent(CoreV1Event e) {
-    return DOMAIN_COMPLETED_EVENT.equals(e.getReason());
-  }
-
   @Test
   void whenAllDesiredServersRunningAndNoMatchingCompletedConditionFound_generateCompletedEvent() {
     domain.getStatus()
@@ -642,7 +633,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_COMPLETED_EVENT));
   }
 
   @Test
@@ -720,7 +711,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(false));
+    assertThat(testSupport, not(hasEvent(DOMAIN_COMPLETED_EVENT)));
   }
 
   @Test
@@ -792,8 +783,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().size(), greaterThan(0));
-    assertThat(getEvents().stream().anyMatch(this::isServerPodFailedEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(SERVER_POD_ERROR));
   }
 
   private void failPod(String serverName) {
@@ -801,11 +791,13 @@ abstract class DomainStatusUpdateTestBase {
     getServerStateMap().put(serverName, UNKNOWN_STATE);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void unreadyPod(String serverName) {
     getPod(serverName).setStatus(
         new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().type("Ready").status("False")));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void markPodRunningPhaseFalse(String serverName) {
     getPod(serverName).setStatus(new V1PodStatus().phase("Pending"));
   }
@@ -1004,7 +996,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isReplicasTooHighEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(REPLICAS_TOO_HIGH_ERROR));
   }
 
   @Test
@@ -1226,21 +1218,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(false));
-  }
-
-  private boolean isDomainAvailableEvent(CoreV1Event e) {
-    return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
-  }
-
-  @SuppressWarnings("ConstantConditions")
-  private boolean isReplicasTooHighEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(REPLICAS_TOO_HIGH_ERROR);
-  }
-
-  @SuppressWarnings("ConstantConditions")
-  private boolean isServerPodFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(SERVER_POD_ERROR);
+    assertThat(testSupport, not(hasEvent(DOMAIN_AVAILABLE_EVENT)));
   }
 
   @Test
@@ -1255,7 +1233,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_COMPLETED_EVENT));
   }
 
   @Test
@@ -1334,7 +1312,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_AVAILABLE_EVENT));
   }
 
   @Test
@@ -1349,7 +1327,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
+    assertThat(testSupport, hasEvent(DOMAIN_AVAILABLE_EVENT));
   }
 
   private DomainConfigurator configureDomain() {
@@ -1665,6 +1643,7 @@ abstract class DomainStatusUpdateTestBase {
       return this;
     }
 
+    @SuppressWarnings("SameParameterValue")
     ServerStatusMatcher withPodPhase(String expectedValue) {
       matcher.addField("pod phase", ServerStatus::getPodPhase, expectedValue);
       return this;
