@@ -222,7 +222,7 @@ pipeline {
                description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
                defaultValue: 'weblogick8s/test-images/database/enterprise'
         )
-        string(name: 'ORACLEDB_IMAGE_TAG',
+        string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
                defaultValue: '12.2.0.1-slim'
         )
@@ -230,7 +230,7 @@ pipeline {
                description: '',
                defaultValue: 'main'
         )
-        string(name: 'MONITORING_EXPORTER_VERSION',
+        string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
                defaultValue: '2.0.4'
         )
@@ -489,15 +489,27 @@ EOF
                     elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
                         echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItResilience,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
                     fi
-                    echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""              >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""        >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.result.root=\"${result_root}\""             >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.pv.root=\"${pv_root}\""                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""   >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                            >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.result.root=\"${result_root}\""                                                      >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.pv.root=\"${pv_root}\""                                                              >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                            >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.istio.version=\"${params.ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-DPARALLEL_CLASSES=\"${params.PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-DNUMBER_OF_THREADS=\"${params.NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wdt.download.url=\"${params.WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wit.download.url=\"${params.WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.repo.registry=\"${params.REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.base.images.repo=\"${params.BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.weblogic.image.name=\"${params.WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.weblogic.image.tag=\"${params.WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.fmwinfra.image.name=\"${params.FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.fmwinfra.image.tag=\"${params.FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.db.image.name=\"${params.DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.db.image.tag=\"${params.DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.monitoring.exporter.branch=\"${params.MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.monitoring.exporter.webapp.version=\"${params.MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.collect.logs.on.success=\"${params.COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                     echo "${WORKSPACE}/.mvn/maven.config contents:"
                     cat "${WORKSPACE}/.mvn/maven.config"
