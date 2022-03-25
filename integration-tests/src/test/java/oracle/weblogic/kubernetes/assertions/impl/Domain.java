@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -193,6 +194,44 @@ public class Domain {
     getLogger().info("Clicking login button");
     HtmlPage home = submit.click();
     assertTrue(home.asText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
+    getLogger().info("Console login passed");
+    return true;
+  }
+
+  /**
+   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
+   * using the node port and validate its the Home page.
+   *
+   * @param nodePort the node port that needs to be tested for access
+   * @param userName WebLogic administration server user name
+   * @param password WebLogic administration server password
+   * @param routeHost For OKD - name of the route for external admin service. Can be empty for non OKD env
+   * @return true if login to WebLogic administration console is successful
+   * @throws IOException when connection to console fails
+   */
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
+      throws IOException {
+
+    LoggingFacade logger = getLogger();
+
+    String hostAndPort = getHostAndPort(routeHost, nodePort);
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(hostAndPort)
+        .append("/console/login/LoginForm.jsp").toString();
+
+    getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
+    final WebClient webClient = new WebClient();
+    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+    final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+        "connection to the WebLogic admin console failed");
+    HtmlForm form = loginPage.getFormByName("loginData");
+    form.getInputByName("j_username").type(userName);
+    form.getInputByName("j_password").type(password);
+    HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
+    getLogger().info("Clicking login button");
+    HtmlPage home = submit.click();
+    assertTrue(home.asNormalizedText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
     getLogger().info("Console login passed");
     return true;
   }
