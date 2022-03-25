@@ -4,7 +4,7 @@
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v2"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
@@ -20,8 +20,8 @@ spec:
   # Note that this might be in the image itself or in a mounted volume or network storage.
   domainHome: /u01/oracle/user_projects/domains/sample-domain1
 
-  # If the domain home is inside the image, set this to `true`, otherwise set `false`:
-  domainHomeInImage: true
+  # How the operator will find the domain home file system, for domains in the image use `Image`
+  domainHomeSourceType: Image
 
   # Update this with the name of the container image that will be used to run your domain:
   #image: "YOUR_OCI_REGION_CODE.ocir.io/YOUR_TENANCY_NAME/weblogic-operator-tutorial:latest"
