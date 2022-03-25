@@ -269,7 +269,7 @@ class ItOperatorWlsUpgrade {
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
     upgradeOperatorToCurrent();
     verifyPodsNotRolled(domainNamespace, pods);
-    reManageCluster();
+    scaleClusterUpAndDown();
   }
 
   /**
@@ -301,7 +301,7 @@ class ItOperatorWlsUpgrade {
   }
 
   // After upgrade scale up/down the cluster
-  private void reManageCluster() {
+  private void scaleClusterUpAndDown() {
     String opServiceAccount = opNamespace + "-sa";
     int externalRestHttpsPort = getServiceNodePort(
         opNamespace, "external-weblogic-operator-svc");
@@ -443,7 +443,7 @@ class ItOperatorWlsUpgrade {
               "Application was not always available when the operator was getting upgraded");
       }
     }
-    reManageCluster();
+    scaleClusterUpAndDown();
     
     // check CRD version is updated
     logger.info("Checking CRD version");
