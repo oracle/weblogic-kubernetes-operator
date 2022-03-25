@@ -23,9 +23,9 @@ Before installing an operator, ensure that each of these prerequisite requiremen
    - [Customizing operator image name, pull secret, and private registry](#customizing-operator-image-name-pull-secret-and-private-registry)
 1. [Determine the platform setting](#determine-the-platform-setting)
 1. [Choose a security strategy](#choose-a-security-strategy)
-   - [_Any namespace with cluster role binding enabled_](#_any-namespace-with-cluster-role-binding-enabled_)
-   - [_Any namespace with cluster role binding disabled_](#_any-namespace-with-cluster-role-binding-disabled_)
-   - [_Local namespace only with cluster role binding disabled_](#_local-namespace-only-with-cluster-role-binding-disabled_)
+   - [Any namespace with cluster role binding enabled](#any-namespace-with-cluster-role-binding-enabled)
+   - [Any namespace with cluster role binding disabled](#any-namespace-with-cluster-role-binding-disabled)
+   - [Local namespace only with cluster role binding disabled](#local-namespace-only-with-cluster-role-binding-disabled)
 1. [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
 1. [Choose a Helm release name](#choose-a-helm-release-name)
 1. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options)
@@ -45,8 +45,8 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}).
 
-1. Install Helm if it is not already installed.
-   It is required to install Helm in your Kubernetes cluster in order to install an operator.
+1. If it is not already installed, then install Helm.
+   To install an operator, it is required to install Helm in your Kubernetes cluster.
    The operator uses Helm to create necessary resources and then deploy the operator in a Kubernetes cluster.
 
    To check if you already have Helm available, try the `helm version` command.
@@ -95,7 +95,7 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
   $ helm search repo weblogic-operator/weblogic-operator --versions
   ```
 
-- For a specified version of the Helm chart and operator, with `helm pull` and `helm install`, use the `--version <value>` option
+- For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
   to choose the version that you want, with the `latest` value being the default.
 
 #### Inspect the operator Helm chart
@@ -104,17 +104,7 @@ You can find out the configuration values that the operator Helm chart supports,
 as well as the default values, using the `helm show` command.
 
   ```text
-  $ helm show values kubernetes/charts/weblogic-operator
-  ```
-- Here's an example of using `helm show`
-  with a GitHub chart repository-based operator Helm chart:
-  ```text
   $ helm show values weblogic-operator/weblogic-operator
-  ```
-- Here's an example of using `helm show`
-  with the local file-based operator Helm chart:
-  ```text
-  $ cd /tmp/weblogic-kubernetes-operator
   ```
 
 
@@ -142,10 +132,9 @@ To simplifies management and monitoring of an operator, Oracle recommends:
   domains, and does not host Kubernetes resources that are
   unrelated to the operator. Sometimes this is not possible,
   in which case the operator can be configured to
-  manage domains in its own namespace (this option
-  is discussed in
+  manage domains in its own namespace. For more information, see
   [Choose a security strategy](#choose-a-security-strategy) and
-  [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)).
+  [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy).
 - Creating a dedicated service account for each operator
   instead of relying on the `default` service account that
   Kubernetes creates when a new namespace is created.
@@ -164,12 +153,12 @@ $ kubectl create namespace sample-weblogic-operator-ns
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
 
-In future operator installation steps,
+In operator installation steps,
 you will specify the namespace using the `--namespace MY-NAMESPACE`
 operator Helm chart configuration setting on the Helm install command line.
 If not specified, then it defaults to `default`.
 If the namespace does not already exist, then Helm will automatically create it
-(and Kubernetes itself will create a `default` service account in the new namespace).
+(and Kubernetes will create a `default` service account in the new namespace).
 If you later uninstall the operator, then Helm will not remove the specified namespace.
 These are standard Helm behaviors.
 
@@ -186,8 +175,8 @@ The operator image must be available to all nodes of your Kubernetes cluster.
 ##### Locating an operator image
 
 Production ready operator images for various supported versions of the operator are
-publicly located in the
-[operator GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
+publicly located in the operator
+[GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 Operator GitHub container registry images can be directly referenced using an image name similar to
 `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N` where `N.N.N` refers to the operator version
 and `ghcr.io` is the DNS name of the GitHub container registry.
@@ -264,15 +253,15 @@ see [kubernetesPlatform]({{<relref "/userguide/managing-operators/using-helm#kub
 
 There are three commonly used security strategies for deploying an operator:
 
-1. [_Any namespace with cluster role binding enabled_](#_any-namespace-with-cluster-role-binding-enabled_)
-1. [_Any namespace with cluster role binding disabled_](#_any-namespace-with-cluster-role-binding-disabled_)
-1. [_Local namespace only with cluster role binding disabled_](#_local-namespace-only-with-cluster-role-binding-disabled_)
+1. [Any namespace with cluster role binding enabled](#any-namespace-with-cluster-role-binding-enabled)
+1. [Any namespace with cluster role binding disabled](#any-namespace-with-cluster-role-binding-disabled)
+1. [Local namespace only with cluster role binding disabled](#local-namespace-only-with-cluster-role-binding-disabled)
 
 For a detailed discussion of the operator's security-related resources,
-see the operator's role based access control (RBAC) requirements,
+see the operator's role-based access control (RBAC) requirements,
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
-##### _Any namespace with cluster role binding enabled_
+##### Any namespace with cluster role binding enabled
 
 If you want to give the operator permission to access any namespace,
 then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
@@ -283,7 +272,7 @@ The default for this setting is `false`.
 
 This is the most popular security strategy.
 
-##### _Any namespace with cluster role binding disabled_
+##### Any namespace with cluster role binding disabled
 
 If your operator Helm `enableClusterRoleBinding` configuration value is `false` (the default),
 then an operator is still capable of managing multiple namespaces
@@ -297,7 +286,7 @@ because `enableClusterRoleBinding` is not set to `true`
 and installation of the CRD requires cluster role binding privileges.
 See [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd).
 
-##### _Local namespace only with cluster role binding disabled_
+##### Local namespace only with cluster role binding disabled
 
 If you want to limit the operator so that it can access only resources in its local namespace, then:
 
@@ -319,8 +308,7 @@ such as may happen on OpenShift platforms when running the operator with a `Dedi
 
 Before installing your operator,
 choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
-See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}})
-in the operator _Namespace management_ guide.
+See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
 Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
 then you should also set `enableClusterRoleBinding` to false.
@@ -431,7 +419,7 @@ you can verify that the CRD is installed correctly using:
 $ kubectl get crd domains.weblogic.oracle
 ```
 
-or by calling:
+Or, by calling:
 
 ```text
 $ kubectl explain domain.spec

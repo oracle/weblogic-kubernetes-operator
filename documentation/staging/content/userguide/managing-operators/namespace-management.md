@@ -120,7 +120,7 @@ If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
   try [forcing the operator to restart]({{< relref "/userguide/managing-operators/troubleshooting#force-the-operator-to-restart" >}}).
 
 For a detailed description of the operator's security related resources,
-see the operator's role based access control (RBAC) requirements
+see the operator's role-based access control (RBAC) requirements
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
 ### Check the namespaces that a running operator manages
