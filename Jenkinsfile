@@ -75,7 +75,7 @@ def kind_k8s_map = [
         '1.15':    'kindest/node:v1.15.12@sha256:b920920e1eda689d9936dfcf7332701e80be12566999152626b2c9d730397a95'
     ]
 ]
-def _kind_image = ''
+def _kind_image = null
 
 pipeline {
     agent { label 'VM.Standard2.8' }
@@ -222,7 +222,7 @@ pipeline {
                description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
                defaultValue: 'weblogick8s/test-images/database/enterprise'
         )
-        string(name: 'ORACLEDB_IMAGE_TAG',
+        string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
                defaultValue: '12.2.0.1-slim'
         )
@@ -230,7 +230,7 @@ pipeline {
                description: '',
                defaultValue: 'main'
         )
-        string(name: 'MONITORING_EXPORTER_VERSION',
+        string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
                defaultValue: '2.0.4'
         )
@@ -241,16 +241,17 @@ pipeline {
     }
 
     stages {
+        stage('Workaround JENKINS-41929 Parameters bug') {
+            steps {
+                echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
+                evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+            }
+        }
         stage ('Echo environment') {
             environment {
                 runtime_path = "${WORKSPACE}/bin:${PATH}"
             }
             steps {
-                script {
-                    def knd = env['KIND_VERSION']
-                    def k8s = env['KUBE_VERSION']
-                    _kind_image = kind_k8s_map.get(knd).get(k8s)
-                }
                 sh '''
                     export PATH=${runtime_path}
                     env|sort
@@ -261,6 +262,25 @@ pipeline {
                     ulimit -a
                     ulimit -aH
                 '''
+                script {
+                    def knd = params.KIND_VERSION
+                    def k8s = params.KUBE_VERSION
+                    if (knd != null && k8s != null) {
+                        def k8s_map = kind_k8s_map.get(knd);
+                        if (k8s_map != null) {
+                            _kind_image = k8s_map.get(k8s)
+                        }
+                        if (_kind_image == null) {
+                            currentBuild.result = 'ABORTED'
+                            error('Unable to compute _kind_image for Kind version ' +
+                                    knd + ' and Kubernetes version ' + k8s)
+                        }
+                    } else {
+                        currentBuild.result = 'ABORTED'
+                        error('KIND_VERSION or KUBE_VERSION were null')
+                    }
+                    echo "Kind Image = ${_kind_image}"
+                }
             }
         }
 
@@ -469,15 +489,27 @@ EOF
                     elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
                         echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItResilience,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
                     fi
-                    echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""              >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""        >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.result.root=\"${result_root}\""             >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.pv.root=\"${pv_root}\""                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""   >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                    echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                     echo "${WORKSPACE}/.mvn/maven.config contents:"
                     cat "${WORKSPACE}/.mvn/maven.config"
