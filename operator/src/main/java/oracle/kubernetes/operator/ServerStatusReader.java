@@ -103,8 +103,13 @@ public class ServerStatusReader {
       AtomicInteger remainingServerHealthToRead = new AtomicInteger();
       packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, remainingServerHealthToRead);
 
+      DomainPresenceInfo currentInfo =
+          Optional.ofNullable(
+              DomainProcessorImpl.getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid()))
+              .orElse(info);
+
       Collection<StepAndPacket> startDetails =
-          info.getServerPods()
+          currentInfo.getServerPods()
               .map(pod -> createStatusReaderStep(packet, pod))
               .collect(Collectors.toList());
 
