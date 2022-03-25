@@ -263,8 +263,8 @@ pipeline {
                     ulimit -aH
                 '''
                 script {
-                    def knd = env['KIND_VERSION']
-                    def k8s = env['KUBE_VERSION']
+                    def knd = params.KIND_VERSION
+                    def k8s = params.KUBE_VERSION
                     if (knd != null && k8s != null) {
                         def k8s_map = kind_k8s_map.get(knd);
                         if (k8s_map != null) {
