@@ -191,7 +191,8 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to remove selected failure conditions.
+   * Asynchronous step to remove failure conditions other than those specified.
+   * @param excludedReasons the failure reasons not to be removed; others will be.
    */
   public static Step createRemoveUnSelectedFailuresStep(DomainFailureReason... excludedReasons) {
     List<DomainFailureReason> selectedReaons = new ArrayList<>(Arrays.asList(DomainFailureReason.values()));

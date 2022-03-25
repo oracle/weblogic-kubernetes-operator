@@ -151,7 +151,7 @@ public class DomainStatus {
   }
 
   private void unmarkMatchingCondition(DomainCondition newCondition) {
-    conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMark);
+    conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
   }
 
   private void setReasonAndMessage() {
@@ -221,7 +221,7 @@ public class DomainStatus {
    * @param reason the reason for the failure
    */
   public void markFailuresForRemoval(DomainFailureReason reason) {
-    conditions.stream().filter(c -> c.isSpecifiedFailure(reason)).forEach(DomainCondition::mark);
+    conditions.stream().filter(c -> c.isSpecifiedFailure(reason)).forEach(DomainCondition::markForDeletion);
   }
 
   /**
@@ -229,7 +229,7 @@ public class DomainStatus {
    * @see #markFailuresForRemoval(DomainFailureReason) 
    */
   public void removeMarkedFailures() {
-    removeConditionsMatching(DomainCondition::isMarked);
+    removeConditionsMatching(DomainCondition::isMarkedForDeletion);
   }
 
   /**

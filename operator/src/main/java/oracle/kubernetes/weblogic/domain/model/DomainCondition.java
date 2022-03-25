@@ -57,7 +57,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   private String status = "True";
 
   // internal: used to select failure conditions for deletion
-  private volatile boolean marked;
+  private volatile boolean markedForDeletion;
 
   /**
    * Creates a new domain condition, initialized with its type.
@@ -75,7 +75,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
-    this.marked = other.marked;
+    this.markedForDeletion = other.markedForDeletion;
   }
 
   /**
@@ -214,16 +214,16 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type == this.type;
   }
 
-  boolean isMarked() {
-    return marked;
+  boolean isMarkedForDeletion() {
+    return markedForDeletion;
   }
 
-  void mark() {
-    this.marked = true;
+  void markForDeletion() {
+    this.markedForDeletion = true;
   }
 
-  void unMark() {
-    this.marked = false;
+  void unMarkForDeletion() {
+    this.markedForDeletion = false;
   }
 
   @Override
