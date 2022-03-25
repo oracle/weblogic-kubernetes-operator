@@ -318,8 +318,9 @@ public class DomainStatusUpdater {
       return doNext(createContext(packet).createUpdateSteps(getNext()), packet);
     }
 
+    // Note: this step is created with no next step, as that is added via a call to Step.chain, later.
     private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context) {
-      return new StatusReplaceResponseStep(this, context, getNext());
+      return new StatusReplaceResponseStep(this, context, null);
     }
   }
 
