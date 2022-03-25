@@ -222,10 +222,6 @@ public class JobStepContext extends BasePodStepContext {
     return conflictStep;
   }
 
-  private void logJobCreated() {
-    LOGGER.info(getJobCreatedMessageKey(), getJobName());
-  }
-
   String getJobCreatedMessageKey() {
     return MessageKeys.JOB_CREATED;
   }
@@ -781,6 +777,10 @@ public class JobStepContext extends BasePodStepContext {
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
       return doNext(createKubernetesFailureSteps(callResponse), packet);
+    }
+
+    private void logJobCreated() {
+      LOGGER.info(getJobCreatedMessageKey(), getJobName());
     }
 
     @Override

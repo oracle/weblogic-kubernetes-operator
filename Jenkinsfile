@@ -80,13 +80,12 @@ def _kind_image = ''
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
-//        skipDefaultCheckout(true)
         timeout(time: 800, unit: 'MINUTES')
     }
 
     tools {
-        maven 'maven-3.8.4'
-        jdk 'OpenJDK 15.0.2'
+        maven 'maven-3.8.5'
+        jdk 'OpenJDK 17.0.2'
     }
 
     environment {
@@ -115,7 +114,6 @@ pipeline {
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
-        wko_build_email='robert.patrick@oracle.com'
     }
 
     parameters {
@@ -551,12 +549,6 @@ EOF
         }
     }
     post {
-        // Jenkins server not properly configured to when email...
-//        failure {
-//            mail to: "${wko_build_email}", from: 'noreply@oracle.com',
-//                    subject: "WKO: ${env.JOB_NAME} - Failed",
-//                    body: "Job Failed - \"${env.JOB_NAME}\" build: ${env.BUILD_NUMBER}\n\nView the log at:\n ${env.BUILD_URL}\n"
-//        }
         always {
             sh '''
                 export PATH="${WORKSPACE}/bin:${PATH}"
