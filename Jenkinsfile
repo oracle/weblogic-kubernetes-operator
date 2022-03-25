@@ -75,7 +75,24 @@ def kind_k8s_map = [
         '1.15':    'kindest/node:v1.15.12@sha256:b920920e1eda689d9936dfcf7332701e80be12566999152626b2c9d730397a95'
     ]
 ]
+
 def _kind_image = null
+def initializeKindImage(knd, k8s) {
+    if (knd != null && k8s != null) {
+        def k8s_map = kind_k8s_map.get(knd);
+        if (k8s_map != null) {
+            _kind_image = k8s_map.get(k8s)
+        }
+        if (_kind_image == null) {
+            currentBuild.result = 'ABORTED'
+            error('Unable to compute _kind_image for Kind version ' +
+                    knd + ' and Kubernetes version ' + k8s)
+        }
+    } else {
+        currentBuild.result = 'ABORTED'
+        error('KIND_VERSION or KUBE_VERSION were null')
+    }
+}
 
 pipeline {
     agent { label 'VM.Standard2.8' }
@@ -241,6 +258,12 @@ pipeline {
     }
 
     stages {
+        stage('Workaround JENKINS-41929 Parameters bug') {
+            steps {
+                echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
+                evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+            }
+        }
         stage ('Echo environment') {
             environment {
                 runtime_path = "${WORKSPACE}/bin:${PATH}"
@@ -257,24 +280,9 @@ pipeline {
                     ulimit -aH
                 '''
                 script {
-                    def knd = env['KIND_VERSION']
-                    def k8s = env['KUBE_VERSION']
-                    if (knd != null && k8s != null) {
-                        def k8s_map = kind_k8s_map.get(knd);
-                        if (k8s_map != null) {
-                            _kind_image = k8s_map.get(k8s)
-                        }
-                        if (_kind_image == null) {
-                            currentBuild.result = 'ABORTED'
-                            error('Unable to compute _kind_image for Kind version ' +
-                                    knd + ' and Kubernetes version ' + k8s)
-                        }
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                        error('KIND_VERSION or KUBE_VERSION were null')
-                    }
+                    _kind_image = initializeKindImage(params.KIND_VERSION, params.KUBE_VERSION)
+                    echo "Kind Image = ${_kind_image}"
                 }
-                echo "Kind Image = ${_kind_image}"
             }
         }
 
