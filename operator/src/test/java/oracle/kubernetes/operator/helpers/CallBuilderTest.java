@@ -39,9 +39,9 @@ import org.junit.jupiter.api.Test;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -163,15 +163,15 @@ class CallBuilderTest {
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
 
-    domainStatus1.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus1.getConditions().add(new DomainCondition(Available).withLastTransitionTime(null));
+    domainStatus1.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
+    domainStatus1.getConditions().add(new DomainCondition(AVAILABLE).withLastTransitionTime(null));
 
     Domain domain2 = new Domain();
     DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
     domain2.setStatus(domainStatus2);
 
-    domainStatus2.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus2.getConditions().add(new DomainCondition(Failed).withLastTransitionTime(null));
+    domainStatus2.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
+    domainStatus2.getConditions().add(new DomainCondition(FAILED).withLastTransitionTime(null));
 
     DomainList list = new DomainList().withItems(Arrays.asList(domain1, domain2));
     defineHttpGetResponse(DOMAIN_RESOURCE, list);
@@ -182,8 +182,8 @@ class CallBuilderTest {
 
     DomainList received = responseStep.waitForAndGetCallResponse().getResult();
     assertThat(received.getItems(), hasSize(2));
-    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(Progressing)));
-    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(Progressing)));
+    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(PROGRESSING)));
+    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(PROGRESSING)));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {

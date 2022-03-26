@@ -354,7 +354,7 @@ class ShutdownManagedServerStepTest {
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
     for (V1EnvVar var : vars) {
       if (var.getName().equals("SHUTDOWN_TYPE")) {
-        var.setValue(ShutdownType.Forced.name());
+        var.setValue(ShutdownType.FORCED.label());
       }
     }
   }

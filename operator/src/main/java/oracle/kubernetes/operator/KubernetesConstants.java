@@ -10,8 +10,8 @@ public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
   String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.4";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
-  String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
-  String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
+  String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.ALWAYS.label();
+  String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IF_NOT_PRESENT.label();
   String LATEST_IMAGE_SUFFIX = ":latest";
 
   String CRD_NAME = "domains.weblogic.oracle";
@@ -35,7 +35,7 @@ public interface KubernetesConstants {
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
 
-  String GRACEFUL_SHUTDOWNTYPE = ShutdownType.Graceful.name();
+  String GRACEFUL_SHUTDOWNTYPE = ShutdownType.GRACEFUL.label();
 
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";

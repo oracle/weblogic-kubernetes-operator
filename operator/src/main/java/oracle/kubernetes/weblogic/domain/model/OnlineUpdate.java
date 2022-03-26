@@ -35,7 +35,7 @@ public class OnlineUpdate {
        + " \n\n"
        + " For more information, see the runtime update section of the Model in Image user guide."
   )
-  private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateOnly;
+  private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 
   private WDTTimeouts wdtTimeouts;
 

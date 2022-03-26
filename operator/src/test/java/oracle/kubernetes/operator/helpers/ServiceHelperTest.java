@@ -47,7 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -388,7 +388,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     runServiceHelper();
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
         .withMessageContaining("create", "service", NS, FAILURE_MESSAGE));
   }
 
