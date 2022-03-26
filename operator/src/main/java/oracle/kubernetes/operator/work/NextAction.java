@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import oracle.kubernetes.operator.Labeled;
 
 import static oracle.kubernetes.operator.work.Fiber.DEBUG_FIBER;
 
@@ -141,12 +143,22 @@ public final class NextAction implements BreadCrumbFactory {
     this.comment = " ((" + comment + "))";
   }
 
-  public enum Kind {
+  public enum Kind implements Labeled {
     INVOKE,
     SUSPEND,
     THROW;
     Kind getPreviousKind(BreadCrumb previous) {
       return (previous instanceof NextActionBreadCrumb) ? ((NextActionBreadCrumb) previous).na.kind : null;
+    }
+
+    @Override
+    public String label() {
+      return name();
+    }
+
+    @Override
+    public String toString() {
+      return label();
     }
   }
 

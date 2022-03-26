@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.Labeled;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -313,7 +314,7 @@ public class EventHelper {
     return (long) (Math.random() * Long.MAX_VALUE);
   }
 
-  public enum EventItem {
+  public enum EventItem implements Labeled {
     DOMAIN_AVAILABLE {
       @Override
       public String getReason() {
@@ -725,6 +726,16 @@ public class EventHelper {
     public abstract String getPattern();
 
     public abstract String getReason();
+
+    @Override
+    public String label() {
+      return name();
+    }
+
+    @Override
+    public String toString() {
+      return label();
+    }
   }
 
   public static class EventData {

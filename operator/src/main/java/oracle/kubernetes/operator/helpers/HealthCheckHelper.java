@@ -37,45 +37,45 @@ public final class HealthCheckHelper {
   // generated for use by the Kubernetes administrator
   //
   private static final Operation[] crudOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.create,
-      Operation.update,
-      Operation.patch,
-      Operation.delete,
-      Operation.deletecollection
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.CREATE,
+      Operation.UPDATE,
+      Operation.PATCH,
+      Operation.DELETE,
+      Operation.DELETECOLLECTION
   };
 
   private static final Operation[] crdOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.create,
-      Operation.update,
-      Operation.patch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.CREATE,
+      Operation.UPDATE,
+      Operation.PATCH
   };
 
   private static final Operation[] cOperations = {
-      Operation.create
+      Operation.CREATE
   };
 
   private static final Operation[] glOperations = {
-      Operation.get, Operation.list
+      Operation.GET, Operation.LIST
   };
 
   private static final Operation[] glwOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH
   };
 
   private static final Operation[] glwupOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.update,
-      Operation.patch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.UPDATE,
+      Operation.PATCH
   };
 
   // default namespace or svc account name
@@ -169,7 +169,7 @@ public final class HealthCheckHelper {
    */
   public static boolean check(
       List<V1ResourceRule> rules, Resource res, Operation op) {
-    String verb = op.name();
+    String verb = op.label();
     String apiGroup = res.getApiGroup();
     String resource = res.getResource();
     String sub = res.getSubResource();

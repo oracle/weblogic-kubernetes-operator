@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainSourceType.Image;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
+import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
@@ -129,7 +129,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenDomainConfiguredWithAuxiliaryImageAndDomainHomeInImage_noErrorReported() {
-    configureDomain(domain).withDomainHomeSourceType(Image)
+    configureDomain(domain).withDomainHomeSourceType(IMAGE)
             .withModelConfigMap("wdt-cm")
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
@@ -633,7 +633,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   void whenConfigOverrideCmExistsTypeImage_dontReportError() {
     resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
-    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(Image);
+    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(IMAGE);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -644,7 +644,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model")
         .withRuntimeEncryptionSecret("wdt-cm-secret")
-        .withDomainHomeSourceType(FromModel);
+        .withDomainHomeSourceType(FROM_MODEL);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("Configuration overridesConfigMap", 
@@ -658,7 +658,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     configureDomain(domain)
         .withRuntimeEncryptionSecret("wdt-cm-secret-model1")
         .withModelConfigMap("wdt-cm")
-        .withDomainHomeSourceType(FromModel);
+        .withDomainHomeSourceType(FROM_MODEL);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -668,7 +668,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
         .withModelConfigMap("wdt-configmap")
-        .withDomainHomeSourceType(FromModel);
+        .withDomainHomeSourceType(FROM_MODEL);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap", 
@@ -677,7 +677,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(Image)
+    configureDomain(domain).withDomainHomeSourceType(IMAGE)
         .withModelConfigMap("wdt-configmap");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -685,7 +685,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(Image)
+    configureDomain(domain).withDomainHomeSourceType(IMAGE)
         .withRuntimeEncryptionSecret("runtime-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -693,14 +693,14 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(Image);
+    configureDomain(domain).withDomainHomeSourceType(IMAGE);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -709,7 +709,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-good-secret");
     resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
 
@@ -718,7 +718,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel);
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("spec.configuration.model.runtimeEncryptionSecret", 
@@ -727,7 +727,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-missing");
 
@@ -739,7 +739,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-missing");
 
@@ -752,7 +752,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletPasswordSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -763,7 +763,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletFileSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-good");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -774,7 +774,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("JRF");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -786,7 +786,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel)
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withDomainType("JRF")
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
@@ -799,7 +799,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(Image)
+    configureDomain(domain).withDomainHomeSourceType(IMAGE)
         .withOpssWalletFileSecret("wallet-file-secret");
 
     resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
@@ -809,7 +809,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(Image)
+    configureDomain(domain).withDomainHomeSourceType(IMAGE)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("WLS")
         .withOpssWalletFileSecret("wallet-file-secret");
@@ -823,7 +823,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   void whenExposingDefaultChannelIfIstio_Enabled() {
     configureDomain(domain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withIstio()
         .withDomainType("WLS")
         .configureAdminServer()
@@ -840,7 +840,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -856,7 +856,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -873,7 +873,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -889,7 +889,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -907,7 +907,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String asName = "servernamecontains30character";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer();
@@ -923,7 +923,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String asName = "servernamecontains26chars";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -941,7 +941,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String asName = "servernamecontains32characterss";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -962,7 +962,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String asName = "servernamecontains32characterss";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer();
@@ -979,7 +979,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String asName = "servernamecontains30characters";
     domainConfig.setAdminServerName(asName);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -998,7 +998,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfig.setAdminServerName(asName);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1016,7 +1016,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfig.setAdminServerName(asName);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1032,7 +1032,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains31characterss";
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1056,7 +1056,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfig.getClusterConfig(CLUSTER)
         .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1077,7 +1077,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
           .addServerConfig(new WlsServerConfig(msName + i, "domain1-" + msName + "-" + i, 8001));
     }
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1099,7 +1099,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
           .addServerConfig(new WlsServerConfig(msName + i, "domain1-" + msName + "-" + i, 8001));
     }
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1127,7 +1127,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     }
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1157,7 +1157,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
           domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
     }
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1184,7 +1184,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
           .addServerConfig(new WlsServerConfig(msName, "domain1-" + msName, 8001));
     }
     configureDomain(myDomain2)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1212,7 +1212,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     }
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1239,7 +1239,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
           domainUID, msName, LegalNames.toServerServiceName(domainUID, msName)));
     }
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1257,7 +1257,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String clusterName = "clusternamecontain21c";
     domainConfig.withCluster(new WlsClusterConfig(clusterName));
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1275,7 +1275,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     String clusterName = "servernamecontains31characters";
     domainConfig.withCluster(new WlsClusterConfig(clusterName));
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1301,7 +1301,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1327,7 +1327,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1353,7 +1353,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1380,7 +1380,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS")
         .configureAdminServer()
@@ -1407,7 +1407,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
 
     configureDomain(myDomain)
-        .withDomainHomeSourceType(Image)
+        .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
         .withDomainType("WLS");
 

@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
@@ -76,8 +78,9 @@ public class Namespaces {
     return getSelectionStrategy().getSelection(visitor);
   }
 
-  public enum SelectionStrategy {
-    List {
+  public enum SelectionStrategy implements Labeled {
+    @SerializedName("List")
+    LIST("List") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         return getConfiguredDomainNamespaces().contains(getNSName(namespace));
@@ -106,7 +109,8 @@ public class Namespaces {
               .orElse(TuningParameters.getInstance().get("targetNamespaces"));
       }
     },
-    LabelSelector {
+    @SerializedName("LabelSelector")
+    LABEL_SELECTOR("LabelSelector") {
       @Override
       public <V> V getSelection(NamespaceStrategyVisitor<V> visitor) {
         return visitor.getLabelSelectorStrategySelection();
@@ -143,7 +147,8 @@ public class Namespaces {
         return value == null || value.equals(labels.get(key));
       }
     },
-    RegExp {
+    @SerializedName("RegExp")
+    REG_EXP("RegExp") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         try {
@@ -167,7 +172,8 @@ public class Namespaces {
         return compiledPatterns.computeIfAbsent(regExp, Pattern::compile);
       }
     },
-    Dedicated {
+    @SerializedName("Dedicated")
+    DEDICATED("Dedicated") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         return getNSName(namespace).equals(getOperatorNamespace());
@@ -216,6 +222,34 @@ public class Namespaces {
       }
       return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
     }
+
+    private static final Map<String, SelectionStrategy> BY_LABEL = new HashMap<>();
+
+    static {
+      for (SelectionStrategy ss : values()) {
+        BY_LABEL.put(ss.label, ss);
+      }
+    }
+
+    private final String label;
+
+    SelectionStrategy(String label) {
+      this.label = label;
+    }
+
+    @Override
+    public String label() {
+      return label;
+    }
+
+    @Override
+    public String toString() {
+      return label();
+    }
+
+    public static SelectionStrategy valueOfLabel(String label) {
+      return BY_LABEL.get(label);
+    }
   }
 
 
@@ -227,11 +261,11 @@ public class Namespaces {
   static SelectionStrategy getSelectionStrategy() {
     SelectionStrategy strategy =
           Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
-                .map(SelectionStrategy::valueOf)
-                .orElse(SelectionStrategy.List);
+                .map(SelectionStrategy::valueOfLabel)
+                .orElse(SelectionStrategy.LIST);
 
-    if (SelectionStrategy.List.equals(strategy) && isDeprecatedDedicated()) {
-      return SelectionStrategy.Dedicated;
+    if (SelectionStrategy.LIST.equals(strategy) && isDeprecatedDedicated()) {
+      return SelectionStrategy.DEDICATED;
     }
     return strategy;
   }

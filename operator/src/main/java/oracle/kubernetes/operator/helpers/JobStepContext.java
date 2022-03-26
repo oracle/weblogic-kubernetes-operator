@@ -456,7 +456,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private boolean isSourceWdt() {
-    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL;
   }
 
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
