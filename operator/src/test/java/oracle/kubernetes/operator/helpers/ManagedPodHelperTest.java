@@ -38,7 +38,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -318,7 +318,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
+    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.label()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 

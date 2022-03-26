@@ -49,8 +49,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -320,7 +320,7 @@ public class JobHelper {
       }
 
       private boolean isModelInImage() {
-        return getDomain().getDomainHomeSourceType() == FromModel;
+        return getDomain().getDomainHomeSourceType() == FROM_MODEL;
       }
 
       private String getCurrentImageSpecHash() {
@@ -553,7 +553,7 @@ public class JobHelper {
       }
 
       private void updateStatusSynchronously() {
-        DomainStatusPatch.updateSynchronously(getDomain(), Introspection, onSeparateLines(severeStatuses));
+        DomainStatusPatch.updateSynchronously(getDomain(), INTROSPECTION, onSeparateLines(severeStatuses));
       }
 
       private String onSeparateLines(List<String> lines) {

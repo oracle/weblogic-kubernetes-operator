@@ -17,18 +17,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -64,78 +64,78 @@ class DomainStatusTest {
 
   @Test
   void whenConditionAdded_removeAnyObsoleteConditions() {
-    domainStatus.addCondition(new DomainCondition(Progressing));
+    domainStatus.addCondition(new DomainCondition(PROGRESSING));
 
-    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart));
+    domainStatus.addCondition(new DomainCondition(CONFIG_CHANGES_PENDING_RESTART));
 
-    assertThat(domainStatus, not(hasCondition(Progressing)));
+    assertThat(domainStatus, not(hasCondition(PROGRESSING)));
   }
 
   @Test
   void whenAddedConditionEqualsPresentCondition_ignoreIt() {
-    DomainCondition originalCondition = new DomainCondition(Failed).withStatus("True");
+    DomainCondition originalCondition = new DomainCondition(FAILED).withStatus("True");
     domainStatus.addCondition(originalCondition);
 
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True"));
 
     assertThat(domainStatus.getConditions().get(0), sameInstance(originalCondition));
   }
 
   @Test
   void whenAddedConditionIsFailed_retainOldFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 1"));
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 2"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("problem 1"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("problem 2"));
 
-    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 1"));
-    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 2"));
+    assertThat(domainStatus, hasCondition(FAILED).withMessage("problem 1"));
+    assertThat(domainStatus, hasCondition(FAILED).withMessage("problem 2"));
   }
 
   @Test
   void whenAddedConditionIsAvailable_replaceOldAvailableCondition() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("False"));
 
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
-    assertThat(domainStatus, hasCondition(Available).withStatus("True"));
-    assertThat(domainStatus, not(hasCondition(Available).withStatus("False")));
+    assertThat(domainStatus, hasCondition(AVAILABLE).withStatus("True"));
+    assertThat(domainStatus, not(hasCondition(AVAILABLE).withStatus("False")));
   }
 
   @Test
   void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True"));
 
-    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(CONFIG_CHANGES_PENDING_RESTART).withStatus("True"));
 
-    assertThat(domainStatus, hasCondition(Failed));
-    assertThat(domainStatus, hasCondition(ConfigChangesPendingRestart));
+    assertThat(domainStatus, hasCondition(FAILED));
+    assertThat(domainStatus, hasCondition(CONFIG_CHANGES_PENDING_RESTART));
   }
 
   @Test
   void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingAvailableCondition() {
-    domainStatus.addCondition(new DomainCondition(Available));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE));
 
-    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(CONFIG_CHANGES_PENDING_RESTART).withStatus("True"));
 
-    assertThat(domainStatus, hasCondition(Available));
-    assertThat(domainStatus, hasCondition(ConfigChangesPendingRestart));
+    assertThat(domainStatus, hasCondition(AVAILABLE));
+    assertThat(domainStatus, hasCondition(CONFIG_CHANGES_PENDING_RESTART));
   }
 
   @Test
   void beforeConditionAdded_statusFailsPredicate() {
-    assertThat(domainStatus.hasConditionWithType(Available), is(false));
+    assertThat(domainStatus.hasConditionWithType(AVAILABLE), is(false));
   }
 
   @Test
   void afterConditionAdded_statusPassesPredicate() {
-    domainStatus.addCondition(new DomainCondition(Available));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE));
 
-    assertThat(domainStatus.hasConditionWithType(Available), is(true));
+    assertThat(domainStatus.hasConditionWithType(AVAILABLE), is(true));
   }
 
   @Test
   void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("msg").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("msg").withReason(INTERNAL));
 
     assertThat(domainStatus.getMessage(), equalTo("msg"));
     assertThat(domainStatus.getReason(), equalTo("Internal"));
@@ -143,8 +143,8 @@ class DomainStatusTest {
 
   @Test
   void mayHaveMultipleFailedConditions_withDifferentReasonsOrMessages() {
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason(Internal));
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message2").withReason(Kubernetes));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message2").withReason(KUBERNETES));
 
     assertThat(domainStatus.getConditions(), hasSize(2));
   }
@@ -152,10 +152,10 @@ class DomainStatusTest {
   @Test
   void duplicateFailuresAreIgnored() {
     final OffsetDateTime initialTime = SystemClock.now();
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message").withReason(INTERNAL));
 
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message").withReason(INTERNAL));
 
     assertThat(domainStatus.getConditions(), hasSize(1));
     assertThat(domainStatus.getConditions().get(0).getLastTransitionTime(), equalTo(initialTime));
@@ -163,29 +163,29 @@ class DomainStatusTest {
 
   @Test
   void failedConditionsAreListedBeforeNoneFailures() {
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason(Internal));
-    domainStatus.addCondition(new DomainCondition(Available).withMessage("message2"));
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message3").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withMessage("message2"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message3").withReason(INTERNAL));
 
-    assertThat(domainStatus.getConditions().get(0).getType(), equalTo(Failed));
-    assertThat(domainStatus.getConditions().get(1).getType(), equalTo(Failed));
-    assertThat(domainStatus.getConditions().get(2).getType(), equalTo(Available));
+    assertThat(domainStatus.getConditions().get(0).getType(), equalTo(FAILED));
+    assertThat(domainStatus.getConditions().get(1).getType(), equalTo(FAILED));
+    assertThat(domainStatus.getConditions().get(2).getType(), equalTo(AVAILABLE));
   }
 
   @Test
   void conditionsAddedLater_areListedBeforeEarlierConditions() {
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message2").withReason(Kubernetes));
+    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message2").withReason(KUBERNETES));
 
     assertThat(domainStatus.getConditions().get(0).getReason(), equalTo("Kubernetes"));
   }
 
   @Test
   void whenMultipleConditionsHaveReason_domainStatusReasonIsTakeFromTheMostRecentlyAdded() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m2").withReason(Kubernetes));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m2").withReason(KUBERNETES));
 
     assertThat(domainStatus.getReason(), equalTo("Kubernetes"));
     assertThat(domainStatus.getMessage(), equalTo("m2"));
@@ -193,8 +193,8 @@ class DomainStatusTest {
 
   @Test
   void whenEarlierConditionsLackReasonOrMessage_domainStatusMessageIsTakenFromFirstNonNullMessage() {
-    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True").withMessage("Got 'em all"));
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("True").withMessage("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
     assertThat(domainStatus.getMessage(), equalTo("Got 'em all"));
     assertThat(domainStatus.getReason(), nullValue());
@@ -202,8 +202,8 @@ class DomainStatusTest {
 
   @Test
   void whenEarlierConditionsLackStatusTrue_domainStatusMessageIsTakenFromFirstWithStatusTrue() {
-    domainStatus.addCondition(new DomainCondition(Completed).withStatus("False").withMessage("Got 'em all"));
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True").withMessage("Got enough"));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("False").withMessage("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True").withMessage("Got enough"));
 
     assertThat(domainStatus.getReason(), nullValue());
     assertThat(domainStatus.getMessage(), equalTo("Got enough"));
@@ -211,11 +211,11 @@ class DomainStatusTest {
 
   @Test
   void whenConditionRemoved_setDomainStatusMessageFromFirstValidRemaining() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason(Internal));
-    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True").withMessage("Got 'em all"));
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("True").withMessage("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
-    domainStatus.removeConditionsWithType(Failed);
+    domainStatus.removeConditionsWithType(FAILED);
 
     assertThat(domainStatus.getMessage(), equalTo("Got 'em all"));
     assertThat(domainStatus.getReason(), nullValue());
@@ -223,11 +223,11 @@ class DomainStatusTest {
 
   @Test
   void whenConditionRemovedAndNoOtherHasMessage_setDomainStatusMessageNull() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason(Internal));
-    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True"));
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
-    domainStatus.removeConditionsWithType(Failed);
+    domainStatus.removeConditionsWithType(FAILED);
 
     assertThat(domainStatus.getMessage(), nullValue());
     assertThat(domainStatus.getReason(), nullValue());
@@ -235,7 +235,7 @@ class DomainStatusTest {
 
   @Test
   void whenDomainRollingStatusAdded_statusHasRollingStatus() {
-    domainStatus.addCondition(new DomainCondition(Rolling));
+    domainStatus.addCondition(new DomainCondition(ROLLING));
 
     assertThat(domainStatus.isRolling(), is(true));
   }
@@ -277,7 +277,7 @@ class DomainStatusTest {
 
   @Test
   void whenHasCondition_cloneIsEqual() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
+    domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("False"));
 
     DomainStatus clone = new DomainStatus(this.domainStatus);
 

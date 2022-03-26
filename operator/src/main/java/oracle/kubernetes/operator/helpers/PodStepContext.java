@@ -488,7 +488,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       return false;
     } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
       return true;
-    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly) {
+    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY) {
       addRestartRequiredLabel = true;
       return true;
     } else {
@@ -690,7 +690,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
@@ -737,7 +737,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());

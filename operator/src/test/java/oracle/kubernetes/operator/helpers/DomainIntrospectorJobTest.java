@@ -73,7 +73,7 @@ import org.yaml.snakeyaml.Yaml;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
@@ -113,7 +113,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
@@ -324,7 +324,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
         .withMessageContaining("create", "job", NS, "failure reported in test"));
   }
 
@@ -544,7 +544,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
-    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
   }
 
   private void defineCompletedIntrospection() {
@@ -560,7 +560,7 @@ class DomainIntrospectorJobTest {
     defineFailedIntrospection();
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
 
-    assertThat(getUpdatedDomain(), hasCondition(Failed));
+    assertThat(getUpdatedDomain(), hasCondition(FAILED));
   }
 
   @Test
@@ -572,7 +572,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
-    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
   }
 
   private void ignoreIntrospectorFailureLogs() {
@@ -619,7 +619,7 @@ class DomainIntrospectorJobTest {
   }
 
   private void defineDomainFailedConditionTrue() {
-    getDomain().getOrCreateStatus().addCondition(new DomainCondition(Failed).withStatus("True"));
+    getDomain().getOrCreateStatus().addCondition(new DomainCondition(FAILED).withStatus("True"));
   }
 
   @Test
@@ -737,7 +737,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
           .withMessageContaining("create", "job", NS, "Test this failure"));
   }
 

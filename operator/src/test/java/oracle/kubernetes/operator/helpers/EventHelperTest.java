@@ -302,7 +302,7 @@ class EventHelperTest {
         createEventStep(new EventData(DOMAIN_FAILED)),
         createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
             .message("Test this failure")
-            .failureReason(DomainFailureReason.Aborted)
+            .failureReason(DomainFailureReason.ABORTED)
             .additionalMessage(WILL_NOT_RETRY)))
     );
 

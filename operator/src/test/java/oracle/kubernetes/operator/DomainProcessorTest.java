@@ -92,14 +92,14 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainSourceType.Image;
-import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
+import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
+import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
 import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
@@ -128,9 +128,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -323,8 +323,8 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain, hasCondition(Available).withStatus("False"));
-    assertThat(updatedDomain, hasCondition(Completed).withStatus("False"));
+    assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
+    assertThat(updatedDomain, hasCondition(COMPLETED).withStatus("False"));
   }
 
   @Test
@@ -356,7 +356,7 @@ class DomainProcessorTest {
 
     triggerStatusUpdate();
 
-    assertThat(testSupport.getResourceWithName(DOMAIN, UID), hasCondition(Completed).withStatus("True"));
+    assertThat(testSupport.getResourceWithName(DOMAIN, UID), hasCondition(COMPLETED).withStatus("True"));
   }
 
   @Test
@@ -856,7 +856,7 @@ class DomainProcessorTest {
     testSupport.addDomainPresenceInfo(info);
     makeRightOperation.execute();
 
-    assertThat(info.getDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(info.getDomain(), hasCondition(COMPLETED).withStatus("False"));
   }
 
   @Test
@@ -944,7 +944,7 @@ class DomainProcessorTest {
 
     executeScheduledRetry();
 
-    assertThat(getRecordedDomain(), hasCondition(Failed).withReason(Aborted));
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(ABORTED));
   }
 
   @Test
@@ -987,7 +987,7 @@ class DomainProcessorTest {
   }
 
   private boolean isDomainConditionFailed() {
-    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == Failed);
+    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == FAILED);
   }
 
   V1JobStatus createBackoffStatus() {
@@ -1248,7 +1248,7 @@ class DomainProcessorTest {
   }
 
   void configureForDomainInPV(Domain d) {
-    configureDomain(d).withDomainHomeSourceType(PersistentVolume);
+    configureDomain(d).withDomainHomeSourceType(PERSISTENT_VOLUME);
   }
 
   private V1Job job;
@@ -1259,7 +1259,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
-    establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(Image));
+    establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(IMAGE));
 
     makeRightOperation.execute();
 
@@ -1277,11 +1277,11 @@ class DomainProcessorTest {
   }
 
   void configureForModelInImage(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL).withRuntimeEncryptionSecret("wdt-cm-secret");
   }
 
   void configureForModelInImageOnlineUpdate(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL).withRuntimeEncryptionSecret("wdt-cm-secret")
       .withMIIOnlineUpdate();
   }
 
@@ -1328,7 +1328,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
-    getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
+    getMIIOnlineUpdateIntrospectResult(DomainConditionType.CONFIG_CHANGES_PENDING_RESTART,
         ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
   }
 
@@ -1889,7 +1889,7 @@ class DomainProcessorTest {
 
     assertThat(
         getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal));
+        hasCondition(FAILED).withStatus("True").withReason(INTERNAL));
   }
 
   private Domain getRecordedDomain() {

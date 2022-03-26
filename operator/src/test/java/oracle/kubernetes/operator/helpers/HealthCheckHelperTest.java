@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
+import oracle.kubernetes.operator.Labeled;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -21,14 +22,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.get;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.list;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.patch;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.update;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.watch;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.CREATE;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.DELETE;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.DELETECOLLECTION;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.GET;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.LIST;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.PATCH;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.UPDATE;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.WATCH;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
@@ -77,20 +78,20 @@ class HealthCheckHelperTest {
         singletonList("secrets");
 
   private static final List<Operation> CRUD_OPERATIONS =
-      Arrays.asList(get, list, watch, create, update, patch, delete, deletecollection);
+      Arrays.asList(GET, LIST, WATCH, CREATE, UPDATE, PATCH, DELETE, DELETECOLLECTION);
 
   private static final List<Operation> CRD_OPERATIONS =
-      Arrays.asList(get, list, watch, create, update, patch);
+      Arrays.asList(GET, LIST, WATCH, CREATE, UPDATE, PATCH);
 
-  private static final List<Operation> READ_ONLY_OPERATIONS = Arrays.asList(get, list);
+  private static final List<Operation> READ_ONLY_OPERATIONS = Arrays.asList(GET, LIST);
 
-  private static final List<Operation> READ_WATCH_OPERATIONS = Arrays.asList(get, list, watch);
+  private static final List<Operation> READ_WATCH_OPERATIONS = Arrays.asList(GET, LIST, WATCH);
 
   private static final List<Operation> READ_UPDATE_OPERATIONS =
-      Arrays.asList(get, list, watch, update, patch);
+      Arrays.asList(GET, LIST, WATCH, UPDATE, PATCH);
 
   private static final List<Operation> CREATE_GET_OPERATIONS =
-      Arrays.asList(create, get);
+      Arrays.asList(CREATE, GET);
 
   private static final String POD_LOGS = "pods/log";
 
@@ -232,7 +233,7 @@ class HealthCheckHelperTest {
     }
 
     private List<String> toVerbs(List<Operation> operations) {
-      return operations.stream().map(Enum::name).collect(Collectors.toList());
+      return operations.stream().map(Labeled::label).collect(Collectors.toList());
     }
   }
 }

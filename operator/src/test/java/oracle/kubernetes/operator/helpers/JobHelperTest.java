@@ -630,7 +630,7 @@ class JobHelperTest extends DomainValidationBaseTest {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
-            .withDomainHomeSourceType(DomainSourceType.FromModel)
+            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
             .withModelConfigMap(LONG_RESOURCE_NAME);
 
     runCreateJob();
