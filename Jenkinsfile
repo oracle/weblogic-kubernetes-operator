@@ -333,18 +333,19 @@ pipeline {
                         fi
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn sonar:sonar"
+                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-aggregate/jacoco.xml sonar:sonar"
                 }
             }
         }
 
-        stage('Verify Sonar Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
+        // waitForQualityGate is not working with SonarCloud...
+//        stage('Verify Sonar Quality Gate') {
+//            steps {
+//                timeout(time: 10, unit: 'MINUTES') {
+//                    waitForQualityGate abortPipeline: true
+//                }
+//            }
+//        }
 
         stage('Make Workspace bin directory') {
             steps {
