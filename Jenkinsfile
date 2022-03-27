@@ -333,7 +333,7 @@ pipeline {
                         fi
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco-aggregate/jacoco.xml sonar:sonar"
+                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
                 }
             }
         }
