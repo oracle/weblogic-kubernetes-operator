@@ -309,12 +309,6 @@ pipeline {
             }
             steps {
                 sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
-                sh "mvn -DtrimStackTrace=false clean install"
-            }
-        }
-
-        stage('Run Sonar Analysis') {
-            steps {
                 sh '''
                         rm -rf ${WORKSPACE}/.mvn/maven.config
                         mkdir -p ${WORKSPACE}/.mvn
@@ -331,7 +325,7 @@ pipeline {
                         fi
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn sonar:sonar"
+                    sh "mvn -B -DtrimStackTrace=false clean install sonar:sonar"
                 }
             }
         }
@@ -339,8 +333,7 @@ pipeline {
         stage('Verify Sonar Quality Gate') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
-                    // Set abortPipeline to true if you want the build to stop when the Sonar Quality Gate is not met...
-                    waitForQualityGate abortPipeline: false
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
