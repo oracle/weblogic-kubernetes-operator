@@ -106,7 +106,7 @@ public class RestBackendImpl implements RestBackend {
               operation,
               Resource.DOMAINS,
               null,
-              Scope.cluster,
+              Scope.CLUSTER,
               null);
     } else {
       authorized =
@@ -116,7 +116,7 @@ public class RestBackendImpl implements RestBackend {
               operation,
               Resource.DOMAINS,
               domainUid,
-              Scope.namespace,
+              Scope.NAMESPACE,
               getNamespace(domainUid));
     }
     if (authorized) {
@@ -170,7 +170,7 @@ public class RestBackendImpl implements RestBackend {
 
   @Override
   public Set<String> getDomainUids() {
-    authorize(null, Operation.list);
+    authorize(null, Operation.LIST);
 
     return getDomainStream().map(Domain::getDomainUid).collect(Collectors.toSet());
   }
@@ -195,7 +195,7 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public void performDomainAction(String domainUid, DomainAction params) {
     verifyDomain(domainUid);
-    authorize(domainUid, Operation.update);
+    authorize(domainUid, Operation.UPDATE);
 
     switch (Optional.ofNullable(params.getAction()).orElse(DomainActionType.UNKNOWN)) {
       case INTROSPECT:
@@ -261,7 +261,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private Optional<Domain> getDomain(String domainUid) {
-    authorize(null, Operation.list);
+    authorize(null, Operation.LIST);
     
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
@@ -270,7 +270,7 @@ public class RestBackendImpl implements RestBackend {
   public Set<String> getClusters(String domainUid) {
     LOGGER.entering(domainUid);
     verifyDomain(domainUid);
-    authorize(domainUid, Operation.get);
+    authorize(domainUid, Operation.GET);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
@@ -283,7 +283,7 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isCluster(String domainUid, String cluster) {
     LOGGER.entering(domainUid, cluster);
-    authorize(domainUid, Operation.list);
+    authorize(domainUid, Operation.LIST);
     boolean result = getClusters(domainUid).contains(cluster);
     LOGGER.exiting(result);
     return result;
@@ -298,7 +298,7 @@ public class RestBackendImpl implements RestBackend {
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
-    authorize(domainUid, Operation.update);
+    authorize(domainUid, Operation.UPDATE);
     forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
     LOGGER.exiting();
   }

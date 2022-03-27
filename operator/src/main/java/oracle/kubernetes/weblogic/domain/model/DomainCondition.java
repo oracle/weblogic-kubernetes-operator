@@ -15,7 +15,7 @@ import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -183,7 +183,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(String status) {
-    assert status.equals(TRUE) || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
@@ -195,7 +194,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(boolean status) {
-    assert status || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status ? TRUE : FALSE;
     return this;
@@ -295,6 +293,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   boolean isSpecifiedFailure(DomainFailureReason reason) {
-    return hasType(Failed) && reason.name().equals(getReason());
+    return hasType(FAILED) && reason.label().equals(getReason());
   }
 }

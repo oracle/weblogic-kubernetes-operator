@@ -11,7 +11,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_METHOD;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
@@ -85,7 +85,7 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   @Override
   public String getReason() {
-    return Kubernetes.toString();
+    return KUBERNETES.toString();
   }
 
   /**

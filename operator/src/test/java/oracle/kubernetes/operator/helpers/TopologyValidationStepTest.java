@@ -35,7 +35,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
+import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
@@ -47,7 +47,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -119,18 +119,18 @@ class TopologyValidationStepTest {
   private void assertTopologyMismatchReported(String messageKey, Object... parameters) {
     final String message = getFormattedMessage(messageKey, parameters);
 
-    assertThat(domain, hasCondition(Failed).withReason(TopologyMismatch).withMessageContaining(message));
+    assertThat(domain, hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessageContaining(message));
     assertThat(logRecords, containsWarning(messageKey, parameters));
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(TOPOLOGY_MISMATCH_ERROR, message));
   }
 
   @Test
   void removeOldTopologyFailures() {
-    domain.getStatus().addCondition(new DomainCondition(Failed).withReason(TopologyMismatch));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH));
 
     runTopologyValidationStep();
 
-    assertThat(domain, not(hasCondition(Failed).withReason(TopologyMismatch)));
+    assertThat(domain, not(hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH)));
   }
 
   @Test
@@ -138,13 +138,13 @@ class TopologyValidationStepTest {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     final OffsetDateTime initialTime = SystemClock.now();
     final String message = getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
-    domain.getStatus().addCondition(new DomainCondition(Failed).withReason(TopologyMismatch).withMessage(message));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessage(message));
 
     SystemClockTestSupport.increment();
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
     runTopologyValidationStep();
 
-    assertThat(domain, hasCondition(Failed).withMessageContaining(message).atTime(initialTime));
+    assertThat(domain, hasCondition(FAILED).withMessageContaining(message).atTime(initialTime));
   }
 
   @Test

@@ -268,7 +268,7 @@ public class DomainValidationSteps {
           : Optional.ofNullable((message))
               .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureSteps(m), next))
               .orElse(Step.chain(
-                    DomainStatusUpdater.createRemoveSelectedFailuresStep(DomainFailureReason.TopologyMismatch), next));
+                    DomainStatusUpdater.createRemoveSelectedFailuresStep(DomainFailureReason.TOPOLOGY_MISMATCH), next));
     }
   }
 

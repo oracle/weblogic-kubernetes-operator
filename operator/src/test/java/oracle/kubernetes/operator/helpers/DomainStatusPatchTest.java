@@ -32,7 +32,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainStatusPatchTest.OrderedArrayMatcher.hasItemsInOrder;
@@ -150,9 +150,9 @@ class DomainStatusPatchTest {
   void whenOnlyNewStatusHasConditions_addNewConditions() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Failed)
-                .withReason(Internal).withMessage("hello").withStatus("True"))
-          .addCondition(new DomainCondition(DomainConditionType.Completed).withStatus("true"));
+          .addCondition(new DomainCondition(DomainConditionType.FAILED)
+                .withReason(INTERNAL).withMessage("hello").withStatus("True"))
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED).withStatus("true"));
 
     computePatch(status1, status2);
 
@@ -167,9 +167,9 @@ class DomainStatusPatchTest {
   @Test
   void whenOnlyOldStatusHasConditions_removeThem() {
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
+          .addCondition(new DomainCondition(DomainConditionType.AVAILABLE)
                 .withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Completed)
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED)
                 .withStatus("true"));
     DomainStatus status2 = new DomainStatus();
 
@@ -181,11 +181,11 @@ class DomainStatusPatchTest {
   @Test
   void whenBothStatusesHaveConditions_replaceMismatches() {
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available).withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Completed).withStatus("true"));
+          .addCondition(new DomainCondition(DomainConditionType.AVAILABLE).withMessage("hello").withStatus("true"))
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED).withStatus("true"));
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available).withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Completed).withMessage("Almost").withStatus("false"));
+          .addCondition(new DomainCondition(DomainConditionType.AVAILABLE).withMessage("hello").withStatus("true"))
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED).withMessage("Almost").withStatus("false"));
 
     computePatch(status1, status2);
 
@@ -197,9 +197,9 @@ class DomainStatusPatchTest {
   @Test
   void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Completed));
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED));
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Completed).withMessage("Nope").withStatus("False"));
+          .addCondition(new DomainCondition(DomainConditionType.COMPLETED).withMessage("Nope").withStatus("False"));
 
     computePatch(status1, status2);
 

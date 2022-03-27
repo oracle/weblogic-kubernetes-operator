@@ -44,14 +44,14 @@ class AuthenticationProxyTest {
   void verify_authorizationScope_isCluster_whenNamespaceIsNull() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
     authorizationProxy.check("", "", null);
-    assertThat(authorizationProxyStub.scope, equalTo(Scope.cluster));
+    assertThat(authorizationProxyStub.scope, equalTo(Scope.CLUSTER));
   }
 
   @Test
   void verify_authorizationScope_isNamespace_whenNamespaceIsDefined() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
     authorizationProxy.check("", "", "NS");
-    assertThat(authorizationProxyStub.scope, equalTo(Scope.namespace));
+    assertThat(authorizationProxyStub.scope, equalTo(Scope.NAMESPACE));
   }
 
   private static class AuthorizationProxyStub extends AuthorizationProxy {

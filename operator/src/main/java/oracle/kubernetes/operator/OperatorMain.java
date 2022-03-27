@@ -408,7 +408,7 @@ public class OperatorMain extends BaseMain {
    * @return true, if selection strategy is dedicated mode.
    */
   public static boolean isDedicated() {
-    return Namespaces.SelectionStrategy.Dedicated.equals(Namespaces.getSelectionStrategy());
+    return Namespaces.SelectionStrategy.DEDICATED.equals(Namespaces.getSelectionStrategy());
   }
 
   @Override
