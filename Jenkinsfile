@@ -317,7 +317,7 @@ pipeline {
             steps {
                 sh '''
                         rm -rf ${WORKSPACE}/.mvn/maven.config
-                        echo "-Dsonar.projectKey=${sonar_project_key}"                        > ${WORKSPACE}/.mvn/maven.config
+                        echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
                         if [ -z "${CHANGE_ID}" ]; then
                             echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
                         else
