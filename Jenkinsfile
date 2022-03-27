@@ -103,6 +103,7 @@ pipeline {
 
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
+        sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
         jacoco_report_path = 'buildtime-reports/target/site/jacoco-aggregate/jacoco.xml'
 
         outdir = "${WORKSPACE}/staging"
@@ -333,19 +334,19 @@ pipeline {
                         fi
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
+                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${WORKSPACE}/${jacoco_report_path} sonar:sonar"
                 }
             }
         }
 
         // waitForQualityGate is not working with SonarCloud...
-//        stage('Verify Sonar Quality Gate') {
-//            steps {
-//                timeout(time: 10, unit: 'MINUTES') {
-//                    waitForQualityGate abortPipeline: true
-//                }
-//            }
-//        }
+        stage('Verify Sonar Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate(abortPipeline: true, webhookSecretId: "${sonar_webhook_secret_creds}")
+                }
+            }
+        }
 
         stage('Make Workspace bin directory') {
             steps {
