@@ -90,9 +90,9 @@ pipeline {
 
     environment {
         github_url = "${env.GIT_URL}"
-        github_creds = "ecnj_github"
-        dockerhub_username_creds = "docker-username"
-        dockerhub_password_creds = "docker-password"
+        github_creds = 'ecnj_github'
+        dockerhub_username_creds = 'docker-username'
+        dockerhub_password_creds = 'docker-password'
         ocr_username_creds = 'OCR username'
         ocr_password_creds = 'OCR Password'
         ocir_registry_creds = 'ocir-server'
@@ -100,6 +100,9 @@ pipeline {
         ocir_username_creds = 'ocir-username'
         ocir_password_creds = 'ocir-token'
         image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
+
+        sonar_project_key = 'oracle_weblogic-kubernetes-operator'
+        sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -299,6 +302,47 @@ pipeline {
             }
         }
 
+        stage('Build WebLogic Kubernetes Operator') {
+            environment {
+                DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
+                DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
+            }
+            steps {
+                sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
+                sh "mvn -DtrimStackTrace=false clean install"
+            }
+        }
+
+        stage('Run Sonar Analysis') {
+            steps {
+                sh '''
+                        rm -rf ${WORKSPACE}/.mvn/maven.config
+                        echo "-Dsonar.projectKey=${sonar_project_key}"                        > ${WORKSPACE}/.mvn/maven.config
+                        if [ -z "${CHANGE_ID}" ]; then
+                            echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
+                        else
+                            echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
+                        fi
+                    '''
+                withSonarQubeEnv('SonarCloud') {
+                    sh "mvn sonar:sonar"
+                }
+            }
+        }
+
+        stage('Verify Sonar Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    // Set abortPipeline to true if you want the build to stop when the Sonar Quality Gate is not met...
+                    waitForQualityGate abortPipeline: false
+                }
+            }
+        }
+
         stage('Make Workspace bin directory') {
             steps {
                 sh "mkdir -m777 -p ${WORKSPACE}/bin"
@@ -345,22 +389,6 @@ pipeline {
                     curl -Lo "${WORKSPACE}/bin/kind" --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
                     chmod +x "${WORKSPACE}/bin/kind"
                     kind version
-                '''
-            }
-        }
-
-        stage('Build WebLogic Kubernetes Operator') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-                DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
-                DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
-            }
-            steps {
-                sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
-                sh '''
-                    export PATH=${runtime_path}
-                    rm -rf ${WORKSPACE}/.mvn
-                    mvn -DtrimStackTrace=false clean install
                 '''
             }
         }
