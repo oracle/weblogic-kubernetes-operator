@@ -260,6 +260,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
+  public FluentdSpecification getFluentdSpecification() {
+    return server.getFluentdSpecification();
+  }
+
+  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())

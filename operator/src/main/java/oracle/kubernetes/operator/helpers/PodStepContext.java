@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -67,6 +68,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -928,6 +930,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
+    Optional.ofNullable(getServerSpec().getFluentdSpecification())
+      .ifPresent(fluentd -> addFluentdContainer(fluentd, containers));
     return containers;
   }
 
@@ -942,9 +946,17 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private V1Volume createRuntimeEncryptionSecretVolume() {
     return new V1Volume()
-        .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
-        .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
+      .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+      .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
   }
+
+  private V1VolumeMount createFluentdConfigmapVolume() {
+    return new V1VolumeMount()
+      .name(FLUENTD_CONFIGMAP_VOLUME)
+      .mountPath("/fluentd/etc/fluentd.conf")
+      .subPath("fluentd.conf");
+  }
+
 
   private V1SecretVolumeSource getRuntimeEncryptionSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
@@ -989,6 +1001,29 @@ public abstract class PodStepContext extends BasePodStepContext {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
       }
     });
+  }
+
+  protected void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers) {
+
+    V1Container fluentdContainer = new V1Container();
+    fluentdContainer
+      .name("fluentd")
+      .addArgsItem("-c")
+      .addArgsItem("/etc/fluent.conf");
+
+    fluentdContainer.setImage(fluentdSpecification.getImage());
+    fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
+    fluentdContainer.setResources(fluentdSpecification.getResources());
+
+    fluentdSpecification.getEnv().stream()
+      .map( c -> fluentdContainer.addEnvItem(c));
+
+    fluentdSpecification.getVolumeMounts().stream()
+      .map( c -> fluentdContainer.addVolumeMountsItem(c));
+
+    // TODO: check what if user already has it ??
+    fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolume());
+    containers.add(fluentdContainer);
   }
 
   private String getDomainHome() {

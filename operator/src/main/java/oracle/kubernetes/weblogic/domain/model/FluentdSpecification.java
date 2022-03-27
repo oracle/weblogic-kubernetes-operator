@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -66,6 +67,9 @@ public class FluentdSpecification {
   private final V1ResourceRequirements resources =
     new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
+  @Description("Volume mounts for fluentd container")
+  private List<V1VolumeMount> volumeMounts;
+
   public List<V1EnvVar> getEnv() {
     return env;
   }
@@ -78,16 +82,14 @@ public class FluentdSpecification {
     return resources;
   }
 
-  public String getFluentdMountPath() {
-    return fluentdMountPath;
+  public List<V1VolumeMount> getVolumeMounts() {
+    return volumeMounts;
   }
 
-  public void setFluentdMountPath(String fluentdMountPath) {
-    this.fluentdMountPath = fluentdMountPath;
+  public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
+    this.volumeMounts = volumeMounts;
   }
 
-  @Description("Volume mount path for fluentd storage. Default: /scratch")
-  private String fluentdMountPath;
 
   public FluentdConfiguration getConfiguration() {
     return Optional.ofNullable(configuration).map(this::toJson).map(this::toConfiguration).orElse(null);
@@ -109,19 +111,19 @@ public class FluentdSpecification {
     return new Yaml().load(yaml);
   }
 
-  String getImage() {
+  public String getImage() {
     return Optional.ofNullable(image).orElse(DEFAULT_FLUENTD_IMAGE);
   }
 
-  void setImage(@Nullable String image) {
+  public void setImage(@Nullable String image) {
     this.image = image;
   }
 
-  String getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  void setImagePullPolicy(@Nullable String imagePullPolicy) {
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
@@ -133,7 +135,7 @@ public class FluentdSpecification {
           .append("imagePullPolicy", imagePullPolicy)
           .append("env", env)
           .append("resources", resources)
-          .append("fluentdMountPath", fluentdMountPath)
+          .append("volumeMounts", volumeMounts)
           .toString();
   }
 
@@ -150,7 +152,7 @@ public class FluentdSpecification {
           .append(imagePullPolicy, that.imagePullPolicy)
           .append(env, that.env)
           .append(resources, that.resources)
-          .append(fluentdMountPath, this.fluentdMountPath)
+          .append(volumeMounts, this.volumeMounts)
           .isEquals();
   }
 
@@ -162,7 +164,7 @@ public class FluentdSpecification {
           .append(imagePullPolicy)
           .append(env)
           .append(resources)
-          .append(fluentdMountPath)
+          .append(volumeMounts)
           .toHashCode();
   }
 }

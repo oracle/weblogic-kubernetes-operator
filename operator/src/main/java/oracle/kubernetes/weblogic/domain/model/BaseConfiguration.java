@@ -125,6 +125,11 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
+  void createFluentdSpecification() {
+    // TODO
+    serverPod.createFluentdConfiguration("ohmac:\n  donald: 8");
+  }
+
   void addEnvironmentVariable(V1EnvVar envVar) {
     serverPod.addEnvVar(envVar);
   }
@@ -377,6 +382,10 @@ public abstract class BaseConfiguration {
 
   public void setMaxReadyWaitTimeSeconds(long waitTime) {
     serverPod.setMaxReadyWaitTimeSeconds(waitTime);
+  }
+
+  public FluentdSpecification getFluentdSpecification() {
+    return serverPod.getFluentdSpecification();
   }
 
   @Override

@@ -167,4 +167,6 @@ public interface ServerSpec {
   boolean alwaysStart();
 
   long getMaximumReadyWaitTimeSeconds();
+
+  FluentdSpecification getFluentdSpecification();
 }

@@ -357,6 +357,15 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  void whenDomainHasFluentdInSerpverPod_createPodShouldHaveFluetdContainer()
+    throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    configureAdminServer().withFluentdSpecification();
+
+    getCreatedPod();
+
+  }
+
+  @Test
   void whenDomainHasValueFromEnvironmentItems_createAdminPodStartupWithThem() {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");

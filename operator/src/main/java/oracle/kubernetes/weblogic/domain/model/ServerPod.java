@@ -276,7 +276,9 @@ class ServerPod extends KubernetesResource {
     if (fluentdConfiguration == null) {
       fluentdConfiguration = new FluentdConfiguration();
     }
-
+    if (fluentdSpecification == null) {
+      fluentdSpecification = new FluentdSpecification();
+    }
     fluentdSpecification.createConfiguration(yaml);
   }
 

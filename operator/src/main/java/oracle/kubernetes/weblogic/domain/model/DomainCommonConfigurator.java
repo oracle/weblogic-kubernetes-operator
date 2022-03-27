@@ -497,6 +497,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withFluentdSpecification() {
+      server.createFluentdSpecification();
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       server.addEnvironmentVariable(envVar);
       return this;

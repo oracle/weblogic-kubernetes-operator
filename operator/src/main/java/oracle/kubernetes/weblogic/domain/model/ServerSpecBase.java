@@ -130,6 +130,11 @@ public abstract class ServerSpecBase implements ServerSpec {
   }
 
   @Override
+  public FluentdSpecification getFluentdSpecification() {
+    return null;
+  }
+
+  @Override
   public String toString() {
     return new ToStringBuilder(this).append("domainSpec", domainSpec).toString();
   }
