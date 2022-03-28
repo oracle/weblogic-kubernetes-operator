@@ -635,6 +635,55 @@ class ItMiiAuxiliaryImage {
 
   }
 
+  /**
+   * Negative test. Create a domain using auxiliary image with no model files at specified sourceModelHome
+   * location. Verify domain events and operator log contains the expected error message.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with no files at specified sourceModelHome")
+  void testCreateDomainNoFilesAtSourceModelHome() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    final String domainUid = "domain5";
+
+    WitParams witParams =
+            new WitParams()
+                    .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+                    .modelImageTag(miiAuxiliaryImage8Tag)
+                    .wdtHome(auxiliaryImagePathCustom)
+                    .wdtModelHome(auxiliaryImagePathCustom + "/models")
+                    .wdtVersion("latest");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage8Tag, witParams);
+
+    OffsetDateTime timestamp = now();
+
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+            domainUid, miiAuxiliaryImage8);
+    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+            encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
+            miiAuxiliaryImage8);
+
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+            domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domainNamespace)),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domainNamespace));
+
+    String errorMessage = "Make sure the 'sourceModelHome' is correctly specified and the WDT model "
+            + "files are available in this directory  or set 'sourceModelHome' to 'None' for this image.";
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+            "Warning", timestamp, errorMessage);
+
+  }
 
   /**
    * Create a domain using auxiliary image with configMap and no model files.
