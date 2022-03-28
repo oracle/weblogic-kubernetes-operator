@@ -343,16 +343,14 @@ pipeline {
             }
         }
 
-        // waitForQualityGate is not working with SonarCloud...
-        // See https://community.sonarsource.com/t/jenkins-waitforqualitygate-fails-because-sonarcloud-is-returning-outdated-browser-html-response/60579
-        //
-        // stage('Verify Sonar Quality Gate') {
-        //     steps {
-        //         timeout(time: 10, unit: 'MINUTES') {
-        //             waitForQualityGate(abortPipeline: true, webhookSecretId: "${sonar_webhook_secret_creds}")
-        //         }
-        //     }
-        // }
+        stage('Verify Sonar Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                    waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
+                }
+            }
+        }
 
         stage('Make Workspace bin directory') {
             steps {
