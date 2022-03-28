@@ -103,7 +103,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>${exec-maven-plugin-version}</version>
                         <executions>
                             <execution><!-- helm chart package-->
                                 <id>package-helm-charts</id>
@@ -127,7 +126,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin-version}</version>
                         <configuration>
                             <!-- run all tests -->
                             <includes>

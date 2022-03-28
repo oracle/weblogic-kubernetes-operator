@@ -104,7 +104,7 @@ pipeline {
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
         sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
-        jacoco_report_path = 'buildtime-reports/target/site/jacoco-aggregate/jacoco.xml'
+        jacoco_report_path = "${WORKSPACE}/buildtime-reports/target/site/jacoco-aggregate/jacoco.xml"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -334,7 +334,7 @@ pipeline {
                         fi
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${WORKSPACE}/${jacoco_report_path} sonar:sonar"
+                    sh "mvn sonar:sonar"
                 }
             }
         }
