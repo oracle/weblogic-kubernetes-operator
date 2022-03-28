@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -51,6 +50,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;

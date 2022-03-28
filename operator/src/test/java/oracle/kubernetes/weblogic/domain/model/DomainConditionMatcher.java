@@ -1,96 +1,54 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import javax.annotation.Nonnull;
+import java.time.OffsetDateTime;
 
-import oracle.kubernetes.utils.OperatorUtils;
+import oracle.kubernetes.operator.DomainFailureReason;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
-  private @Nonnull final DomainConditionType expectedType;
-  private String expectedStatus;
-  private String expectedReason;
-  private String expectedMessage;
+public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+  private final DomainStatusConditionMatcher statusMatcher;
 
-  private DomainConditionMatcher(DomainConditionType expectedType) {
-    this.expectedType = expectedType;
+  private DomainConditionMatcher(DomainStatusConditionMatcher statusMatcher) {
+    this.statusMatcher = statusMatcher;
   }
 
   public static DomainConditionMatcher hasCondition(DomainConditionType type) {
-    return new DomainConditionMatcher(type);
+    return new DomainConditionMatcher(DomainStatusConditionMatcher.hasCondition(type));
   }
 
-  DomainConditionMatcher withStatus(String status) {
-    expectedStatus = status;
+  public DomainConditionMatcher withStatus(String status) {
+    statusMatcher.withStatus(status);
     return this;
   }
 
-  DomainConditionMatcher withReason(String reason) {
-    expectedReason = reason;
+  public DomainConditionMatcher withReason(DomainFailureReason reason) {
+    statusMatcher.withReason(reason);
     return this;
   }
 
-  DomainConditionMatcher withMessage(String message) {
-    expectedMessage = message;
+  public DomainConditionMatcher withMessageContaining(String message) {
+    statusMatcher.withMessageContaining(message);
+    return this;
+  }
+
+  public DomainConditionMatcher atTime(OffsetDateTime transitionTime) {
+    statusMatcher.atTime(transitionTime);
     return this;
   }
 
   @Override
-  protected boolean matchesSafely(DomainStatus item, Description mismatchDescription) {
-    for (DomainCondition condition : item.getConditions()) {
-      if (matches(condition)) {
-        return true;
-      }
-    }
-
-    mismatchDescription.appendValueList(
-        "found domain with conditions ", ", ", ".", item.getConditions());
-    return false;
-  }
-
-  private boolean matches(DomainCondition condition) {
-    if (expectedType != condition.getType()) {
-      return false;
-    }
-    if (expectedStatus != null && !expectedStatus.equals(condition.getStatus())) {
-      return false;
-    }
-    if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) {
-      return false;
-    }
-    return expectedReason == null || expectedReason.equals(condition.getReason());
-  }
-
-  private DomainStatus getStatus(Domain domain) {
-    return Optional.ofNullable(domain.getStatus()).orElse(new DomainStatus());
+  protected boolean matchesSafely(Domain item, Description mismatchDescription) {
+    return statusMatcher.matchesSafely(item.getStatus(), mismatchDescription);
   }
 
   @Override
   public void describeTo(Description description) {
-    List<String> expectations = new ArrayList<>();
-    expectations.add(expectation("type", expectedType.toString()));
-    if (expectedStatus != null) {
-      expectations.add(expectation("status", expectedStatus));
-    }
-    if (expectedReason != null) {
-      expectations.add(expectation("reason", expectedReason));
-    }
-    if (expectedMessage != null) {
-      expectations.add(expectation("reason", expectedMessage));
-    }
-    description
-        .appendText("domain containing condition: ")
-        .appendText(OperatorUtils.joinListGrammatically(expectations));
+    statusMatcher.describeTo(description, "domain containing condition: ");
   }
 
-  private String expectation(String description, String value) {
-    return description + " = '" + value + "'";
-  }
 }

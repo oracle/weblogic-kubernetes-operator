@@ -759,7 +759,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
             createLegacyDomainMap(
                     createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName("test"))

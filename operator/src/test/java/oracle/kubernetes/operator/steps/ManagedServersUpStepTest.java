@@ -16,15 +16,12 @@ import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -34,8 +31,6 @@ import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
@@ -60,12 +55,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_EXCEEDS_TOTA
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
@@ -81,7 +70,6 @@ import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -494,7 +482,7 @@ class ManagedServersUpStepTest {
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
-    assertThat(skipProgressingStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
@@ -504,7 +492,7 @@ class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -517,7 +505,7 @@ class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1",
+    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
         "server3", ADMIN);
   }
 
@@ -669,10 +657,9 @@ class ManagedServersUpStepTest {
     assertManagedServersUpStepNotCreated();
   }
 
-  private static Step skipProgressingStep(Step step) {
+  private static Step firstNonEventStep(Step step) {
     Step stepLocal = step;
-    while (stepLocal instanceof EventHelper.CreateEventStep
-        || stepLocal instanceof DomainStatusUpdater.RemoveFailuresStep) {
+    while (stepLocal instanceof EventHelper.CreateEventStep) {
       stepLocal = stepLocal.getNext();
     }
 
@@ -707,7 +694,6 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
     ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo, false);
-    List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
   }
 
@@ -852,38 +838,4 @@ class ManagedServersUpStepTest {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  private void setExplicitRecheck() {
-    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
-        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
-  }
-
-  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return true;
-    }
-  }
-
-  private void assertContainsEventWithReplicasTooHighMessage(String msgId, Object... messageParams) {
-    String formattedMessage = formatMessage(msgId, messageParams);
-    assertThat(
-        "Expected Event with message '"
-            + getExpectedReplicasTooHighEventMessage(formattedMessage) + "' was not created",
-        containsEventWithMessage(
-            getEvents(),
-            DOMAIN_FAILED_EVENT,
-            getExpectedReplicasTooHighEventMessage(formattedMessage)),
-        is(true));
-  }
-
-  private String formatMessage(String msgId, Object... params) {
-    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
-    return logger.formatMessage(msgId, params);
-  }
-
-  private String getExpectedReplicasTooHighEventMessage(String message) {
-    return String.format(DOMAIN_FAILED_PATTERN, UID,
-        REPLICAS_TOO_HIGH_ERROR, message, REPLICAS_TOO_HIGH_ERROR_SUGGESTION);
-  }
 }
