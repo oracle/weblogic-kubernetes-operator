@@ -47,7 +47,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 1. If it is not already installed, then install Helm.
    To install an operator, it is required to install Helm in your Kubernetes cluster.
-   The operator uses Helm to create necessary resources and then deploy the operator in a Kubernetes cluster.
+   The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster.
 
    To check if you already have Helm available, try the `helm version` command.
 
@@ -174,7 +174,7 @@ The operator image must be available to all nodes of your Kubernetes cluster.
 
 ##### Locating an operator image
 
-Production ready operator images for various supported versions of the operator are
+Production-ready operator images for various supported versions of the operator are
 publicly located in the operator
 [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 Operator GitHub container registry images can be directly referenced using an image name similar to
@@ -185,6 +185,7 @@ see the [Developer Guide]({{<relref "/developerguide/_index.md">}}).
 
 ##### Default operator image
 
+Each Helm chart version defaults to using an operator image from the matching version.
 To find the default image name that will be used when installing the operator,
 see [Inspect the operator Helm chart](#inspect-the-operator-helm-chart) and look for the `image` value.
 The value will look something like `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
@@ -226,7 +227,7 @@ provide security credentials.
   for example `--set "image=my-image-registry.io/my-operator-image:1.0"`.
 - To create an image pull registry secret, create a Kubernetes Secret of type `docker-registry`
   in the namespace where the operator is to be deployed, as described
-  in [Specifying ImagePullSecrets on a Pod](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
+  in [Specifying `imagePullSecrets` on a Pod](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
 - To reference an image pull registry secret from an operator installation, there are two options:
   - Use the `imagePullSecrets` operator Helm chart
     configuration setting when installing the operator.
@@ -242,7 +243,7 @@ for the `kubernetesPlatform` Helm chart configuration setting when installing th
 
 In particular, beginning with operator version 3.3.2,
 specify the operator `kubernetesPlatform` Helm chart setting
-with value `OpenShift` when using the `OpenShift` Kubernetes platform,
+with the value `OpenShift` when using the `OpenShift` Kubernetes platform,
 for example `--set "kubernetesPlatform=OpenShift"`.
 This accommodates OpenShift security requirements.
 
@@ -257,7 +258,7 @@ There are three commonly used security strategies for deploying an operator:
 1. [Any namespace with cluster role binding disabled](#any-namespace-with-cluster-role-binding-disabled)
 1. [Local namespace only with cluster role binding disabled](#local-namespace-only-with-cluster-role-binding-disabled)
 
-For a detailed discussion of the operator's security-related resources,
+For a detailed description of the operator's security-related resources,
 see the operator's role-based access control (RBAC) requirements,
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
@@ -311,11 +312,11 @@ choose the value for its `domainNamespaceSelectionStrategy` Helm chart configura
 See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
 Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
-then you should also set `enableClusterRoleBinding` to false.
+then you should also set `enableClusterRoleBinding` to `false`.
 See [Choose a security strategy](#choose-a-security-strategy).
 
-For a discussion about common namespace management issues,
-see [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
+For a description of common namespace management issues,
+see [Common mistakes and solutions]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
 For reference, see [WebLogic domain management]({{<relref "/userguide/managing-operators/using-helm#weblogic-domain-management">}}).
 
 #### Choose a Helm release name
