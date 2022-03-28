@@ -35,6 +35,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
+import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
+import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
+import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
@@ -43,12 +49,6 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
-import static oracle.kubernetes.operator.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
-import static oracle.kubernetes.operator.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 

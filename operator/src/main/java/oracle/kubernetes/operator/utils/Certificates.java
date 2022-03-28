@@ -14,9 +14,9 @@ import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
 
 public class Certificates {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

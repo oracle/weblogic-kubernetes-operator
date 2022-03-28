@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -22,15 +22,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.common.logging.MessageKeys.CM_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CM_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.CM_REPLACED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;

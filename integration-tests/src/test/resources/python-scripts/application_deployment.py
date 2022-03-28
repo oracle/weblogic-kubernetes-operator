@@ -1,15 +1,13 @@
 # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-import sys
 import os
+import sys
 import traceback
-
-from java.util import Base64
-from java.nio.file import Files
-from java.nio.file import Path
 from java.io import File
 from java.io import FileOutputStream
+from java.nio.file import Files
+from java.util import Base64
 
 script_name = 'application_deployment.py'
 print 'script_name: ' + script_name

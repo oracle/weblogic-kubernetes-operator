@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -29,9 +29,9 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
-import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;
@@ -79,7 +79,7 @@ class RestTest extends JerseyTest {
   @BeforeEach
   public void setupRestTest() throws Exception {
     setUp();
-    mementos.add(TestUtils.silenceJsonPathLogger());
+    mementos.add(BaseTestUtils.silenceJsonPathLogger());
   }
 
   @AfterEach

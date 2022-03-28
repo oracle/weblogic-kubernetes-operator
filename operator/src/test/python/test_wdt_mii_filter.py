@@ -2,11 +2,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import ast
+import model_wdt_mii_filter
 import os
 import unittest
-#import yaml
 
-import model_wdt_mii_filter
+
+# import yaml
 
 
 class WdtUpdateFilterCase(unittest.TestCase):

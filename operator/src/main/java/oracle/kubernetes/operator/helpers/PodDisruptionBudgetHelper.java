@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,14 +29,14 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_PATCHED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_PATCHED;
 
 /**
  * Operations for dealing with namespaces.

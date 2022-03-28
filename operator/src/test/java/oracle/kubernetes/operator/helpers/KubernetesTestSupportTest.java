@@ -193,7 +193,7 @@ class KubernetesTestSupportTest {
     Step steps = new CallBuilder()
         .replaceDomainStatusAsync("domain1", NS,
             createDomain(NS, "domain1")
-                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.Completed))),
+                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.COMPLETED))),
             null);
     testSupport.runSteps(steps);
 

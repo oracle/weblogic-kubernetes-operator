@@ -44,7 +44,6 @@
 #   configuration.
 #
 
-import copy
 import inspect
 import os
 import sys

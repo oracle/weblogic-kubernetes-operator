@@ -3,40 +3,30 @@
 
 package application;
 
-import java.text.SimpleDateFormat;
 import java.text.DateFormat;
-
+import java.text.SimpleDateFormat;
 import java.util.Hashtable;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
-import javax.jms.Destination;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-import javax.jms.JMSConsumer;
-import javax.jms.JMSProducer;
-import javax.jms.MessageListener;
-
-import javax.ejb.MessageDriven;
 import javax.ejb.ActivationConfigProperty;
+import javax.ejb.MessageDriven;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSContext;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 import weblogic.javaee.MessageDestinationConfiguration;
-import weblogic.javaee.TransactionIsolation;
-import weblogic.javaee.TransactionTimeoutSeconds;
-
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.DomainRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 @MessageDriven(
   activationConfig = {

@@ -12,10 +12,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -35,28 +35,28 @@ class DomainConditionTest {
 
   @Test
   void whenCreated_conditionHasLastTransitionTime() {
-    assertThat(new DomainCondition(Available).getLastTransitionTime(), SystemClockTestSupport.isDuringTest());
+    assertThat(new DomainCondition(AVAILABLE).getLastTransitionTime(), SystemClockTestSupport.isDuringTest());
   }
 
   @Test
   void predicateDetectsType() {
-    assertThat(new DomainCondition(Failed).hasType(Failed), is(true));
-    assertThat(new DomainCondition(Completed).hasType(Available), is(false));
-    assertThat(new DomainCondition(ConfigChangesPendingRestart).hasType(ConfigChangesPendingRestart), is(true));
+    assertThat(new DomainCondition(FAILED).hasType(FAILED), is(true));
+    assertThat(new DomainCondition(COMPLETED).hasType(AVAILABLE), is(false));
+    assertThat(new DomainCondition(CONFIG_CHANGES_PENDING_RESTART).hasType(CONFIG_CHANGES_PENDING_RESTART), is(true));
   }
 
   @Test
   void equalsIgnoresLastTransitionTime() {
-    DomainCondition oldCondition = new DomainCondition(Available).withStatus("True");
+    DomainCondition oldCondition = new DomainCondition(AVAILABLE).withStatus("True");
     SystemClockTestSupport.increment();
 
-    assertThat(oldCondition.equals(new DomainCondition(Available).withStatus("True")), is(true));
+    assertThat(oldCondition.equals(new DomainCondition(AVAILABLE).withStatus("True")), is(true));
   }
 
   @Test
   void mayNotPatchObjects() {
-    DomainCondition oldCondition = new DomainCondition(Available).withStatus("False");
-    DomainCondition newCondition = new DomainCondition(Available).withStatus("True");
+    DomainCondition oldCondition = new DomainCondition(AVAILABLE).withStatus("False");
+    DomainCondition newCondition = new DomainCondition(AVAILABLE).withStatus("True");
 
     assertThat(newCondition.isPatchableFrom(oldCondition), is(false));
 

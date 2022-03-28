@@ -28,8 +28,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
@@ -40,11 +42,10 @@ import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
@@ -105,7 +106,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNeedToReplacePodAndRolling_dontGenerateRollingStartedEvent() {
-    domain.getStatus().addCondition(new DomainCondition(Rolling));
+    domain.getStatus().addCondition(new DomainCondition(ROLLING));
 
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
 
@@ -114,7 +115,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNeedToReplacePodAndRolling_dontLogDomainStarted() {
-    domain.getStatus().addCondition(new DomainCondition(Rolling));
+    domain.getStatus().addCondition(new DomainCondition(ROLLING));
     consoleHandlerMemento.trackMessage(DOMAIN_ROLL_START);
 
     testSupport.runSteps(DomainStatusUpdater.createStartRollStep());
@@ -155,7 +156,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
         getRecordedDomain(),
-        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+        hasCondition(FAILED).withStatus(TRUE).withReason(INTERNAL).withMessageContaining(message));
   }
 
   @Test
@@ -184,7 +185,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
         getRecordedDomain(),
-        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+        hasCondition(FAILED).withStatus(TRUE).withReason(INTERNAL).withMessageContaining(message));
   }
 
   @Test
@@ -202,16 +203,16 @@ class DomainStatusUpdaterTest {
 
     testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
 
-    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }
 
   @Test
   void whenDomainHasFailedCondition_removeFailureStepRemovesIt() {
-    domain.getStatus().addCondition(new DomainCondition(Failed));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES));
 
     testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
 
-    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+    assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }
 
   @Test

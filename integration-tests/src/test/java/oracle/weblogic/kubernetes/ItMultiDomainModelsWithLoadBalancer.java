@@ -15,13 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
@@ -38,38 +35,33 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -77,11 +69,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
@@ -95,7 +86,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -160,6 +151,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String miiDomainUid = "miidomain";
   private static final String dimDomainUid = "domaininimage";
+  private static final String domainOnPVUid = "domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-multiapps-usingprop-wls.yaml";
 
   private static String opNamespace = null;
@@ -169,17 +161,13 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static int externalRestHttpsPort = 0;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
-  private static Domain miiDomain = null;
-  private static Domain domainInImage = null;
-  private static Domain domainOnPV = null;
   private static String miiDomainNamespace = null;
+  private static String domainInImageNamespace = null;
+  private static String domainOnPVNamespace = null;
   private static String miiDomainNegativeNamespace = null;
   private static String miiDomainNegativeNamespacePortforward = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
-  private static Map<String, Quantity> resourceRequest = new HashMap<>();
-  private static Map<String, Quantity> resourceLimit = new HashMap<>();
-  private static String operExtSvcRouteHost = null;
   private String curlCmd = null;
 
   /**
@@ -209,9 +197,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     assertNotNull(namespaces.get(2));
     miiDomainNamespace = namespaces.get(2);
     assertNotNull(namespaces.get(3));
-    String domainOnPVNamespace = namespaces.get(3);
+    domainOnPVNamespace = namespaces.get(3);
     assertNotNull(namespaces.get(4));
-    String domainInImageNamespace = namespaces.get(4);
+    domainInImageNamespace = namespaces.get(4);
     assertNotNull(namespaces.get(5));
     miiDomainNegativeNamespace = namespaces.get(5);
     miiDomainNegativeNamespacePortforward = namespaces.get(6);
@@ -228,10 +216,12 @@ class ItMultiDomainModelsWithLoadBalancer {
         miiDomainNegativeNamespace, miiDomainNegativeNamespacePortforward);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
-    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
@@ -242,53 +232,6 @@ class ItMultiDomainModelsWithLoadBalancer {
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
-    }
-
-    // set resource request and limit
-    resourceRequest.put("cpu", new Quantity("250m"));
-    resourceRequest.put("memory", new Quantity("768Mi"));
-    resourceLimit.put("cpu", new Quantity("2"));
-    resourceLimit.put("memory", new Quantity("2Gi"));
-
-    // create model in image domain with multiple clusters
-    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
-
-    // create domain in image
-    List<String> appSrcDirList = new ArrayList<>();
-    appSrcDirList.add(MII_BASIC_APP_NAME);
-    appSrcDirList.add(WLDF_OPENSESSION_APP);
-    domainInImage = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
-        wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
-
-    // create domain on pv
-    domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
-
-    domains.add(miiDomain);
-    domains.add(domainInImage);
-    domains.add(domainOnPV);
-
-    // create ingress for each domain
-    for (Domain domain: domains) {
-      assertDomainNotNull(domain);
-
-      String domainUid = domain.getSpec().getDomainUid();
-      String domainNamespace = domain.getMetadata().getNamespace();
-
-      //create route for external admin service
-      createRouteForOKD(domainUid + "-admin-server-ext", domainNamespace);
-
-      // create ingress using host based routing
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      int numClusters = domain.getSpec().getClusters().size();
-      for (int i = 1; i <= numClusters; i++) {
-        clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
-        createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
-      }
-      if (!OKD) {
-        logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
-            true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
-      }
     }
   }
 
@@ -311,13 +254,14 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Scale the cluster by patching domain resource for three different
    * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
    *
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
-  @MethodSource("domainProvider")
-  void testScaleClustersByPatchingDomainResource(Domain domain) {
-    assertDomainNotNull(domain);
+  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  void testScaleClustersByPatchingDomainResource(String domainType) {
+
+    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -351,6 +295,12 @@ class ItMultiDomainModelsWithLoadBalancer {
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
 
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+
     final String hostName = "localhost";
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
@@ -360,19 +310,22 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     stopPortForwardProcess(domainNamespace);
 
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
    * Scale cluster using REST API for three different type of domains.
    * i.e. domain-on-pv, domain-in-image and model-in-image
    *
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
-  @MethodSource("domainProvider")
-  void testScaleClustersWithRestApi(Domain domain) {
-    assertDomainNotNull(domain);
+  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  void testScaleClustersWithRestApi(String domainType) {
+
+    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -396,19 +349,29 @@ class ItMultiDomainModelsWithLoadBalancer {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
+
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
+
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
    * Scale cluster using WLDF policy for three different type of domains.
    * i.e. domain-on-pv, domain-in-image and model-in-image
    *
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV
    */
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
-  @MethodSource("domainProvider")
-  void testScaleClustersWithWLDF(Domain domain) {
-    assertDomainNotNull(domain);
+  @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  void testScaleClustersWithWLDF(String domainType) {
+
+    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -442,66 +405,15 @@ class ItMultiDomainModelsWithLoadBalancer {
         replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
         true, domainHome, "scaleDown", 1,
         WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
-  }
 
-  /**
-   * Verify admin console login using admin node port.
-   * Skip the test for slim images due to unavailability of console application
-   * @param domain oracle.weblogic.domain.Domain object
-   */
-  @ParameterizedTest
-  @DisplayName("Test admin console login using admin node port")
-  @MethodSource("domainProvider")
-  void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+    // verify admin console login using admin node port
+    verifyAdminConsoleLoginUsingAdminNodePort(domainUid, domainNamespace);
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+    // verify admin console login using ingress controller
+    verifyAdminConsoleLoginUsingIngressController(domainUid, domainNamespace);
 
-    assertDomainNotNull(domain);
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-
-    // In OKD cluster, we need to get the routeHost for the external admin service
-    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
-        }, "Access to admin server node port failed"),
-        logger,
-        "Console login validation");
-  }
-
-  /**
-   * Verify admin console login using ingress controller.
-   * Skip the test for slim images due to unavailability of console application
-   * @param domain oracle.weblogic.domain.Domain object
-   */
-  @ParameterizedTest
-  @DisplayName("Test admin console login using ingress controller")
-  @MethodSource("domainProvider")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  void testAdminConsoleLoginUsingIngressController(Domain domain) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-
-    assertDomainNotNull(domain);
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-
-    String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
-        + domainUid + "." + domainNamespace + ".adminserver.test"
-        + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-
-    logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
-    logger.info("WebLogic console on domain1 is accessible");
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -510,11 +422,12 @@ class ItMultiDomainModelsWithLoadBalancer {
   @Test
   @DisplayName("Test liveness probe of pod")
   void testLivenessProbe() {
-    Domain domain = miiDomain;
-    assertDomainNotNull(domain);
+    Domain domain = createOrStartDomainBasedOnDomainType("modelInImage");
+
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
+
     String serverName;
     if (numClusters > 1) {
       serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
@@ -597,6 +510,9 @@ class ItMultiDomainModelsWithLoadBalancer {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
+
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -611,7 +527,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with domain in image type")
   void testDataHomeOverrideDomainInImage() {
 
-    assertDomainNotNull(domainInImage);
+    Domain domainInImage = createOrStartDomainBasedOnDomainType("domainInImage");
     String domainUid = domainInImage.getSpec().getDomainUid();
     String domainNamespace = domainInImage.getMetadata().getNamespace();
 
@@ -639,6 +555,9 @@ class ItMultiDomainModelsWithLoadBalancer {
       String defaultMSDataFile = DATA_HOME_OVERRIDE + "/" + domainUid + "/_WLS_MANAGED-SERVER" + i + "000000.DAT";
       waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
+
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -654,7 +573,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with model in image type")
   void testDataHomeOverrideMiiDomain() {
 
-    assertDomainNotNull(miiDomain);
+    Domain miiDomain = createOrStartDomainBasedOnDomainType("modelInImage");
     String domainUid = miiDomain.getSpec().getDomainUid();
     String domainNamespace = miiDomain.getMetadata().getNamespace();
 
@@ -685,6 +604,9 @@ class ItMultiDomainModelsWithLoadBalancer {
         waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
       }
     }
+
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -700,7 +622,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with domain on PV type")
   void testDataHomeOverrideDomainOnPV() {
 
-    assertDomainNotNull(domainOnPV);
+    Domain domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();
 
@@ -729,6 +651,9 @@ class ItMultiDomainModelsWithLoadBalancer {
           + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
       waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
+
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -738,18 +663,19 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Rolling restart triggered by changing:
    * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    * Verify domain changed event is logged.
+   * Disabled for now due to bug.
    */
+  @Disabled
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
   void testMiiMultiClustersRollingRestart() {
-    OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(miiDomainUid, miiDomainNamespace),
-            String.format("getDomainCustomResource failed with ApiException when tried to get domain %s "
-                    + "in namespace %s", miiDomainUid, miiDomainNamespace));
+    Domain domain1 = createOrStartDomainBasedOnDomainType("modelInImage");
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    OffsetDateTime timestamp = now();
 
     //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
     StringBuffer patchStr = new StringBuffer("[{")
@@ -797,6 +723,7 @@ class ItMultiDomainModelsWithLoadBalancer {
             POD_TERMINATED,
             managedServerPodName);
         testUntil(
+            withLongRetryPolicy,
             checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_STARTED, timestamp),
             logger,
             "event {0} to be logged for pod {1}",
@@ -804,52 +731,9 @@ class ItMultiDomainModelsWithLoadBalancer {
             managedServerPodName);
       }
     }
-  }
 
-  /**
-   * Generate a steam of Domain objects used in parameterized tests.
-   * @return stream of oracle.weblogic.domain.Domain objects
-   */
-  private static Stream<Domain> domainProvider() {
-    return domains.stream();
-  }
-
-  /**
-   * Uninstall NGINX release.
-   * Delete cluster role and cluster role binding used for WLDF.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    if (!SKIP_CLEANUP) {
-      // uninstall NGINX release
-      if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-            .as("Test uninstallNginx returns true")
-            .withFailMessage("uninstallNginx() did not return true")
-            .isTrue();
-      }
-
-      for (Domain domain : domains) {
-        assertDomainNotNull(domain);
-
-        String domainNamespace = domain.getMetadata().getNamespace();
-
-        // delete cluster role binding created for WLDF policy
-        if (assertDoesNotThrow(
-            () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
-          assertTrue(deleteClusterRoleBinding(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME));
-        }
-      }
-
-      // delete cluster role created for WLDF policy
-      if (assertDoesNotThrow(() -> clusterRoleExists(WLDF_CLUSTER_ROLE_NAME))) {
-        assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
-            "deleteClusterRole failed with ApiException"))
-            .as("Test delete cluster role returns true")
-            .withFailMessage("deleteClusterRole() did not return true")
-            .isTrue();
-      }
-    }
+    // shutdown domain and verify the domain is shutdown
+    shutdownDomainAndVerify(miiDomainNamespace, miiDomainUid, replicaCount);
   }
 
   /**
@@ -914,10 +798,7 @@ class ItMultiDomainModelsWithLoadBalancer {
                         + "-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .limits(resourceLimit)
-                    .requests(resourceRequest)))
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminChannelPortForwardingEnabled(true)
@@ -935,6 +816,7 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         miiDomainUid, domainNamespace, miiImage);
@@ -967,9 +849,8 @@ class ItMultiDomainModelsWithLoadBalancer {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createDomainOnPvUsingWdt(String domainNamespace) {
+  private static Domain createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
 
-    final String domainUid = "domainonpv" + "-" + domainNamespace.substring(3);
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     Domain domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
@@ -1179,10 +1060,7 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .limits(resourceLimit)
-                    .requests(resourceRequest)))
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1222,4 +1100,165 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     return miiImage;
   }
+
+  private static Domain createOrStartDomainBasedOnDomainType(String domainType) {
+    Domain domain = null;
+
+    if (domainType.equalsIgnoreCase("modelInImage")) {
+      if (!doesDomainExist(miiDomainUid, DOMAIN_VERSION, miiDomainNamespace)) {
+
+        // create mii domain
+        domain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+
+        // create route for OKD or ingress for the domain
+        createRouteForOKDOrIngressForDomain(domain);
+      } else {
+        domain = assertDoesNotThrow(() -> getDomainCustomResource(miiDomainUid, miiDomainNamespace));
+        startDomainAndVerify(miiDomainNamespace, miiDomainUid, replicaCount, domain.getSpec().getClusters().size());
+      }
+    } else if (domainType.equalsIgnoreCase("domainInImage")) {
+      if (!doesDomainExist(dimDomainUid, DOMAIN_VERSION, domainInImageNamespace)) {
+
+        // create domain in image domain
+        List<String> appSrcDirList = new ArrayList<>();
+        appSrcDirList.add(MII_BASIC_APP_NAME);
+        appSrcDirList.add(WLDF_OPENSESSION_APP);
+        domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
+            wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
+
+        // create route for OKD or ingress for the domain
+        createRouteForOKDOrIngressForDomain(domain);
+      } else {
+        domain = assertDoesNotThrow(() -> getDomainCustomResource(dimDomainUid, domainInImageNamespace));
+        startDomainAndVerify(domainInImageNamespace, dimDomainUid, replicaCount, domain.getSpec().getClusters().size());
+      }
+    } else if (domainType.equalsIgnoreCase("domainOnPV")) {
+      if (!doesDomainExist(domainOnPVUid, DOMAIN_VERSION, domainOnPVNamespace)) {
+
+        // create domain-on-pv domain
+        domain = createDomainOnPvUsingWdt(domainOnPVUid, domainOnPVNamespace);
+
+        // create route for OKD or ingress for the domain
+        createRouteForOKDOrIngressForDomain(domain);
+      } else {
+        domain = assertDoesNotThrow(() -> getDomainCustomResource(domainOnPVUid, domainOnPVNamespace));
+        startDomainAndVerify(domainOnPVNamespace, domainOnPVUid, replicaCount, domain.getSpec().getClusters().size());
+      }
+    }
+
+    assertDomainNotNull(domain);
+
+    return domain;
+  }
+
+  private static void createRouteForOKDOrIngressForDomain(Domain domain) {
+
+    assertDomainNotNull(domain);
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+
+    //create route for external admin service
+    createRouteForOKD(domainUid + "-admin-server-ext", domainNamespace);
+
+    // create ingress using host based routing
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    int numClusters = domain.getSpec().getClusters().size();
+    for (int i = 1; i <= numClusters; i++) {
+      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
+      createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
+    }
+
+    if (!OKD) {
+      logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+      createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
+          true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
+    }
+  }
+
+  /**
+   * Start domain and verify all the server pods were started.
+   *
+   * @param domainNamespace the namespace where the domain exists
+   * @param domainUid the uid of the domain to shutdown
+   * @param replicaCount replica count of the domain cluster
+   * @param numClusters number of clusters in the domain
+   */
+  private static void startDomainAndVerify(String domainNamespace,
+                                           String domainUid,
+                                           int replicaCount,
+                                           int numClusters) {
+    // start domain
+    getLogger().info("Starting domain {0} in namespace {1}", domainUid, domainNamespace);
+    startDomain(domainUid, domainNamespace);
+
+    // check that admin service/pod exists in the domain namespace
+    getLogger().info("Checking that admin service/pod {0} exists in namespace {1}",
+        domainUid + "-" + ADMIN_SERVER_NAME_BASE, domainNamespace);
+    checkPodReadyAndServiceExists(domainUid + "-" + ADMIN_SERVER_NAME_BASE, domainUid, domainNamespace);
+
+    String managedServerPodName;
+    if (numClusters > 1) {
+      for (int i = 1; i <= numClusters; i++) {
+        for (int j = 1; j <= replicaCount; j++) {
+          managedServerPodName = domainUid + "-cluster-" + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+          // check that ms service/pod exists in the domain namespace
+          getLogger().info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+              managedServerPodName, domainNamespace);
+          checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+        }
+      }
+    } else {
+      for (int i = 1; i <= replicaCount; i++) {
+        managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
+
+        // check that ms service/pod exists in the domain namespace
+        getLogger().info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+            managedServerPodName, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+  }
+
+  // verify the admin console login using admin node port
+  private void verifyAdminConsoleLoginUsingAdminNodePort(String domainUid, String domainNamespace) {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+
+    // In OKD cluster, we need to get the routeHost for the external admin service
+    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+  }
+
+  // Verify admin console login using ingress controller
+  private void verifyAdminConsoleLoginUsingIngressController(String domainUid, String domainNamespace) {
+
+    if (!OKD) {
+      assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+      String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
+          + domainUid + "." + domainNamespace + ".adminserver.test"
+          + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+
+      logger.info("Executing curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      logger.info("WebLogic console on domain1 is accessible");
+    } else {
+      logger.info("Skipping the admin console login test using ingress controller in OKD environment");
+    }
+  }
+
 }

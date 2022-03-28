@@ -17,13 +17,13 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.Component;
@@ -33,7 +33,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_SUCCESS;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -43,9 +44,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
@@ -243,7 +243,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
-      final var condition = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
+      final var condition = new DomainCondition(FAILED).withReason(KUBERNETES).withMessage(createMessage(apiException));
       if (recordedFailure == null) {
         addFailureStatus(domain, condition);
       } else if (!recordedFailure.equals(condition)) {

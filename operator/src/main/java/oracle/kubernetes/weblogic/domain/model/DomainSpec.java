@@ -16,18 +16,18 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.ImagePullPolicy;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -561,7 +561,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+    return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
   public void setImagePullPolicy(@Nullable String imagePullPolicy) {
@@ -725,11 +725,11 @@ public class DomainSpec extends BaseConfiguration {
 
   private DomainSourceType inferDomainSourceType() {
     if (getModel() != null) {
-      return DomainSourceType.FromModel;
+      return DomainSourceType.FROM_MODEL;
     } else if (isDomainHomeInImage()) {
-      return DomainSourceType.Image;
+      return DomainSourceType.IMAGE;
     } else {
-      return DomainSourceType.PersistentVolume;
+      return DomainSourceType.PERSISTENT_VOLUME;
     }
   }
 

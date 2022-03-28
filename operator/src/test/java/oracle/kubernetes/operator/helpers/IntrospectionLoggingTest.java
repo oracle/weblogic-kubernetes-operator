@@ -22,7 +22,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
+import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -31,10 +35,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -109,7 +109,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(updatedDomain.getStatus().getMessage(),
             equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
   }
@@ -150,7 +150,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
         equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));

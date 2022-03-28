@@ -20,6 +20,7 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
@@ -28,15 +29,15 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_FORMATTING;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -127,13 +128,14 @@ public class DomainStatus {
 
   /**
    * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
-   * conditions according to the domain rules.
+   * conditions according to the domain rules. Any existing matching condition will be preserved and unmarked.
    *
    * @param newCondition the condition to add.
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
+      unmarkMatchingCondition(newCondition);
       return this;
     }
 
@@ -148,10 +150,14 @@ public class DomainStatus {
     return this;
   }
 
+  private void unmarkMatchingCondition(DomainCondition newCondition) {
+    conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
+  }
+
   private void setReasonAndMessage() {
     DomainCondition selected = conditions.stream()
           .filter(this::maySupplyStatusMessage)
-          .findFirst().orElse(new DomainCondition(Failed));
+          .findFirst().orElse(new DomainCondition(FAILED));
     reason = selected.getReason();
     message = selected.getMessage();
   }
@@ -206,6 +212,24 @@ public class DomainStatus {
   public void removeCondition(@Nonnull DomainCondition condition) {
     conditions.remove(condition);
     setReasonAndMessage();
+  }
+
+  /**
+   * Marks any failures in the status with the specified reason as ready to be removed.
+   * Adding a failure will unmark any matching one, allowing it to be preserved.
+   * @see #removeMarkedFailures()
+   * @param reason the reason for the failure
+   */
+  public void markFailuresForRemoval(DomainFailureReason reason) {
+    conditions.stream().filter(c -> c.isSpecifiedFailure(reason)).forEach(DomainCondition::markForDeletion);
+  }
+
+  /**
+   * Removes any failures currently marked.
+   * @see #markFailuresForRemoval(DomainFailureReason) 
+   */
+  public void removeMarkedFailures() {
+    removeConditionsMatching(DomainCondition::isMarkedForDeletion);
   }
 
   /**
@@ -270,7 +294,7 @@ public class DomainStatus {
    * Returns true if the status has a condition indicating that the domain is currently rolling.
    */
   public boolean isRolling() {
-    return conditions.stream().anyMatch(c -> c.getType().equals(Rolling));
+    return conditions.stream().anyMatch(c -> c.getType().equals(ROLLING));
   }
 
   /**

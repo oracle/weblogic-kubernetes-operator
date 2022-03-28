@@ -42,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -58,7 +59,6 @@ import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -76,6 +76,8 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
@@ -85,13 +87,11 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -493,7 +493,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       return false;
     } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
       return true;
-    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly) {
+    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY) {
       addRestartRequiredLabel = true;
       return true;
     } else {
@@ -695,7 +695,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
@@ -742,7 +742,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());

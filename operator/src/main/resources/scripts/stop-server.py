@@ -21,12 +21,13 @@
 # for its nmConnect credentials.
 #
 
-import sys
-import os
-import traceback
 import base64
-import time as systime
+import os
 import re
+import sys
+import time as systime
+import traceback
+
 
 # Get an ENV var
 def getEnvVar(var):
