@@ -201,6 +201,26 @@
           <artifactId>dependency-check-maven</artifactId>
           <version>${dependency-check-version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jxr-plugin</artifactId>
+          <version>${maven-jxr-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin-version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.commonjava.maven.plugins</groupId>
+          <artifactId>directory-maven-plugin</artifactId>
+          <version>${directory-maven-version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -209,11 +229,9 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
-
       <plugin>
         <groupId>org.commonjava.maven.plugins</groupId>
         <artifactId>directory-maven-plugin</artifactId>
-        <version>${directory-maven-version}</version>
         <executions>
           <execution>
             <id>directories</id>
@@ -231,7 +249,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin-version}</version>
         <executions>
           <execution>
             <id>aggregate</id>
@@ -304,7 +321,6 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>${jacoco.version}</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
@@ -323,7 +339,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>${maven-jxr-plugin-version}</version>
       </plugin>
     </plugins>
   </reporting>
@@ -363,7 +378,6 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>${mojo-build-helper-version}</version>
             <executions>
               <execution>
                 <id>add-test-source</id>
@@ -379,7 +393,6 @@
               </execution>
             </executions>
           </plugin>
-
         </plugins>
       </build>
     </profile>
@@ -568,6 +581,11 @@
         <artifactId>awaitility</artifactId>
         <version>${awaitility-version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path-assert</artifactId>
+        <version>${jsonpath-version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -575,7 +593,6 @@
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path-assert</artifactId>
-      <version>${jsonpath-version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -655,6 +672,7 @@
     <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
     <wko.it.skip.enforcer.rules>true</wko.it.skip.enforcer.rules>
+    <no-reports>false</no-reports>
   </properties>
 
 </project>
