@@ -376,33 +376,24 @@ public class DomainSpec extends BaseConfiguration {
    * The Fluentd configuration.
    *
    */
-  @Description("Automatic fluentd sidcar injection. If "
+  @Description("Automatic fluentd sidecar injection. If "
           + "specified, the operator "
           + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
-          + "WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, "
-          + "will not be affected until they are restarted. When any given server "
-          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will "
-          + "have the fluentd sidecar or not, as appropriate")
+          + "WebLogic Server instances that are already running when the `monitoringExporter` field is created "
+          + "or deleted, will not be affected until they are restarted. When any given server "
+          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+          + " will have the fluentd sidecar or not, as appropriate")
   private FluentdSpecification fluentdSpecification;
-
-  private FluentdConfiguration fluentdConfiguration;
 
   public FluentdSpecification getFluentdSpecification() {
     return fluentdSpecification;
   }
 
-  FluentdConfiguration getFluentdConfiguration() {
-    return Optional.ofNullable(fluentdSpecification).map(FluentdSpecification::getConfiguration).orElse(null);
-  }
-
-  void createFluentdConfiguration(String yaml) {
-    if (fluentdConfiguration == null) {
-      fluentdConfiguration = new FluentdConfiguration();
-    }
+  void setFluentdConfiguration(String yaml) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
     }
-    fluentdSpecification.createConfiguration(yaml);
+    fluentdSpecification.setConfigurationConfigMap(yaml);
   }
 
   String getFluentdImage() {

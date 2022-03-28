@@ -200,6 +200,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withFluentdConfiguration(String configuration) {
+    getDomainSpec().setFluentdConfiguration(configuration);
+    return this;
+  }
+
   private AdminServer getOrCreateAdminServer() {
     return getDomainSpec().getOrCreateAdminServer();
   }
@@ -493,12 +499,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withEnvironmentVariable(String name, String value) {
       server.addEnvironmentVariable(name, value);
-      return this;
-    }
-
-    @Override
-    public ServerConfigurator withFluentdSpecification() {
-      server.createFluentdSpecification();
       return this;
     }
 

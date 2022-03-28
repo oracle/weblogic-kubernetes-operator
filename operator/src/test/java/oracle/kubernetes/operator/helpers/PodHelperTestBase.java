@@ -450,6 +450,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
+  protected DomainConfigurator defineFluentdConfiguration() {
+    return configureDomain()
+            .withFluentdConfiguration("fluentd-configufation-confgmap");
+  }
+
   @Test
   void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
     defineExporterConfiguration();
@@ -539,6 +544,15 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
   }
+
+  @Test
+  void whenDomainHasFluentdInSerpverPod_createPodShouldHaveFluetdContainer() {
+    defineFluentdConfiguration();
+
+    getCreatedPod();
+
+  }
+
 
   abstract void setServerPort(int port);
 

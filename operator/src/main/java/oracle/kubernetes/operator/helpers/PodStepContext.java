@@ -21,7 +21,6 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -734,8 +733,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
-    Optional.ofNullable(getServerSpec().getFluentdSpecification())
-      .ifPresent(fluentd -> addFluentdContainer(fluentd, containers));
+    Optional.ofNullable(getDomain().getFluentdSpecification())
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers));
     return containers;
   }
 
@@ -811,21 +810,20 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     V1Container fluentdContainer = new V1Container();
     fluentdContainer
-      .name("fluentd")
-      .addArgsItem("-c")
-      .addArgsItem("/etc/fluent.conf");
+        .name("fluentd")
+        .addArgsItem("-c")
+        .addArgsItem("/etc/fluent.conf");
 
     fluentdContainer.setImage(fluentdSpecification.getImage());
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
 
     fluentdSpecification.getEnv().stream()
-      .map( c -> fluentdContainer.addEnvItem(c));
+      .map(c -> fluentdContainer.addEnvItem(c));
 
     fluentdSpecification.getVolumeMounts().stream()
-      .map( c -> fluentdContainer.addVolumeMountsItem(c));
+      .map(c -> fluentdContainer.addVolumeMountsItem(c));
 
-    // TODO: check what if user already has it ??
     fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolume());
     containers.add(fluentdContainer);
   }
