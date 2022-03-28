@@ -737,13 +737,14 @@ class ItMiiAuxiliaryImage {
   /**
    * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
    * where the wdtModelHome is placed
-   * under the directory for the wdtInstallHome, or is the same directory. Ditto for vice-versa.
+   * under the wdtInstallHome directory, or same directory. Ditto for vice-versa.
    * For example wdtModelHome is "/aux/y/models" and wdtInstallHome is "/aux" or vice-versa.
    * Verify domain was created and all servers are running.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with"
-          + " wdtModelHome is placed under or same directory for the wdtInstallHome or vice-versa")
+          + " custom wdtModelHome and wdtInstallHome"
+          + " where the wdtModelHome is placed under or same wdtInstallHome directory or vice-versa")
   void testCreateDomainUseWdtModelHomeDirUnderWdtInstallHome() {
 
     String wdtInstallPath = "/aux";
