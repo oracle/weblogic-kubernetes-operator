@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
@@ -58,10 +59,12 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -491,6 +494,64 @@ public class CommonTestUtils {
   }
 
   /**
+   * Verify Configured System Resource.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   * @param resourceType resource type
+   * @param resourceName resource name
+   * @param expectedValue
+   *
+   */
+  public static void verifyConfiguredSystemResource(String domainNamespace, String adminServerPodName,
+                                               String adminSvcExtHost, String resourceType,
+                                               String resourceName,
+                                               String expectedValue) {
+
+    LoggingFacade logger = getLogger();
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+
+    testUntil(
+        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, resourceType,
+            resourceName, expectedValue),
+        logger,
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
+        adminSvcExtHost,
+        adminServiceNodePort,
+        resourceName);
+    logger.info("Found the " + resourceType + " configuration");
+  }
+
+  /**
+   * Check Configured System Resource by Resource Path.
+   *
+   * @param domainNamespace domain namespace
+   * @param adminServerPodName  admin server pod name
+   * @param adminSvcExtHost admin server external host
+   */
+  public static void verifyConfiguredSystemResouceByPath(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost, String resourcePath, String expectedValue) {
+    LoggingFacade logger = getLogger();
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+
+    testUntil(
+        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+            resourcePath,
+            expectedValue),
+        logger,
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
+        adminSvcExtHost,
+        adminServiceNodePort,
+        resourcePath);
+    logger.info("Found the " + resourcePath + " configuration");
+  }
+
+  /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
    * @param resourcesType type of the resource
@@ -500,10 +561,28 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
                                                    String resourcesName, String expectedStatusCode) {
+    return checkSystemResourceConfiguration(null, nodePort, resourcesType, resourcesName, expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(String adminSvcExtHost, int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
@@ -559,10 +638,27 @@ public class CommonTestUtils {
    * @return true if the REST API results matches expected status code
    */
   public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    return checkSystemResourceConfig(null, nodePort, resourcesPath, expectedValue);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(String adminSvcExtHost, int nodePort,
+                                       String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesPath)

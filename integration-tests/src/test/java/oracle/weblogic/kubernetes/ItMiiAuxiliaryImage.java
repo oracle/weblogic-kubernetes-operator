@@ -74,6 +74,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -85,6 +88,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -124,6 +128,7 @@ class ItMiiAuxiliaryImage {
   private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private final int replicaCount = 2;
+  private String adminSvcExtHost = null;
   private String adminSecretName = "weblogic-credentials";
   private String encryptionSecretName = "encryptionsecret";
 
@@ -286,8 +291,14 @@ class ItMiiAuxiliaryImage {
     createDomainAndVerify(domainUid, domainCR, domainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
 
+    //create router for admin service on OKD
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName);
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
 
     //checking the order of loading for the auxiliary images, expecting file with content =2
     assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/test.txt").toFile()));
@@ -338,11 +349,17 @@ class ItMiiAuxiliaryImage {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
     }
 
+    //create router for admin service on OKD
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     // check configuration for DataSource in the running domain
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
         "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         "Can't find expected URL configuration for DataSource");
@@ -351,7 +368,7 @@ class ItMiiAuxiliaryImage {
 
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid, domainNamespace);
 
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
   }
 
   /**
@@ -420,10 +437,16 @@ class ItMiiAuxiliaryImage {
 
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
+    //create router for admin service on OKD
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName);
+    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
     //check configuration for JDBC
-    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName);
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
 
   }
 
@@ -1044,12 +1067,17 @@ class ItMiiAuxiliaryImage {
     int adminServiceNodePort
         = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
-        "Can't find expected URL configuration for DataSource");
-
+    testUntil(
+        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+            "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+        logger,
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
+        adminSvcExtHost,
+        adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
     logger.info("Found the DataResource configuration");
+
     //check WDT version in the image equals the  provided WDT_TEST_VERSION
 
     assertDoesNotThrow(() -> {
@@ -1070,13 +1098,17 @@ class ItMiiAuxiliaryImage {
         + "or wdt was not updated after patching with auxiliary image");
 
     // check configuration for DataSource in the running domain
-    adminServiceNodePort
-        = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
-        "Can't find expected URL configuration for DataSource");
+    testUntil(
+        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+            "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+            "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+        logger,
+        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
+        adminSvcExtHost,
+        adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
+    logger.info("Found the DataResource configuration");
 
   }
 
@@ -1230,14 +1262,16 @@ class ItMiiAuxiliaryImage {
     logger.info("Found the JMSSystemResource configuration");
   }
 
-  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+  private static void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName,
+                                                String adminSvcExtHost) {
+    verifyConfiguredSystemResource(domainNamespace, adminServerPodName, adminSvcExtHost,
+        "JMSSystemResources", "TestClusterJmsModule2", "200");
+  }
+
+  private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
+    verifyConfiguredSystemResouceByPath(domainNamespace, adminServerPodName, adminSvcExtHost,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"), "Can't find expected URL configuration for DataSource");
-    logger.info("Found the DataResource configuration");
+        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
   }
 
   private String checkWDTVersion(String domainUid, String domainNamespace, String auxiliaryImagePath) throws Exception {
