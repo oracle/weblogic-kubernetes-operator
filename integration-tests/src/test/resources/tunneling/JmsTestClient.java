@@ -2,28 +2,16 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import java.util.Hashtable;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSConsumer;
+import javax.jms.JMSContext;
+import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
-import javax.jms.Destination;
-import javax.jms.ConnectionFactory;
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.Message;
-import javax.jms.DeliveryMode;
-import javax.jms.TextMessage;
-import javax.jms.MessageProducer;
-import javax.jms.MessageConsumer;
-import javax.jms.JMSException;
-
-import javax.jms.JMSContext;
-import javax.jms.JMSConsumer;
-import javax.jms.JMSProducer;
-import javax.jms.JMSRuntimeException;
 
 import weblogic.jms.client.WLConnectionImpl;
-import weblogic.jms.extensions.WLConnection;
 
 /**
  * This JMS client that sends 300 messages to a Uniform Distributed Queue 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -6,6 +6,9 @@ package oracle.kubernetes.operator.logging;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import oracle.kubernetes.common.logging.LoggingFilter;
+import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.common.logging.MockLoggingFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

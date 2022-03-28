@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
 
 import static oracle.kubernetes.operator.work.Fiber.DEBUG_FIBER;
 

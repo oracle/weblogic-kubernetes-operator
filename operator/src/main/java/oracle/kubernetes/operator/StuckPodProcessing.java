@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_FORCE_DELETED;
 
 /**
  * Under certain circumstances, when a Kubernetes node goes down, it may mark its pods as terminating, but never

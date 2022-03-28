@@ -4,7 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
 
 public enum SessionAffinity implements Labeled {
   @SerializedName("ClientIP")

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.common.Labeled;
+
 public enum ServerStartPolicy implements Labeled {
   ALWAYS {
     @Override

@@ -6,9 +6,9 @@ package oracle.kubernetes.operator.utils;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 public class ChecksumUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

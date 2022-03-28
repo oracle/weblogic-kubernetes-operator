@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,8 +13,8 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
+import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.ClientFactoryStub;
-import oracle.kubernetes.operator.Labeled;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +22,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
+import static oracle.kubernetes.common.logging.MessageKeys.VERIFY_ACCESS_DENIED;
+import static oracle.kubernetes.common.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.CREATE;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.DELETE;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.DELETECOLLECTION;
@@ -30,12 +36,6 @@ import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.LI
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.PATCH;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.UPDATE;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.WATCH;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
-import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
-import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class HealthCheckHelperTest {

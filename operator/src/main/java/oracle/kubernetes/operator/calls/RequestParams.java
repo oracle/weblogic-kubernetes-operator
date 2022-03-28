@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -6,10 +6,10 @@ package oracle.kubernetes.operator.calls;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import org.apache.commons.lang3.StringUtils;
 
 public final class RequestParams {
