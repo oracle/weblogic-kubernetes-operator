@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -18,6 +18,6 @@ public class TerminalStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     executed = true;
-    return doNext(packet);
+    return doNext(null, packet);
   }
 }

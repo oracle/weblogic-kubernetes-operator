@@ -11,10 +11,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
@@ -113,6 +113,14 @@ public class HttpAsyncRequestStep extends Step {
       }
     }
 
+    private String getDomainUIDFromInfo(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse(null);
+    }
+
+    private String getNamespaceFromInfo(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getNamespace).orElse(null);
+    }
+
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       try (ThreadLoggingContext ignored =
@@ -140,14 +148,6 @@ public class HttpAsyncRequestStep extends Step {
       LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
       HttpResponseStep.addToPacket(packet, throwable);
     }
-  }
-
-  private String getDomainUIDFromInfo(DomainPresenceInfo info) {
-    return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse(null);
-  }
-
-  private String getNamespaceFromInfo(DomainPresenceInfo info) {
-    return Optional.ofNullable(info).map(DomainPresenceInfo::getNamespace).orElse(null);
   }
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {

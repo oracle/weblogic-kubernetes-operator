@@ -28,7 +28,7 @@ A completely installed and running WebLogic Kubernetes Operator environment incl
 - Each operator is associated with a local Kubernetes service account for security purposes. The service account is deployed to the same namespace as the operator.
 
 When an operator runtime detects a domain,
-it will first run a short lived Kubernetes job (the "introspector job")
+it will first run a short-lived Kubernetes job (the "introspector job")
 that reads and checks the domain's WebLogic configuration,
 and then it will generate and deploy the domain's pods, services, and potentially other resources.
 The operator will also monitor the domain for changes,
@@ -36,18 +36,18 @@ such as a request to change the number of pods in a WebLogic cluster,
 will update status fields on the domain's domain resource,
 and will generate Kubernetes events for the domain in the domain's namespace.
 If the operator detects that a domain is deleted, then
-it will shutdown any running pods associated with the domain
+it will shut down any running pods associated with the domain
 and delete the resources that it has deployed for the domain.
 If an operator is shut down,
 then its domains' pods, services, and such, will remain running but changes
 to a domain resource will not be detected and honored until the operator is restarted.
 
-Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/what-is/)
+Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/elastic-stack/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
 For an example, see the operator [Elastic Stack]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) sample.
 
 For advanced users, the operator provides an optional REST server that
-you can use as an alternate method for getting a list of WebLogic domains and clusters that an operator manages,
+you can use as an alternative method for getting a list of WebLogic domains and clusters that an operator manages,
 and to initiate scaling operations (instead of directly performing such operations using the Kubernetes API or the Kubernetes command line).
 See the operator [REST services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
 

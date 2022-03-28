@@ -375,7 +375,7 @@ public class Domain implements KubernetesObject {
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
         .map(OnlineUpdate::getOnNonDynamicChanges)
-        .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly);
+        .orElse(MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY);
   }
 
   /**
@@ -540,7 +540,7 @@ public class Domain implements KubernetesObject {
   }
 
   private boolean isDomainSourceTypeFromModel() {
-    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL;
   }
 
   public boolean isHttpAccessLogInLogHome() {
@@ -1249,7 +1249,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void addIllegalSitConfigForMii() {
-      if (getDomainHomeSourceType() == DomainSourceType.FromModel
+      if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
       }
@@ -1323,23 +1323,23 @@ public class Domain implements KubernetesObject {
     }
 
     private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
-      verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WebLogicCredentials);
+      verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WEBLOGIC_CREDENTIALS);
       for (V1LocalObjectReference reference : getImagePullSecrets()) {
-        verifySecretExists(resourceLookup, reference.getName(), SecretType.ImagePull);
+        verifySecretExists(resourceLookup, reference.getName(), SecretType.IMAGE_PULL);
       }
       for (String secretName : getConfigOverrideSecrets()) {
-        verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
+        verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
       }
 
-      verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OpssWalletPassword);
-      verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
+      verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OPSS_WALLET_PASSWORD);
+      verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OPSS_WALLET_FILE);
 
-      if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+      if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
         if (getRuntimeEncryptionSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredSecret(
               "spec.configuration.model.runtimeEncryptionSecret"));
         } else {
-          verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RuntimeEncryption);
+          verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RUNTIME_ENCRYPTION);
         }
         if (ModelInImageDomainType.JRF.toString().equals(getWdtDomainType()) 
             && getOpssWalletPasswordSecret() == null) {
@@ -1378,7 +1378,7 @@ public class Domain implements KubernetesObject {
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
-      if (getDomainHomeSourceType() == DomainSourceType.FromModel
+      if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }

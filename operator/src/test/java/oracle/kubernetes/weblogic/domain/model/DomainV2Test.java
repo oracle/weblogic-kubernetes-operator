@@ -26,7 +26,7 @@ import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -753,14 +753,14 @@ class DomainV2Test extends DomainTestBase {
   void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
-    assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.Image));
+    assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.IMAGE));
   }
 
   @Test
   void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PersistentVolume));
+    assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PERSISTENT_VOLUME));
   }
 
   @Test
@@ -1544,7 +1544,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void domainHomeTest_standardHome1() {
-    configureDomain(domain).withDomainHomeSourceType(FromModel);
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL);
 
     assertThat(domain.getDomainHome(), equalTo("/u01/domains/uid1"));
   }

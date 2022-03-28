@@ -18,10 +18,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
-import static oracle.kubernetes.utils.LogMatcher.containsConfig;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.common.utils.LogMatcher.containsConfig;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;

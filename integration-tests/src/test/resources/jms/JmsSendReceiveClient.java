@@ -2,15 +2,13 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import java.util.Hashtable;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
-import javax.jms.Destination;
 import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.Message;
-import javax.jms.JMSConsumer;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 public class JmsSendReceiveClient {
 

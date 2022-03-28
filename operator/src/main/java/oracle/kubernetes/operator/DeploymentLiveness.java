@@ -7,9 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 /**
  * This task maintains the "liveness" indicator so that Kubernetes knows the Operator is still

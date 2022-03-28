@@ -238,7 +238,6 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-
   /**
    * The maximum ready wait time.
    *
@@ -247,7 +246,6 @@ class ServerPod extends KubernetesResource {
   @Description("The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state "
       + "before it considers the pod failed. Defaults to 1800 seconds.")
   private Long maxReadyWaitTimeSeconds = 1800L;
-
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -812,6 +810,7 @@ class ServerPod extends KubernetesResource {
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
+        .append("resources", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .append("initContainers", initContainers)

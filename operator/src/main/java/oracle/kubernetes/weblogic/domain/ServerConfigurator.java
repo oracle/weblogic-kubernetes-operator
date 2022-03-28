@@ -16,8 +16,6 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
 
-  ServerConfigurator withFluentdSpecification();
-
   ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   ServerConfigurator withServerStartState(String state);

@@ -33,14 +33,11 @@ public class LoggingFactory {
    * @return a PlatformLogger object for the caller to use
    */
   public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
-
-    LoggingFacade lf = facade.get(resourceBundleName);
-    if (lf == null) {
-      Logger logger = Logger.getLogger(name, resourceBundleName);
-      lf = new LoggingFacade(logger);
-      facade.put(resourceBundleName, lf);
-    }
-
-    return lf;
+    return facade.computeIfAbsent(resourceBundleName, lf -> getLoggingFacade(name, resourceBundleName));
   }
+
+  private static LoggingFacade getLoggingFacade(String name, String resourceBundleName) {
+    return new LoggingFacade(Logger.getLogger(name, resourceBundleName));
+  }
+
 }

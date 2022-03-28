@@ -371,7 +371,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     OnlineUpdate onlineUpdate = new OnlineUpdate();
     onlineUpdate.setEnabled(true);
     getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
-        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateOnly);
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY);
     return this;
   }
 
@@ -380,7 +380,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     OnlineUpdate onlineUpdate = new OnlineUpdate();
     onlineUpdate.setEnabled(true);
     getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
-        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateAndRoll);
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.COMMIT_UPDATE_AND_ROLL);
     return this;
   }
 

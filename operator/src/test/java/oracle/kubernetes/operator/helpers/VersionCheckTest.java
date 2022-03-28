@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -20,14 +20,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static oracle.kubernetes.common.logging.MessageKeys.K8S_VERSION_CHECK;
+import static oracle.kubernetes.common.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
+import static oracle.kubernetes.common.logging.MessageKeys.K8S_VERSION_TOO_LOW;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
 import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
-import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_TOO_LOW;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class VersionCheckTest {
