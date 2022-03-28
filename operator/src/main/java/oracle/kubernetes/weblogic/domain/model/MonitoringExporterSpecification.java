@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,11 +8,11 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
+import oracle.kubernetes.common.ImagePullPolicy;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.PreserveUnknown;
-import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -87,7 +87,7 @@ public class MonitoringExporterSpecification {
   }
 
   String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+    return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
   void setImagePullPolicy(@Nullable String imagePullPolicy) {

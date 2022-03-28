@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
 
 /**
  * Types of secrets which can be configured on a domain.

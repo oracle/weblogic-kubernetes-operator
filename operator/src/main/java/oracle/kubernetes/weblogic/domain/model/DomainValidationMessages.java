@@ -11,8 +11,8 @@ import java.util.ResourceBundle;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;

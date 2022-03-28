@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,11 +6,11 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.openapi.models.V1Service;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ManagerServerServiceHelperTest extends ServiceHelperTest {

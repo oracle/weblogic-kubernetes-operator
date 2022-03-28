@@ -37,13 +37,13 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.common.logging.MessageKeys.CREATE_CRD_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.CREATING_CRD;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_CRD_FAILED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.ConversionWebhookMainTest.getCertificates;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
-import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
-import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;

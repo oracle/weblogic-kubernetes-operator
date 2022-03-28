@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -23,8 +23,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.DUMP_BREADCRUMBS;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.logging.MessageKeys.DUMP_BREADCRUMBS;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;

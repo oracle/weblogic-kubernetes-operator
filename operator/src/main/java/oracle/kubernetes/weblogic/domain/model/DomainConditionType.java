@@ -4,8 +4,8 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.json.Obsoleteable;
-import oracle.kubernetes.operator.Labeled;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;

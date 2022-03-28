@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -47,6 +47,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
@@ -62,20 +76,6 @@ import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatch
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.UniquePortsMatcher.hasOnlyUniquePortNames;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;

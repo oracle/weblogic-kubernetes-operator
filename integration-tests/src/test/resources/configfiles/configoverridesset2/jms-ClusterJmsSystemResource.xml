@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <jms:weblogic-jms
-    xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
-    xmlns:fr="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
-    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+        xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
+        xmlns:fr="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
+>
     <jms:uniform-distributed-topic name="UniformReplicatedTestTopic">
         <jms:notes fr:combine-mode="add">${env:DOMAIN_UID}</jms:notes>
         <jms:delivery-failure-params>

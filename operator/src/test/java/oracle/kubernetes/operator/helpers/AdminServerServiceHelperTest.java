@@ -1,11 +1,11 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
 
 class AdminServerServiceHelperTest extends ServiceHelperTest {
 

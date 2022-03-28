@@ -44,24 +44,24 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 
 public class ServiceHelper {
   public static final String CLUSTER_IP_TYPE = "ClusterIP";

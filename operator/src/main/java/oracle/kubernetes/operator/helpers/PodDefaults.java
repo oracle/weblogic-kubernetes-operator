@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,6 +12,8 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.getIntrospectorConfigMapName;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.getIntrospectorVolumePath;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
@@ -20,8 +22,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.ALL_READ_A
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 
 class PodDefaults {
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =

@@ -2,11 +2,9 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import java.util.Hashtable;
+import javax.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
-import javax.jms.ConnectionFactory;
 
 public class SslTestClient {
   private String    url;

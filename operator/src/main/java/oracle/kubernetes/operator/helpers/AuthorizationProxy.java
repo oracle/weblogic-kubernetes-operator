@@ -15,10 +15,10 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {

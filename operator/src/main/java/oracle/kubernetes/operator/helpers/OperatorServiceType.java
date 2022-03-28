@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Service;
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
 
 /** Describes the service types supported by the operator. */
 public enum OperatorServiceType implements Labeled {
