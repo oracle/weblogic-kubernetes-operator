@@ -5,6 +5,8 @@ package oracle.kubernetes.operator;
 
 import java.net.HttpURLConnection;
 
+import oracle.kubernetes.common.ImagePullPolicy;
+
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";

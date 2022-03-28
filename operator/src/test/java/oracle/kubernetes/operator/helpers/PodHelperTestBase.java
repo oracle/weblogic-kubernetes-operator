@@ -59,6 +59,8 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -68,7 +70,6 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
-import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -84,10 +85,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.junit.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +98,15 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
@@ -119,7 +128,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_N
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -146,21 +154,13 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_V
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_TIMEOUT;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -180,7 +180,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
-public abstract class PodHelperTestBase extends DomainValidationBaseTest {
+public abstract class PodHelperTestBase extends DomainValidationTestBase {
   public static final String EXPORTER_IMAGE = "monexp:latest";
   public static final String CUSTOM_WDT_INSTALL_SOURCE_HOME = "/myaux/weblogic-deploy";
   public static final String CUSTOM_MODEL_SOURCE_HOME = "/myaux/models";
@@ -234,7 +234,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
+  private final SchemaConversionUtils conversionUtils = new SchemaConversionUtils();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -1125,7 +1125,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
     try {
       testSupport.addDomainPresenceInfo(new DomainPresenceInfo(
-              conversionUtils.readDomain(conversionUtils.convertDomain(new Yaml().dump(map)))));
+              readDomain(conversionUtils.convertDomainSchema(new Yaml().dump(map)))));
       addAuxiliaryImagePathsEnvToPacket();
     } catch (IOException ioe) {
       ioe.printStackTrace();

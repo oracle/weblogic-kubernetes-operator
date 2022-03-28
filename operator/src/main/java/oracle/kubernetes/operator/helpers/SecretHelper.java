@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,18 +6,18 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.kubernetes.common.logging.LoggingFilter;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.LoggingFilter;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.common.logging.MessageKeys.SECRET_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.helpers.SecretType.WEBLOGIC_CREDENTIALS;
-import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_NOT_FOUND;
 
 /** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator. */
 public class SecretHelper {

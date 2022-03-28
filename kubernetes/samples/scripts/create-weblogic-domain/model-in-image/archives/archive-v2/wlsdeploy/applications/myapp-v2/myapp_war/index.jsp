@@ -1,8 +1,10 @@
 <%-- Copyright (c) 2019, 2021, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
+<%@ page import="java.io.PrintStream" %>
+<%@ page import="javax.management.MBeanServer" %>
+<%@ page import="javax.management.ObjectInstance" %>
+<%@ page import="javax.management.ObjectName" %>
 <%@ page import="javax.naming.InitialContext" %>
-<%@ page import="javax.management.*" %>
-<%@ page import="java.io.*" %>
 <%
   InitialContext ic = null;
   try {

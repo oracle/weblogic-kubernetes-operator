@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator.rest.model;
 
-import oracle.kubernetes.operator.Labeled;
+import oracle.kubernetes.common.Labeled;
 
 public enum DomainActionType implements Labeled {
   UNKNOWN, INTROSPECT, RESTART;

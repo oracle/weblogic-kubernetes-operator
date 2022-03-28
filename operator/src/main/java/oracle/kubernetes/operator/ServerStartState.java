@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.common.Labeled;
+
 public enum ServerStartState implements Labeled {
   RUNNING,
   ADMIN;

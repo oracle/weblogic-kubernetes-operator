@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainValidationTest extends DomainValidationBaseTest {
+class DomainValidationTest extends DomainValidationTestBase {
 
   private static final String ENV_NAME1 = "MY_ENV";
   private static final String RAW_VALUE_1 = "123";

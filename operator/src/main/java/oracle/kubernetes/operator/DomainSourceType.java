@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.common.Labeled;
 
 public enum DomainSourceType implements Labeled {
   @SerializedName("Image")
