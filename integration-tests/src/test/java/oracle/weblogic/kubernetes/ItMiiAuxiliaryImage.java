@@ -735,11 +735,11 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Negative test. Create a domain using auxiliary image with If the wdtModelHome is placed
-   * under the directory for the wdtInstallHome, or is the same directory,
-   * then generate a DomainInvalid Failure condition and event. Ditto for vice-versa.
-   * Verify it fail if wdtModelHome is "/aux/y" and wdtInstallHome is "/aux" or vice-versa.
-   * Verify domain events and operator log contains the expected error message.
+   * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtModelHome is placed
+   * under the directory for the wdtInstallHome, or is the same directory. Ditto for vice-versa.
+   * For example wdtModelHome is "/aux/y/models" and wdtInstallHome is "/aux" or vice-versa.
+   * Verify domain was created and all servers are running.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with"
@@ -748,23 +748,26 @@ class ItMiiAuxiliaryImage {
 
     String wdtInstallPath = "/aux";
     String wdtModelHomePath = "/aux/y";
-    String domainUid = "domain5";
+    String domainUid = "testdomain13";
 
-    // creating image13 with wdtModelHome dir located under wdtInstallHome dir, verify error message
-    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+    // creating image13 with wdtModelHome dir located under wdtInstallHome dir, verify domain is started
+    createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
             wdtModelHomePath,domainUid,miiAuxiliaryImage13Tag);
 
 
     // create image14 with same wdtModelHome and wdtInstallHome dir, verify error message
     wdtInstallPath = "/aux";
     wdtModelHomePath = "/aux";
-    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+    domainUid = "testdomain14";
+    createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
             wdtModelHomePath,domainUid,miiAuxiliaryImage14Tag);
 
     // create image15 with wdtInstallHome under wdtModelHome dir,verify error message
     wdtInstallPath = "/aux/y";
     wdtModelHomePath = "/aux";
-    createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(wdtInstallPath,
+    domainUid = "testdomain15";
+
+    createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
             wdtModelHomePath,domainUid,miiAuxiliaryImage15Tag);
   }
 
@@ -1236,6 +1239,10 @@ class ItMiiAuxiliaryImage {
     deleteImage(miiAuxiliaryImage9);
     deleteImage(miiAuxiliaryImage10);
     deleteImage(miiAuxiliaryImage11);
+    deleteImage(miiAuxiliaryImage12);
+    deleteImage(miiAuxiliaryImage13);
+    deleteImage(miiAuxiliaryImage14);
+    deleteImage(miiAuxiliaryImage15);
     deleteImage(errorPathAuxiliaryImage1);
     deleteImage(errorPathAuxiliaryImage2);
     deleteImage(errorPathAuxiliaryImage3);
@@ -1313,7 +1320,7 @@ class ItMiiAuxiliaryImage {
     return domainCR;
   }
 
-  private void createAuxImageWithWdtModelHomeInstallHomeDependenciesVerifyExpectedErrorMessage(String wdtInstallPath,
+  private void createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(String wdtInstallPath,
                                                                                                String wdtModelHomePath,
                                                                                                String domainUid,
                                                                                                String imageTag) {
@@ -1322,15 +1329,16 @@ class ItMiiAuxiliaryImage {
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    OffsetDateTime timestamp = now();
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
     WitParams witParams =
             new WitParams()
                     .modelImageName(MII_AUXILIARY_IMAGE_NAME)
                     .modelImageTag(imageTag)
                     .modelFiles(modelList)
-                    .modelArchiveFiles(archiveList)
+                    .wdtModelHome(wdtModelHomePath + "/models")
                     .wdtHome(wdtInstallPath)
-                    .wdtModelHome(wdtModelHomePath)
                     .modelArchiveFiles(archiveList);
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,imageTag, witParams);
     String imageName = MII_AUXILIARY_IMAGE_NAME + ":" + imageTag;
@@ -1343,21 +1351,14 @@ class ItMiiAuxiliaryImage {
             List.of("cluster-1"),
             imageName);
 
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace)),
+    assertNotNull(domainCR,
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
                     domainUid, domainNamespace));
-
-    String errorMessage = "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation "
-            + "files are available in this directory  or set 'sourceWDTInstallHome' to 'None' for this image.";
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, errorMessage);
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} in namespace {3}",
+            domainUid, imageName, domainNamespace);
+    createDomainAndVerify(domainUid, domainCR, domainNamespace,
+            adminServerPodName, managedServerPrefix, replicaCount);
 
     deleteDomainResource(domainNamespace, domainUid);
   }
