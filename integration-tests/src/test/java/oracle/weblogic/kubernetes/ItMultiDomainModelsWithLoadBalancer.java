@@ -648,7 +648,6 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Rolling restart triggered by changing:
    * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    * Verify domain changed event is logged.
-   * Disabled for now due to bug.
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
