@@ -14,28 +14,16 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.Stub;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -45,24 +33,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
-import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER;
-import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER;
-import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
-import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -81,15 +56,6 @@ class DomainValidationStepTest {
   private static final String TEST_SECRET_PREFIX = "TEST_SECRET";
   private static final String TEST_CONFIGMAP_PREFIX = "TEST_CM";
 
-  private static final String ADMIN_SERVER = "admin-server";
-  private static final String MANAGED_SERVER1 = "managed-server1";
-  private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
-  private static final String SERVER_TEMPLATE_NAME = "server-template";
-  private static final String DOMAIN_NAME = "domain";
-  private static final int ADMIN_SERVER_PORT_NUM = 7001;
-  private static final int MANAGED_SERVER1_PORT_NUM = 8001;
-  private static final int SERVER_TEMPLATE_PORT_NUM = 9001;
-
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
@@ -97,25 +63,15 @@ class DomainValidationStepTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  private final WlsDomainConfig domainConfig =
-      new WlsDomainConfigSupport(DOMAIN_NAME)
-          .withAdminServerName(ADMIN_SERVER)
-          .withWlsServer(ADMIN_SERVER, ADMIN_SERVER_PORT_NUM)
-          .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
-          .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, SERVER_TEMPLATE_NAME, SERVER_TEMPLATE_PORT_NUM)
-          .createDomainConfig();
 
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
   private Step domainValidationSteps;
-  private Step topologyValidationStep;
 
   @BeforeEach
   public void setUp() throws Exception {
-    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
-        NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN,
-        MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER, MONITORING_EXPORTER_CONFLICT_SERVER);
+    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED);
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
@@ -123,7 +79,6 @@ class DomainValidationStepTest {
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     domainValidationSteps = Step.chain(DomainValidationSteps.createDomainValidationSteps(NS), terminalStep);
-    topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
@@ -226,13 +181,15 @@ class DomainValidationStepTest {
     createSecrets(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
-    assertThat(getMatchingSecretsCount(), is(MULTI_CHUNKS_LAST_NUM));
+    assertThat(getNumMatchingSecrets(), is((long) MULTI_CHUNKS_LAST_NUM));
   }
 
-  private int getMatchingSecretsCount() {
-    List<V1Secret> list =
-        (List<V1Secret>) Optional.ofNullable(testSupport.getPacket().get(SECRETS)).orElse(Collections.EMPTY_LIST);
-    return Math.toIntExact(list.stream().filter(secret -> matchesExpectedSecretNamePattern(secret)).count());
+  private long getNumMatchingSecrets() {
+    return Optional.ofNullable(testSupport.getPacket().<List<V1Secret>>getValue(SECRETS))
+          .orElse(Collections.emptyList())
+          .stream()
+          .filter(this::matchesExpectedSecretNamePattern)
+          .count();
   }
 
   private boolean matchesExpectedSecretNamePattern(V1Secret secret) {
@@ -270,6 +227,7 @@ class DomainValidationStepTest {
     assertThat(terminalStep.wasRun(), is(true));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void createSecrets(int lastSecretNum) {
     IntStream.rangeClosed(1, lastSecretNum)
         .boxed()
@@ -287,13 +245,15 @@ class DomainValidationStepTest {
     createConfigMaps(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
-    assertThat(getMatchingConfigMapsCount(), is(MULTI_CHUNKS_LAST_NUM));
+    assertThat(getNumMatchingConfigMaps(), equalTo((long) MULTI_CHUNKS_LAST_NUM));
   }
 
-  private int getMatchingConfigMapsCount() {
-    List<V1ConfigMap> list =
-        (List<V1ConfigMap>) Optional.ofNullable(testSupport.getPacket().get(CONFIGMAPS)).orElse(Collections.EMPTY_LIST);
-    return Math.toIntExact(list.stream().filter(cm -> matchesExpectedConfigMapNamePattern(cm)).count());
+  private long getNumMatchingConfigMaps() {
+    return Optional.ofNullable(testSupport.getPacket().<List<V1ConfigMap>>getValue(CONFIGMAPS))
+          .orElse(Collections.emptyList())
+          .stream()
+          .filter(this::matchesExpectedConfigMapNamePattern)
+          .count();
   }
 
   private boolean matchesExpectedConfigMapNamePattern(V1ConfigMap cm) {
@@ -349,6 +309,7 @@ class DomainValidationStepTest {
     assertThat(terminalStep.wasRun(), is(true));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void createConfigMaps(int lastConfigMapNum) {
     IntStream.rangeClosed(1, lastConfigMapNum)
         .boxed()
@@ -359,194 +320,5 @@ class DomainValidationStepTest {
 
   private V1ConfigMap createConfigMap(String cm) {
     return new V1ConfigMap().metadata(new V1ObjectMeta().name(cm).namespace(NS));
-  }
-
-  @Test
-  void whenClusterDoesNotExistInDomain_logWarning() {
-    domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(logRecords, containsWarning(MessageKeys.NO_CLUSTER_IN_DOMAIN));
-    assertThat(info.getValidationWarningsAsString(),
-        stringContainsInOrder("Cluster", "no-such-cluster", "does not exist"));
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-  }
-
-  @Test
-  void whenServerDoesNotExistInDomain_logWarning() {
-    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(logRecords, containsWarning(MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN));
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertThat(info.getValidationWarningsAsString(),
-        stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
-  }
-
-  private DomainConfigurator configureDomain(Domain domain) {
-    return DomainConfiguratorFactory.forDomain(domain);
-  }
-
-  @Test
-  void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarningAndGenerateEvent() {
-    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(7001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
-    assertThat(info.getValidationWarningsAsString(),
-        stringContainsInOrder(Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithFormattedMessage(
-        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
-            Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
-  }
-
-  @Test
-  void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarningAndGenerateEvent() {
-    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(8001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
-    assertThat(info.getValidationWarningsAsString(),
-        stringContainsInOrder(Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithFormattedMessage(
-        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
-            Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
-  }
-
-  @Test
-  void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarningAndGenerateEvent() {
-    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(9001);
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER));
-    assertThat(info.getValidationWarningsAsString(),
-        stringContainsInOrder(Integer.toString(9001), DYNAMIC_CLUSTER_NAME,
-            Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithFormattedMessage(
-        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
-            Integer.toString(9001), DYNAMIC_CLUSTER_NAME, Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
-  }
-
-  @Test
-  void whenServerDoesNotExistInDomain_createEvent() {
-    consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
-    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server");
-  }
-
-  private boolean isTopologyMistachFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(TOPOLOGY_MISMATCH_ERROR);
-  }
-
-  @Test
-  void whenClusterDoesNotExistInDomain_createEvent() {
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
-  }
-
-  @Test
-  void whenBothServerAndClusterDoNotExistInDomain_createEventWithBothWarnings() {
-    consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
-    domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
-    assertContainsEventWithFormattedMessage(getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster")
-        + "\n" + getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server"));
-  }
-
-  @Test
-  void whenIsExplicitRecheck_doNotCreateEvent() {
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    setExplicitRecheck();
-    domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
-
-    testSupport.runSteps(topologyValidationStep);
-
-    assertThat(getEvents(), empty());
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private Cluster createCluster(String clusterName) {
-    Cluster cluster = new Cluster();
-    cluster.setClusterName(clusterName);
-    cluster.setReplicas(1);
-    cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
-    return cluster;
-  }
-
-  private List<CoreV1Event> getEvents() {
-    return testSupport.getResources(KubernetesTestSupport.EVENT);
-  }
-
-  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
-    assertContainsEventWithFormattedMessage(getFormattedMessage(msgId, messageParams));
-  }
-
-  private void assertContainsEventWithFormattedMessage(String message) {
-    assertThat(
-        "Expected Event with message was not created: " + getExpectedTopologyMismatchEventMessage(message)
-            + ".\nThere are " + getEvents().size() + " event.\nEvents: " + getEvents(),
-        containsEventWithMessage(
-            getEvents(),
-            DOMAIN_FAILED_EVENT,
-            getExpectedTopologyMismatchEventMessage(message)),
-        is(true));
-  }
-
-  private String getFormattedMessage(String msgId, Object... params) {
-    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
-    return logger.formatMessage(msgId, params);
-  }
-
-  private String getExpectedTopologyMismatchEventMessage(String message) {
-    return String.format(DOMAIN_FAILED_PATTERN, UID,
-        TOPOLOGY_MISMATCH_ERROR, message, TOPOLOGY_MISMATCH_ERROR_SUGGESTION);
-  }
-
-  private void setExplicitRecheck() {
-    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
-        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
-  }
-
-  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements
-      MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return true;
-    }
   }
 }

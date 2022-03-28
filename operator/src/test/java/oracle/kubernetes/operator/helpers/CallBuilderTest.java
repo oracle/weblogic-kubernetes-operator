@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -156,9 +156,9 @@ class CallBuilderTest {
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Disabled
+  @Disabled("Disabled until synchronization issue is resolved - RJE")
   @Test
-  void listDomainsAsync_returnsUpgrade() throws ApiException, InterruptedException {
+  void listDomainsAsync_returnsUpgrade() throws InterruptedException {
     Domain domain1 = new Domain();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
@@ -182,8 +182,8 @@ class CallBuilderTest {
 
     DomainList received = responseStep.waitForAndGetCallResponse().getResult();
     assertThat(received.getItems(), hasSize(2));
-    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(PROGRESSING)));
-    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(PROGRESSING)));
+    assertThat(received.getItems().get(0), not(hasCondition(PROGRESSING)));
+    assertThat(received.getItems().get(1), not(hasCondition(PROGRESSING)));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {

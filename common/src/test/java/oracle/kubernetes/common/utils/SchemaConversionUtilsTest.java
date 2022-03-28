@@ -59,10 +59,11 @@ class SchemaConversionUtilsTest {
     assertThat(convertedDomain, equalTo(expectedDomain));
   }
 
+  @SuppressWarnings("unchecked")
   private Map<String, Object> readAsYaml(String fileName) throws IOException {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    return ((Map<String, Object>) yamlReader.readValue(yamlStream, Object.class));
+    return ((Map<String, Object>) yamlReader.readValue(yamlStream, Map.class));
   }
 
   public static InputStream inputStreamFromClasspath(String path) {
