@@ -332,21 +332,27 @@ pipeline {
                             echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
                         fi
+                        echo "${WORKSPACE}/.mvn/maven.config contents:"
+                        cat "${WORKSPACE}/.mvn/maven.config"
                     '''
                 withSonarQubeEnv('SonarCloud') {
-                    sh "mvn sonar:sonar"
+                    // For whatever reason, defining this property in the maven.config file is not working...
+                    //
+                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_reports_path} sonar:sonar"
                 }
             }
         }
 
         // waitForQualityGate is not working with SonarCloud...
-        stage('Verify Sonar Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate(abortPipeline: true, webhookSecretId: "${sonar_webhook_secret_creds}")
-                }
-            }
-        }
+        // See https://community.sonarsource.com/t/jenkins-waitforqualitygate-fails-because-sonarcloud-is-returning-outdated-browser-html-response/60579
+        //
+        // stage('Verify Sonar Quality Gate') {
+        //     steps {
+        //         timeout(time: 10, unit: 'MINUTES') {
+        //             waitForQualityGate(abortPipeline: true, webhookSecretId: "${sonar_webhook_secret_creds}")
+        //         }
+        //     }
+        // }
 
         stage('Make Workspace bin directory') {
             steps {
