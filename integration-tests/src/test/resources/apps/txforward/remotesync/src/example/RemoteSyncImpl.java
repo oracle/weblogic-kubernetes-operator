@@ -5,7 +5,6 @@ package example;
 
 import java.rmi.RemoteException;
 import java.util.Arrays;
-
 import javax.naming.Context;
 import javax.transaction.RollbackException;
 import javax.transaction.Synchronization;

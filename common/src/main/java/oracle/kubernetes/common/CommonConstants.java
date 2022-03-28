@@ -1,0 +1,23 @@
+// Copyright (c) 2022, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package oracle.kubernetes.common;
+
+public class CommonConstants {
+
+  private CommonConstants() {
+    //not called
+  }
+
+  public static final String COMPATIBILITY_MODE = "compatibility-mode-";
+  public static final String API_VERSION_V9 = "weblogic.oracle/v9";
+  public static final String API_VERSION_V8 = "weblogic.oracle/v8";
+
+  public static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
+  public static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
+
+  public static final String LATEST_IMAGE_SUFFIX = ":latest";
+  public static final String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.ALWAYS.label();
+  public static final String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IF_NOT_PRESENT.label();
+
+}

@@ -6,25 +6,19 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.ImagePullPolicy;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class AuxiliaryImage {
 
-  public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";
   public static final String AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME = "aux-image-internal-volume";
-  public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "aux-image-volume-";
-  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/auxImage.sh";
-  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX = "operator-aux-container";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
-  public static final String AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND
-          = "cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH";
 
   /**
    * The auxiliary image.
@@ -69,7 +63,7 @@ public class AuxiliaryImage {
   }
 
   public String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+    return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
   public void setImagePullPolicy(String imagePullPolicy) {
@@ -88,10 +82,6 @@ public class AuxiliaryImage {
   public String getSourceWDTInstallHomeOrDefault() {
     return Optional.ofNullable(sourceWDTInstallHome)
             .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
-  }
-
-  public void setSourceWDTInstallHome() {
-    this.sourceWDTInstallHome = sourceWDTInstallHome;
   }
 
   public AuxiliaryImage sourceWDTInstallHome(String sourceWDTInstallHome) {

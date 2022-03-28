@@ -1,10 +1,10 @@
 # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-from java.util import Properties
-import sys, socket
 import os
+import sys
 import time as systime
+from java.util import Properties
 
 k8s_master_host=os.environ.get('KUBERNETES_SERVICE_HOST')
 k8s_master_port=os.environ.get('KUBERNETES_SERVICE_PORT')

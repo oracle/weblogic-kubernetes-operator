@@ -5,32 +5,23 @@ package application;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.annotation.WebInitParam;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServlet;
-import java.text.SimpleDateFormat;
 import java.text.DateFormat;
-
+import java.text.SimpleDateFormat;
 import java.util.Hashtable;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
-import javax.jms.JMSProducer;
-import javax.jms.MessageConsumer;
-import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
-
-import javax.transaction.UserTransaction;
-import weblogic.transaction.TransactionHelper;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebInitParam;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(name="JmsServlet", urlPatterns={"/jmstest"},
      initParams={ @WebInitParam(name="simpleParam", value="paramValue") } )

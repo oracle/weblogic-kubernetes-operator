@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.Optional;
 
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
