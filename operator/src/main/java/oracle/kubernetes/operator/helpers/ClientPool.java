@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,18 +17,18 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.util.ClientBuilder;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static ClientFactory FACTORY = new DefaultClientFactory();
+  private static ClientFactory factory = new DefaultClientFactory();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static ClientPool SINGLETON = new ClientPool();
+  private static ClientPool singleton = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
@@ -39,19 +39,8 @@ public class ClientPool extends Pool<ApiClient> {
     ClientPool.threadFactory = threadFactory;
   }
 
-  private static Runnable wrapRunnable(Runnable r) {
-    return () -> {
-      try {
-        r.run();
-      } catch (Throwable t) {
-        // These will almost always be spurious exceptions
-        LOGGER.finer(MessageKeys.EXCEPTION, t);
-      }
-    };
-  }
-
   public static ClientPool getInstance() {
-    return SINGLETON;
+    return singleton;
   }
 
   @Override
@@ -66,7 +55,6 @@ public class ClientPool extends Pool<ApiClient> {
 
   @Override
   public void discard(ApiClient client) {
-    client = null;
     instance.updateAndGet(newClient -> getApiClient());
   }
 
@@ -76,16 +64,16 @@ public class ClientPool extends Pool<ApiClient> {
     ApiClient client = null;
     LOGGER.fine(MessageKeys.CREATING_API_CLIENT);
     try {
-      ClientFactory factory = null;
+      ClientFactory clientFactory = null;
       Container c = ContainerResolver.getInstance().getContainer();
       if (c != null) {
-        factory = c.getSpi(ClientFactory.class);
+        clientFactory = c.getSpi(ClientFactory.class);
       }
-      if (factory == null) {
-        factory = FACTORY;
+      if (clientFactory == null) {
+        clientFactory = ClientPool.factory;
       }
 
-      client = factory.get();
+      client = clientFactory.get();
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
@@ -105,6 +93,17 @@ public class ClientPool extends Pool<ApiClient> {
 
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
+
+    private static Runnable wrapRunnable(Runnable r) {
+      return () -> {
+        try {
+          r.run();
+        } catch (Throwable t) {
+          // These will almost always be spurious exceptions
+          LOGGER.finer(MessageKeys.EXCEPTION, t);
+        }
+      };
+    }
 
     @Override
     public ApiClient get() {

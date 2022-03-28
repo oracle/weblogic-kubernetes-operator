@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -39,9 +39,9 @@ import org.junit.jupiter.api.Test;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -156,22 +156,22 @@ class CallBuilderTest {
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Disabled
+  @Disabled("Disabled until synchronization issue is resolved - RJE")
   @Test
-  void listDomainsAsync_returnsUpgrade() throws ApiException, InterruptedException {
+  void listDomainsAsync_returnsUpgrade() throws InterruptedException {
     Domain domain1 = new Domain();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
 
-    domainStatus1.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus1.getConditions().add(new DomainCondition(Available).withLastTransitionTime(null));
+    domainStatus1.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
+    domainStatus1.getConditions().add(new DomainCondition(AVAILABLE).withLastTransitionTime(null));
 
     Domain domain2 = new Domain();
     DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
     domain2.setStatus(domainStatus2);
 
-    domainStatus2.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus2.getConditions().add(new DomainCondition(Failed).withLastTransitionTime(null));
+    domainStatus2.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
+    domainStatus2.getConditions().add(new DomainCondition(FAILED).withLastTransitionTime(null));
 
     DomainList list = new DomainList().withItems(Arrays.asList(domain1, domain2));
     defineHttpGetResponse(DOMAIN_RESOURCE, list);
@@ -182,8 +182,8 @@ class CallBuilderTest {
 
     DomainList received = responseStep.waitForAndGetCallResponse().getResult();
     assertThat(received.getItems(), hasSize(2));
-    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(Progressing)));
-    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(Progressing)));
+    assertThat(received.getItems().get(0), not(hasCondition(PROGRESSING)));
+    assertThat(received.getItems().get(1), not(hasCondition(PROGRESSING)));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {
@@ -228,7 +228,7 @@ class CallBuilderTest {
     static Memento installSync(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
       PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
-      Memento memento = StaticStubSupport.install(CallBuilder.class, "DISPATCHER", dispatcher);
+      Memento memento = StaticStubSupport.install(CallBuilder.class, "dispatcher", dispatcher);
       dispatcher.setUnderlyingSyncDispatcher(memento.getOriginalValue());
       return memento;
     }
@@ -236,7 +236,7 @@ class CallBuilderTest {
     static Memento installAsync(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
       PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
-      Memento memento = StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", dispatcher);
+      Memento memento = StaticStubSupport.install(CallBuilder.class, "stepFactory", dispatcher);
       dispatcher.setUnderlyingAsyncRequestStepFactory(memento.getOriginalValue());
       return memento;
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,9 +6,10 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.common.Labeled;
 
 /** Describes the service types supported by the operator. */
-public enum OperatorServiceType {
+public enum OperatorServiceType implements Labeled {
   SERVER {
     @Override
     void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
@@ -105,9 +106,11 @@ public enum OperatorServiceType {
   }
 
   void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
+    // no-op
   }
 
   void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
+    // no-op
   }
 
   /**
@@ -126,4 +129,13 @@ public enum OperatorServiceType {
     return false;
   }
 
+  @Override
+  public String label() {
+    return name();
+  }
+
+  @Override
+  public String toString() {
+    return label();
+  }
 }

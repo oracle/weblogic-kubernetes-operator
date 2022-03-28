@@ -71,7 +71,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
+    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
     mementos.add(TuningParametersStub.install());
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -28,11 +28,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_GOT_THROWABLE;
-import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.common.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_GOT_THROWABLE;
+import static oracle.kubernetes.common.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;

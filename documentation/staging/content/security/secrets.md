@@ -21,7 +21,7 @@ Also, the domain credentials secret must be created in the namespace where the `
 
 {{% notice note %}}
 For an example of a WebLogic Domain YAML file using `webLogicCredentialsSecret`,
-see [Container Image Protection]({{<relref "/security/domain-security/image-protection#1-use-imagepullsecrets-with-the-domain-resource">}}).
+see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
 {{% /notice %}}
 
 The samples supplied with the operator use a naming convention that follows
@@ -79,7 +79,7 @@ in the registry. The `imagePullSecrets` setting on the `Domain` can be used to s
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
-For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
+For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection.md">}}).
 {{% /notice %}}
 
 #### Domain configuration override or runtime update secrets

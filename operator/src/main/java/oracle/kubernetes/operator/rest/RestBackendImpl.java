@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -25,6 +25,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
@@ -35,7 +36,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.DomainAction;
 import oracle.kubernetes.operator.rest.model.DomainActionType;
@@ -43,8 +43,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
+import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.INVALID_DOMAIN_UID;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -59,7 +59,7 @@ public class RestBackendImpl implements RestBackend {
   private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
-  private static TopologyRetriever INSTANCE =
+  private static TopologyRetriever instance =
       (String ns, String domainUid) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
         if (s != null) {
@@ -106,7 +106,7 @@ public class RestBackendImpl implements RestBackend {
               operation,
               Resource.DOMAINS,
               null,
-              Scope.cluster,
+              Scope.CLUSTER,
               null);
     } else {
       authorized =
@@ -116,7 +116,7 @@ public class RestBackendImpl implements RestBackend {
               operation,
               Resource.DOMAINS,
               domainUid,
-              Scope.namespace,
+              Scope.NAMESPACE,
               getNamespace(domainUid));
     }
     if (authorized) {
@@ -170,7 +170,7 @@ public class RestBackendImpl implements RestBackend {
 
   @Override
   public Set<String> getDomainUids() {
-    authorize(null, Operation.list);
+    authorize(null, Operation.LIST);
 
     return getDomainStream().map(Domain::getDomainUid).collect(Collectors.toSet());
   }
@@ -195,7 +195,7 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public void performDomainAction(String domainUid, DomainAction params) {
     verifyDomain(domainUid);
-    authorize(domainUid, Operation.update);
+    authorize(domainUid, Operation.UPDATE);
 
     switch (Optional.ofNullable(params.getAction()).orElse(DomainActionType.UNKNOWN)) {
       case INTROSPECT:
@@ -261,7 +261,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private Optional<Domain> getDomain(String domainUid) {
-    authorize(null, Operation.list);
+    authorize(null, Operation.LIST);
     
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
@@ -270,7 +270,7 @@ public class RestBackendImpl implements RestBackend {
   public Set<String> getClusters(String domainUid) {
     LOGGER.entering(domainUid);
     verifyDomain(domainUid);
-    authorize(domainUid, Operation.get);
+    authorize(domainUid, Operation.GET);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
@@ -283,7 +283,7 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isCluster(String domainUid, String cluster) {
     LOGGER.entering(domainUid, cluster);
-    authorize(domainUid, Operation.list);
+    authorize(domainUid, Operation.LIST);
     boolean result = getClusters(domainUid).contains(cluster);
     LOGGER.exiting(result);
     return result;
@@ -298,7 +298,7 @@ public class RestBackendImpl implements RestBackend {
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
-    authorize(domainUid, Operation.update);
+    authorize(domainUid, Operation.UPDATE);
     forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
     LOGGER.exiting();
   }
@@ -381,7 +381,7 @@ public class RestBackendImpl implements RestBackend {
    */
   WlsDomainConfig getWlsDomainConfig(String domainUid) {
     for (String ns : domainNamespaces.get()) {
-      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUid);
+      WlsDomainConfig config = instance.getWlsDomainConfig(ns, domainUid);
       if (config != null) {
         return config;
       }

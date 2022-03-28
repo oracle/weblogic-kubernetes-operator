@@ -4,9 +4,9 @@ Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 -->
 <jdbc:jdbc-data-source
-    xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
-    xmlns:jdbcf="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
-    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+        xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
+        xmlns:jdbcf="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
+>
     <jdbc:name>JdbcTestDataSource-0</jdbc:name>
     <jdbc:jdbc-connection-pool-params>
         <jdbc:initial-capacity jdbcf:combine-mode="replace">2</jdbc:initial-capacity>

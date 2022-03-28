@@ -79,7 +79,7 @@ class PodPresenceTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", domains));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());

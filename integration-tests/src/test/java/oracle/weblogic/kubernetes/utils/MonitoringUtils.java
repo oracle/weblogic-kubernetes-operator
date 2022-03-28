@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -52,8 +51,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -111,8 +112,7 @@ public class MonitoringUtils {
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
-    String monitoringExporterWebAppVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
-        .orElse(MONITORING_EXPORTER_WEBAPP_VERSION);
+    String monitoringExporterWebAppVersion = MONITORING_EXPORTER_WEBAPP_VERSION;
 
     String monitoringExporterBuildFile = String.format(
         "%s/get%s.sh", applicationDir, monitoringExporterWebAppVersion);
@@ -193,8 +193,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
 
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("main");
+    String monitoringExporterBranch = MONITORING_EXPORTER_BRANCH;
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
             + monitoringExporterBranch
@@ -554,10 +553,8 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
 
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("main");
     //adding ability to build monitoring exporter if branch is not main
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
+    boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
@@ -987,7 +984,7 @@ public class MonitoringUtils {
    * @param monitoringExporterSrcDir path to monitoring exporter src location
    */
   public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
-    String httpsproxy = System.getenv("HTTPS_PROXY");
+    String httpsproxy = HTTPS_PROXY;
     logger.info(" httpsproxy : " + httpsproxy);
     String proxyHost = "";
     String command;

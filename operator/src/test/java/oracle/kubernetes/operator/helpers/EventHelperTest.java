@@ -37,6 +37,9 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.common.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
@@ -94,9 +97,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MAN
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
-import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -125,7 +125,7 @@ class EventHelperTest {
   void setUp() throws Exception {
     mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
     mementos.add(TuningParametersStub.install());
@@ -302,7 +302,7 @@ class EventHelperTest {
         createEventStep(new EventData(DOMAIN_FAILED)),
         createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
             .message("Test this failure")
-            .failureReason(DomainFailureReason.Aborted)
+            .failureReason(DomainFailureReason.ABORTED)
             .additionalMessage(WILL_NOT_RETRY)))
     );
 

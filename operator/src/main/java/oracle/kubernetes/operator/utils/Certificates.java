@@ -14,14 +14,14 @@ import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
 
 public class Certificates {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<String, Path> GET_PATH = Paths::get;
+  private static Function<String, Path> getPath = Paths::get;
 
   private final File externalIdDir;
   final File externalCertificateKey;
@@ -62,7 +62,7 @@ public class Certificates {
   }
 
   private String getKeyOrNull(String path) {
-    return isFileExists(GET_PATH.apply(path)) ? path : null;
+    return isFileExists(getPath.apply(path)) ? path : null;
   }
 
   public String getOperatorExternalCertificateData() {
@@ -95,7 +95,7 @@ public class Certificates {
 
   private static String getCertificate(String path, String failureMessage) {
     try {
-      return new String(Files.readAllBytes(GET_PATH.apply(path)));
+      return new String(Files.readAllBytes(getPath.apply(path)));
     } catch (IOException e) {
       LOGGER.config(failureMessage, path);
       return null;

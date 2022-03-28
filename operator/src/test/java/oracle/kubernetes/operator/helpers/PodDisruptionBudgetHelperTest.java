@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -37,7 +37,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_EXISTS;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
@@ -46,10 +50,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_EXISTS;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -218,7 +218,7 @@ class PodDisruptionBudgetHelperTest {
 
     runPodDisruptionBudgetHelper();
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
             .withMessageContaining("create", PODDISRUPTIONBUDGET.toLowerCase(), NS, "Test this failure"));
   }
 

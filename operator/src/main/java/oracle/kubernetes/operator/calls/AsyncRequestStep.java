@@ -17,13 +17,13 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.Component;
@@ -33,7 +33,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_SUCCESS;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -43,9 +44,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
@@ -243,7 +243,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
-      final var condition = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
+      final var condition = new DomainCondition(FAILED).withReason(KUBERNETES).withMessage(createMessage(apiException));
       if (recordedFailure == null) {
         addFailureStatus(domain, condition);
       } else if (!recordedFailure.equals(condition)) {
@@ -292,10 +292,71 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     private boolean firstTimeResumed() {
       return didResume.compareAndSet(false, true);
     }
-  }
 
-  private String getOperation() {
-    return this.requestParams.call;
+    private void logTimeout() {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.finer(
+            MessageKeys.ASYNC_TIMEOUT,
+            identityHash(),
+            requestParams.call,
+            requestParams.namespace,
+            requestParams.name,
+            requestParams.body != null
+                ? LoggingFactory.getJson().serialize(requestParams.body)
+                : "",
+            fieldSelector,
+            labelSelector,
+            resourceVersion);
+      }
+    }
+
+    private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.finer(
+            ASYNC_SUCCESS,
+            identityHash(),
+            requestParams.call,
+            result,
+            statusCode,
+            responseHeaders);
+      }
+    }
+
+    private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      // called from a code path where we don't have the necessary information for logging context
+      // so we need to use the thread context to pass in the logging context
+      try (ThreadLoggingContext ignored =
+               setThreadContext()
+                   .namespace(requestParams.namespace)
+                   .domainUid(requestParams.domainUid)) {
+        LOGGER.fine(
+            MessageKeys.ASYNC_FAILURE,
+            identityHash(),
+            ae.getMessage(),
+            statusCode,
+            responseHeaders,
+            requestParams.call,
+            requestParams.namespace,
+            requestParams.name,
+            requestParams.body != null
+                ? LoggingFactory.getJson().serialize(requestParams.body)
+                : "",
+            fieldSelector,
+            labelSelector,
+            resourceVersion,
+            ae.getResponseBody());
+      }
+    }
   }
 
   @Override
@@ -337,7 +398,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
     return doSuspend(
-        (fiber) -> {
+        fiber -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
             scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
@@ -387,71 +448,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         labelSelector,
         resourceVersion,
         responseBody);
-  }
-
-  private void logTimeout() {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.finer(
-          MessageKeys.ASYNC_TIMEOUT,
-          identityHash(),
-          requestParams.call,
-          requestParams.namespace,
-          requestParams.name,
-          requestParams.body != null
-              ? LoggingFactory.getJson().serialize(requestParams.body)
-              : "",
-          fieldSelector,
-          labelSelector,
-          resourceVersion);
-    }
-  }
-
-  private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.finer(
-          ASYNC_SUCCESS,
-          identityHash(),
-          requestParams.call,
-          result,
-          statusCode,
-          responseHeaders);
-    }
-  }
-
-  private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-    // called from a code path where we don't have the necessary information for logging context
-    // so we need to use the thread context to pass in the logging context
-    try (ThreadLoggingContext ignored =
-             setThreadContext()
-                 .namespace(requestParams.namespace)
-                 .domainUid(requestParams.domainUid)) {
-      LOGGER.fine(
-          MessageKeys.ASYNC_FAILURE,
-          identityHash(),
-          ae.getMessage(),
-          statusCode,
-          responseHeaders,
-          requestParams.call,
-          requestParams.namespace,
-          requestParams.name,
-          requestParams.body != null
-              ? LoggingFactory.getJson().serialize(requestParams.body)
-              : "",
-          fieldSelector,
-          labelSelector,
-          resourceVersion,
-          ae.getResponseBody());
-    }
   }
 
   // creates a unique ID that allows matching requests to responses

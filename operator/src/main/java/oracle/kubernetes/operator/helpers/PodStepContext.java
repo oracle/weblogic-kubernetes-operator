@@ -42,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -57,7 +58,6 @@ import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -75,6 +75,8 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
@@ -84,13 +86,11 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -369,11 +369,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return null;
   }
 
-  // Prevent the watcher from recreating pod with old spec
-  private void markBeingDeleted() {
-    info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
-  }
-
   // ----------------------- step methods ------------------------------
 
   private void clearBeingDeleted() {
@@ -394,18 +389,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return Step.chain(
         DomainValidationSteps.createAdditionalDomainValidationSteps(podModel.getSpec()),
         new VerifyPodStep(next));
-  }
-
-  /**
-   * Deletes the specified pod.
-   *
-   * @param pod the existing pod
-   * @param next the next step to perform after the pod deletion is complete.
-   * @return a step to be scheduled.
-   */
-  private Step deletePod(V1Pod pod, Step next) {
-    return new CallBuilder()
-        .deletePodAsync(getPodName(), getNamespace(), getDomainUid(), new V1DeleteOptions(), deleteResponse(pod, next));
   }
 
   /**
@@ -440,31 +423,6 @@ public abstract class PodStepContext extends BasePodStepContext {
    */
   abstract Step replaceCurrentPod(V1Pod pod, Step next);
 
-  /**
-   * Creates the specified replacement pod and records it.
-   *
-   * @param next the next step to perform after the pod creation is complete.
-   * @return a step to be scheduled.
-   */
-  private Step replacePod(Step next) {
-    return createPodAsync(replaceResponse(next));
-  }
-
-  private Step patchCurrentPod(V1Pod currentPod, Step next) {
-    return patchPod(currentPod, next);
-  }
-
-  private Step patchPod(V1Pod currentPod, Step next) {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    KubernetesUtils.addPatches(
-        patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
-    KubernetesUtils.addPatches(
-        patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
-    return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
-  }
-
   private Map<String, String> getNonHashedPodLabels() {
     Map<String,String> result = new HashMap<>(getPodLabels());
     Optional.ofNullable(miiDomainZipHash)
@@ -473,7 +431,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
     Optional.ofNullable(productVersion)
-          .ifPresent(productVersion -> result.put(LabelConstants.OPERATOR_VERSION, productVersion));
+          .ifPresent(pv -> result.put(LabelConstants.OPERATOR_VERSION, pv));
 
     if (addRestartRequiredLabel) {
       result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
@@ -489,30 +447,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return result;
   }
 
-  private Map<String, String> getLabels(V1Pod pod) {
-    return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
-  }
-
-  private Map<String, String> getAnnotations(V1Pod pod) {
-    return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getAnnotations).orElseGet(Collections::emptyMap);
-  }
-
-  private void logPodCreated() {
-    LOGGER.info(getPodCreatedMessageKey(), getDomainUid(), getServerName());
-  }
-
-  private void logPodExists() {
-    LOGGER.fine(getPodExistsMessageKey(), getDomainUid(), getServerName());
-  }
-
-  private void logPodPatched() {
-    LOGGER.info(getPodPatchedMessageKey(), getDomainUid(), getServerName());
-  }
-
-  private void logPodReplaced() {
-    LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
-  }
-
   abstract String getPodCreatedMessageKey();
 
   abstract String getPodExistsMessageKey();
@@ -525,45 +459,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, next));
   }
 
-  private boolean mustPatchPod(V1Pod currentPod) {
-    return KubernetesUtils.isMissingValues(getLabels(currentPod), getNonHashedPodLabels())
-        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations());
-  }
-
-  private boolean canUseCurrentPod(V1Pod currentPod) {
-
-    boolean useCurrent = hasCorrectPodHash(currentPod) && canUseNewDomainZip(currentPod);
-
-    if (!useCurrent) {
-      LOGGER.finer(
-          MessageKeys.POD_DUMP,
-          Yaml.dump(currentPod),
-          Yaml.dump(getPodModel()));
-    }
-
-    return useCurrent;
-  }
-
-  private boolean hasCorrectPodHash(V1Pod currentPod) {
-    if (isLegacyAuxImageOperatorVersion(currentPod)) {
-      return canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod));
-    } else if (!isLegacyPod(currentPod)) {
-      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
-    } else {
-      return canAdjustHashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
-    }
-  }
-
-  private boolean isLegacyPod(V1Pod currentPod) {
-    return !hasLabel(currentPod, OPERATOR_VERSION);
-  }
-
-  private boolean isLegacyAuxImageOperatorVersion(V1Pod currentPod) {
-    boolean result = Optional.ofNullable(currentPod.getMetadata()).map(m -> m.getLabels())
-            .map(l -> l.get(OPERATOR_VERSION)).map(v -> isLegacyAuxImageOperatorVersion(v)).orElse(false);
-    return result;
-  }
-
   private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
     try {
       return new SemanticVersion(operatorVersion).getMajor() == LEGACY_AUXILIARY_IMAGE_OPERATOR_MAJOR_VERSION;
@@ -572,92 +467,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
-    return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_0))
-          || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1));
-  }
-
-  private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
-    V1Pod recipe = createPodRecipe();
-    convertAuxImagesInitContainerVolumeAndMounts(recipe);
-    return requiredHash.equals(AnnotationHelper.createHash(recipe));
-  }
-
-  private boolean hasLabel(V1Pod pod, String key) {
-    return pod.getMetadata().getLabels().containsKey(key);
-  }
-
-  private String adjustedHash(V1Pod currentPod, Consumer<V1Pod> prometheusAdjustment) {
-    V1Pod recipe = createPodRecipe();
-    prometheusAdjustment.accept(recipe);
-
-    if (isLegacyMiiPod(currentPod)) {
-      copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
-    }
-
-    return AnnotationHelper.createHash(recipe);
-  }
-
-  private void addLegacyPrometheusAnnotationsFrom_3_0(V1Pod pod) {
-    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
-  }
-
-  private void addLegacyPrometheusAnnotationsFrom_3_1(V1Pod pod) {
+  private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod) {
     AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
-  }
-
-  private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
-    V1PodSpec podSpec = pod.getSpec();
-    List<V1Container> convertedInitContainers = new ArrayList();
-    podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i));
-    podSpec.initContainers(convertedInitContainers);
-
-    List<V1Container> convertedContainers = new ArrayList();
-    podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
-    podSpec.containers(convertedContainers);
-
-    List<V1Volume> convertedVolumes = new ArrayList();
-    podSpec.getVolumes().forEach(i -> adjustVolumeName(convertedVolumes, i));
-    podSpec.volumes(convertedVolumes);
-    pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
-  }
-
-  private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
-    String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
-    List<V1EnvVar> env = container.getEnv();
-    List<V1EnvVar> newEnv = new ArrayList<>();
-    env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
-            .map(e -> e.getValue()).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
-
-    List<V1VolumeMount> convertedVolumeMounts = new ArrayList();
-    container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
-    convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
-            .volumeMounts(convertedVolumeMounts));
-  }
-
-  private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
-    convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
-  }
-
-  private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
-    convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
   }
 
   private Integer getMetricsPort() {
     return getListenPort() != null ? getListenPort() : getSslListenPort();
-  }
-
-  private boolean isLegacyMiiPod(V1Pod currentPod) {
-    return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
-    setLabel(toPod, key, getLabel(fromPod, key));
-  }
-
-  private void setLabel(V1Pod currentPod, String key, String value) {
-    currentPod.getMetadata().putLabelsItem(key, value);
   }
 
   private String getLabel(V1Pod currentPod, String key) {
@@ -673,7 +488,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       return false;
     } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
       return true;
-    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly) {
+    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY) {
       addRestartRequiredLabel = true;
       return true;
     } else {
@@ -687,18 +502,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
-  }
-
-  private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
-    return new DeleteResponseStep(pod, next);
-  }
-
-  private ResponseStep<V1Pod> replaceResponse(Step next) {
-    return new ReplacePodResponseStep(next);
-  }
-
-  private ResponseStep<V1Pod> patchResponse(Step next) {
-    return new PatchPodResponseStep(next);
   }
 
   V1Pod createPodModel() {
@@ -771,7 +574,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
-    if (shutdown.getWaitForAllSessions() != Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) {
+    if (!shutdown.getWaitForAllSessions().equals(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS)) {
       addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS",
               String.valueOf(shutdown.getWaitForAllSessions()));
     }
@@ -887,7 +690,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
     volumes.addAll(getServerSpec().getAdditionalVolumes());
@@ -895,6 +698,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
+  @Override
   protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
     V1Container v1Container = super.createPrimaryContainer(tuningParameters)
             .ports(getContainerPorts())
@@ -933,7 +737,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
+    if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
@@ -985,7 +789,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      if (auxiliaryImages.size() > 0) {
+      if (!auxiliaryImages.isEmpty()) {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
       }
     });
@@ -1161,6 +965,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       super(next);
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }
@@ -1198,6 +1003,28 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.pod = pod;
     }
 
+    private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
+      return new DeleteResponseStep(pod, next);
+    }
+
+    /**
+     * Deletes the specified pod.
+     *
+     * @param pod the existing pod
+     * @param next the next step to perform after the pod deletion is complete.
+     * @return a step to be scheduled.
+     */
+    private Step deletePod(V1Pod pod, Step next) {
+      return new CallBuilder()
+          .deletePodAsync(getPodName(), getNamespace(), getDomainUid(),
+              new V1DeleteOptions(), deleteResponse(pod, next));
+    }
+
+    // Prevent the watcher from recreating pod with old spec
+    private void markBeingDeleted() {
+      info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
+    }
+
     @Override
     public NextAction apply(Packet packet) {
 
@@ -1216,6 +1043,154 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     VerifyPodStep(Step next) {
       super(next);
+    }
+
+    private ResponseStep<V1Pod> patchResponse(Step next) {
+      return new PatchPodResponseStep(next);
+    }
+
+    private Map<String, String> getLabels(V1Pod pod) {
+      return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
+    }
+
+    private Map<String, String> getAnnotations(V1Pod pod) {
+      return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getAnnotations).orElseGet(Collections::emptyMap);
+    }
+
+    private Step patchPod(V1Pod currentPod, Step next) {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
+      return new CallBuilder()
+          .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+              new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+    }
+
+    private Step patchCurrentPod(V1Pod currentPod, Step next) {
+      return patchPod(currentPod, next);
+    }
+
+    private boolean mustPatchPod(V1Pod currentPod) {
+      return KubernetesUtils.isMissingValues(getLabels(currentPod), getNonHashedPodLabels())
+          || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations());
+    }
+
+    private void logPodExists() {
+      LOGGER.fine(getPodExistsMessageKey(), getDomainUid(), getServerName());
+    }
+
+    private boolean hasLabel(V1Pod pod, String key) {
+      return pod.getMetadata().getLabels().containsKey(key);
+    }
+
+    private boolean isLegacyPod(V1Pod currentPod) {
+      return !hasLabel(currentPod, OPERATOR_VERSION);
+    }
+
+    private boolean isLegacyAuxImageOperatorVersion(V1Pod currentPod) {
+      return Optional.ofNullable(currentPod.getMetadata()).map(V1ObjectMeta::getLabels)
+          .map(l -> l.get(OPERATOR_VERSION)).map(PodStepContext.this::isLegacyAuxImageOperatorVersion).orElse(false);
+    }
+
+    private boolean isLegacyMiiPod(V1Pod currentPod) {
+      return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
+    }
+
+    private void setLabel(V1Pod currentPod, String key, String value) {
+      currentPod.getMetadata().putLabelsItem(key, value);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
+      setLabel(toPod, key, getLabel(fromPod, key));
+    }
+
+    private String adjustedHash(V1Pod currentPod, Consumer<V1Pod> prometheusAdjustment) {
+      V1Pod recipe = createPodRecipe();
+      prometheusAdjustment.accept(recipe);
+
+      if (isLegacyMiiPod(currentPod)) {
+        copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
+      }
+
+      return AnnotationHelper.createHash(recipe);
+    }
+
+    private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
+      AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
+    }
+
+    private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
+      return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom30))
+          || requiredHash.equals(adjustedHash(currentPod, PodStepContext.this::addLegacyPrometheusAnnotationsFrom31));
+    }
+
+    private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
+      convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+    }
+
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
+      String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
+      List<V1EnvVar> env = container.getEnv();
+      List<V1EnvVar> newEnv = new ArrayList<>();
+      env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
+          .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, "")).orElse(null))));
+
+      List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
+      container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
+      convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
+          .volumeMounts(convertedVolumeMounts));
+    }
+
+    private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
+      convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+    }
+
+    private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
+      V1PodSpec podSpec = pod.getSpec();
+      List<V1Container> convertedInitContainers = new ArrayList<>();
+      podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i));
+      podSpec.initContainers(convertedInitContainers);
+
+      List<V1Container> convertedContainers = new ArrayList<>();
+      podSpec.getContainers().forEach(c -> adjustContainer(convertedContainers, c));
+      podSpec.containers(convertedContainers);
+
+      List<V1Volume> convertedVolumes = new ArrayList<>();
+      podSpec.getVolumes().forEach(i -> adjustVolumeName(convertedVolumes, i));
+      podSpec.volumes(convertedVolumes);
+      pod.spec(new V1PodSpecBuilder(podSpec).build().initContainers(convertedInitContainers).volumes(convertedVolumes));
+    }
+
+    private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
+      V1Pod recipe = createPodRecipe();
+      convertAuxImagesInitContainerVolumeAndMounts(recipe);
+      return requiredHash.equals(AnnotationHelper.createHash(recipe));
+    }
+
+    private boolean hasCorrectPodHash(V1Pod currentPod) {
+      if (isLegacyAuxImageOperatorVersion(currentPod)) {
+        return canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod));
+      } else if (!isLegacyPod(currentPod)) {
+        return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+      } else {
+        return canAdjustHashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
+      }
+    }
+
+    private boolean canUseCurrentPod(V1Pod currentPod) {
+      boolean useCurrent = hasCorrectPodHash(currentPod) && canUseNewDomainZip(currentPod);
+
+      if (!useCurrent) {
+        LOGGER.finer(
+            MessageKeys.POD_DUMP,
+            Yaml.dump(currentPod),
+            Yaml.dump(getPodModel()));
+      }
+
+      return useCurrent;
     }
 
     @Override
@@ -1245,6 +1220,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       super(next);
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }
@@ -1267,6 +1243,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     CreateResponseStep(Step next) {
       super(next);
+    }
+
+    private void logPodCreated() {
+      LOGGER.info(getPodCreatedMessageKey(), getDomainUid(), getServerName());
     }
 
     @Override
@@ -1296,6 +1276,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       this.pod = pod;
     }
 
+    @Override
     protected String getDetail() {
       return getServerName();
     }
@@ -1306,6 +1287,20 @@ public abstract class PodStepContext extends BasePodStepContext {
         return onSuccess(packet, callResponses);
       }
       return super.onFailure(getConflictStep(), packet, callResponses);
+    }
+
+    private ResponseStep<V1Pod> replaceResponse(Step next) {
+      return new ReplacePodResponseStep(next);
+    }
+
+    /**
+     * Creates the specified replacement pod and records it.
+     *
+     * @param next the next step to perform after the pod creation is complete.
+     * @return a step to be scheduled.
+     */
+    private Step replacePod(Step next) {
+      return createPodAsync(replaceResponse(next));
     }
 
     @Override
@@ -1319,6 +1314,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     ReplacePodResponseStep(Step next) {
       super(next);
+    }
+
+    private void logPodReplaced() {
+      LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
     }
 
     @Override
@@ -1338,6 +1337,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     PatchPodResponseStep(Step next) {
       super(next);
+    }
+
+    private void logPodPatched() {
+      LOGGER.info(getPodPatchedMessageKey(), getDomainUid(), getServerName());
     }
 
     void logPodChanged() {

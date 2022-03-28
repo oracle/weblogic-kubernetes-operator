@@ -1,4 +1,4 @@
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -12,12 +12,14 @@
 #   It's the user responsibility to save off the original file if needed
 #
 
-from oracle.weblogic.deploy.encrypt import EncryptionUtils
-from oracle.weblogic.deploy.encrypt import EncryptionException
+import sys
+import traceback
 from java.lang import String
-import sys, os, traceback
 from java.lang import System
+from oracle.weblogic.deploy.encrypt import EncryptionException
+from oracle.weblogic.deploy.encrypt import EncryptionUtils
 from utils import trace
+
 
 def decrypt_file(cipher_text, password, outputfile):
       try:

@@ -24,6 +24,8 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -34,14 +36,12 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -51,8 +51,10 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -219,10 +221,6 @@ public class JobStepContext extends BasePodStepContext {
   Step createJob() {
     conflictStep = new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), newCreateResponse());
     return conflictStep;
-  }
-
-  private void logJobCreated() {
-    LOGGER.info(getJobCreatedMessageKey(), getJobName());
   }
 
   String getJobCreatedMessageKey() {
@@ -401,11 +399,13 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
       getEnvironmentVariables(tuningParameters).stream()
-              .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+              .forEach(envVar -> addIfMissing(initContainerEnvVars,
+                  envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
     }
     return initContainerEnvVars;
   }
 
+  @Override
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
@@ -458,7 +458,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private boolean isSourceWdt() {
-    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL;
   }
 
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
@@ -475,6 +475,7 @@ public class JobStepContext extends BasePodStepContext {
             .secret(getRuntimeEncryptionSecretVolume()));
   }
 
+  @Override
   protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
     V1Container container = super.createPrimaryContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
@@ -681,8 +682,8 @@ public class JobStepContext extends BasePodStepContext {
     // check. To prevent a false trip of the circuit breaker, the list must be the
     // same regardless of whether domainTopology == null.
     StringBuilder sb = new StringBuilder(vars.size() * 32);
-    for (V1EnvVar var : vars) {
-      sb.append(var.getName()).append(',');
+    for (V1EnvVar envVar : vars) {
+      sb.append(envVar.getName()).append(',');
     }
     sb.deleteCharAt(sb.length() - 1);
     addEnvVar(vars, "OPERATOR_ENVVAR_NAMES", sb.toString());
@@ -706,7 +707,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addAuxImagePathEnv(List<AuxiliaryImage> auxiliaryImages, List<V1EnvVar> vars) {
-    if (auxiliaryImages.size() > 0) {
+    if (!auxiliaryImages.isEmpty()) {
       addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
     }
   }
@@ -770,6 +771,10 @@ public class JobStepContext extends BasePodStepContext {
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
       return doNext(createKubernetesFailureSteps(callResponse), packet);
+    }
+
+    private void logJobCreated() {
+      LOGGER.info(getJobCreatedMessageKey(), getJobName());
     }
 
     @Override

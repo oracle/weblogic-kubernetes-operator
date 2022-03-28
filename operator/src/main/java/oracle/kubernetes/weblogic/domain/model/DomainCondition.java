@@ -15,6 +15,7 @@ import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -55,8 +56,8 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @NotNull
   private String status = "True";
 
-  @Description("The uid of an introspection job associated with this failed condition")
-  private String introspectionUid;
+  // internal: used to select failure conditions for deletion
+  private volatile boolean markedForDeletion;
 
   /**
    * Creates a new domain condition, initialized with its type.
@@ -74,7 +75,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
-    this.introspectionUid = other.introspectionUid;
+    this.markedForDeletion = other.markedForDeletion;
   }
 
   /**
@@ -93,17 +94,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    */
   public void setLastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
-  }
-
-  /**
-   * Last time we probed the condition.
-   *
-   * @param lastProbeTime time
-   * @return this
-   */
-  public DomainCondition withLastProbeTime(OffsetDateTime lastProbeTime) {
-    this.lastProbeTime = lastProbeTime;
-    return this;
   }
 
   /**
@@ -193,7 +183,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(String status) {
-    assert status.equals(TRUE) || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
@@ -205,7 +194,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this object
    */
   public DomainCondition withStatus(boolean status) {
-    assert status || type.statusMayBeFalse() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status ? TRUE : FALSE;
     return this;
@@ -224,12 +212,16 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type == this.type;
   }
 
-  public String getIntrospectionUid() {
-    return introspectionUid;
+  boolean isMarkedForDeletion() {
+    return markedForDeletion;
   }
 
-  public void setIntrospectionUid(String introspectionUid) {
-    this.introspectionUid = introspectionUid;
+  void markForDeletion() {
+    this.markedForDeletion = true;
+  }
+
+  void unMarkForDeletion() {
+    this.markedForDeletion = false;
   }
 
   @Override
@@ -244,7 +236,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
     Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
     Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));
-    Optional.ofNullable(introspectionUid).ifPresent(u -> sb.append(" introspection job UID: ").append(u));
     return sb.toString();
   }
 
@@ -255,7 +246,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message)
         .append(type)
         .append(status)
-        .append(introspectionUid)
         .toHashCode();
   }
 
@@ -273,7 +263,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message, rhs.message)
         .append(type, rhs.type)
         .append(status, rhs.status)
-        .append(introspectionUid, rhs.introspectionUid)
         .isEquals();
   }
 
@@ -284,7 +273,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Override
   public int compareTo(DomainCondition o) {
     return type == o.type
-          ? -(lastTransitionTime.compareTo(o.lastTransitionTime))
+          ? o.lastTransitionTime.compareTo(lastTransitionTime)
           : type.compareTo(o.type);
   }
 
@@ -292,7 +281,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .withStringField("message", DomainCondition::getMessage)
         .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)
-        .withStringField("introspectionUid", DomainCondition::getIntrospectionUid)
         .withEnumField("type", DomainCondition::getType);
 
   static ObjectPatch<DomainCondition> getObjectPatch() {
@@ -304,4 +292,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return (newCondition.getType() != getType()) || getType().allowMultipleConditionsWithThisType();
   }
 
+  boolean isSpecifiedFailure(DomainFailureReason reason) {
+    return hasType(FAILED) && reason.label().equals(getReason());
+  }
 }

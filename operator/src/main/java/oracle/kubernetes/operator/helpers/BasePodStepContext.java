@@ -22,17 +22,19 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -65,7 +67,7 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected void addVolumeMountIfMissing(V1Container container) {
     if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
-            volumeMount -> hasMatchingVolumeName(volumeMount))).orElse(true)) {
+        this::hasMatchingVolumeName)).orElse(true)) {
       container.addVolumeMountsItem(
               new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                       .mountPath(getPrimaryContainerMountPath()));
@@ -120,7 +122,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
     Optional.ofNullable(getMedium()).ifPresent(emptyDirVolumeSource::medium);
     Optional.ofNullable(getSizeLimit())
-            .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
+            .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString(sl)));
     return new V1Volume()
         .name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
   }
@@ -193,13 +195,13 @@ public abstract class BasePodStepContext extends StepContextBase {
   private void addConfiguredEnvVarsExcludingAuxImagePaths(TuningParameters tuningParameters, List<V1EnvVar> vars) {
     getConfiguredEnvVars(tuningParameters).stream()
             .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()))
-            .forEach(var -> addIfMissing(vars, var.getName(), var.getValue(), var.getValueFrom()));
+            .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
   }
 
   private void addAuxImagePathsEnvVarIfExists(TuningParameters tuningParameters, List<V1EnvVar> vars) {
     getConfiguredEnvVars(tuningParameters).stream()
             .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
-            .forEach(var -> addIfMissing(vars, var.getName(), var.getValue(), var.getValueFrom()));
+            .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
   }
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
@@ -225,8 +227,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected boolean hasEnvVar(List<V1EnvVar> vars, String name) {
-    for (V1EnvVar var : vars) {
-      if (name.equals(var.getName())) {
+    for (V1EnvVar envVar : vars) {
+      if (name.equals(envVar.getName())) {
         return true;
       }
     }
@@ -246,18 +248,18 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected V1EnvVar findEnvVar(List<V1EnvVar> vars, String name) {
-    for (V1EnvVar var : vars) {
-      if (name.equals(var.getName())) {
-        return var;
+    for (V1EnvVar envVar : vars) {
+      if (name.equals(envVar.getName())) {
+        return envVar;
       }
     }
     return null;
   }
 
   protected void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
-    V1EnvVar var = findEnvVar(vars, name);
-    if (var != null) {
-      var.value(value);
+    V1EnvVar envVar = findEnvVar(vars, name);
+    if (envVar != null) {
+      envVar.value(value);
     } else {
       addEnvVar(vars, name, value);
     }

@@ -20,7 +20,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 public abstract class HttpResponseStep extends Step {
   private static final String RESPONSE = "httpResponse";
 
-  public HttpResponseStep(Step next) {
+  protected HttpResponseStep(Step next) {
     super(next);
   }
 
@@ -37,7 +37,7 @@ public abstract class HttpResponseStep extends Step {
         .orElse(doNext(packet));
   }
 
-  private Throwable getThrowableResponse(Packet packet) {
+  protected Throwable getThrowableResponse(Packet packet) {
     return packet.getSpi(Throwable.class);
   }
 
@@ -57,7 +57,7 @@ public abstract class HttpResponseStep extends Step {
   }
 
   @SuppressWarnings("unchecked")
-  private HttpResponse<String> getResponse(Packet packet) {
+  protected HttpResponse<String> getResponse(Packet packet) {
     return packet.getSpi(HttpResponse.class);
   }
 

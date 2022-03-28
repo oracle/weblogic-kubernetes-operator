@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -42,7 +43,6 @@ import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderI
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
-import oracle.kubernetes.operator.utils.DomainUpgradeUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -62,6 +62,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,8 +73,21 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
+import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
@@ -89,6 +103,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.Matchers.hasLegacyAuxiliaryImageInitContainer;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MODEL_SOURCE_HOME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
@@ -97,23 +112,11 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxilia
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImageVolume;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyDomainMap;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
-import static oracle.kubernetes.operator.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
@@ -127,7 +130,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
-class DomainIntrospectorJobTest {
+class DomainIntrospectorJobTest extends DomainTestUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -163,7 +166,7 @@ class DomainIntrospectorJobTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-  private final DomainUpgradeUtils conversionUtils = new DomainUpgradeUtils();
+  private final SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
 
   private boolean jobDeleted;
 
@@ -324,7 +327,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
         .withMessageContaining("create", "job", NS, "failure reported in test"));
   }
 
@@ -544,7 +547,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
-    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
   }
 
   private void defineCompletedIntrospection() {
@@ -560,19 +563,19 @@ class DomainIntrospectorJobTest {
     defineFailedIntrospection();
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
 
-    assertThat(getUpdatedDomain(), hasCondition(Failed));
+    assertThat(getUpdatedDomain(), hasCondition(FAILED));
   }
 
   @Test
   void whenNewJobSucceededOnFailedDomain_clearFailedCondition() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    defineDomainFailedConditionTrue();
+    getDomain().getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION));
     defineCompletedIntrospection();
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
-    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+    assertThat(getUpdatedDomain(), not(hasCondition(FAILED)));
   }
 
   private void ignoreIntrospectorFailureLogs() {
@@ -616,10 +619,6 @@ class DomainIntrospectorJobTest {
   private void definePreviousFailedIntrospectionWithoutPodLog() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
-  }
-
-  private void defineDomainFailedConditionTrue() {
-    getDomain().getOrCreateStatus().addCondition(new DomainCondition(Failed).withStatus("True"));
   }
 
   @Test
@@ -737,7 +736,7 @@ class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+    assertThat(getDomain(), hasStatus().withReason(KUBERNETES)
           .withMessageContaining("create", "job", NS, "Test this failure"));
   }
 
@@ -986,16 +985,16 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
 
     V1Job job = runStepsAndGetJobs().get(0);
     List<V1Container> podTemplateInitContainers = getPodTemplateInitContainers(job);
 
     assertThat(
             podTemplateInitContainers,
-            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -1013,7 +1012,7 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
 
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
@@ -1031,7 +1030,7 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
@@ -1049,7 +1048,7 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
@@ -1067,18 +1066,17 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(
-                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+               hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
   }
 
   void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
     try {
       testSupport.addDomainPresenceInfo(new DomainPresenceInfo(
-              conversionUtils.readDomain(conversionUtils.convertDomain(new Yaml().dump(map)))));
+              readDomain(schemaConversionUtils.convertDomainSchema(new Yaml().dump(map)))));
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
@@ -1095,12 +1093,11 @@ class DomainIntrospectorJobTest {
             createLegacyDomainMap(
                     PodHelperTestBase.createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(
-                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                            "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+               hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT));
   }
 
   @Test
@@ -1118,9 +1115,9 @@ class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(
-                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                             "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
-                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                    hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
                             "wdt-image2:v1",
                             "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(4));
