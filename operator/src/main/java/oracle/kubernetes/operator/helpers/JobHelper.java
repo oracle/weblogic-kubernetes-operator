@@ -14,6 +14,7 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -23,7 +24,9 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.IntrospectionStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -220,7 +223,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
@@ -235,6 +238,70 @@ public class JobHelper {
       private String jobDescription(@Nonnull V1Job job) {
         return "found introspection job " + job.getMetadata().getName()
                          + ", started at " + job.getMetadata().getCreationTimestamp();
+      }
+
+      private boolean isJobOutdated(V1Job job) {
+        return Optional.ofNullable(job).map(this::hasSignificantSpecChanges).orElse(false);
+      }
+
+      private boolean hasSignificantSpecChanges(V1Job job) {
+        return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
+      }
+
+      private boolean hasImageChanged(@Nonnull V1Job job) {
+        return getImageFromJob(job).map(this::isImageDifferentFromContextJobModel).orElse(false);
+      }
+
+      private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
+        return getAuxiliaryImageFromJob(job)
+            .map(this::isAuxiliaryImageDifferentFromContextJobModel).orElse(false);
+      }
+
+      Optional<String> getImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getImageFromPodSpec);
+      }
+
+      private boolean isImageDifferentFromContextJobModel(@Nonnull String image) {
+        return !image.equals(getJobModelPodSpecImage());
+      }
+
+      private boolean isAuxiliaryImageDifferentFromContextJobModel(@Nonnull String auxiliaryImage) {
+        return !auxiliaryImage.equals(getJobModelPodSpecAuxiliaryImage());
+      }
+
+      Optional<String> getAuxiliaryImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getAuxiliaryImageFromPodSpec);
+      }
+
+      Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
+        return Optional.ofNullable(job)
+            .map(V1Job::getSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec);
+      }
+
+      @Nullable
+      String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getContainer(pod)
+            .map(V1Container::getImage)
+            .orElse(null);
+      }
+
+      @Nullable
+      String getAuxiliaryImageFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getAuxiliaryContainer(pod)
+            .map(V1Container::getImage)
+            .orElse(null);
+      }
+
+      @Nullable
+      String getJobModelPodSpecImage() {
+        return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
+      }
+
+      @Nullable
+      String getJobModelPodSpecAuxiliaryImage() {
+        return Optional.ofNullable(getJobModelPodSpec()).map(this::getAuxiliaryImageFromPodSpec).orElse(null);
       }
 
       private boolean isKnownFailedJob(V1Job job) {

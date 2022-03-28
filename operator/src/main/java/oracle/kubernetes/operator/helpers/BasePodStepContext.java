@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -310,5 +311,17 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected String getMainContainerName() {
     return KubernetesConstants.WLS_CONTAINER_NAME;
+  }
+
+  protected boolean isAuxiliaryContainer(V1Container c) {
+    return Optional.ofNullable(c.getName()).map(this::isAuxiliaryContainerName).orElse(false);
+  }
+
+  private boolean isAuxiliaryContainerName(@Nonnull String name) {
+    return name.startsWith(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX);
+  }
+
+  protected Optional<V1Container> getAuxiliaryContainer(V1PodSpec v1PodSpec) {
+    return v1PodSpec.getInitContainers().stream().filter(this::isAuxiliaryContainer).findFirst();
   }
 }
