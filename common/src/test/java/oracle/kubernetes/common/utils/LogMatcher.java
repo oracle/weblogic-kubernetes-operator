@@ -6,16 +6,17 @@ package oracle.kubernetes.common.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-public class LogMatcher
-    extends org.hamcrest.TypeSafeDiagnosingMatcher<
-        Collection<LogRecord>> {
+public class LogMatcher extends TypeSafeDiagnosingMatcher<Collection<LogRecord>> {
 
   private String expectedMessage;
   private Level expectedLevel;
@@ -44,8 +45,8 @@ public class LogMatcher
     return new LogMatcher(Level.INFO, expectedMessage, expectedParameters);
   }
 
-  public static LogMatcher containsWarning(String expectedMessage) {
-    return new LogMatcher(Level.WARNING, expectedMessage);
+  public static LogMatcher containsWarning(String expectedMessage, Object... expectedParameters) {
+    return new LogMatcher(Level.WARNING, expectedMessage, expectedParameters);
   }
 
   public static LogMatcher containsSevere(String expectedMessage) {
@@ -106,7 +107,11 @@ public class LogMatcher
   private boolean matches(LogRecord item) {
     return item.getLevel() == expectedLevel
         && item.getMessage().equals(expectedMessage)
-        && (expectedParameters == null || containsAll(Arrays.asList(item.getParameters()), expectedParameters));
+        && (expectedParameters == null || containsAll(getParametersAsList(item), expectedParameters));
+  }
+
+  private List<Object> getParametersAsList(LogRecord item) {
+    return Optional.ofNullable(item.getParameters()).map(Arrays::asList).orElse(Collections.emptyList());
   }
 
   private boolean containsAll(List<Object> actualParameters, Object[] expectedParameters) {

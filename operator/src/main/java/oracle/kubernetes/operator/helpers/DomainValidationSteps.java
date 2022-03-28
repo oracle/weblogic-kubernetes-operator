@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -41,6 +42,9 @@ public class DomainValidationSteps {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
+
+  private DomainValidationSteps() {
+  }
 
   /**
    * Returns a chain of steps to validate the domain in the current packet.
@@ -241,11 +245,10 @@ public class DomainValidationSteps {
         Integer conflictPort, DomainPresenceInfo info) {
       if (cluster != null) {
         logAndAddValidationWarning(info, MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
-            // Note: Using Integer.toString because default logger behavior formats with commas, e.g. "7,001"
-            Integer.toString(port), cluster.getClusterName(), Integer.toString(conflictPort));
+            port, cluster.getClusterName(), conflictPort);
       } else {
         logAndAddValidationWarning(info, MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER,
-            Integer.toString(port), serverConfig.getName(), Integer.toString(conflictPort));
+            port, serverConfig.getName(), conflictPort);
       }
     }
 
@@ -264,7 +267,8 @@ public class DomainValidationSteps {
           ? next
           : Optional.ofNullable((message))
               .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureSteps(m), next))
-              .orElse(next);
+              .orElse(Step.chain(
+                    DomainStatusUpdater.createRemoveSelectedFailuresStep(DomainFailureReason.TOPOLOGY_MISMATCH), next));
     }
   }
 

@@ -20,6 +20,7 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
@@ -127,13 +128,14 @@ public class DomainStatus {
 
   /**
    * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
-   * conditions according to the domain rules.
+   * conditions according to the domain rules. Any existing matching condition will be preserved and unmarked.
    *
    * @param newCondition the condition to add.
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
+      unmarkMatchingCondition(newCondition);
       return this;
     }
 
@@ -146,6 +148,10 @@ public class DomainStatus {
     Collections.sort(conditions);
     setReasonAndMessage();
     return this;
+  }
+
+  private void unmarkMatchingCondition(DomainCondition newCondition) {
+    conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
   }
 
   private void setReasonAndMessage() {
@@ -206,6 +212,24 @@ public class DomainStatus {
   public void removeCondition(@Nonnull DomainCondition condition) {
     conditions.remove(condition);
     setReasonAndMessage();
+  }
+
+  /**
+   * Marks any failures in the status with the specified reason as ready to be removed.
+   * Adding a failure will unmark any matching one, allowing it to be preserved.
+   * @see #removeMarkedFailures()
+   * @param reason the reason for the failure
+   */
+  public void markFailuresForRemoval(DomainFailureReason reason) {
+    conditions.stream().filter(c -> c.isSpecifiedFailure(reason)).forEach(DomainCondition::markForDeletion);
+  }
+
+  /**
+   * Removes any failures currently marked.
+   * @see #markFailuresForRemoval(DomainFailureReason) 
+   */
+  public void removeMarkedFailures() {
+    removeConditionsMatching(DomainCondition::isMarkedForDeletion);
   }
 
   /**

@@ -93,7 +93,6 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -128,6 +127,7 @@ import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
@@ -1477,7 +1477,7 @@ class DomainProcessorTest {
   void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
-            Arrays.asList(INDEPENDENT_SERVER));
+          List.of(INDEPENDENT_SERVER));
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
     domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -1496,7 +1496,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"

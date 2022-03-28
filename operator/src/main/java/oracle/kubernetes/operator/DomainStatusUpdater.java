@@ -184,10 +184,27 @@ public class DomainStatusUpdater {
   }
 
   /**
+   * Asynchronous step to remove selected failure conditions.
+   */
+  public static Step createRemoveSelectedFailuresStep(DomainFailureReason... selectedReasons) {
+    return new RemoveSelectedFailuresStep(Arrays.asList(selectedReasons));
+  }
+
+  /**
+   * Asynchronous step to remove failure conditions other than those specified.
+   * @param excludedReasons the failure reasons not to be removed; others will be.
+   */
+  public static Step createRemoveUnSelectedFailuresStep(DomainFailureReason... excludedReasons) {
+    List<DomainFailureReason> selectedReaons = new ArrayList<>(Arrays.asList(DomainFailureReason.values()));
+    Arrays.stream(excludedReasons).forEach(selectedReaons::remove);
+    return new RemoveSelectedFailuresStep(selectedReaons);
+  }
+
+  /**
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep() {
-    return new RemoveFailuresStep();
+    return createRemoveUnSelectedFailuresStep(TOPOLOGY_MISMATCH);
   }
 
   /**
@@ -250,7 +267,7 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createTopologyMismatchFailureSteps(String message) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message);
+    return new FailureStep(TOPOLOGY_MISMATCH, message).removingOldFailures(TOPOLOGY_MISMATCH);
   }
 
   /**
@@ -1110,14 +1127,18 @@ public class DomainStatusUpdater {
     }
   }
 
-  public static class RemoveFailuresStep extends DomainStatusUpdaterStep {
+  static class RemoveSelectedFailuresStep extends DomainStatusUpdaterStep {
 
-    private RemoveFailuresStep() {
+    private final List<DomainFailureReason> selectedReasons;
+
+    private RemoveSelectedFailuresStep(List<DomainFailureReason> selectedReasons) {
+      this.selectedReasons = selectedReasons;
     }
 
     @Override
     void modifyStatus(DomainStatus status) {
-      status.removeConditionsWithType(FAILED);
+      selectedReasons.forEach(status::markFailuresForRemoval);
+      status.removeMarkedFailures();
     }
   }
 
@@ -1214,7 +1235,8 @@ public class DomainStatusUpdater {
   static class FailureStep extends DomainStatusUpdaterStep implements StepWithRetryCount {
     private final DomainFailureReason reason;
     private final String message;
-    String jobUid;
+    private String jobUid;
+    private final List<DomainFailureReason> removingReasons = new ArrayList<>();
 
     @Override
     public FailureStep forIntrospection(@Nullable V1Job introspectorJob) {
@@ -1242,7 +1264,12 @@ public class DomainStatusUpdater {
       return new FailureStatusUpdaterContext(packet, this, reason, message, jobUid);
     }
 
-    static class FailureStatusUpdaterContext extends DomainStatusUpdaterContext {
+    public Step removingOldFailures(DomainFailureReason... removingReasons) {
+      this.removingReasons.addAll(Arrays.asList(removingReasons));
+      return this;
+    }
+
+    class FailureStatusUpdaterContext extends DomainStatusUpdaterContext {
       private DomainFailureReason reason;
       private String message;
       private final String jobUid;
@@ -1257,6 +1284,7 @@ public class DomainStatusUpdater {
 
       @Override
       void modifyStatus(DomainStatus status) {
+        removingReasons.forEach(status::markFailuresForRemoval);
         if (hasJustGotFatalIntrospectorError(message)) {
           this.reason = ABORTED;
           this.message = FATAL_INTROSPECTOR_ERROR_MSG + message;
@@ -1264,6 +1292,7 @@ public class DomainStatusUpdater {
           this.reason = ABORTED;
         }
         addFailure(status, reason, message);
+        status.removeMarkedFailures();
 
         if (jobUid != null) {
           addRetryInfoToStatusMessage(status, jobUid, status.getMessage());
