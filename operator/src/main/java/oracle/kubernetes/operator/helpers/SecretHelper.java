@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.common.logging.MessageKeys.SECRET_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
-import static oracle.kubernetes.operator.helpers.SecretType.WebLogicCredentials;
+import static oracle.kubernetes.operator.helpers.SecretType.WEBLOGIC_CREDENTIALS;
 
 /** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator. */
 public class SecretHelper {
@@ -89,7 +89,7 @@ public class SecretHelper {
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
         if (callResponse.getStatusCode() == HTTP_NOT_FOUND) {
           LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
-          LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WebLogicCredentials);
+          LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WEBLOGIC_CREDENTIALS);
           return doNext(packet);
         }
         return super.onFailure(packet, callResponse);

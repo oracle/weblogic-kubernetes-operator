@@ -39,6 +39,10 @@
       <artifactId>snakeyaml</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.meterware.simplestub</groupId>
       <artifactId>simplestub</artifactId>
       <scope>test</scope>

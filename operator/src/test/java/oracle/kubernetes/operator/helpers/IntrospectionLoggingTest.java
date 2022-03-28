@@ -26,7 +26,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTO
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -109,7 +109,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(updatedDomain.getStatus().getMessage(),
             equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
   }
@@ -150,7 +150,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
         equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));

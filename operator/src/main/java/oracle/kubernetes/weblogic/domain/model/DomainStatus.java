@@ -35,8 +35,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Rolling;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -151,7 +151,7 @@ public class DomainStatus {
   private void setReasonAndMessage() {
     DomainCondition selected = conditions.stream()
           .filter(this::maySupplyStatusMessage)
-          .findFirst().orElse(new DomainCondition(Failed));
+          .findFirst().orElse(new DomainCondition(FAILED));
     reason = selected.getReason();
     message = selected.getMessage();
   }
@@ -270,7 +270,7 @@ public class DomainStatus {
    * Returns true if the status has a condition indicating that the domain is currently rolling.
    */
   public boolean isRolling() {
-    return conditions.stream().anyMatch(c -> c.getType().equals(Rolling));
+    return conditions.stream().anyMatch(c -> c.getType().equals(ROLLING));
   }
 
   /**

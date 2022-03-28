@@ -17,7 +17,7 @@ public class CommonConstants {
   public static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
 
   public static final String LATEST_IMAGE_SUFFIX = ":latest";
-  public static final String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
-  public static final String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
+  public static final String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.ALWAYS.label();
+  public static final String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IF_NOT_PRESENT.label();
 
 }

@@ -48,7 +48,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -318,7 +318,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
+    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.label()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 

@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
+import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -188,7 +189,7 @@ public class AuthorizationProxy {
       resourceAttributes.setName(resourceName);
     }
 
-    if (Scope.namespace == scope) {
+    if (Scope.NAMESPACE == scope) {
       resourceAttributes.setNamespace(namespaceName);
     }
     LOGGER.exiting(resourceAttributes);
@@ -208,18 +209,34 @@ public class AuthorizationProxy {
     }
   }
 
-  public enum Operation {
-    get,
-    list,
-    create,
-    update,
-    patch,
-    watch,
-    delete,
-    deletecollection
+  public enum Operation implements Labeled {
+    GET("get"),
+    LIST("list"),
+    CREATE("create"),
+    UPDATE("update"),
+    PATCH("patch"),
+    WATCH("watch"),
+    DELETE("delete"),
+    DELETECOLLECTION("deletecollection");
+
+    private final String label;
+
+    Operation(String label) {
+      this.label = label;
+    }
+
+    @Override
+    public String label() {
+      return label;
+    }
+
+    @Override
+    public String toString() {
+      return label();
+    }
   }
 
-  public enum Resource {
+  public enum Resource implements Labeled {
     CONFIGMAPS("configmaps", ""),
     PODS("pods", ""),
     LOGS("pods", "log", ""),
@@ -260,10 +277,36 @@ public class AuthorizationProxy {
     public String getApiGroup() {
       return apiGroup;
     }
+
+    @Override
+    public String label() {
+      return name();
+    }
+
+    @Override
+    public String toString() {
+      return label();
+    }
   }
 
-  public enum Scope {
-    namespace,
-    cluster
+  public enum Scope implements Labeled {
+    NAMESPACE("namespace"),
+    CLUSTER("cluster");
+
+    private final String label;
+
+    Scope(String label) {
+      this.label = label;
+    }
+
+    @Override
+    public String label() {
+      return label;
+    }
+
+    @Override
+    public String toString() {
+      return label();
+    }
   }
 }

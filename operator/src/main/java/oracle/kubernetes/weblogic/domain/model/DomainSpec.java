@@ -698,11 +698,11 @@ public class DomainSpec extends BaseConfiguration {
 
   private DomainSourceType inferDomainSourceType() {
     if (getModel() != null) {
-      return DomainSourceType.FromModel;
+      return DomainSourceType.FROM_MODEL;
     } else if (isDomainHomeInImage()) {
-      return DomainSourceType.Image;
+      return DomainSourceType.IMAGE;
     } else {
-      return DomainSourceType.PersistentVolume;
+      return DomainSourceType.PERSISTENT_VOLUME;
     }
   }
 

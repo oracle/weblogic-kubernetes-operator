@@ -35,10 +35,10 @@ public class AuthenticationProxy {
       boolean allowed =
           authorizationProxy.check(
               principal,
-              AuthorizationProxy.Operation.create,
+              AuthorizationProxy.Operation.CREATE,
               AuthorizationProxy.Resource.TOKENREVIEWS,
               null,
-              namespace == null ? AuthorizationProxy.Scope.cluster : AuthorizationProxy.Scope.namespace,
+              namespace == null ? AuthorizationProxy.Scope.CLUSTER : AuthorizationProxy.Scope.NAMESPACE,
               namespace);
       if (allowed) {
         result = new CallBuilder().createTokenReview(prepareTokenReview(token));
