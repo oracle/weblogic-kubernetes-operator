@@ -602,17 +602,19 @@ public class CommonTestUtils {
 
   /**
    * verify the system resource configuration using REST API.
+   * @param adminRouteHost only required for OKD env. null otherwise
    * @param nodePort admin node port
    * @param resourcesType type of the resource
    * @param resourcesName name of the resource
    * @param expectedStatusCode expected status code
    */
-  public static void verifySystemResourceConfiguration(int nodePort, String resourcesType,
+  public static void verifySystemResourceConfiguration(String adminRouteHost, int nodePort, String resourcesType,
                                                        String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://")
+        .append(getHostAndPort(adminRouteHost, nodePort))
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)

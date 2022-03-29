@@ -364,13 +364,16 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
-    verifySystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources", "TestDataSource", "200");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                      "JDBCSystemResources", "TestDataSource", "200");
     logger.info("Found the JDBCSystemResource configuration");
 
-    verifySystemResourceConfiguration(adminServiceNodePort,"JMSSystemResources", "TestClusterJmsModule", "200");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                      "JMSSystemResources", "TestClusterJmsModule", "200");
     logger.info("Found the JMSSystemResource configuration");
 
-    verifySystemResourceConfiguration(adminServiceNodePort,"WLDFSystemResources", "TestWldfModule", "200");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                      "WLDFSystemResources", "TestWldfModule", "200");
     logger.info("Found the WLDFSystemResource configuration");
 
     verifyJdbcRuntime("TestDataSource", "jdbc:oracle:thin:localhost");
@@ -436,8 +439,10 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    verifySystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources", "TestDataSource", "404");
-    verifySystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources", "TestClusterJmsModule", "404");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JDBCSystemResources", "TestDataSource", "404");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JMSSystemResources", "TestClusterJmsModule", "404");
   }
 
   /**
@@ -501,10 +506,12 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
-    verifySystemResourceConfiguration(adminServiceNodePort,"JDBCSystemResources", "TestDataSource2", "200");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JDBCSystemResources", "TestDataSource2", "200");
     logger.info("Found the JDBCSystemResource configuration");
 
-    verifySystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources", "TestClusterJmsModule2", "200");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JMSSystemResources", "TestClusterJmsModule2", "200");
     logger.info("Found the JMSSystemResource configuration");
 
     // check JMS logs are written on PV
