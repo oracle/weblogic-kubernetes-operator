@@ -5,11 +5,13 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
@@ -322,6 +324,9 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected Optional<V1Container> getAuxiliaryContainer(V1PodSpec v1PodSpec) {
-    return v1PodSpec.getInitContainers().stream().filter(this::isAuxiliaryContainer).findFirst();
+    return Stream.ofNullable(v1PodSpec.getInitContainers())
+        .flatMap(Collection::stream)
+        .filter(this::isAuxiliaryContainer)
+        .findFirst();
   }
 }
