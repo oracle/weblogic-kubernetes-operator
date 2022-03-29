@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUserna
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -248,8 +249,8 @@ public class ItFmwSample {
 
   private void createPvPvc(String domainUid) {
 
-    String pvName = domainUid + "-weblogic-sample-pv";
-    String pvcName = domainUid + "-weblogic-sample-pvc";
+    String pvName = getUniquePvOrPvcName(domainUid + "-weblogic-sample-pv");
+    String pvcName = getUniquePvOrPvcName(domainUid + "-weblogic-sample-pvc");
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
