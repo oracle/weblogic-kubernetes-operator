@@ -19,6 +19,7 @@
     <properties>
         <skipITs>false</skipITs>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+        <test.groups>wko-srg</test.groups>
 
         <!-- integration tests configuration -->
         <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
@@ -180,6 +181,7 @@
                     <excludes>
                         <exclude/>
                     </excludes>
+                    <groups>${test.groups}</groups>
                 </configuration>
                 <executions>
                     <execution>

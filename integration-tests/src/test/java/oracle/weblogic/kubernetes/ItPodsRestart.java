@@ -30,6 +30,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
@@ -135,6 +136,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing the resources")
+  @Tag("wko-srg")
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
