@@ -62,7 +62,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -1059,12 +1058,12 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    checkCluster = new StringBuffer("status=$(curl --user ")
-        .append(ADMIN_USERNAME_DEFAULT)
+    checkCluster = new StringBuffer("status=$(curl --user ");
+    checkCluster.append(ADMIN_USERNAME_DEFAULT)
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)
         .append(" ")
-        .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
@@ -1105,18 +1104,18 @@ class ItMiiUpdateDomainConfig {
   private void verifyJdbcRuntime(String resourcesName, String expectedOutput) {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
 
+    ExecResult result = null;
     curlString = new StringBuffer("curl --user ")
-        .append(ADMIN_USERNAME_DEFAULT)
-        .append(":")
-        .append(ADMIN_PASSWORD_DEFAULT)
-        .append(" ")
-        .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-        .append("/management/wls/latest/datasources/id/")
-        .append(resourcesName)
-        .append("/")
-        .append(" --silent --show-error ");
+         .append(ADMIN_USERNAME_DEFAULT)
+         .append(":")
+         .append(ADMIN_PASSWORD_DEFAULT)
+         .append(" ")
+         .append("http://" + getHostAndPort(adminSvcExtHost, adminServiceNodePort))
+         .append("/management/wls/latest/datasources/id/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ");
     logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
     verifyCommandResultContainsMsg(new String(curlString), expectedOutput);
   }
