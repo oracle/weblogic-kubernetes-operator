@@ -1,7 +1,7 @@
 ---
 title: "REST services"
 date: 2019-02-23T17:08:32-05:00
-weight: 50
+weight: 8
 description: "Use the operator's REST services."
 ---
 
@@ -9,6 +9,7 @@ description: "Use the operator's REST services."
 
 - [Introduction](#introduction)
 - [Configure the operator's external REST HTTPS interface](#configure-the-operators-external-rest-https-interface)
+- [Updating operator external certificates](#updating-operator-external-certificates)
 - [Use the operator's REST services](#use-the-operators-rest-services)
    - [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)
    - [Sample SSL certificate and private key for the REST interface](#sample-ssl-certificate-and-private-key-for-the-rest-interface)
@@ -32,10 +33,46 @@ To enable the external REST interface, configure these values in a custom config
 
 * Set `externalRestEnabled` to `true`.
 * Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
-  For more information about the REST identity secret, see [Updating REST certificates]({{< relref "/userguide/managing-operators/the-rest-certificates.md" >}}).
+  For more information about the REST identity secret, see [Updating REST certificates](#updating-operator-external-certificates).
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
 **Note**: A node port is a security risk because the port may be publicly exposed to the Internet in some environments. If you need external access to the REST port, then consider alternatives, such as providing access through your load balancer or using Kubernetes port forwarding.
+
+#### Updating operator external certificates
+
+If the operator needs to update the external certificate and key currently
+being used or was installed without an external REST API SSL/TLS identity,
+then the `helm upgrade` command is used to restart the operator
+with the new or updated Kubernetes `tls secret` that contains
+the desired certificates.
+
+The operator _requires_ a restart in order to begin using the new or updated external
+certificate. The Helm `--recreate-pods` flag is used to cause the existing
+Kubernetes Pod to be terminated and a new pod to be started with the updated configuration.
+
+For example, if the operator was installed with the Helm release name `weblogic-operator`
+in the namespace `weblogic-operator-ns` and the Kubernetes `tls secret` is named
+`weblogic-operator-cert`, the following commands can be used to update the operator
+certificates and key:
+
+```shell
+$ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \
+  --cert=<path-to-certificate> --key=<path-to-private-key>
+```
+
+```shell
+$ helm get values weblogic-operator -n weblogic-operator-ns
+```
+```shell
+$ helm -n weblogic-operator-ns upgrade weblogic-operator weblogic-operator/weblogic-operator \
+  --wait --recreate-pods --reuse-values \
+  --set externalRestEnabled=true \
+  --set externalRestIdentitySecret=weblogic-operator-cert
+```
+
+**Additional resources**:
+* [REST interface configuration settings]({{<relref "/userguide/managing-operators/using-helm#rest-interface-configuration">}})
+* [Sample to create external certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
 
 
 #### Use the operator's REST services
