@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersi
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithWDTInstallOnly;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -249,7 +248,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid1, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    Domain domainCR = createDomainResource40(domainUid1, domainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid1, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage1,
@@ -458,7 +457,7 @@ class ItMiiAuxiliaryImage {
     // and other with sourceWDTInstallHome set to none
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
-    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
         miiAuxiliaryImage1, miiAuxiliaryImage4);
@@ -480,7 +479,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images with default sourceWDTInstallHome for both images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
-    Domain domainCR2 = createDomainResource40(domainUid + "1", domainNamespace,
+    Domain domainCR2 = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid + "1", domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage1,
@@ -536,7 +535,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, miiAuxiliaryImage5);
-    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
         miiAuxiliaryImage5);
@@ -660,7 +659,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domainUid, miiAuxiliaryImage8);
-    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
             encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
             miiAuxiliaryImage8);
@@ -727,7 +726,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domainUid, miiAuxiliaryImage12);
-    final Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    final Domain domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
             encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
             miiAuxiliaryImage12);
@@ -773,7 +772,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domainUid, miiAuxiliaryImage12);
-    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
             encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePathCustom,
             miiAuxiliaryImage12);
@@ -784,11 +783,15 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
-   * where the wdtModelHome is placed
-   * under the wdtInstallHome directory, or same directory. Ditto for vice-versa.
-   * For example wdtModelHome is "/aux/y/models" and wdtInstallHome is "/aux" or vice-versa.
-   * Verify domain was created and all servers are running.
+   * 1.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtModelHome ("/aux/y/models") is placed
+   * under the wdtInstallHome (/aux") directory. Verify domain creation.
+   * 2.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtInstallHome is ("/aux") and wdtModelHome is (/aux/models")
+   * Verify domain creation.
+   * 3.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtInstallHome is ("/aux/y") and wdtInstallHome is (/aux/models")
+   * Verify domain creation.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with"
@@ -842,7 +845,7 @@ class ItMiiAuxiliaryImage {
     // and other with sourceWDTInstallHome set to none
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage4);
-    Domain domainCR1 = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR1 = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
         miiAuxiliaryImage1, miiAuxiliaryImage2);
@@ -898,7 +901,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid2, errorPathAuxiliaryImage1);
 
-    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         errorPathAuxiliaryImage1);
@@ -966,7 +969,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid2, errorPathAuxiliaryImage2);
 
-    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         errorPathAuxiliaryImage2);
@@ -1037,7 +1040,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid2, errorPathAuxiliaryImage3);
-    Domain domainCR = createDomainResource40(domainUid2, errorpathDomainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid2, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         errorPathAuxiliaryImage3);
@@ -1137,7 +1140,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage9, miiAuxiliaryImage10);
-    Domain domainCR = createDomainResource40(domainUid, wdtDomainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage9,
@@ -1221,7 +1224,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using the auxiliary image that doesn't exist
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1}",
         domainUid, aiThatDoesntExist);
-    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, List.of("cluster-1"), auxiliaryImagePath,
         aiThatDoesntExist + ":" + MII_BASIC_IMAGE_TAG);
@@ -1311,7 +1314,7 @@ class ItMiiAuxiliaryImage {
         "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
   }
 
-  private Domain createDomainResourceWithAuxiliaryImage40(
+  private Domain createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -1323,7 +1326,7 @@ class ItMiiAuxiliaryImage {
       String auxiliaryImagePath,
       String... auxiliaryImageName) {
 
-    return createDomainResourceWithAuxiliaryImage40(
+    return createDomainResourceWithAuxiliaryImage(
             domainResourceName,
             domNamespace,
             baseImageName,
@@ -1337,7 +1340,7 @@ class ItMiiAuxiliaryImage {
             auxiliaryImageName);
   }
 
-  private Domain createDomainResourceWithAuxiliaryImage40(
+  private Domain createDomainResourceWithAuxiliaryImage(
           String domainResourceName,
           String domNamespace,
           String baseImageName,
@@ -1395,7 +1398,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary image13
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domainUid, imageName);
-    Domain domainCR = createDomainResourceWithAuxiliaryImage40(domainUid, domainNamespace,
+    Domain domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
             WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
             encryptionSecretName, replicaCount, wdtInstallPath, wdtModelHomePath,
             List.of("cluster-1"),
