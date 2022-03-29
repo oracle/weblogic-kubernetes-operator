@@ -223,7 +223,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isJobOutdated(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
@@ -240,11 +240,16 @@ public class JobHelper {
                          + ", started at " + job.getMetadata().getCreationTimestamp();
       }
 
-      private boolean isJobOutdated(V1Job job) {
-        return Optional.ofNullable(job).map(this::hasSignificantSpecChanges).orElse(false);
+      private boolean isInProgressJobOutdated(V1Job job) {
+        return hasNotCompleted(job)
+            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
       }
 
-      private boolean hasSignificantSpecChanges(V1Job job) {
+      private boolean hasNotCompleted(V1Job job) {
+        return job != null && !JobWatcher.isComplete(job);
+      }
+
+      private boolean hasAnyImageChanged(V1Job job) {
         return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
       }
 
