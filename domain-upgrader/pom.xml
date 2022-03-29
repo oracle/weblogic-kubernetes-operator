@@ -60,12 +60,12 @@
     <dependency>
       <groupId>oracle.kubernetes</groupId>
       <artifactId>common</artifactId>
-      <version>${version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>oracle.kubernetes</groupId>
       <artifactId>common</artifactId>
-      <version>${version}</version>
+      <version>${project.version}</version>
       <type>test-jar</type>
     </dependency>
     <dependency>
@@ -87,8 +87,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-  </properties>
 </project>
