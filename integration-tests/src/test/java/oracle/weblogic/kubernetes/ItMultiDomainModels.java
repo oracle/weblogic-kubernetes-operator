@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
-@Tag("wko-srg")
+@Tag("wko-wls-srg")
 class ItMultiDomainModels {
 
   // domain constants

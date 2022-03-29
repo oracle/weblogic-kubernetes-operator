@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
-@Tag("wko-srg")
+@Tag("wko-wls-srg")
 class ItPodsRestart {
 
   private static String miiImage;

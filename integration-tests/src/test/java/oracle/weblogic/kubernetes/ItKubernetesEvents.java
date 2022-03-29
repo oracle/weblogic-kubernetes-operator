@@ -137,7 +137,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
-@Tag("wko-srg")
+@Tag("wko-wls-srg")
 class ItKubernetesEvents {
 
   private static String opNamespace = null;
