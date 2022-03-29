@@ -1,7 +1,7 @@
 ---
 title: "Prepare for installation"
 date: 2021-12-05T16:47:21-05:00
-weight: 10
+weight: 2
 description: "Consult these preparation steps, strategy choices, and prequisites prior to installing an operator."
 ---
 

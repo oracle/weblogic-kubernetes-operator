@@ -1,7 +1,7 @@
 ---
 title: "Overview"
 date: 2021-12-05T16:47:21-05:00
-weight: 8
+weight: 1
 description: "An introduction to the operator runtime."
 ---
 

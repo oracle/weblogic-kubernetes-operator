@@ -1,7 +1,7 @@
 ---
 title: "Installation and upgrade"
 date: 2019-02-23T16:47:21-05:00
-weight: 20
+weight: 3
 description: "How to install, upgrade, and uninstall the operator."
 ---
 
