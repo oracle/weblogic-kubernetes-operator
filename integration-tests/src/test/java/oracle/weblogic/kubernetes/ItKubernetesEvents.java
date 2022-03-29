@@ -137,6 +137,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
+@Tag("wko-srg")
 class ItKubernetesEvents {
 
   private static String opNamespace = null;
@@ -227,7 +228,6 @@ class ItKubernetesEvents {
   @Order(1)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
-  @Tag("wko-srg")
   void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");

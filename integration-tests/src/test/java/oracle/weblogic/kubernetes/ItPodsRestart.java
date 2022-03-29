@@ -84,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
+@Tag("wko-srg")
 class ItPodsRestart {
 
   private static String miiImage;
@@ -136,7 +137,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing the resources")
-  @Tag("wko-srg")
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
