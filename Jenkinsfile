@@ -281,7 +281,7 @@ pipeline {
                             def knd = params.KIND_VERSION
                             def k8s = params.KUBE_VERSION
                             if (knd != null && k8s != null) {
-                                def k8s_map = kind_k8s_map.get(knd);
+                                def k8s_map = kind_k8s_map.get(knd)
                                 if (k8s_map != null) {
                                     _kind_image = k8s_map.get(k8s)
                                 }
@@ -534,7 +534,7 @@ EOF
                             if [ "${IT_TEST}" != '**/It*' ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
-                                echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItResilience,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
