@@ -25,7 +25,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -60,13 +59,11 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The current class verifies various use cases related to domainNamespaceSelectionStrategy.
  * For more detail regarding the feature, please refer to
- * https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/docs-source/content/
- * userguide/managing-operators/using-the-operator/using-helm.md#overall-operator-information.
+ * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
@@ -213,78 +210,6 @@ class ItDedicatedMode {
         true, externalRestHttpsPort, opNamespace, opNamespace + "-sa",
         false, "", "", 0, "",
         "", null, null);
-  }
-
-  /**
-   * Test when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart and
-   * the CRD with a lower than expected version is present, Operator fails with error
-   * if it has no permission to overwrite the CRD.
-   */
-  @Test
-  @Order(4)
-  @Disabled("Disable the test because the Operator has permission to overwrite the CRD")
-  @DisplayName("Create a CRD with a lower than expected version and verify that Operator fails with error")
-  void testDedicatedModeNlowerVersionCrd() {
-    // delete existing CRD
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
-
-    // install a lower version of CRD, v2.6.0
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/domain-v1beta1-crdv7-260.yaml"))
-        .execute();
-
-    try {
-      // install latest version of operator and verify
-      logger.info("Installing and verifying operator");
-      installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-          false, 0, opHelmParams, domainNamespaceSelectionStrategy,
-          false, domain2Namespace);
-
-      // we expect installAndVerifyOperator fails with a lower than expected version of CRD
-      fail("Installing the Operator should fail with a lower than expected version of CRD");
-    } catch (Exception ex) {
-      logger.info("Installing the Operator with a lower than expected version of CRD failed as expected");
-    } finally {
-      // restore the test env
-      uninstallOperatorAndVerify();
-    }
-  }
-
-  /**
-   * Test when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart and
-   * the CRD is not present or is deleted, Operator fails with error if it has no permission to create the CRD.
-   */
-  @Test
-  @Order(5)
-  @Disabled("Disable the test because the Operator has permission to create the CRD")
-  @DisplayName("Delete the CRD and verify that Operator fails with error")
-  void testDedicatedModeNoCrd() {
-    // delete existing CRD
-    logger.info("Delete existing CRD");
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
-
-    try {
-      // install and verify operator
-      logger.info("Installing and verifying operator");
-      installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-          false, 0, opHelmParams, domainNamespaceSelectionStrategy,
-          false, domain2Namespace);
-
-      // we expect installAndVerifyOperator fails when the CRD misses
-      fail("Installing the Operator should fail when the CRD misses");
-    } catch (Exception ex) {
-      logger.info("Installing the Operator failed as expected when the CRD misses");
-    } finally {
-      // restore the test env
-      uninstallOperatorAndVerify();
-    }
   }
 
   private void createDomain(String domainNamespace) {
