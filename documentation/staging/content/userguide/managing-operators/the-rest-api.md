@@ -42,7 +42,7 @@ To enable the external REST interface, configure these values in a custom config
 
 If the operator needs to update the external certificate and key currently
 being used or was installed without an external REST API SSL/TLS identity,
-the `helm upgrade` command is used to restart the operator
+then the `helm upgrade` command is used to restart the operator
 with the new or updated Kubernetes `tls secret` that contains
 the desired certificates.
 
