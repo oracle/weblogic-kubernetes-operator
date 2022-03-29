@@ -188,7 +188,7 @@ When upgrading the operator:
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
 
-This rationale for this is because, even with a new version of the Helm chart,
+The rationale for this is because, even with a new version of the Helm chart,
 `--reuse-values` will retain the previous image value from when it was installed.  To upgrade,
 you must override the image value to use the new operator image version.
 
