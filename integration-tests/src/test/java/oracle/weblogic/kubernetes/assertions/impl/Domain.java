@@ -18,13 +18,11 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -32,6 +30,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -173,13 +172,27 @@ public class Domain {
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
 
-    LoggingFacade logger = getLogger();
+    return adminNodePortAccessible(nodePort, userName, password, getHostAndPort(null, nodePort));
+  }
 
+  /**
+   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
+   * using the node port and validate its the Home page.
+   *
+   * @param nodePort the node port that needs to be tested for access
+   * @param userName WebLogic administration server user name
+   * @param password WebLogic administration server password
+   * @param routeHost For OKD - name of the route for external admin service. Can be empty for non OKD env
+   * @return true if login to WebLogic administration console is successful
+   * @throws IOException when connection to console fails
+   */
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
+      throws IOException {
+
+    String hostAndPort = getHostAndPort(routeHost, nodePort);
     String consoleUrl = new StringBuffer()
         .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(nodePort)
+        .append(hostAndPort)
         .append("/console/login/LoginForm.jsp").toString();
 
     getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
@@ -192,7 +205,7 @@ public class Domain {
     HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
     getLogger().info("Clicking login button");
     HtmlPage home = submit.click();
-    assertTrue(home.asText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
+    assertTrue(home.asNormalizedText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
     getLogger().info("Console login passed");
     return true;
   }
