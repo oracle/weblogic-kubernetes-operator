@@ -90,7 +90,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * To test ELK Stack used in Operator env, this Elasticsearch test does
  * 1. Install Kibana/Elasticsearch.
- * 2. Install and start Operators with ELK Stack enabled.
+ * 2. Install and start Operators with ELK Stack enabled,
+ *    one used to test createLogStashConfigMap = true and another one is used to
+ *    test createLogStashConfigMap = false.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
  *    Kibana and Logstash created in the Operator pod successfully.
  * 4. Install WebLogic Logging Exporter in all WebLogic server pods by
@@ -103,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       stores them in its repository correctly.
  *    2) Using WebLogic Logging Exporter, WebLogic server Logs can be integrated to
  *       ELK Stack in the same pod that the domain is running on.
- *    2) Users can update logstash configuration by updating the configmap
+ *    3) Users can update logstash configuration by updating the configmap
  *       weblogic-operator-logstash-cm instead of rebuilding operator image
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
@@ -367,7 +369,7 @@ class ItElasticLogging {
   }
 
   /**
-   * Test when new variable createLogStashConfigMap sets to true, a configMap named weblogic-operator-logstash-cm
+   * Test when variable createLogStashConfigMap sets to true, a configMap named weblogic-operator-logstash-cm
    * is created and users can update logstash configuration by updating the configmap
    * instead of rebuilding operator image.
    */
@@ -400,8 +402,8 @@ class ItElasticLogging {
   }
 
   /**
-   * Test that users can config and create their own configMap weblogic-operator-logstash-cm
-   * when new variable createLogStashConfigMap sets to false.
+   * Test that users are able to use their own configMap weblogic-operator-logstash-cm
+   * to create the Operator when variable createLogStashConfigMap sets to false.
    */
   @Test
   @DisplayName("Test that users can config and create their own configMap "
@@ -592,11 +594,11 @@ class ItElasticLogging {
 
     // wait for logstash config modified and verify
     withStandardRetryPolicy.untilAsserted(
-        () -> assertTrue(copyConfigFrPodAndSearchForString(containerName, replaceStr),
+        () -> assertTrue(copyConfigFromPodAndSearchForString(containerName, replaceStr),
             String.format("Failed to find search string %s", replaceStr)));
   }
 
-  private boolean copyConfigFrPodAndSearchForString(String containerName, String replaceStr) {
+  private boolean copyConfigFromPodAndSearchForString(String containerName, String replaceStr) {
     String sourceConfigFileInPod = "/usr/share/logstash/pipeline/logstash.conf";
     String newDestConfigFile = WORK_DIR + "/logstash_new.conf";
     String operatorPodName = assertDoesNotThrow(

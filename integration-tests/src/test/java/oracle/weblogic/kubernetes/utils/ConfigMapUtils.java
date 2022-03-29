@@ -221,10 +221,12 @@ public class ConfigMapUtils {
    * @param newRegex new value
    * @param nameSpace namespace for the pod
    * @param cmName name of Config Map to modify
+   * @param configFileName name of Config file to modify
    * @throws ApiException when update fails
    */
   public static void editConfigMap(String oldRegex, String newRegex,
-                                  String nameSpace, String cmName) throws ApiException {
+                                   String nameSpace, String cmName,
+                                   String configFileName) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
     V1ConfigMap configMapToModify = cmList.stream()
         .filter(cm -> cmName.equals(cm.getMetadata().getName()))
@@ -236,7 +238,7 @@ public class ConfigMapUtils {
 
     String values = cmData.get("logstash.conf").replace(oldRegex,newRegex);
     assertNotNull(values, "can't find values for key prometheus.yml");
-    cmData.replace("logstash.conf", values);
+    cmData.replace(configFileName, values);
 
     configMapToModify.setData(cmData);
     Kubernetes.replaceConfigMap(configMapToModify);
