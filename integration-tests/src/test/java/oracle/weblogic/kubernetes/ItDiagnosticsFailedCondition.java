@@ -77,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -344,8 +345,8 @@ class ItDiagnosticsFailedCondition {
   void testNonexistentPVC() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String pvName = domainName + "-pv"; // name of the persistent volume
-    String pvcName = domainName + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniquePvOrPvcName(domainName + "-pv-");
+    final String pvcName = getUniquePvOrPvcName(domainName + "-pvc-");
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");

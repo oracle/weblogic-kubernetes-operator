@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyApache;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -68,9 +69,8 @@ class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String apachePvcName = "apache-custom-file-pvc";
-  private static final String apachePvName = "apache-custom-file-pv";
-
+  private static final String apachePvName = getUniquePvOrPvcName("apache-custom-file-pv-");
+  private static final String apachePvcName = getUniquePvOrPvcName("apache-custom-file-pvc-");
   private static List<String> domainUids = new ArrayList<>();
   private static String miiDomainUid = null;
   private static String domainNamespace = null;

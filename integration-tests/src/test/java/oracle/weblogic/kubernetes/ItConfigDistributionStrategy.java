@@ -99,6 +99,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -133,8 +134,8 @@ class ItConfigDistributionStrategy {
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
   int t3ChannelPort;
-  final String pvName = domainUid + "-pv"; // name of the persistent volume
-  final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
+  final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;

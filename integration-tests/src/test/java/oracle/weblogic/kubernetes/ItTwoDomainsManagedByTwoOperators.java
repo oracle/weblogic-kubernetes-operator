@@ -108,6 +108,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilCom
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -132,8 +133,9 @@ class ItTwoDomainsManagedByTwoOperators {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = "default-sharing-pvc";
-  private static final String defaultSharingPvName = "default-sharing-pv";
+
+  final String defaultSharingPvName = getUniquePvOrPvcName("default-sharing-pv-");
+  final String defaultSharingPvcName = getUniquePvOrPvcName("default-sharing-pvc-");
 
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
