@@ -1,7 +1,7 @@
 ---
 title: "Troubleshooting"
 date: 2019-02-23T16:47:21-05:00
-weight: 180
+weight: 11
 description: "General advice for debugging and monitoring the operator."
 ---
 
