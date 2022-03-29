@@ -73,14 +73,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
+
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
