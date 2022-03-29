@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -204,7 +205,7 @@ public class OperatorParams {
       values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
     }
 
-    values.put(IMAGE_PULL_POLICY, imagePullPolicy.toString());
+    values.put(IMAGE_PULL_POLICY, Optional.ofNullable(imagePullPolicy).map(Object::toString).orElse(null));
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
