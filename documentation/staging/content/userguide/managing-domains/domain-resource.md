@@ -189,12 +189,12 @@ Elements related to specifying and overriding WebLogic domain configuration:
     to verify that the pod is ready
     for application traffic. Defaults to 8888.
   * `replicationChannelPort`:
-    The operator will create a `T3` protocol 
+    The operator will create a `T3` protocol
     WebLogic network access point
-    on each WebLogic Server that is part of a cluster with this port 
+    on each WebLogic Server that is part of a cluster with this port
     to handle EJB and servlet session state replication traffic
-    between servers. This setting is ignored for clusters 
-    where the WebLogic cluster configuration already 
+    between servers. This setting is ignored for clusters
+    where the WebLogic cluster configuration already
     defines a `replication-channel` attribute. Defaults to 4564.
   * `localhostBindingsEnabled`:
     This setting was added in operator version 3.3.3,
@@ -250,7 +250,7 @@ You can use the following environment variables to specify JVM memory and JVM op
   * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
-* For a detailed discussion of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
+* For a detailed description of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
 This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.
