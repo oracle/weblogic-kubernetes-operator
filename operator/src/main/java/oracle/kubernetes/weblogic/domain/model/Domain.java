@@ -286,7 +286,7 @@ public class Domain implements KubernetesObject {
     return spec.getMonitoringExporterImage();
   }
 
-  public String getMonitoringExporterImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
     return spec.getMonitoringExporterImagePullPolicy();
   }
 

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -190,7 +191,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
-  public String getRestartPolicy() {
+  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
     return server.getRestartPolicy();
   }
 

@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.util.Arrays;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -36,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEna
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -70,7 +72,7 @@ public class FmwUtils {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -163,7 +165,7 @@ public class FmwUtils {
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -236,7 +238,7 @@ public class FmwUtils {
             .domainHome(domainInHomePrefix + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET)))
@@ -315,7 +317,7 @@ public class FmwUtils {
     String adminServerPodName = domainUid + "-admin-server";
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
 

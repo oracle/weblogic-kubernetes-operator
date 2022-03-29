@@ -248,7 +248,7 @@ public class BuildApplication {
             .containers(Arrays.asList(container
                 .name("weblogic-container")
                 .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                .imagePullPolicy("IfNotPresent")
+                .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                 .addCommandItem("sleep")
                 .addArgsItem("600")))
             .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()

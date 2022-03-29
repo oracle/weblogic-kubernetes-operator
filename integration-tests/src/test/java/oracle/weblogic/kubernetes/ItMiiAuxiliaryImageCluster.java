@@ -351,7 +351,7 @@ class ItMiiAuxiliaryImageCluster {
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
         stageDirPath, dockerFileLocation,
         "--build-arg AUXILIARY_IMAGE_PATH=" + auxiliaryImagePath, auxiliaryImage);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute(), String.format("Failed to execute", cmdToExecute));

@@ -102,7 +102,7 @@ public class IntrospectionTestUtils {
 
   private static V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
-          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
+          .addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("True"));
   }
 
   private static String getIntrospectResult(WlsDomainConfig domainConfig) throws JsonProcessingException {

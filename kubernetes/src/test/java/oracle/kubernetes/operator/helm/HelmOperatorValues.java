@@ -113,7 +113,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
-    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
+    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicyAsString, "imagePullPolicy");
     addStringMapEntry(map, this::getExternalOperatorSecret, "externalOperatorSecret");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");

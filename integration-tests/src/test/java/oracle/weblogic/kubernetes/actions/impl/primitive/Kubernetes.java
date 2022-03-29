@@ -61,6 +61,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
 import io.kubernetes.client.openapi.models.V1Role;
@@ -317,7 +318,8 @@ public class Kubernetes {
           deployment, // V1Deployment | body of the V1Deployment containing deployment data
           PRETTY, // String | pretty print output.
           null, // String | dry run or permanent change
-          null // String | field manager who is making the change
+          null, // String | field manager who is making the change
+          null // String | field validation
       );
       if (createdDeployment != null) {
         status = true;
@@ -467,7 +469,7 @@ public class Kubernetes {
   public static V1Pod createPod(String namespace, V1Pod podBody) throws ApiException {
     V1Pod pod;
     try {
-      pod = coreV1Api.createNamespacedPod(namespace, podBody, null, null, null);
+      pod = coreV1Api.createNamespacedPod(namespace, podBody, null, null, null, null);
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -547,13 +549,14 @@ public class Kubernetes {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+      throws ApiException {
     V1Pod pod = getPod(namespace, labelSelectors, podName);
     if (pod != null && pod.getStatus() != null) {
       return pod.getStatus().getPhase();
     } else {
       getLogger().info("Pod does not exist or pod status is null");
-      return "";
+      return null;
     }
   }
 
@@ -839,7 +842,8 @@ public class Kubernetes {
           namespace, // name of the Namespace
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+          null, // name associated with the actor or entity that is making these changes
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -867,7 +871,8 @@ public class Kubernetes {
           namespace, // name of the Namespace
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+          null, // name associated with the actor or entity that is making these changes
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -896,7 +901,8 @@ public class Kubernetes {
           namespace, // V1Namespace configuration data object
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+          null, // name associated with the actor or entity that is making these changes
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -920,7 +926,8 @@ public class Kubernetes {
           ns, // V1Namespace object body
           PRETTY, // pretty print the output
           null, // dry run or changes need to be permanent
-          null // field manager
+          null, // field manager
+          null // field validation
       );
     } catch (ApiException ex) {
       getLogger().severe(ex.getResponseBody());
@@ -1104,7 +1111,7 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
       events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
@@ -1138,7 +1145,7 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.emptyList());
       events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
           Comparator.nullsFirst(Comparator.naturalOrder())));
       Collections.reverse(events);
@@ -1389,6 +1396,7 @@ public class Kubernetes {
                   null,
                   null, // field-manager is optional
                   null,
+                  null,
                   null),
           patchFormat,
           apiClient);
@@ -1463,7 +1471,8 @@ public class Kubernetes {
           configMap, // config map configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+          null, // name associated with the actor or entity that is making these changes
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1508,7 +1517,8 @@ public class Kubernetes {
           configMap, // config map configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // name associated with the actor or entity that is making these changes
+          null, // name associated with the actor or entity that is making these changes
+          null // field validation
       );
       assertNotNull(cm, "cm replace failed ");
     } catch (ApiException apex) {
@@ -1609,7 +1619,8 @@ public class Kubernetes {
           secret, // secret configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1701,7 +1712,8 @@ public class Kubernetes {
           persistentVolume, // persistent volume configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1744,7 +1756,8 @@ public class Kubernetes {
           persistentVolumeClaim, // persistent volume claim configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1931,7 +1944,8 @@ public class Kubernetes {
           serviceAccount, // service account configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -1962,7 +1976,7 @@ public class Kubernetes {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
               + "service account in background!");
-      V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
+      V1ServiceAccount serviceAccount = response.getObject();
       getLogger().info(
           "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
     }
@@ -2019,7 +2033,8 @@ public class Kubernetes {
           service, // service configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -2171,7 +2186,8 @@ public class Kubernetes {
           jobBody, // V1Job | body of the V1Job containing job data
           PRETTY, // String | pretty print output.
           null, // String | dry run or permanent change
-          null // String | field manager who is making the change
+          null, // String | field manager who is making the change
+          null // field validation
       );
       if (createdJob != null) {
         name = createdJob.getMetadata().getName();
@@ -2336,7 +2352,8 @@ public class Kubernetes {
           clusterRole, // cluster role configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -2360,7 +2377,8 @@ public class Kubernetes {
           clusterRoleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -2385,7 +2403,8 @@ public class Kubernetes {
           role, // role configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -2410,7 +2429,8 @@ public class Kubernetes {
           roleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
-          null // fieldManager is a name associated with the actor
+          null, // fieldManager is a name associated with the actor
+          null // field validation
       );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
@@ -2924,7 +2944,8 @@ public class Kubernetes {
           ingressBody, // V1Ingress object, representing the ingress details
           PRETTY, // pretty print output
           null, // when present, indicates that modifications should not be persisted
-          null // a name associated with the actor or entity that is making these changes
+          null, // a name associated with the actor or entity that is making these changes
+          null // field validation
       );
       getLogger().info("Created ingress: {0}", Yaml.dump(ingress));
     } catch (ApiException apex) {

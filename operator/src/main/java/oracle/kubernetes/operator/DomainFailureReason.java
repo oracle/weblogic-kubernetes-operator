@@ -3,9 +3,13 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
 import java.util.Optional;
 
-import com.google.gson.annotations.SerializedName;
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -13,8 +17,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
 
+@JsonAdapter(DomainFailureReason.Adapter.class)
 public enum DomainFailureReason implements Labeled {
-  @SerializedName("DomainInvalid")
   DOMAIN_INVALID("DomainInvalid") {
     @Override
     public String getEventError() {
@@ -26,7 +30,6 @@ public enum DomainFailureReason implements Labeled {
       return EventConstants.DOMAIN_INVALID_ERROR_SUGGESTION;
     }
   },
-  @SerializedName("Introspection")
   INTROSPECTION("Introspection") {
     @Override
     public String getEventError() {
@@ -38,7 +41,6 @@ public enum DomainFailureReason implements Labeled {
       return getFailureRetryAdditionalMessage(info);
     }
   },
-  @SerializedName("Kubernetes")
   KUBERNETES("Kubernetes") {
     @Override
     public String getEventError() {
@@ -50,7 +52,6 @@ public enum DomainFailureReason implements Labeled {
       return EventConstants.KUBERNETES_ERROR_SUGGESTION;
     }
   },
-  @SerializedName("ServerPod")
   SERVER_POD("ServerPod") {
     @Override
     public String getEventError() {
@@ -62,7 +63,6 @@ public enum DomainFailureReason implements Labeled {
       return EventConstants.SERVER_POD_ERROR_SUGGESTION;
     }
   },
-  @SerializedName("ReplicasTooHigh")
   REPLICAS_TOO_HIGH("ReplicasTooHigh") {
     @Override
     public String getEventError() {
@@ -74,7 +74,6 @@ public enum DomainFailureReason implements Labeled {
       return EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
     }
   },
-  @SerializedName("TopologyMismatch")
   TOPOLOGY_MISMATCH("TopologyMismatch") {
     @Override
     public String getEventError() {
@@ -86,7 +85,6 @@ public enum DomainFailureReason implements Labeled {
       return EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
     }
   },
-  @SerializedName("Internal")
   INTERNAL("Internal") {
     @Override
     public String getEventError() {
@@ -98,7 +96,6 @@ public enum DomainFailureReason implements Labeled {
       return getFailureRetryAdditionalMessage(info);
     }
   },
-  @SerializedName("Aborted")
   ABORTED("Aborted") {
     @Override
     public String getEventError() {
@@ -145,5 +142,31 @@ public enum DomainFailureReason implements Labeled {
   @Override
   public String toString() {
     return label();
+  }
+
+  /**
+   * Locate enum type from value.
+   * @param value Value
+   * @return Domain failure reason type
+   */
+  public static DomainFailureReason fromValue(String value) {
+    for (DomainFailureReason testValue : values()) {
+      if (testValue.label.equals(value)) {
+        return testValue;
+      }
+    }
+
+    throw new IllegalArgumentException("Unexpected value '" + value + "'");
+  }
+
+  public static class Adapter extends TypeAdapter<DomainFailureReason> {
+    public void write(JsonWriter jsonWriter, DomainFailureReason enumeration) throws IOException {
+      jsonWriter.value(enumeration.label());
+    }
+
+    public DomainFailureReason read(JsonReader jsonReader) throws IOException {
+      String value = jsonReader.nextString();
+      return DomainFailureReason.fromValue(value);
+    }
   }
 }

@@ -418,6 +418,11 @@
       </dependency>
       <dependency>
         <groupId>io.kubernetes</groupId>
+        <artifactId>client-java-api</artifactId>
+        <version>${client-java-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.kubernetes</groupId>
         <artifactId>client-java-extended</artifactId>
         <version>${client-java-version}</version>
       </dependency>

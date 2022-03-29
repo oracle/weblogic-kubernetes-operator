@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 
 /** An interface for an object to configure a server in a test. */
@@ -113,7 +114,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
    */
   ServerConfigurator withRestartVersion(String restartVersion);
 
-  ServerConfigurator withRestartPolicy(String restartPolicy);
+  ServerConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
 
   ServerConfigurator withAffinity(V1Affinity affinity);
 

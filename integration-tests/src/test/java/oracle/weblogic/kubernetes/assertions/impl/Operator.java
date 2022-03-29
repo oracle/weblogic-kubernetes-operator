@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -29,7 +30,7 @@ public class Operator {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean doesExternalRestServiceExists(String namespace) throws ApiException {
-    HashMap label = new HashMap();
+    Map<String, String> label = new HashMap<>();
     label.put("weblogic.operatorName", namespace);
     String serviceName = "external-weblogic-operator-svc";
     return Kubernetes.doesServiceExist(serviceName, label, namespace);

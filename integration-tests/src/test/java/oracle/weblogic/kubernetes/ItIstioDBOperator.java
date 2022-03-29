@@ -207,7 +207,7 @@ class ItIstioDBOperator {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(fmwDomainNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(wlsDomainNamespace, labelMap));
@@ -288,7 +288,7 @@ class ItIstioDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.EMPTY_LIST);
+    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
     Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
@@ -732,7 +732,7 @@ class ItIstioDBOperator {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + namespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap = new HashMap();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", namespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE", adminServerPodName);

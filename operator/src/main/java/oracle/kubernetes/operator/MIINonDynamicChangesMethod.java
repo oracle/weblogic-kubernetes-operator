@@ -3,13 +3,17 @@
 
 package oracle.kubernetes.operator;
 
-import com.google.gson.annotations.SerializedName;
+import java.io.IOException;
+
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import oracle.kubernetes.common.Labeled;
 
+@JsonAdapter(MIINonDynamicChangesMethod.Adapter.class)
 public enum MIINonDynamicChangesMethod implements Labeled {
-  @SerializedName("CommitUpdateAndRoll")
   COMMIT_UPDATE_AND_ROLL("CommitUpdateAndRoll"),
-  @SerializedName("CommitUpdateOnly")
   COMMIT_UPDATE_ONLY("CommitUpdateOnly");
 
   private final String label;
@@ -26,5 +30,31 @@ public enum MIINonDynamicChangesMethod implements Labeled {
   @Override
   public String toString() {
     return label();
+  }
+
+  /**
+   * Locate enum type from value.
+   * @param value Value
+   * @return MII non-dynamic changes method type
+   */
+  public static MIINonDynamicChangesMethod fromValue(String value) {
+    for (MIINonDynamicChangesMethod testValue : values()) {
+      if (testValue.label.equals(value)) {
+        return testValue;
+      }
+    }
+
+    throw new IllegalArgumentException("Unexpected value '" + value + "'");
+  }
+
+  public static class Adapter extends TypeAdapter<MIINonDynamicChangesMethod> {
+    public void write(JsonWriter jsonWriter, MIINonDynamicChangesMethod enumeration) throws IOException {
+      jsonWriter.value(enumeration.label());
+    }
+
+    public MIINonDynamicChangesMethod read(JsonReader jsonReader) throws IOException {
+      String value = jsonReader.nextString();
+      return MIINonDynamicChangesMethod.fromValue(value);
+    }
   }
 }

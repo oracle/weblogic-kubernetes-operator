@@ -93,6 +93,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -100,7 +101,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasLegacyAuxiliaryImageInitContainer;
@@ -422,7 +422,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(
             podTemplateInitContainers,
             Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "IfNotPresent"));
+                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -487,12 +487,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
-                    .imagePullPolicy("ALWAYS")));
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS"));
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -504,7 +504,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", CUSTOM_WDT_INSTALL_SOURCE_HOME));
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT, CUSTOM_WDT_INSTALL_SOURCE_HOME));
   }
 
   @Test
@@ -516,8 +516,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
-                    CUSTOM_MODEL_SOURCE_HOME));
+                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME, CUSTOM_MODEL_SOURCE_HOME));
   }
 
   @Test
@@ -529,9 +529,9 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image1:v1", "IfNotPresent"),
+                    "wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT),
                     Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                        "wdt-image2:v1", "IfNotPresent")));
+                        "wdt-image2:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(8));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
@@ -692,7 +692,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private V1Job asFailedJobWithBackoffLimitExceeded(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
             .reason("BackoffLimitExceeded")));
     return job;
   }
@@ -718,12 +719,14 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private V1Job asCompletedJob(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Complete")));
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.COMPLETE)));
     return job;
   }
 
   private V1Job asFailedJob(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")));
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)));
     return job;
   }
 
@@ -979,7 +982,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithLegacyAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -994,7 +998,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             podTemplateInitContainers,
             hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
+                    V1Container.ImagePullPolicyEnum.IFNOTPRESENT, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -1006,7 +1010,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobCreatedWithLegacyAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1024,7 +1029,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, null, "Memory");
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1042,7 +1048,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH,
             "100G", null);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1060,7 +1067,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithLegacyAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "ALWAYS");
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1069,8 +1076,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                             List.of(auxiliaryImage))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-               hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
+        hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+           "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
   }
 
   void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
@@ -1086,7 +1093,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithLegacyAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
             CUSTOM_COMMAND_SCRIPT);
 
     convertDomainWithLegacyAuxImages(
@@ -1096,16 +1104,18 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                             List.of(auxiliaryImage))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-               hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                            "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT));
+        hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT, CUSTOM_COMMAND_SCRIPT));
   }
 
   @Test
   void whenJobCreatedWithMultipleLegacyAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
-    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image2:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+    Map<String, Object> auxiliaryImage2 =
+        createAuxiliaryImage("wdt-image2:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1114,12 +1124,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                             Arrays.asList(auxiliaryImage, auxiliaryImage2))));
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(
-                    hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                            "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                            "wdt-image2:v1",
-                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+        org.hamcrest.Matchers.allOf(
+            hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+            hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                "wdt-image2:v1",
+                V1Container.ImagePullPolicyEnum.IFNOTPRESENT, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(4));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())

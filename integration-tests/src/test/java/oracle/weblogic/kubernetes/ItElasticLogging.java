@@ -366,7 +366,7 @@ class ItElasticLogging {
       miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
           MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
     } else {
-      List<String> appList = new ArrayList();
+      List<String> appList = new ArrayList<>();
       appList.add(MII_BASIC_APP_NAME);
 
       // build the model file list
@@ -451,7 +451,7 @@ class ItElasticLogging {
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
-    String indexName = (String) testVarMap.get(index);
+    String indexName = testVarMap.get(index);
     StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
         .append(" --max-time " + waittime)
         .append(" -X GET ");

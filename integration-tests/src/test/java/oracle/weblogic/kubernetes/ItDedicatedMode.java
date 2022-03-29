@@ -123,7 +123,7 @@ class ItDedicatedMode {
             .chartDir(OPERATOR_CHART_DIR);
 
     // delete existing CRD
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
@@ -131,7 +131,7 @@ class ItDedicatedMode {
     // install CRD
     String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + CRD_V16;
     logger.info("Creating CRD with command {0}", createCrdCommand);
-    new Command()
+    Command
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
 
@@ -226,13 +226,13 @@ class ItDedicatedMode {
   @DisplayName("Create a CRD with a lower than expected version and verify that Operator fails with error")
   void testDedicatedModeNlowerVersionCrd() {
     // delete existing CRD
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
 
     // install a lower version of CRD, v2.6.0
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/domain-v1beta1-crdv7-260.yaml"))
         .execute();
@@ -265,7 +265,7 @@ class ItDedicatedMode {
   void testDedicatedModeNoCrd() {
     // delete existing CRD
     logger.info("Delete existing CRD");
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
@@ -405,7 +405,7 @@ class ItDedicatedMode {
         String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
 
     // delete secret/ocir-secret
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete secret/ocir-secret -n " + opNamespace + " --ignore-not-found"))
         .execute();

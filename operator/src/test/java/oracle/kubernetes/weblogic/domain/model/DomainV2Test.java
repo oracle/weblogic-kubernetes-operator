@@ -13,9 +13,11 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SELinuxOptions;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -28,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
@@ -737,7 +738,7 @@ class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(serverSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
@@ -784,7 +785,7 @@ class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server0", "cluster0");
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(serverSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
@@ -1274,16 +1275,16 @@ class DomainV2Test extends DomainTestBase {
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromSpec() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
-    String restartPolicy = domain.getSpec().getRestartPolicy();
-    assertThat(restartPolicy, is("OnFailure"));
+    V1PodSpec.RestartPolicyEnum restartPolicy = domain.getSpec().getRestartPolicy();
+    assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
   }
 
   @Test
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromClusterSpec() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
-    String restartPolicy = domain.getCluster("cluster2").getRestartPolicy();
-    assertThat(restartPolicy, is("OnFailure"));
+    V1PodSpec.RestartPolicyEnum restartPolicy = domain.getCluster("cluster2").getRestartPolicy();
+    assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
   }
 
   @Test
@@ -1323,8 +1324,8 @@ class DomainV2Test extends DomainTestBase {
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    String sessionAffinity = domain.getCluster("cluster1").getClusterSessionAffinity();
-    assertThat(sessionAffinity, is("ClientIP"));
+    V1ServiceSpec.SessionAffinityEnum sessionAffinity = domain.getCluster("cluster1").getClusterSessionAffinity();
+    assertThat(sessionAffinity, is(V1ServiceSpec.SessionAffinityEnum.CLIENTIP));
   }
 
   @Test
@@ -1332,7 +1333,7 @@ class DomainV2Test extends DomainTestBase {
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
-    String sessionAffinity = domain.getCluster("cluster2").getClusterSessionAffinity();
+    V1ServiceSpec.SessionAffinityEnum sessionAffinity = domain.getCluster("cluster2").getClusterSessionAffinity();
     assertThat(sessionAffinity, nullValue());
   }
 

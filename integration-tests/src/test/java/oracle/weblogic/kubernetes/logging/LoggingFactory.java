@@ -31,7 +31,7 @@ public class LoggingFactory {
    * @param clazz use class name as logger name
    * @return a logger for the caller to use
    */
-  public static LoggingFacade getLogger(Class clazz) {
+  public static LoggingFacade getLogger(Class<?> clazz) {
     return getLogger(clazz.getName(), "OperatorIntegrationTests");
   }
 

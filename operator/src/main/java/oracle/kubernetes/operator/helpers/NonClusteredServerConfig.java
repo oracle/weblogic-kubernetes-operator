@@ -10,9 +10,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** NonClusteredServerConfig describes the desired state of a non-clustered server. */
 public class NonClusteredServerConfig extends ServerConfig {
 
-  public static final String NON_CLUSTERED_SERVER_START_POLICY_ALWAYS = SERVER_START_POLICY_ALWAYS;
-  public static final String NON_CLUSTERED_SERVER_START_POLICY_NEVER = SERVER_START_POLICY_NEVER;
-
   private String nonClusteredServerStartPolicy;
 
   @Override

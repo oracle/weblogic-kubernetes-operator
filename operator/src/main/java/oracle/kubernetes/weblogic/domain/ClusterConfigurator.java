@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 
 /** An interface for an object to configure a cluster in a test. */
@@ -114,7 +115,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
    */
   ClusterConfigurator withRestartVersion(String restartVersion);
 
-  ClusterConfigurator withRestartPolicy(String restartPolicy);
+  ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
 
   ClusterConfigurator withAffinity(V1Affinity affinity);
 

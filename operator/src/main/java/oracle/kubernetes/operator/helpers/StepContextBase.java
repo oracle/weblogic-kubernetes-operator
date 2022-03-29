@@ -32,7 +32,9 @@ public abstract class StepContextBase implements StepContextConstants {
 
   @SuppressWarnings("unchecked")
   private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
-    if (obj instanceof String) {
+    if (obj instanceof Enum) {
+      return obj;
+    } else if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
     } else if (obj instanceof List) {
       List<Object> result = new ArrayList<>();

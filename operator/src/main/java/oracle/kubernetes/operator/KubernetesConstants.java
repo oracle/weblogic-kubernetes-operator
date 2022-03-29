@@ -5,15 +5,11 @@ package oracle.kubernetes.operator;
 
 import java.net.HttpURLConnection;
 
-import oracle.kubernetes.common.ImagePullPolicy;
-
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
   String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.4";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
-  String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.ALWAYS.label();
-  String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IF_NOT_PRESENT.label();
   String LATEST_IMAGE_SUFFIX = ":latest";
 
   String CRD_NAME = "domains.weblogic.oracle";

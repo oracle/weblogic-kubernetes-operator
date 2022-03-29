@@ -409,7 +409,7 @@ public class JobStepContext extends BasePodStepContext {
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
-            .restartPolicy("Never")
+            .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(

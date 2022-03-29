@@ -352,7 +352,7 @@ public class ItMiiDomainModelInPV {
                 new V1Container()
                     .name("weblogic-container")
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .addCommandItem("sleep")
                     .addArgsItem("600")
                     .volumeMounts(Arrays.asList(

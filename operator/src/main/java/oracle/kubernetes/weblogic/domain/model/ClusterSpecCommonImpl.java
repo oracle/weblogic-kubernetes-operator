@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
 public class ClusterSpecCommonImpl extends ClusterSpec {
   private final Cluster cluster;
@@ -31,7 +33,7 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
-  public String getClusterSessionAffinity() {
+  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
     return cluster.getClusterSessionAffinity();
   }
 
@@ -51,7 +53,7 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
-  public String getRestartPolicy() {
+  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
     return cluster.getRestartPolicy();
   }
 

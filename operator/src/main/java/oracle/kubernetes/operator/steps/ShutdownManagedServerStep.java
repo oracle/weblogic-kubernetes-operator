@@ -231,7 +231,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     boolean isTCPProtocol(V1ContainerPort port) {
-      return "TCP".equals(port.getProtocol());
+      return V1ContainerPort.ProtocolEnum.TCP.equals(port.getProtocol());
     }
 
     private WlsServerConfig getWlsServerConfig() {

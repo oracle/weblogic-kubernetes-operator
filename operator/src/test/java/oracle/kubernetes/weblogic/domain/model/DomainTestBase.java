@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -20,12 +21,10 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -91,7 +90,7 @@ public abstract class DomainTestBase {
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(ServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(spec.getImagePullSecrets(), empty());
   }
 
@@ -126,10 +125,10 @@ public abstract class DomainTestBase {
   void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
     configureDomain(domain).withDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
     assertThat(
         domain.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(ALWAYS_IMAGEPULLPOLICY));
+        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -148,7 +147,7 @@ public abstract class DomainTestBase {
 
     ServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -158,17 +157,17 @@ public abstract class DomainTestBase {
 
     ServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
   }
 
   @Test
   void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
-    configureDomain(domain).withDefaultImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
+    configureDomain(domain).withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
     assertThat(
         domain.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(ALWAYS_IMAGEPULLPOLICY));
+        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -492,7 +491,7 @@ public abstract class DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(serverSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret"));
     assertThat(serverSpec.getEnvironmentVariables(), empty());
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));

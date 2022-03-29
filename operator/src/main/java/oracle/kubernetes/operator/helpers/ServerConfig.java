@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -14,16 +15,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** ServerConfig describes the desired state of a server. */
 public class ServerConfig {
 
-  protected static final String SERVER_START_POLICY_ALWAYS = "ALWAYS";
-  protected static final String SERVER_START_POLICY_NEVER = "NEVER";
-
   private String serverName;
   private String restartedLabel;
   private int nodePort;
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1EnvVar> env = null;
   private String image;
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1LocalObjectReference> imagePullSecrets = null;
 

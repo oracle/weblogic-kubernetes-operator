@@ -136,8 +136,6 @@ class HealthCheckHelperTest {
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
 
-  // HERE
-
   @Test
   void whenRulesReviewSupportedAndNoOperatorNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
