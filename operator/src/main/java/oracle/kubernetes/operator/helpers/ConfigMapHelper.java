@@ -45,6 +45,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
@@ -255,6 +256,7 @@ public class ConfigMapHelper {
       return model;
     }
 
+
     protected final V1ConfigMap createModel(Map<String, String> data) {
       return AnnotationHelper.withSha256Hash(
           new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data), data);
@@ -345,6 +347,7 @@ public class ConfigMapHelper {
         return new CallBuilder()
             .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
       }
+
 
       private void logConfigMapExists() {
         LOGGER.fine(MessageKeys.CM_EXISTS, getResourceName(), namespace);
@@ -927,6 +930,53 @@ public class ConfigMapHelper {
     return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
 
+  private static Step createFluentdConfigMap(DomainPresenceInfo info) {
+    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+    if (fluentdSpecification != null) {
+      return new CallBuilder()
+              .createConfigMapAsync(info.getNamespace(), getFluentdConfigMap(fluentdSpecification,
+                      info.getDomainUid(), info.getNamespace()), new FluentdConfigMapResponseStep());
+    } else {
+      return null;
+    }
+  }
+
+  private static Step replaceFluentdConfigMap(DomainPresenceInfo info) {
+    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+    if (fluentdSpecification != null) {
+      return new CallBuilder()
+              .replaceConfigMapAsync(fluentdSpecification.getConfigurationConfigMap(), info.getNamespace(),
+                      getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
+                      new FluentdConfigMapResponseStep());
+    } else {
+      return null;
+    }
+  }
+
+  public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
+    // TODO handle replace
+    return createFluentdConfigMap(info);
+  }
+
+  protected static V1ConfigMap getFluentdConfigMap(FluentdSpecification fluentdSpecification, String domainUid,
+                                            String namespace) {
+    String contents = "";
+    HashMap<String, String> data = new HashMap<>();
+    data.put("fluentd-config", contents);
+    HashMap<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+
+    V1ObjectMeta meta = new V1ObjectMeta()
+            .name("fluentd-config")
+            .labels(labels)
+            .namespace(namespace);
+
+    return new V1ConfigMap()
+            .kind("ConfigMap")
+            .apiVersion("v1")
+            .metadata(meta).data(data);
+  }
+
   private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {
 
     @Override
@@ -939,6 +989,14 @@ public class ConfigMapHelper {
                 version -> packet.put(INTROSPECTION_STATE_LABEL, version),
                 () -> packet.remove(INTROSPECTION_STATE_LABEL));
 
+      return doNext(packet);
+    }
+  }
+
+  private static class FluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
       return doNext(packet);
     }
   }

@@ -296,6 +296,12 @@ public class DomainProcessorImpl implements DomainProcessor {
           JobHelper.createIntrospectionStartStep(null));
   }
 
+  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
+    return Step.chain(
+            ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info)
+    );
+  }
+
   /**
    * Compares the domain introspection version to current introspection state label and request introspection
    * if they don't match.
@@ -1154,6 +1160,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
+            //createOrReplaceFluentdConfigMapStep(info),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),

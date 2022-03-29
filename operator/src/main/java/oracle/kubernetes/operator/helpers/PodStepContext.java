@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Handler;
@@ -36,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -818,14 +820,61 @@ public abstract class PodStepContext extends BasePodStepContext {
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
 
-    fluentdSpecification.getEnv().stream()
-      .map(c -> fluentdContainer.addEnvItem(c));
+    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer);
 
     fluentdSpecification.getVolumeMounts().stream()
       .map(c -> fluentdContainer.addVolumeMountsItem(c));
 
     fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolume());
     containers.add(fluentdContainer);
+  }
+
+  private void addFluentdContainerEnvList(FluentdSpecification fluentdSpecification, V1Container fluentdContainer) {
+
+    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
+            "elasticsearchhost");
+    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_PORT",
+            "elasticsearchport");
+    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_USER",
+            "elasticsearchuser");
+    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer,
+            "ELASTICSEARCH_PASSWORD", "elasticsearchpassword");
+
+    if (!hasFluentdContainerEnv(fluentdSpecification, "ELASTICSEARCH_SED_DISABLE")) {
+      V1EnvVar sedDisable = new V1EnvVar().name("ELASTICSEARCH_SED_DISABLE").value("true");
+      fluentdContainer.addEnvItem(sedDisable);
+    }
+
+    fluentdSpecification.getEnv().stream()
+            .map(c -> fluentdContainer.addEnvItem(c));
+
+  }
+
+  private void addFluentdContainerELSCredEnv(FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
+      String envName, String keyName) {
+    if (!hasFluentdContainerEnv(fluentdSpecification, envName)) {
+      V1SecretKeySelector keySelector = new V1SecretKeySelector()
+            .key(keyName)
+            .name(fluentdSpecification.getElasticSearchCredentials());
+      V1EnvVarSource source = new V1EnvVarSource()
+            .secretKeyRef(keySelector);
+      V1EnvVar envItem = new V1EnvVar()
+            .name(envName)
+            .valueFrom(source);
+      fluentdContainer.addEnvItem(envItem);
+    }
+  }
+
+  private boolean hasFluentdContainerEnv(FluentdSpecification fluentdSpecification, String name) {
+    V1EnvVar var = fluentdSpecification.getEnv().stream()
+            .filter(c -> c.getName().equals("SOMETHING"))
+            .findFirst()
+            .orElse(null);
+    if (var != null) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private String getDomainHome() {

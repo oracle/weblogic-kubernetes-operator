@@ -61,6 +61,15 @@ public class FluentdSpecification {
   @Description("Volume mounts for fluentd container")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
+  @Description("Fluentd elastic search credentials")
+  private String elasticSearchCredentials;
+
+  @Description("Fluentd will watch server logs")
+  private Boolean watchServerLogs = true;
+
+  @Description("Fluentd will watch introspector logs")
+  private Boolean watchIntrospectorLogs = true;
+
   public List<V1EnvVar> getEnv() {
     return env;
   }
@@ -105,6 +114,30 @@ public class FluentdSpecification {
     this.imagePullPolicy = imagePullPolicy;
   }
 
+  public Boolean getWatchServerLogs() {
+    return watchServerLogs;
+  }
+
+  public void setWatchServerLogs(Boolean watchServerLogs) {
+    this.watchServerLogs = watchServerLogs;
+  }
+
+  public Boolean getWatchIntrospectorLogs() {
+    return watchIntrospectorLogs;
+  }
+
+  public void setWatchIntrospectorLogs(Boolean watchIntrospectorLogs) {
+    this.watchIntrospectorLogs = watchIntrospectorLogs;
+  }
+
+  public String getElasticSearchCredentials() {
+    return elasticSearchCredentials;
+  }
+
+  public void setElasticSearchCredentials(String elasticSearchCredentials) {
+    this.elasticSearchCredentials = elasticSearchCredentials;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -114,6 +147,8 @@ public class FluentdSpecification {
           .append("env", env)
           .append("resources", resources)
           .append("volumeMounts", volumeMounts)
+          .append("watchServerLogs", watchServerLogs)
+          .append("watchIntrospectorLogs", watchIntrospectorLogs)
           .toString();
   }
 
@@ -131,6 +166,8 @@ public class FluentdSpecification {
           .append(env, that.env)
           .append(resources, that.resources)
           .append(volumeMounts, this.volumeMounts)
+          .append(watchServerLogs, this.watchServerLogs)
+          .append(watchIntrospectorLogs, this.watchIntrospectorLogs)
           .isEquals();
   }
 
@@ -143,6 +180,8 @@ public class FluentdSpecification {
           .append(env)
           .append(resources)
           .append(volumeMounts)
+          .append(watchServerLogs)
+          .append(watchIntrospectorLogs)
           .toHashCode();
   }
 }
