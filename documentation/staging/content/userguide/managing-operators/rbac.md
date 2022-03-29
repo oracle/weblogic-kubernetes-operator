@@ -1,7 +1,7 @@
 ---
 title: "RBAC"
 date: 2019-02-23T17:15:36-05:00
-weight: 110
+weight: 7
 description: "Operator role-based authorization."
 ---
 
