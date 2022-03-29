@@ -359,7 +359,6 @@
                 <surefireArgLine></surefireArgLine>
                 <failsafeArgLine></failsafeArgLine>
                 <skipITs>true</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
             </properties>
         </profile>
         <profile>
