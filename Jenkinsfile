@@ -246,203 +246,213 @@ pipeline {
     }
 
     stages {
-        stage('Workaround JENKINS-41929 Parameters bug') {
-            steps {
-                echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
-                evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+        stage('Filter unwanted branches') {
+            when {
+                anyOf {
+                    changeRequest()
+                    branch 'main'
+                    branch 'release/3.3'
+                    branch 'release/3.4'
+                }
             }
-        }
-        stage ('Echo environment') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    env|sort
-                    java -version
-                    mvn --version
-                    python --version
-                    docker version
-                    ulimit -a
-                    ulimit -aH
-                '''
-                script {
-                    def knd = params.KIND_VERSION
-                    def k8s = params.KUBE_VERSION
-                    if (knd != null && k8s != null) {
-                        def k8s_map = kind_k8s_map.get(knd);
-                        if (k8s_map != null) {
-                            _kind_image = k8s_map.get(k8s)
-                        }
-                        if (_kind_image == null) {
-                            currentBuild.result = 'ABORTED'
-                            error('Unable to compute _kind_image for Kind version ' +
-                                    knd + ' and Kubernetes version ' + k8s)
-                        }
-                    } else {
-                        currentBuild.result = 'ABORTED'
-                        error('KIND_VERSION or KUBE_VERSION were null')
+            stages {
+                stage('Workaround JENKINS-41929 Parameters bug') {
+                    steps {
+                        echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
+                        evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
                     }
-                    echo "Kind Image = ${_kind_image}"
                 }
-            }
-        }
-
-        // Use explicit checkout so that we can clean up the workspace.
-        // Cannot use skipDefaultCheckout option since we want to use
-        // the GIT_COMMIT environment variable to make sure that we are
-        // checking out the exactly commit that triggered the build.
-        //
-        stage('GitHub Checkout') {
-            steps {
-                sh "sudo rm -rf ${WORKSPACE}/*"
-                checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
-                          doGenerateSubmoduleConfigurations: false,
-                          extensions: [], submoduleCfg: [],
-                          userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
-            }
-        }
-
-        stage('Build WebLogic Kubernetes Operator') {
-            environment {
-                DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
-                DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
-            }
-            steps {
-                sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
-                sh "mvn -DtrimStackTrace=false clean install"
-            }
-        }
-
-        stage('Run Sonar Analysis') {
-            steps {
-                sh '''
-                        rm -rf ${WORKSPACE}/.mvn/maven.config
-                        mkdir -p ${WORKSPACE}/.mvn
-                        touch ${WORKSPACE}/.mvn/maven.config
-                        echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                        echo "-Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path}"  >> ${WORKSPACE}/.mvn/maven.config
-                        if [ -z "${CHANGE_ID}" ]; then
-                            echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                        else
-                            echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                        fi
-                        echo "${WORKSPACE}/.mvn/maven.config contents:"
-                        cat "${WORKSPACE}/.mvn/maven.config"
-                    '''
-                withSonarQubeEnv('SonarCloud') {
-                    // For whatever reason, defining this property in the maven.config file is not working...
-                    //
-                    sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
+                stage ('Echo environment') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            env|sort
+                            java -version
+                            mvn --version
+                            python --version
+                            docker version
+                            ulimit -a
+                            ulimit -aH
+                        '''
+                        script {
+                            def knd = params.KIND_VERSION
+                            def k8s = params.KUBE_VERSION
+                            if (knd != null && k8s != null) {
+                                def k8s_map = kind_k8s_map.get(knd)
+                                if (k8s_map != null) {
+                                    _kind_image = k8s_map.get(k8s)
+                                }
+                                if (_kind_image == null) {
+                                    currentBuild.result = 'ABORTED'
+                                    error('Unable to compute _kind_image for Kind version ' +
+                                            knd + ' and Kubernetes version ' + k8s)
+                                }
+                            } else {
+                                currentBuild.result = 'ABORTED'
+                                error('KIND_VERSION or KUBE_VERSION were null')
+                            }
+                            echo "Kind Image = ${_kind_image}"
+                        }
+                    }
                 }
-            }
-        }
 
-        stage('Verify Sonar Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                    waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
+                // Use explicit checkout so that we can clean up the workspace.
+                // Cannot use skipDefaultCheckout option since we want to use
+                // the GIT_COMMIT environment variable to make sure that we are
+                // checking out the exactly commit that triggered the build.
+                //
+                stage('GitHub Checkout') {
+                    steps {
+                        sh "sudo rm -rf ${WORKSPACE}/*"
+                        checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
+                                  doGenerateSubmoduleConfigurations: false,
+                                  extensions: [], submoduleCfg: [],
+                                  userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
+                    }
                 }
-            }
-        }
 
-        stage('Make Workspace bin directory') {
-            steps {
-                sh "mkdir -m777 -p ${WORKSPACE}/bin"
-            }
-        }
+                stage('Build WebLogic Kubernetes Operator') {
+                    environment {
+                        DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
+                        DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
+                    }
+                    steps {
+                        sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
+                        sh "mvn -DtrimStackTrace=false clean install"
+                    }
+                }
 
-        stage('Install Helm') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
-                    tar zxf helm-v${HELM_VERSION}-linux-amd64.tar.gz
-                    mv linux-amd64/helm ${WORKSPACE}/bin/helm
-                    rm -rf linux-amd64
-                    helm version
-                '''
-            }
-        }
+                stage('Run Sonar Analysis') {
+                    steps {
+                        sh '''
+                            rm -rf ${WORKSPACE}/.mvn/maven.config
+                            mkdir -p ${WORKSPACE}/.mvn
+                            touch ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path}"  >> ${WORKSPACE}/.mvn/maven.config
+                            if [ -z "${CHANGE_ID}" ]; then
+                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
+                            else
+                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
+                            fi
+                            echo "${WORKSPACE}/.mvn/maven.config contents:"
+                            cat "${WORKSPACE}/.mvn/maven.config"
+                        '''
+                        withSonarQubeEnv('SonarCloud') {
+                            // For whatever reason, defining this property in the maven.config file is not working...
+                            //
+                            sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
+                        }
+                    }
+                }
 
-        stage ('Install kubectl') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    curl -L --retry 3 -o "${WORKSPACE}/bin/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-                    chmod +x ${WORKSPACE}/bin/kubectl
-                    kubectl version --client=true
-                '''
-            }
-        }
+                stage('Verify Sonar Quality Gate') {
+                    steps {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
+                        }
+                    }
+                }
 
-        stage('Install kind') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    curl -Lo "${WORKSPACE}/bin/kind" --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
-                    chmod +x "${WORKSPACE}/bin/kind"
-                    kind version
-                '''
-            }
-        }
+                stage('Make Workspace bin directory') {
+                    steps {
+                        sh "mkdir -m777 -p ${WORKSPACE}/bin"
+                    }
+                }
 
-        stage('Preparing Integration Test Environment') {
-            steps {
-                sh 'mkdir -m777 -p ${result_root}'
-                echo "Results will be in ${result_root}"
-                sh 'mkdir -m777 -p ${pv_root}'
-                echo "Persistent volume files, if any, will be in ${pv_root}"
-            }
-        }
+                stage('Install Helm') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
+                            tar zxf helm-v${HELM_VERSION}-linux-amd64.tar.gz
+                            mv linux-amd64/helm ${WORKSPACE}/bin/helm
+                            rm -rf linux-amd64
+                            helm version
+                        '''
+                    }
+                }
 
-        stage('Start registry container') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
-                    if [ "${running}" = 'true' ]; then
-                      echo "Stopping the registry container ${registry_name}"
-                      docker stop "${registry_name}"
-                      docker rm --force "${registry_name}"
-                    fi
+                stage ('Install kubectl') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            curl -L --retry 3 -o "${WORKSPACE}/bin/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+                            chmod +x ${WORKSPACE}/bin/kubectl
+                            kubectl version --client=true
+                        '''
+                    }
+                }
 
-                    docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" registry:2
-                    echo "Registry Host: ${registry_host}"
-                '''
-            }
-        }
+                stage('Install kind') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            curl -Lo "${WORKSPACE}/bin/kind" --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
+                            chmod +x "${WORKSPACE}/bin/kind"
+                            kind version
+                        '''
+                    }
+                }
 
-        stage('Create kind cluster') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-                kind_image = sh(script: "echo -n ${_kind_image}", returnStdout: true).trim()
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
-                        echo "Deleted orphaned kind cluster ${kind_name}"
-                    fi
-                    cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
+                stage('Preparing Integration Test Environment') {
+                    steps {
+                        sh 'mkdir -m777 -p ${result_root}'
+                        echo "Results will be in ${result_root}"
+                        sh 'mkdir -m777 -p ${pv_root}'
+                        echo "Persistent volume files, if any, will be in ${pv_root}"
+                    }
+                }
+
+                stage('Start registry container') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+                            if [ "${running}" = 'true' ]; then
+                              echo "Stopping the registry container ${registry_name}"
+                              docker stop "${registry_name}"
+                              docker rm --force "${registry_name}"
+                            fi
+        
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" registry:2
+                            echo "Registry Host: ${registry_host}"
+                        '''
+                    }
+                }
+
+                stage('Create kind cluster') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        kind_image = sh(script: "echo -n ${_kind_image}", returnStdout: true).trim()
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            if kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
+                                echo "Deleted orphaned kind cluster ${kind_name}"
+                            fi
+                            cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${kubeconfig_file}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
@@ -460,30 +470,30 @@ nodes:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
 EOF
-
-                    export KUBECONFIG=${kubeconfig_file}
-                    kubectl cluster-info --context "kind-${kind_name}"
-
-                    for node in $(kind get nodes --name "${kind_name}"); do
-                        kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
-                    done
-                    
-                    if [ "${kind_network}" != "bridge" ]; then
-                        containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
-                        needs_connect="true"
-                        for c in ${containers}; do
-                            if [ "$c" = "${registry_name}" ]; then
-                                needs_connect="false"
+        
+                            export KUBECONFIG=${kubeconfig_file}
+                            kubectl cluster-info --context "kind-${kind_name}"
+        
+                            for node in $(kind get nodes --name "${kind_name}"); do
+                                kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
+                            done
+                            
+                            if [ "${kind_network}" != "bridge" ]; then
+                                containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
+                                needs_connect="true"
+                                for c in ${containers}; do
+                                    if [ "$c" = "${registry_name}" ]; then
+                                        needs_connect="false"
+                                    fi
+                                done
+                                if [ "${needs_connect}" = "true" ]; then
+                                    docker network connect "${kind_network}" "${registry_name}" || true
+                                fi
                             fi
-                        done
-                        if [ "${needs_connect}" = "true" ]; then
-                            docker network connect "${kind_network}" "${registry_name}" || true
-                        fi
-                    fi
-
-                    # Document the local registry
-                    # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
-                    cat <<EOF | kubectl apply -f -
+        
+                            # Document the local registry
+                            # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
+                            cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -494,144 +504,149 @@ data:
     host: "localhost:${registry_port}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
-                '''
+                        '''
+                    }
+                }
+
+                stage('Run integration tests') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
+                        OCR_USERNAME = credentials("${ocr_username_creds}")
+                        OCR_PASSWORD = credentials("${ocr_password_creds}")
+                        OCR_EMAIL = credentials("${ocr_username_creds}")
+                        OCIR_REGISTRY = credentials("${ocir_registry_creds}")
+                        OCIR_USERNAME = credentials("${ocir_username_creds}")
+                        OCIR_PASSWORD = credentials("${ocir_password_creds}")
+                        OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        TWO_CLUSTERS = "false"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            mkdir -m777 -p "${WORKSPACE}/.mvn"
+                            touch ${WORKSPACE}/.mvn/maven.config
+                            
+                            export KUBECONFIG=${kubeconfig_file}
+                            K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+                            export NO_PROXY="${K8S_NODEPORT_HOST}"
+        
+                            if [ "${IT_TEST}" != '**/It*' ]; then
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+                                echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
+                            fi
+                            echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+        
+                            echo "${WORKSPACE}/.mvn/maven.config contents:"
+                            cat "${WORKSPACE}/.mvn/maven.config"
+                            cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
+        
+                            export TWO_CLUSTERS=${TWO_CLUSTERS}
+                            export OCR_USERNAME=${OCR_USERNAME}
+                            export OCR_PASSWORD=${OCR_PASSWORD}
+                            export OCR_EMAIL=${OCR_EMAIL}
+                            export OCIR_USERNAME=${OCIR_USERNAME}
+                            export OCIR_PASSWORD=${OCIR_PASSWORD}
+                            export OCIR_EMAIL=$OCIR_EMAIL}
+                            
+                            if [ ! -z "${http_proxy}" ]; then
+                                export http_proxy
+                            elif [ ! -z "${HTTP_PROXY}" ]; then
+                                export HTTP_PROXY
+                            fi
+        
+                            if [ ! -z "${https_proxy}" ]; then
+                                export https_proxy
+                            elif [ ! -z "${HTTPS_PROXY}" ]; then
+                                export HTTPS_PROXY
+                            fi
+                            
+                            if [ ! -z "${no_proxy}" ]; then
+                                export no_proxy
+                            elif [ ! -z "${NO_PROXY}" ]; then
+                                export NO_PROXY
+                            fi
+                            
+                            if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
+                                echo "integration-tests failed"
+                            fi
+                        '''
+                    }
+                }
+
+                stage('Collect logs') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            export KUBECONFIG=${kubeconfig_file}
+                            mkdir -m777 -p ${result_root}/kubelogs
+                            if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
+                                echo "Failed to export kind logs for kind cluster ${kind_name}"
+                            fi
+                            if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
+                                echo "Failed to run journalctl for kind worker"
+                            fi
+                            if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
+                                echo "Failed to run journalctl for kind control plane"
+                            fi
+                            if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
+                                echo "Failed to run journalctl for compute node"
+                            fi
+        
+                            mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                            sudo mv -f ${result_root}/* ${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results
+                            # pushd ${result_root}
+                            # tar zcf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
+                            # popd
+                        '''
+                        // archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
+                        archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/**/*")
+                        junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                    }
+                }
+
             }
-        }
-
-        stage('Run integration tests') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-                IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                OCR_USERNAME = credentials("${ocr_username_creds}")
-                OCR_PASSWORD = credentials("${ocr_password_creds}")
-                OCR_EMAIL = credentials("${ocr_username_creds}")
-                OCIR_REGISTRY = credentials("${ocir_registry_creds}")
-                OCIR_USERNAME = credentials("${ocir_username_creds}")
-                OCIR_PASSWORD = credentials("${ocir_password_creds}")
-                OCIR_EMAIL = credentials("${ocir_email_creds}")
-                TWO_CLUSTERS = "false"
+            post {
+                always {
+                    sh '''
+                        export PATH="${WORKSPACE}/bin:${PATH}"
+                        running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
+                        if [ "${running}" = 'true' ]; then
+                          echo "Stopping the registry container ${registry_name}"
+                          docker stop "${registry_name}"
+                          docker rm --force "${registry_name}"
+                        fi
+                        echo 'Remove old Kind cluster (if any)...'
+                        if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
+                            echo "Failed to delete kind cluster ${kind_name}"
+                        fi
+                    '''
+                }
             }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    mkdir -m777 -p "${WORKSPACE}/.mvn"
-                    touch ${WORKSPACE}/.mvn/maven.config
-                    
-                    export KUBECONFIG=${kubeconfig_file}
-                    K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
-                    export NO_PROXY="${K8S_NODEPORT_HOST}"
-
-                    if [ "${IT_TEST}" != '**/It*' ]; then
-                        echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                    elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
-                        echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
-                    fi
-                    echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
-                    echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
-
-                    echo "${WORKSPACE}/.mvn/maven.config contents:"
-                    cat "${WORKSPACE}/.mvn/maven.config"
-                    cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-
-                    export TWO_CLUSTERS=${TWO_CLUSTERS}
-                    export OCR_USERNAME=${OCR_USERNAME}
-                    export OCR_PASSWORD=${OCR_PASSWORD}
-                    export OCR_EMAIL=${OCR_EMAIL}
-                    export OCIR_USERNAME=${OCIR_USERNAME}
-                    export OCIR_PASSWORD=${OCIR_PASSWORD}
-                    export OCIR_EMAIL=$OCIR_EMAIL}
-                    
-                    if [ ! -z "${http_proxy}" ]; then
-                        export http_proxy
-                    elif [ ! -z "${HTTP_PROXY}" ]; then
-                        export HTTP_PROXY
-                    fi
-
-                    if [ ! -z "${https_proxy}" ]; then
-                        export https_proxy
-                    elif [ ! -z "${HTTPS_PROXY}" ]; then
-                        export HTTPS_PROXY
-                    fi
-                    
-                    if [ ! -z "${no_proxy}" ]; then
-                        export no_proxy
-                    elif [ ! -z "${NO_PROXY}" ]; then
-                        export NO_PROXY
-                    fi
-                    
-                    if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
-                        echo "integration-tests failed"
-                    fi
-                '''
-            }
-        }
-
-        stage('Collect logs') {
-            environment {
-                runtime_path = "${WORKSPACE}/bin:${PATH}"
-            }
-            steps {
-                sh '''
-                    export PATH=${runtime_path}
-                    export KUBECONFIG=${kubeconfig_file}
-                    mkdir -m777 -p ${result_root}/kubelogs
-                    if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
-                        echo "Failed to export kind logs for kind cluster ${kind_name}"
-                    fi
-                    if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
-                        echo "Failed to run journalctl for kind worker"
-                    fi
-                    if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
-                        echo "Failed to run journalctl for kind control plane"
-                    fi
-                    if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
-                        echo "Failed to run journalctl for compute node"
-                    fi
-
-                    mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                    pushd ${result_root}
-                    tar zcvf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
-                    popd
-                '''
-                archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
-                junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
-            }
-        }
-    }
-    post {
-        always {
-            sh '''
-                export PATH="${WORKSPACE}/bin:${PATH}"
-                running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
-                if [ "${running}" = 'true' ]; then
-                  echo "Stopping the registry container ${registry_name}"
-                  docker stop "${registry_name}"
-                  docker rm --force "${registry_name}"
-                fi
-                echo 'Remove old Kind cluster (if any)...'
-                if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
-                    echo "Failed to delete kind cluster ${kind_name}"
-                fi
-            '''
         }
     }
 }
