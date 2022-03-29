@@ -369,19 +369,6 @@
             </properties>
         </profile>
         <profile>
-            <id>fmw-image-cert</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItMiiSample,
-                  **/ItFmwDomainInPV,
-                  **/ItFmwMiiDomain,
-                  **/ItFmwSample,
-                  **/ItFmwBigCMMiiDomain
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -404,15 +391,6 @@
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
                   **/ItManageNameSpace
-               </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>resilience</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItResilience
                </includes-failsafe>
             </properties>
         </profile>
