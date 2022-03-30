@@ -9,27 +9,25 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import oracle.kubernetes.common.Labeled;
 
 @JsonAdapter(ShutdownType.Adapter.class)
-public enum ShutdownType implements Labeled {
+public enum ShutdownType {
   GRACEFUL("Graceful"),
   FORCED("Forced");
 
-  private final String label;
+  private final String value;
 
-  ShutdownType(String label) {
-    this.label = label;
+  ShutdownType(String value) {
+    this.value = value;
   }
 
-  @Override
-  public String label() {
-    return label;
+  public String getValue() {
+    return this.value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 
   /**
@@ -39,7 +37,7 @@ public enum ShutdownType implements Labeled {
    */
   public static ShutdownType fromValue(String value) {
     for (ShutdownType testValue : values()) {
-      if (testValue.label.equals(value)) {
+      if (testValue.value.equals(value)) {
         return testValue;
       }
     }
@@ -49,7 +47,7 @@ public enum ShutdownType implements Labeled {
 
   public static class Adapter extends TypeAdapter<ShutdownType> {
     public void write(JsonWriter jsonWriter, ShutdownType enumeration) throws IOException {
-      jsonWriter.value(enumeration.label());
+      jsonWriter.value(enumeration.getValue());
     }
 
     public ShutdownType read(JsonReader jsonReader) throws IOException {

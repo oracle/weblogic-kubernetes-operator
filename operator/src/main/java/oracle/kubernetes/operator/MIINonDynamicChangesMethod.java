@@ -9,27 +9,25 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import oracle.kubernetes.common.Labeled;
 
 @JsonAdapter(MIINonDynamicChangesMethod.Adapter.class)
-public enum MIINonDynamicChangesMethod implements Labeled {
+public enum MIINonDynamicChangesMethod {
   COMMIT_UPDATE_AND_ROLL("CommitUpdateAndRoll"),
   COMMIT_UPDATE_ONLY("CommitUpdateOnly");
 
-  private final String label;
+  private final String value;
 
-  MIINonDynamicChangesMethod(String label) {
-    this.label = label;
+  MIINonDynamicChangesMethod(String value) {
+    this.value = value;
   }
 
-  @Override
-  public String label() {
-    return label;
+  public String getValue() {
+    return this.value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 
   /**
@@ -39,7 +37,7 @@ public enum MIINonDynamicChangesMethod implements Labeled {
    */
   public static MIINonDynamicChangesMethod fromValue(String value) {
     for (MIINonDynamicChangesMethod testValue : values()) {
-      if (testValue.label.equals(value)) {
+      if (testValue.value.equals(value)) {
         return testValue;
       }
     }
@@ -49,7 +47,7 @@ public enum MIINonDynamicChangesMethod implements Labeled {
 
   public static class Adapter extends TypeAdapter<MIINonDynamicChangesMethod> {
     public void write(JsonWriter jsonWriter, MIINonDynamicChangesMethod enumeration) throws IOException {
-      jsonWriter.value(enumeration.label());
+      jsonWriter.value(enumeration.getValue());
     }
 
     public MIINonDynamicChangesMethod read(JsonReader jsonReader) throws IOException {

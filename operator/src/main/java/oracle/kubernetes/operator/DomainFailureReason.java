@@ -10,7 +10,6 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -18,7 +17,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
 
 @JsonAdapter(DomainFailureReason.Adapter.class)
-public enum DomainFailureReason implements Labeled {
+public enum DomainFailureReason {
   DOMAIN_INVALID("DomainInvalid") {
     @Override
     public String getEventError() {
@@ -128,20 +127,19 @@ public enum DomainFailureReason implements Labeled {
     return DomainFailureReason.getAdditionalMessageFromStatus(info) + getRetryMessage();
   }
 
-  private final String label;
+  private final String value;
 
-  DomainFailureReason(String label) {
-    this.label = label;
+  DomainFailureReason(String value) {
+    this.value = value;
   }
 
-  @Override
-  public String label() {
-    return label;
+  public String getValue() {
+    return this.value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 
   /**
@@ -151,7 +149,7 @@ public enum DomainFailureReason implements Labeled {
    */
   public static DomainFailureReason fromValue(String value) {
     for (DomainFailureReason testValue : values()) {
-      if (testValue.label.equals(value)) {
+      if (testValue.value.equals(value)) {
         return testValue;
       }
     }
@@ -161,7 +159,7 @@ public enum DomainFailureReason implements Labeled {
 
   public static class Adapter extends TypeAdapter<DomainFailureReason> {
     public void write(JsonWriter jsonWriter, DomainFailureReason enumeration) throws IOException {
-      jsonWriter.value(enumeration.label());
+      jsonWriter.value(enumeration.getValue());
     }
 
     public DomainFailureReason read(JsonReader jsonReader) throws IOException {

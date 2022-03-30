@@ -25,7 +25,6 @@ import com.google.gson.stream.JsonWriter;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -83,7 +82,7 @@ public class Namespaces {
   }
 
   @JsonAdapter(SelectionStrategy.Adapter.class)
-  public enum SelectionStrategy implements Labeled {
+  public enum SelectionStrategy {
     LIST("List") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
@@ -224,20 +223,19 @@ public class Namespaces {
       return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
     }
 
-    private final String label;
+    private final String value;
 
-    SelectionStrategy(String label) {
-      this.label = label;
+    SelectionStrategy(String value) {
+      this.value = value;
     }
 
-    @Override
-    public String label() {
-      return label;
+    public String getValue() {
+      return this.value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
 
     /**
@@ -247,7 +245,7 @@ public class Namespaces {
      */
     public static SelectionStrategy fromValue(String value) {
       for (SelectionStrategy testValue : values()) {
-        if (testValue.label.equals(value)) {
+        if (testValue.value.equals(value)) {
           return testValue;
         }
       }
@@ -257,7 +255,7 @@ public class Namespaces {
 
     public static class Adapter extends TypeAdapter<SelectionStrategy> {
       public void write(JsonWriter jsonWriter, SelectionStrategy enumeration) throws IOException {
-        jsonWriter.value(enumeration.label());
+        jsonWriter.value(enumeration.getValue());
       }
 
       public SelectionStrategy read(JsonReader jsonReader) throws IOException {

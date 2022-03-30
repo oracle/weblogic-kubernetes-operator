@@ -38,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -57,7 +58,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -114,7 +114,6 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyD
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -232,7 +231,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     Cluster cluster = new Cluster();
     cluster.setClusterName("cluster-1");
     cluster.setReplicas(1);
-    cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    cluster.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     DomainSpec spec =
         new DomainSpec()
             .withDomainUid(UID)
@@ -241,7 +240,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withCluster(cluster)
             .withImage(LATEST_IMAGE)
             .withDomainHomeInImage(false);
-    spec.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     List<String> overrideSecrets = new ArrayList<>();
     overrideSecrets.add(OVERRIDE_SECRET_1);
@@ -792,8 +791,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);
 
     // make JobHelper.runIntrospector() return false
-    getCluster("cluster-1").setServerStartPolicy(START_NEVER);
-    domain.getSpec().setServerStartPolicy(START_NEVER);
+    getCluster("cluster-1").setServerStartPolicy(ServerStartPolicy.NEVER);
+    domain.getSpec().setServerStartPolicy(ServerStartPolicy.NEVER);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, wlsDomainConfig);
 
     testSupport.runSteps(getStepFactory(), terminalStep);

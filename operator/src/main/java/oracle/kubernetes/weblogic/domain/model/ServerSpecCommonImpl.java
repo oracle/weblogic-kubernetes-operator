@@ -143,7 +143,6 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   private ServerStartPolicy getEffectiveServerStartPolicy() {
     return Optional.ofNullable(server.getServerStartPolicy())
-        .map(ServerStartPolicy::valueOf)
         .orElse(ServerStartPolicy.getDefaultPolicy());
   }
 

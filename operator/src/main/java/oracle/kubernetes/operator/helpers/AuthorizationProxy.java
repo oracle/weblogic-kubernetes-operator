@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -215,7 +214,7 @@ public class AuthorizationProxy {
   }
 
   @JsonAdapter(Operation.Adapter.class)
-  public enum Operation implements Labeled {
+  public enum Operation {
     GET("get"),
     LIST("list"),
     CREATE("create"),
@@ -225,20 +224,19 @@ public class AuthorizationProxy {
     DELETE("delete"),
     DELETECOLLECTION("deletecollection");
 
-    private final String label;
+    private final String value;
 
-    Operation(String label) {
-      this.label = label;
+    Operation(String value) {
+      this.value = value;
     }
 
-    @Override
-    public String label() {
-      return label;
+    public String getValue() {
+      return this.value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
 
     /**
@@ -248,7 +246,7 @@ public class AuthorizationProxy {
      */
     public static Operation fromValue(String value) {
       for (Operation testValue : values()) {
-        if (testValue.label.equals(value)) {
+        if (testValue.value.equals(value)) {
           return testValue;
         }
       }
@@ -258,7 +256,7 @@ public class AuthorizationProxy {
 
     public static class Adapter extends TypeAdapter<Operation> {
       public void write(JsonWriter jsonWriter, Operation enumeration) throws IOException {
-        jsonWriter.value(enumeration.label());
+        jsonWriter.value(enumeration.getValue());
       }
 
       public Operation read(JsonReader jsonReader) throws IOException {
@@ -268,7 +266,7 @@ public class AuthorizationProxy {
     }
   }
 
-  public enum Resource implements Labeled {
+  public enum Resource {
     CONFIGMAPS("configmaps", ""),
     PODS("pods", ""),
     LOGS("pods", "log", ""),
@@ -310,35 +308,33 @@ public class AuthorizationProxy {
       return apiGroup;
     }
 
-    @Override
-    public String label() {
-      return name();
+    public String getValue() {
+      return this.resource;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.resource);
     }
   }
 
-  public enum Scope implements Labeled {
+  public enum Scope {
     NAMESPACE("namespace"),
     CLUSTER("cluster");
 
-    private final String label;
+    private final String value;
 
-    Scope(String label) {
-      this.label = label;
+    Scope(String value) {
+      this.value = value;
     }
 
-    @Override
-    public String label() {
-      return label;
+    public String getValue() {
+      return this.value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
   }
 }

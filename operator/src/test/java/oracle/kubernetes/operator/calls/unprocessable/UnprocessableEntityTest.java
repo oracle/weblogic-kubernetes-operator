@@ -54,7 +54,7 @@ class UnprocessableEntityTest {
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(builder.getReason(), equalTo(KUBERNETES.label()));
+    assertThat(builder.getReason(), equalTo(KUBERNETES.getValue()));
   }
 
   @Test
@@ -79,7 +79,7 @@ class UnprocessableEntityTest {
     FailureStatusSource source = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(source.getReason(), equalTo(KUBERNETES.label()));
+    assertThat(source.getReason(), equalTo(KUBERNETES.getValue()));
     assertThat(source.getMessage(), allOf(
           containsString("replace"), containsString("pod"), containsString("pod1"),
                     containsString("junit"), containsString("This explanation")));

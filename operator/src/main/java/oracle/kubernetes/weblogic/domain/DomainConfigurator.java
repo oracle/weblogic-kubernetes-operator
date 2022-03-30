@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -307,7 +308,7 @@ public abstract class DomainConfigurator {
    * @param startPolicy the new default policy
    * @return this object
    */
-  public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
+  public abstract DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy);
 
   /**
    * Sets the server start state ("RUNNING" or "ADMIN") for the domain.

@@ -13,7 +13,6 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
@@ -231,7 +230,7 @@ class HealthCheckHelperTest {
     }
 
     private List<String> toVerbs(List<Operation> operations) {
-      return operations.stream().map(Labeled::label).collect(Collectors.toList());
+      return operations.stream().map(Operation::getValue).collect(Collectors.toList());
     }
   }
 }

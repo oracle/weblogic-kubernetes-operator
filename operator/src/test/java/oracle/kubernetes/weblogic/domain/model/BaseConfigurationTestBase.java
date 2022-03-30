@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -65,15 +66,15 @@ public abstract class BaseConfigurationTestBase {
 
   @Test
   void whenServerStartPolicyAreSame_objectsAreEqual() {
-    instance1.setServerStartPolicy("IF_NEEDED");
-    instance2.setServerStartPolicy("IF_NEEDED");
+    instance1.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    instance2.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
   void whenServerStartPoliciesDiffer_objectsAreNotEqual() {
-    instance1.setServerStartPolicy("NEVER");
+    instance1.setServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(instance1, not(equalTo(instance2)));
   }

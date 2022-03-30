@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -97,11 +98,11 @@ public abstract class BaseConfiguration {
   }
 
   boolean isStartAdminServerOnly() {
-    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.ADMIN_ONLY);
   }
 
   private boolean isStartNever() {
-    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
   }
 
   @Nullable
@@ -130,7 +131,7 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(envVar);
   }
 
-  public abstract String getServerStartPolicy();
+  public abstract ServerStartPolicy getServerStartPolicy();
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
@@ -141,7 +142,7 @@ public abstract class BaseConfiguration {
    * @since 2.0
    * @param serverStartPolicy start policy
    */
-  public abstract void setServerStartPolicy(String serverStartPolicy);
+  public abstract void setServerStartPolicy(ServerStartPolicy serverStartPolicy);
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);

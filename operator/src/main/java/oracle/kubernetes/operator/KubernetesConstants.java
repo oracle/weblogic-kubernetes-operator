@@ -33,8 +33,6 @@ public interface KubernetesConstants {
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
 
-  String GRACEFUL_SHUTDOWNTYPE = ShutdownType.GRACEFUL.label();
-
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";
   String WEBHOOK_NAMESPACE_ENV = "WEBHOOK_NAMESPACE";

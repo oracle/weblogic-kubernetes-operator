@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +35,6 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -180,14 +179,14 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenStartupPolicyNever_nonClusteredServerDoesNotStartUp() {
-    configureDomain(domain).withDefaultServerStartPolicy(START_NEVER);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getServer("server1", null).shouldStart(0), is(false));
   }
 
   @Test
   void whenStartupPolicyAlways_clusteredServerStartsUpEvenIfLimitReached() {
-    configureDomain(domain).withDefaultServerStartPolicy(START_ALWAYS);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
     configureCluster("cluster1").withReplicas(3);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(4), is(true));
@@ -208,7 +207,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenServerStartPolicyAlwaysConfiguredOnlyOnDomain_startServer() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
     configureServer("server1");
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(true));
@@ -216,14 +215,14 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenServerStartPolicyNever_dontStartServer() {
-    configureServer("server1").withServerStartPolicy(START_NEVER);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
   }
 
   @Test
   void whenServerStartPolicyAlways_startServer() {
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(true));
   }
@@ -247,7 +246,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenClusteredServerStartPolicyIfNeededAndDontNeedMoreServers_dontStartServer() {
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(5), is(false));
@@ -255,55 +254,55 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainStartPolicyNever_ignoreServerSettings() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
   }
 
   @Test
   void whenDomainStartPolicyNever_adminServerDesiredStateIsShutdown() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
   }
 
   @Test
   void whenClusterStartPolicyNever_ignoreServerSettings() {
-    configureCluster("cluster1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureCluster("cluster1").withServerStartPolicy(ServerStartPolicy.NEVER);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
   }
 
   @Test
   void whenDomainStartPolicyAdminOnly_dontStartManagedServer() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
-    configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    configureServer("server1").withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(domain.getServer("server1", "cluster1").shouldStart(0), is(false));
   }
 
   @Test
   void whenDomainStartPolicyAdminOnlyAndAdminServerNever_dontStartAdminServer() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
-    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
   }
 
   @Test
   void whenAdminServerStartPolicyNever_desiredStateIsShutdown() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
-    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
   }
 
   @Test
   void whenDomainStartPolicyAdminOnlyAndAdminServerIfNeeded_startAdminServer() {
-    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
-    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureDomain(domain).withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(domain.getAdminServerSpec().shouldStart(0), is(true));
   }

@@ -19,13 +19,11 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
 
@@ -93,7 +91,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
+  public DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy) {
     getDomainSpec().setServerStartPolicy(startPolicy);
     return this;
   }
@@ -456,7 +454,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+    configureAdminServer().withServerStartPolicy(shuttingDown ? ServerStartPolicy.NEVER : ServerStartPolicy.ALWAYS);
   }
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
@@ -509,7 +507,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withServerStartPolicy(String policy) {
+    public ServerConfigurator withServerStartPolicy(ServerStartPolicy policy) {
       server.setServerStartPolicy(policy);
       return this;
     }
@@ -703,7 +701,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withServerStartPolicy(String policy) {
+    public ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy) {
       cluster.setServerStartPolicy(policy);
       return this;
     }

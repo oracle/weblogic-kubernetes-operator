@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -47,7 +48,6 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -216,7 +216,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+        .withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -224,7 +224,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+        .withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -232,7 +232,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_NEVER);
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
@@ -240,7 +240,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+        .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -248,7 +248,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+        .withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -1334,13 +1334,13 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private void configureServersToStart() {
-    configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+        .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     return domainPresenceInfo;
   }
 

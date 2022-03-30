@@ -79,7 +79,7 @@ public class DomainSpec extends BaseConfiguration {
       + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private String serverStartPolicy;
+  private ServerStartPolicy serverStartPolicy;
 
   /**
    * Reference to secret containing WebLogic startup credentials user name and password. Secret must
@@ -495,12 +495,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   @Override
-  public String getServerStartPolicy() {
-    return Optional.ofNullable(serverStartPolicy).orElse(ConfigurationConstants.START_IF_NEEDED);
+  public ServerStartPolicy getServerStartPolicy() {
+    return Optional.ofNullable(serverStartPolicy).orElse(ServerStartPolicy.IF_NEEDED);
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 

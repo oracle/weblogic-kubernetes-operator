@@ -125,8 +125,6 @@ import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -332,7 +330,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
-    domainConfigurator.withDefaultServerStartPolicy("NEVER");
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
@@ -364,7 +362,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     final DomainPresenceInfo info1 = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info1).execute();
-    domainConfigurator.withDefaultServerStartPolicy("NEVER");
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     info1.setWebLogicCredentialsSecret(createCredentialsSecret());
@@ -559,7 +557,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -584,7 +582,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -607,7 +605,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1,3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -633,7 +631,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -658,7 +656,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 3, 4));
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
@@ -684,7 +682,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -711,7 +709,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -732,7 +730,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(START_NEVER);
+    domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(ServerStartPolicy.NEVER);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
@@ -754,7 +752,7 @@ class DomainProcessorTest {
     int[] servers = IntStream.rangeClosed(1, MAX_SERVERS).toArray();
     for (int i : servers) {
       if (i != 5) {
-        domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_NEVER);
+        domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.NEVER);
       }
     }
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);

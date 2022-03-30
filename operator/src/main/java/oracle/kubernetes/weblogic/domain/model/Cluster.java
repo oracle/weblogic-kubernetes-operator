@@ -59,7 +59,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private String serverStartPolicy;
+  private ServerStartPolicy serverStartPolicy;
 
   @Description(
       "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
@@ -159,12 +159,12 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   @Nullable
   @Override
-  public String getServerStartPolicy() {
+  public ServerStartPolicy getServerStartPolicy() {
     return serverStartPolicy;
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 

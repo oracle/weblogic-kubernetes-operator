@@ -9,7 +9,6 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.json.Obsoleteable;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
@@ -22,7 +21,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 
 @JsonAdapter(DomainConditionType.Adapter.class)
-public enum DomainConditionType implements Obsoleteable, Labeled {
+public enum DomainConditionType implements Obsoleteable {
   FAILED("Failed",null, DOMAIN_FAILURE_RESOLVED) {
     @Override
     boolean allowMultipleConditionsWithThisType() {
@@ -50,12 +49,12 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
     }
   };
 
-  private final String label;
+  private final String value;
   private final EventHelper.EventItem addedEvent;
   private final EventHelper.EventItem removedEvent;
 
-  DomainConditionType(String label, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
-    this.label = label;
+  DomainConditionType(String value, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
+    this.value = value;
     this.addedEvent = addedEvent;
     this.removedEvent = removedEvent;
   }
@@ -80,14 +79,13 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
     return removedEvent;
   }
 
-  @Override
-  public String label() {
-    return label;
+  public String getValue() {
+    return this.value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 
   /**
@@ -97,7 +95,7 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
    */
   public static DomainConditionType fromValue(String value) {
     for (DomainConditionType testValue : values()) {
-      if (testValue.label.equals(value)) {
+      if (testValue.value.equals(value)) {
         return testValue;
       }
     }
@@ -107,7 +105,7 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
 
   public static class Adapter extends TypeAdapter<DomainConditionType> {
     public void write(JsonWriter jsonWriter, DomainConditionType enumeration) throws IOException {
-      jsonWriter.value(enumeration.label());
+      jsonWriter.value(enumeration.getValue());
     }
 
     public DomainConditionType read(JsonReader jsonReader) throws IOException {

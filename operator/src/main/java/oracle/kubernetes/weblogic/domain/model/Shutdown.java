@@ -12,8 +12,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
-
 public class Shutdown {
   // Default timeout must stay 30 seconds to match Kubernetes default
   public static final Long DEFAULT_TIMEOUT = 30L;
@@ -60,7 +58,7 @@ public class Shutdown {
   }
 
   public String getShutdownType() {
-    return Optional.ofNullable(shutdownType).orElse(GRACEFUL_SHUTDOWNTYPE);
+    return Optional.ofNullable(shutdownType).orElse(ShutdownType.GRACEFUL.getValue());
   }
 
   public Shutdown shutdownType(String shutdownType) {

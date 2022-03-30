@@ -9,13 +9,12 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import oracle.kubernetes.common.Labeled;
 
 /**
  * Types of secrets which can be configured on a domain.
  */
 @JsonAdapter(SecretType.Adapter.class)
-public enum SecretType implements Labeled {
+public enum SecretType {
   WEBLOGIC_CREDENTIALS("WebLogicCredentials"),
   IMAGE_PULL("ImagePull"),
   CONFIG_OVERRIDE("ConfigOverride"),
@@ -23,20 +22,19 @@ public enum SecretType implements Labeled {
   OPSS_WALLET_PASSWORD("OpssWalletPassword"),
   OPSS_WALLET_FILE("OpssWalletFile");
 
-  private final String label;
+  private final String value;
 
-  SecretType(String label) {
-    this.label = label;
+  SecretType(String value) {
+    this.value = value;
   }
 
-  @Override
-  public String label() {
-    return label;
+  public String getValue() {
+    return this.value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 
   /**
@@ -46,7 +44,7 @@ public enum SecretType implements Labeled {
    */
   public static SecretType fromValue(String value) {
     for (SecretType testValue : values()) {
-      if (testValue.label.equals(value)) {
+      if (testValue.value.equals(value)) {
         return testValue;
       }
     }
@@ -56,7 +54,7 @@ public enum SecretType implements Labeled {
 
   public static class Adapter extends TypeAdapter<SecretType> {
     public void write(JsonWriter jsonWriter, SecretType enumeration) throws IOException {
-      jsonWriter.value(enumeration.label());
+      jsonWriter.value(enumeration.getValue());
     }
 
     public SecretType read(JsonReader jsonReader) throws IOException {

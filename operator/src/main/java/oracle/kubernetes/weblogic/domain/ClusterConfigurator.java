@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import oracle.kubernetes.operator.ServerStartPolicy;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -22,7 +23,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withServerStartState(String cluster);
 
-  ClusterConfigurator withServerStartPolicy(String policy);
+  ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy);
 
   ClusterConfigurator withReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
 

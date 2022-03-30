@@ -468,7 +468,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.label()));
+    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.getValue()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 

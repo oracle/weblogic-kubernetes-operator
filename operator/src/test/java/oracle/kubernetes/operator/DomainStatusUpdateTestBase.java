@@ -41,7 +41,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -1418,7 +1417,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnly_availableIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     updateDomainStatus();
@@ -1428,7 +1427,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnly_completedIsTrue() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     updateDomainStatus();
@@ -1438,7 +1437,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnlyAndAdminIsNotYetRunning_completedIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     deactivateServer(ADMIN);
@@ -1449,7 +1448,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnlyAndAManagedServersShuttingDown_completedIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario()
           .withServers("server1", "server2")
           .withServersReachingState(SHUTTING_DOWN_STATE, "server1", "server2")
