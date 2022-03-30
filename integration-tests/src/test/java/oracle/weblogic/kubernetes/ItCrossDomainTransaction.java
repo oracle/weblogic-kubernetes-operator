@@ -504,16 +504,13 @@ class ItCrossDomainTransaction {
         replicaCount, domainImage);
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     // check admin server pod exists
     logger.info("Check for admin server pod {0} existence in namespace {1}",
