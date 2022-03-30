@@ -1,7 +1,7 @@
 ---
 title: "Troubleshooting"
 date: 2019-02-23T16:47:21-05:00
-weight: 180
+weight: 11
 description: "General advice for debugging and monitoring the operator."
 ---
 
@@ -90,7 +90,7 @@ A pod `describe` usefully includes any events that might be associated with the 
 
 ### Check common issues
 
-- See [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
+- See [Common mistakes and solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 - Check the [FAQs]({{<relref "/faq/_index.md">}}).
 
 ### Check for events
