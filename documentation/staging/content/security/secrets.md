@@ -115,7 +115,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see [REST Certificates]({{<relref "/userguide/managing-operators/the-rest-certificates#additional-reading">}}) in the operator user guide.
+For more information, see [REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
 {{% /notice %}}
 
 #### Operator internal REST interface secret
