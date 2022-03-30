@@ -143,19 +143,19 @@ public class Kubernetes {
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodInitialized(String namespace, String domainUid, String podName) throws ApiException {
     final LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, null, podName);
     if (pod != null) {
       if (pod.getStatus() != null
-          && pod.getStatus().getConditions() != null
-          && pod.getStatus().getConditions().stream() != null) {
+              && pod.getStatus().getConditions() != null
+              && pod.getStatus().getConditions().stream() != null) {
         // get the podCondition with the 'Ready' type field
         V1PodCondition v1PodInitializedCondition = pod.getStatus().getConditions().stream()
-            .filter(v1PodCondition -> "Initialized".equals(v1PodCondition.getType()))
-            .findAny()
-            .orElse(null);
+                .filter(v1PodCondition -> "Initialized".equals(v1PodCondition.getType()))
+                .findAny()
+                .orElse(null);
 
         if (v1PodInitializedCondition != null && v1PodInitializedCondition.getStatus() != null) {
           status = v1PodInitializedCondition.getStatus().equalsIgnoreCase("true");

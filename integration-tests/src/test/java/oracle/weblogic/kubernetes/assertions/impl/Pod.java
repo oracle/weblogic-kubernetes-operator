@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -130,9 +130,9 @@ public class Pod {
    * @param podName name of the pod
    * @return true if pod is initializing otherwise false
    */
-  public static Callable<Boolean> podInitializing(String namespace, String domainUid, String podName) {
+  public static Callable<Boolean> podInitialized(String namespace, String domainUid, String podName) {
     return () -> {
-      return Kubernetes.isPodInitializing(namespace, domainUid, podName);
+      return Kubernetes.isPodInitialized(namespace, domainUid, podName);
     };
   }
 

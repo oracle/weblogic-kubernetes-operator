@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -487,15 +487,15 @@ public class LoggingUtil {
 
     getLogger().info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
     withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                expectedString,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
-            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+            .conditionEvaluationListener(
+                    condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
+                                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                            expectedString,
+                            podName,
+                            namespace,
+                            condition.getElapsedTimeInMS(),
+                            condition.getRemainingTimeInMS()))
+            .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+                    "podLogContainsString failed with IOException, ApiException or InterruptedException"));
   }
 }

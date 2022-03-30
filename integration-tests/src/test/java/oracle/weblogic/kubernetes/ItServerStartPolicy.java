@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -19,16 +19,18 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_LIFECYCLE;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.DOMAIN;
@@ -45,6 +47,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedSer
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.verifyExecuteResult;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -494,9 +497,9 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Verify Operator infrastructure log warning message, when the sample script
-  * tries to start a server that exceeds the max cluster size.
-  */
+   * Verify Operator infrastructure log warning message, when the sample script
+   * tries to start a server that exceeds the max cluster size.
+   */
   @Order(7)
   @Test
   @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
@@ -504,11 +507,9 @@ class ItServerStartPolicy {
     String operatorPodName =
             assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-    logger.info("operator pod log: {0}", operatorPodLog);
-    assertTrue(operatorPodLog.contains("WARNING"));
-    assertTrue(operatorPodLog.contains(
-            "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
+    checkPodLogContainsString(opNamespace, operatorPodName, "WARNING");
+    checkPodLogContainsString(opNamespace, operatorPodName,
+            "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException");
   }
 
   /**
@@ -536,6 +537,7 @@ class ItServerStartPolicy {
 
     // Here managed server can be stopped without admin server
     // but can not be started to RUNNING state.
+
     try {
       // Make sure that config-cluster-server1 is RUNNING
       checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
@@ -543,17 +545,17 @@ class ItServerStartPolicy {
 
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                "/spec/adminServer/serverStartPolicy", "NEVER"),
-                "Failed to patch adminServer's serverStartPolicy to NEVER");
+              "/spec/adminServer/serverStartPolicy", "NEVER"),
+              "Failed to patch adminServer's serverStartPolicy to NEVER");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
 
       // verify the script can stop the server by reducing replica count
       assertDoesNotThrow(() ->
-                        executeLifecycleScript(domainUid, domainNamespace, samplePath,STOP_SERVER_SCRIPT,
-                                SERVER_LIFECYCLE, serverName, "", true),
-                String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+                      executeLifecycleScript(domainUid, domainNamespace, samplePath,STOP_SERVER_SCRIPT,
+                              SERVER_LIFECYCLE, serverName, "", true),
+              String.format("Failed to run %s", STOP_SERVER_SCRIPT));
       checkPodDeleted(serverPodName, domainUid, domainNamespace);
       logger.info("Shutdown [" + serverName + "] without admin server success");
 
@@ -562,34 +564,41 @@ class ItServerStartPolicy {
       // lost while stopping the server in mii model.
 
       assertDoesNotThrow(() ->
-                        executeLifecycleScript(domainUid, domainNamespace, samplePath,
-                                START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
-                String.format("Failed to run %s", START_SERVER_SCRIPT));
+                      executeLifecycleScript(domainUid, domainNamespace, samplePath,
+                              START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, "", true),
+              String.format("Failed to run %s", START_SERVER_SCRIPT));
       logger.info("Replica count increased without admin server");
 
       // Check if pod in init state
-      // Here the server pd is created but does not goes into 1/1 state
-      checkPodInitializing(serverPodName, domainUid, domainNamespace);
+      // Here the server pod is created but does not goes into 1/1 state
+      checkPodInitialized(serverPodName, domainUid, domainNamespace);
       logger.info("Server[" + serverName + "] pod is initialized");
 
       // (re)Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-                "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-                "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-      checkPodReadyAndServiceExists(
-                adminServerPodName, domainUid, domainNamespace);
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+                      .and().with().pollInterval(10, SECONDS)
+                      .atMost(10, MINUTES).await(),
+              adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
 
-      checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+              .and().with().pollInterval(10, SECONDS)
+              .atMost(10, MINUTES).await(), serverPodName, domainUid, domainNamespace);
       logger.info("(re)Started [" + serverName + "] on admin server restart");
     } finally {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-            "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-            "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
+              "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
+              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
-            adminServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+              adminServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+              .and().with().pollInterval(10, SECONDS)
+              .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
     }
   }
 }

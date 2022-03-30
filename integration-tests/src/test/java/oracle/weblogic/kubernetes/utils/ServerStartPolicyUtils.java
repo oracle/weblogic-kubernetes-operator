@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -156,8 +157,8 @@ public class ServerStartPolicyUtils {
   * @param samplePathDir - name of sample script dir
   */
   public static void scalingClusters(String domainUid, String domainNamespace,
-                                       String clusterName, String serverPodName, int replicaNum,
-                                       String regex, boolean checkPodExist, String samplePathDir) {
+                                     String clusterName, String serverPodName, int replicaNum,
+                                     String regex, boolean checkPodExist, String samplePathDir) {
     // use scaleCluster.sh to scale a given cluster
     logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
     String result =  assertDoesNotThrow(() ->
@@ -176,13 +177,8 @@ public class ServerStartPolicyUtils {
             domainUid, domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
-    result =  assertDoesNotThrow(() ->
-                    executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
-                            STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
-            String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
-
-    logger.info("The cluster {0} scaled result {1}.", clusterName, result);
-    assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
+    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
+            "Checking for cluster status for cluster: " + clusterName);
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 
@@ -453,5 +449,17 @@ public class ServerStartPolicyUtils {
     Matcher matcher = pattern.matcher(result);
 
     return matcher.find();
+  }
+
+  private static Callable<Boolean> checkClusterStatus(String domainUid, String domainNamespace,
+                                                      String samplePathDir, String clusterName,
+                                                      String regex) {
+    // use clusterStatus.sh to verify scaling results
+    String result = assertDoesNotThrow(() ->
+                    executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                            STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+            String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
+    logger.info("Status of cluster {0} retured {1}, expected {2}", clusterName, result, regex);
+    return () -> verifyExecuteResult(result, regex);
   }
 }
