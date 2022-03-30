@@ -144,18 +144,17 @@ public class ServerStartPolicyUtils {
     setupSample(samplePath);
   }
 
-
   /**
-  *  Scaling cluster util method.
-  * @param domainUid - domain uid
-  * @param domainNamespace - domain namespace
-  * @param clusterName - cluster name
-  * @param serverPodName -server pod name
-  * @param replicaNum -number of servers to scale
-  * @param regex - regex
-  * @param checkPodExist - to check if pod exists
-  * @param samplePathDir - name of sample script dir
-  */
+   *  Scaling cluster util method.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param clusterName - cluster name
+   * @param serverPodName -server pod name
+   * @param replicaNum -number of servers to scale
+   * @param regex - regex
+   * @param checkPodExist - to check if pod exists
+   * @param samplePathDir - name of sample script dir
+   */
   public static void scalingClusters(String domainUid, String domainNamespace,
                                      String clusterName, String serverPodName, int replicaNum,
                                      String regex, boolean checkPodExist, String samplePathDir) {
