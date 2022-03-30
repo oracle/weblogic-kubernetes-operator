@@ -614,11 +614,7 @@ EOF
     
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                                # pushd ${result_root}
-                                # tar zcf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
-                                # popd
                             '''
-                            // archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
                             archiveArtifacts(artifacts: "logdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
                         }
