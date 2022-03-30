@@ -121,20 +121,18 @@ pipeline {
     }
 
     parameters {
-        string(name: 'IT_TEST',
-               description: 'Comma separated ItClasses to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
-               defaultValue: '**/It*'
-        )
         choice(name: 'MAVEN_PROFILE_NAME',
-               description: 'Profile to use in mvn command to run the tests.  Possible values are integration-tests, toolkits-srg, kind-sequential, wls-image-cert, fmw-image-cert, and fmw-srg.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-               choices: [
-                   'integration-tests',
-                   'toolkits-srg',
-                   'kind-sequential',
-                   'wls-image-cert',
-                   'fmw-image-cert',
-                   'fmw-srg'
-               ]
+                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                choices: [
+                        'wls-srg',
+                        'integration-tests',
+                        'kind-sequential',
+                        'toolkits-srg'
+                ]
+        )
+        string(name: 'IT_TEST',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               defaultValue: ''
         )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
@@ -354,7 +352,7 @@ pipeline {
                 // stage('Verify Sonar Quality Gate') {
                 //    steps {
                 //        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                //            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
                 //            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
                 //        }
                 //    }
@@ -528,11 +526,11 @@ EOF
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-
-                            if [ "${IT_TEST}" != '**/It*' ]; then
-                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                            elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+        
+                            if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                 echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
+                            elif [ ! -z "${IT_TEST}" ]; then
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
@@ -591,42 +589,33 @@ EOF
                             fi
                         '''
                     }
-                }
-
-                stage('Collect logs') {
-                    environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
-                    }
-                    steps {
-                        sh '''
-                            export PATH=${runtime_path}
-                            export KUBECONFIG=${kubeconfig_file}
-                            mkdir -m777 -p ${result_root}/kubelogs
-                            if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
-                                echo "Failed to export kind logs for kind cluster ${kind_name}"
-                            fi
-                            if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
-                                echo "Failed to run journalctl for kind worker"
-                            fi
-                            if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
-                                echo "Failed to run journalctl for kind control plane"
-                            fi
-                            if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
-                                echo "Failed to run journalctl for compute node"
-                            fi
-
-                            mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                            sudo mv -f ${result_root}/* ${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results
-                            # pushd ${result_root}
-                            # tar zcf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
-                            # popd
-                        '''
-                        // archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
-                        archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/**/*")
-                        junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                    post {
+                        always {
+                            sh '''
+                                export PATH="${WORKSPACE}/bin:${PATH}"
+                                export KUBECONFIG=${kubeconfig_file}
+                                mkdir -m777 -p ${result_root}/kubelogs
+                                if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
+                                    echo "Failed to export kind logs for kind cluster ${kind_name}"
+                                fi
+                                if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
+                                    echo "Failed to run journalctl for kind worker"
+                                fi
+                                if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
+                                    echo "Failed to run journalctl for kind control plane"
+                                fi
+                                if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
+                                    echo "Failed to run journalctl for compute node"
+                                fi
+    
+                                mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                                sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                            '''
+                            archiveArtifacts(artifacts: "logdir/**/*")
+                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                        }
                     }
                 }
-
             }
             post {
                 always {
@@ -634,9 +623,9 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}"
                         running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                         if [ "${running}" = 'true' ]; then
-                          echo "Stopping the registry container ${registry_name}"
-                          docker stop "${registry_name}"
-                          docker rm --force "${registry_name}"
+                            echo "Stopping the registry container ${registry_name}"
+                            docker stop "${registry_name}"
+                            docker rm --force "${registry_name}"
                         fi
                         echo 'Remove old Kind cluster (if any)...'
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then
