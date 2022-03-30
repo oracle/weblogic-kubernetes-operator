@@ -41,9 +41,9 @@ validateKubectlAvailable() {
 usage() {
   echo usage: ${script} -u username -p password -a sysuser -q syspassword [-d domainUID] [-n namespace] [-s secretName] [-h]
   echo "  -u username for schema owner (regular user), must be specified."
-  echo "  -p password for schema owner (regular user), must be specified."
+  echo "  -p password for schema owner (regular user), must be provided through -p argument or user will be prompted to enter a value."
   echo "  -a username for SYSDBA user, must be specified."
-  echo "  -q password for SYSDBA user, must be specified."
+  echo "  -q password for SYSDBA user, must be provided through -q argument or user will be prompted to enter a value."
   echo "  -d domainUID, optional. The default value is domain1. If specified, the secret will be labeled with the domainUID unless the given value is an empty string."
   echo "  -n namespace, optional. Use the default namespace if not specified"
   echo "  -s secretName, optional. If not specified, the secret name will be determined based on the domainUID value"
@@ -92,18 +92,35 @@ if [ -z ${username} ]; then
   missingRequiredOption="true"
 fi
 
-if [ -z ${password} ]; then
-  echo "${script}: -p must be specified."
+if [ -z ${sys_username} ]; then
+  echo "${script}: -a must be specified."
   missingRequiredOption="true"
 fi
 
-if [ -z ${sys_username} ]; then
-  echo "${script}: -s must be specified."
+if [ "${missingRequiredOption}" != "true" ]; then
+  if [ -z ${password} ]; then
+    stty -echo
+    printf "Enter password for schema owner: "
+    read password
+    stty echo
+    printf "\n"
+  fi
+  if [ -z ${sys_password} ]; then
+    stty -echo
+    printf "Enter password for SYSDBA user: "
+    read sys_password
+    stty echo
+    printf "\n"
+  fi
+fi
+
+if [ -z ${password} ]; then
+  echo "${script}: -p password for schema owner must be specified."
   missingRequiredOption="true"
 fi
 
 if [ -z ${sys_password} ]; then
-  echo "${script}: -q must be specified."
+  echo "${script}: -q password for SYSDBA user must be specified."
   missingRequiredOption="true"
 fi
 
