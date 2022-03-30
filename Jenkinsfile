@@ -122,20 +122,18 @@ pipeline {
     }
 
     parameters {
-        string(name: 'IT_TEST',
-               description: 'Comma separated ItClasses to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
-               defaultValue: '**/It*'
-        )
         choice(name: 'MAVEN_PROFILE_NAME',
-               description: 'Profile to use in mvn command to run the tests.  Possible values are integration-tests, toolkits-srg, kind-sequential, wls-image-cert, fmw-image-cert, and fmw-srg.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-               choices: [
-                   'integration-tests',
-                   'toolkits-srg',
-                   'kind-sequential',
-                   'wls-image-cert',
-                   'fmw-image-cert',
-                   'fmw-srg'
-               ]
+                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                choices: [
+                        'wls-srg',
+                        'integration-tests',
+                        'kind-sequential',
+                        'toolkits-srg'
+                ]
+        )
+        string(name: 'IT_TEST',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               defaultValue: ''
         )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
@@ -356,7 +354,7 @@ pipeline {
                 // stage('Verify Sonar Quality Gate') {
                 //    steps {
                 //        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                //            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
                 //            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
                 //        }
                 //    }
@@ -531,10 +529,10 @@ EOF
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
         
-                            if [ "${IT_TEST}" != '**/It*' ]; then
-                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                            elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+                            if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                 echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
+                            elif [ ! -z "${IT_TEST}" ]; then
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
