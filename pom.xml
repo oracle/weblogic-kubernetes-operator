@@ -18,7 +18,6 @@
     <module>kubernetes</module>
     <module>operator-build-maven-plugin</module>
     <module>json-schema-generator</module>
-    <module>buildtime-reports</module>
   </modules>
 
   <scm>
