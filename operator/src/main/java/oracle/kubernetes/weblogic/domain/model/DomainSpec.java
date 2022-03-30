@@ -389,11 +389,12 @@ public class DomainSpec extends BaseConfiguration {
     return fluentdSpecification;
   }
 
-  void setFluentdConfiguration(String yaml) {
+  void setFluentdConfiguration(boolean watchServerLogs, boolean watchIntrospectorLog) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
     }
-    fluentdSpecification.setConfigurationConfigMap(yaml);
+    fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
+    fluentdSpecification.setWatchServerLogs(watchServerLogs);
   }
 
   String getFluentdImage() {

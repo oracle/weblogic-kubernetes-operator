@@ -450,9 +450,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
-  protected DomainConfigurator defineFluentdConfiguration() {
+  protected DomainConfigurator defineFluentdConfiguration(boolean watchServerLogs, boolean watchIntrospectorLog) {
     return configureDomain()
-            .withFluentdConfiguration("fluentd-configufation-confgmap");
+            .withFluentdConfiguration(watchServerLogs, watchIntrospectorLog);
   }
 
   @Test
@@ -547,7 +547,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasFluentdInSerpverPod_createPodShouldHaveFluetdContainer() {
-    defineFluentdConfiguration();
+    defineFluentdConfiguration(true, true);
 
     getCreatedPod();
 

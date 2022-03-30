@@ -849,7 +849,6 @@ public class ConfigMapHelper {
   }
 
   private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
-
     ReadIntrospectorConfigMapStep() {
     }
 
@@ -930,6 +929,17 @@ public class ConfigMapHelper {
     return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
 
+  static class EmptyStep extends Step {
+
+    EmptyStep() {
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(null);
+    }
+  }
+
   private static Step createFluentdConfigMap(DomainPresenceInfo info) {
     FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
     if (fluentdSpecification != null) {
@@ -937,21 +947,21 @@ public class ConfigMapHelper {
               .createConfigMapAsync(info.getNamespace(), getFluentdConfigMap(fluentdSpecification,
                       info.getDomainUid(), info.getNamespace()), new FluentdConfigMapResponseStep());
     } else {
-      return null;
+      return new EmptyStep();
     }
   }
 
-  private static Step replaceFluentdConfigMap(DomainPresenceInfo info) {
-    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-    if (fluentdSpecification != null) {
-      return new CallBuilder()
-              .replaceConfigMapAsync(fluentdSpecification.getConfigurationConfigMap(), info.getNamespace(),
-                      getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
-                      new FluentdConfigMapResponseStep());
-    } else {
-      return null;
-    }
-  }
+  //  private static Step replaceFluentdConfigMap(DomainPresenceInfo info) {
+  //    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+  //    if (fluentdSpecification != null) {
+  //      return new CallBuilder()
+  //              .replaceConfigMapAsync(fluentdSpecification.getConfigurationConfigMap(), info.getNamespace(),
+  //                      getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
+  //                      new FluentdConfigMapResponseStep());
+  //    } else {
+  //      return new EmptyStep();
+  //    }
+  //  }
 
   public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
     // TODO handle replace
@@ -960,7 +970,53 @@ public class ConfigMapHelper {
 
   protected static V1ConfigMap getFluentdConfigMap(FluentdSpecification fluentdSpecification, String domainUid,
                                             String namespace) {
-    String contents = "";
+    String contents = "   <match fluent.**>\n"
+            + "      @type null\n"
+            + "    </match>\n"
+            + "    <source>\n"
+            + "      @type tail\n"
+            + "      path \"#{ENV['LOG_PATH']}\"\n"
+            + "      pos_file /tmp/server.log.pos\n"
+            + "      read_from_head true\n"
+            + "      tag \"#{ENV['DOMAIN_UID']}\"\n"
+            + "      # multiline_flush_interval 20s\n"
+            + "      <parse>\n"
+            + "        @type multiline\n"
+            + "        format_firstline /^####/\n"
+            + "        format1 /^####<(?<timestamp>(.*?))>/\n"
+            + "        format2 / <(?<level>(.*?))>/\n"
+            + "        format3 / <(?<subSystem>(.*?))>/\n"
+            + "        format4 / <(?<serverName>(.*?))>/\n"
+            + "        format5 / <(?<serverName2>(.*?))>/\n"
+            + "        format6 / <(?<threadName>(.*?))>/\n"
+            + "        format7 / <(?<info1>(.*?))>/\n"
+            + "        format8 / <(?<info2>(.*?))>/\n"
+            + "        format9 / <(?<info3>(.*?))>/\n"
+            + "        format10 / <(?<sequenceNumber>(.*?))>/\n"
+            + "        format11 / <(?<severity>(.*?))>/\n"
+            + "        format12 / <(?<messageID>(.*?))>/\n"
+            + "        format13 / <(?<message>(.*?))>/\n"
+            + "        # use the timestamp field in the message as the timestamp\n"
+            + "        # instead of the time the message was actually read\n"
+            + "        time_key timestamp\n"
+            + "        keep_time_key true\n"
+            + "    </source>\n"
+            + "    <match **>\n"
+            + "      @type elasticsearch\n"
+            + "      host \"#{ENV['ELASTICSEARCH_HOST']}\"\n"
+            + "      port \"#{ENV['ELASTICSEARCH_PORT']}\"\n"
+            + "      user \"#{ENV['ELASTICSEARCH_USER']}\"\n"
+            + "      password \"#{ENV['ELASTICSEARCH_PASSWORD']}\"\n"
+            + "      index_name \"#{ENV['DOMAIN_UID']}\"\n"
+            + "      scheme https\n"
+            + "      ssl_version TLSv1_2\n"
+            + "      key_name timestamp\n"
+            + "      types timestamp:time\n"
+            + "      # inject the @timestamp special field (as type time) into the record\n"
+            + "      # so you will be able to do time based queries.\n"
+            + "      # not to be confused with timestamp which is of type string!!!\n"
+            + "      include_timestamp true\n"
+            + "    </match>";
     HashMap<String, String> data = new HashMap<>();
     data.put("fluentd-config", contents);
     HashMap<String, String> labels = new HashMap<>();

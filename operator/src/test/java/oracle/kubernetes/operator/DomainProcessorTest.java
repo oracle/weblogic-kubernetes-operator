@@ -956,6 +956,20 @@ class DomainProcessorTest {
     assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
   }
 
+  @Test
+  void whenFluentdSpecified_verifyConfigMapAndContainers() {
+    domainConfigurator
+            .withFluentdConfiguration(true, true)
+            .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    List<V1Pod> runningPods = getRunningPods();
+
+  }
+
+
   private void executeScheduledRetry() {
     testSupport.setTime(10, TimeUnit.SECONDS);
   }
