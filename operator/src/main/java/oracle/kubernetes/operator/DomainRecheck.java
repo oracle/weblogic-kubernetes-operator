@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -27,7 +28,6 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
@@ -171,10 +171,10 @@ class DomainRecheck {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> domainNamespaces = getNamespacesToStart(callResponse.getResult());
-      Namespaces.getFoundDomainNamespaces(packet).addAll(domainNamespaces);
+      final Set<String> namespacesToStart = getNamespacesToStart(callResponse.getResult());
+      Namespaces.getFoundDomainNamespaces(packet).addAll(namespacesToStart);
 
-      return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
+      return doContinueListOrNext(callResponse, packet, createNextSteps(namespacesToStart));
     }
 
     private Step createNextSteps(Set<String> namespacesToStartNow) {
@@ -188,6 +188,10 @@ class DomainRecheck {
         current = Step.chain(nextSteps);
       }
       return current;
+    }
+
+    private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+      return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
     }
 
     private boolean haveExplicitlyConfiguredNamespacesToManage() {
@@ -206,10 +210,6 @@ class DomainRecheck {
 
   Step createStartNamespacesStep(Collection<String> domainNamespaces) {
     return RunInParallel.perNamespace(domainNamespaces, this::startNamespaceSteps);
-  }
-
-  private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
-    return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
   }
 
   private Step startNamespaceSteps(String ns) {

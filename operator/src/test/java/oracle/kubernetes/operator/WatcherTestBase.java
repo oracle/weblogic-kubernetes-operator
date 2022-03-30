@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,6 +12,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -19,7 +20,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.utils.TestUtils.ConsoleHandlerMemento;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,7 +80,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     StubWatchFactory.setListener(this);
   }
 
-  protected ConsoleHandlerMemento configureOperatorLogger() {
+  protected BaseTestUtils.ConsoleHandlerMemento configureOperatorLogger() {
     return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException);
   }
 

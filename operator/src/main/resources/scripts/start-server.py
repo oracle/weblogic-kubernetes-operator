@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -8,8 +8,9 @@
 # for its nmConnect credentials.
 #
 
-import sys;
 import base64
+import sys;
+
 
 def getEnvVar(var):
   val=os.environ.get(var)

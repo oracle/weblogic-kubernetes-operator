@@ -86,13 +86,12 @@ public abstract class StepContextBase implements StepContextConstants {
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
   private static final String DOMAIN_MODEL_PACKAGE = Domain.class.getPackageName();
 
-  private boolean isModelClass(Class cls) {
+  private boolean isModelClass(Class<?> cls) {
     return cls.getPackageName().startsWith(MODELS_PACKAGE)
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
-  @SuppressWarnings("unchecked")
-  private List<Pair<Method, Method>> typeBeans(Class cls) {
+  private List<Pair<Method, Method>> typeBeans(Class<?> cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();
     for (Method m : methods) {
@@ -106,9 +105,7 @@ public abstract class StepContextBase implements StepContextConstants {
         if (beanName != null) {
           try {
             Method set = cls.getMethod("set" + beanName, m.getReturnType());
-            if (set != null) {
-              results.add(new Pair<>(m, set));
-            }
+            results.add(new Pair<>(m, set));
           } catch (NoSuchMethodException nsme) {
             // no-op
           }

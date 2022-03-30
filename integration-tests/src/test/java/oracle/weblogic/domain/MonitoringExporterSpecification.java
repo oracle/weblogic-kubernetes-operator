@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import com.google.gson.Gson;
 import io.swagger.annotations.ApiModelProperty;
-import oracle.weblogic.domain.MonitoringExporterConfiguration;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;

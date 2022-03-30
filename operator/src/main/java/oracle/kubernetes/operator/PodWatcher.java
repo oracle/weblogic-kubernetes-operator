@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -30,16 +31,15 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
-import static oracle.kubernetes.operator.logging.MessageKeys.LOG_WAITING_COUNT;
 
 /**
  * Watches for changes to pods.
@@ -89,39 +89,15 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return watcher;
   }
 
-  private void addOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (modifiedCallbackRegistrations) {
-      modifiedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
-    }
-  }
-
   private @Nonnull Collection<Consumer<V1Pod>> getOnModifiedCallbacks(String podName) {
     synchronized (modifiedCallbackRegistrations) {
       return Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).orElse(Collections.emptyList());
     }
   }
 
-  private void removeOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (modifiedCallbackRegistrations) {
-      Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
-    }
-  }
-
-  private void addOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (deletedCallbackRegistrations) {
-      deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
-    }
-  }
-
   private @Nonnull Collection<Consumer<V1Pod>> getOnDeleteCallbacks(String podName) {
     synchronized (deletedCallbackRegistrations) {
       return Optional.ofNullable(deletedCallbackRegistrations.remove(podName)).orElse(Collections.emptyList());
-    }
-  }
-
-  private void removeOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
-    synchronized (deletedCallbackRegistrations) {
-      Optional.ofNullable(deletedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
     }
   }
 
@@ -274,7 +250,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           return Optional.ofNullable(serverName).map(info::getServerPod).orElse(null);
         }
 
-        private boolean isNotFoundOnRead(CallResponse callResponse) {
+        private boolean isNotFoundOnRead(CallResponse<?> callResponse) {
           return callResponse.getResult() == null;
         }
 
@@ -283,7 +259,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         }
       };
     }
-
   }
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
@@ -308,9 +283,21 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return isReady(resource);
     }
 
+    private void addOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        modifiedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
+      }
+    }
+
     @Override
     protected void addCallback(String podName, Consumer<V1Pod> callback) {
       addOnModifiedCallback(podName, callback);
+    }
+
+    private void removeOnModifiedCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        Optional.ofNullable(modifiedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
+      }
     }
 
     @Override
@@ -347,9 +334,21 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return result == null;
     }
 
+    private void addOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (deletedCallbackRegistrations) {
+        deletedCallbackRegistrations.computeIfAbsent(podName, k -> new ArrayList<>()).add(callback);
+      }
+    }
+
     @Override
     protected void addCallback(String podName, Consumer<V1Pod> callback) {
       addOnDeleteCallback(podName, callback);
+    }
+
+    private void removeOnDeleteCallback(String podName, Consumer<V1Pod> callback) {
+      synchronized (deletedCallbackRegistrations) {
+        Optional.ofNullable(deletedCallbackRegistrations.get(podName)).ifPresent(c -> c.remove(callback));
+      }
     }
 
     @Override

@@ -29,8 +29,20 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_PATCHED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
@@ -40,7 +52,6 @@ import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
@@ -53,17 +64,6 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainerWithEn
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
@@ -243,7 +243,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     assertThat(getDomain(),
-          hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+          hasStatus().withReason(KUBERNETES).withMessageContaining("create", "pod", NS));
   }
 
   @Test
@@ -468,7 +468,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
+    assertThat(getDomain().getStatus().getReason(), is(DOMAIN_INVALID.label()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 
@@ -759,7 +759,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
             createLegacyDomainMap(
                     createDomainSpecMap(
                             Collections.singletonList(auxiliaryImageVolume),
-                            Arrays.asList(auxiliaryImage))));
+                            List.of(auxiliaryImage))));
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName("test"))

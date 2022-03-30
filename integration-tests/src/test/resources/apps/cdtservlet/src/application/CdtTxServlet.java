@@ -11,14 +11,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Hashtable;
 import java.util.Date;
+import java.util.Hashtable;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSContext;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,10 +29,6 @@ import javax.transaction.xa.Xid;
 import weblogic.transaction.Transaction;
 import weblogic.transaction.TransactionHelper;
 import weblogic.transaction.TransactionManager;
-
-import javax.servlet.*;
-import javax.servlet.annotation.*;
-import javax.servlet.http.*;
 
 import static java.lang.Thread.sleep;
      

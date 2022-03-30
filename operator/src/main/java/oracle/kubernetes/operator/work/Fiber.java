@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -16,13 +16,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
-import static oracle.kubernetes.operator.logging.MessageKeys.DUMP_BREADCRUMBS;
+import static oracle.kubernetes.common.logging.MessageKeys.CURRENT_STEPS;
+import static oracle.kubernetes.common.logging.MessageKeys.DUMP_BREADCRUMBS;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is

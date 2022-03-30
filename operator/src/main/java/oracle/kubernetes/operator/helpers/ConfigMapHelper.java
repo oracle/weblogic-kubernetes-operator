@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -28,6 +28,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonValue;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -35,7 +36,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -280,10 +280,6 @@ public class ConfigMapHelper {
       model = null;
     }
 
-    private Map<String,String> getLabels() {
-      return Collections.unmodifiableMap(labels);
-    }
-
     /**
      * Creates the step which begins verifying or updating the config map.
      * @param next the step to run after the config map processing is done
@@ -341,6 +337,10 @@ public class ConfigMapHelper {
         }
       }
 
+      private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
+        return new CreateResponseStep(next);
+      }
+
       private Step createConfigMap(Step next) {
         return new CallBuilder()
             .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
@@ -350,10 +350,18 @@ public class ConfigMapHelper {
         LOGGER.fine(MessageKeys.CM_EXISTS, getResourceName(), namespace);
       }
 
+      private ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
+        return new ReplaceResponseStep(next);
+      }
+
       private Step replaceConfigMap(Step next) {
         return new CallBuilder().replaceConfigMapAsync(name, namespace,
                                         model,
                                         createReplaceResponseStep(next));
+      }
+
+      private Map<String,String> getLabels() {
+        return Collections.unmodifiableMap(labels);
       }
 
       private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
@@ -367,6 +375,10 @@ public class ConfigMapHelper {
 
       private Map<String, String> getMapLabels(@NotNull V1ConfigMap map) {
         return Optional.ofNullable(map.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
+      }
+
+      private ResponseStep<V1ConfigMap> createPatchResponseStep(Step next) {
+        return new PatchResponseStep(next);
       }
 
       private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
@@ -401,10 +413,6 @@ public class ConfigMapHelper {
       }
     }
 
-    private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
-    }
-
     private class CreateResponseStep extends ResponseStep<V1ConfigMap> {
       CreateResponseStep(Step next) {
         super(next);
@@ -421,10 +429,6 @@ public class ConfigMapHelper {
         recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
-    }
-
-    private ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
-      return new ReplaceResponseStep(next);
     }
 
     private class ReplaceResponseStep extends ResponseStep<V1ConfigMap> {
@@ -445,10 +449,6 @@ public class ConfigMapHelper {
       }
     }
 
-
-    private ResponseStep<V1ConfigMap> createPatchResponseStep(Step next) {
-      return new PatchResponseStep(next);
-    }
 
     private class PatchResponseStep extends ResponseStep<V1ConfigMap> {
 
