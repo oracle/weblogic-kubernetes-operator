@@ -698,7 +698,7 @@ from a base Oracle Linux image, a WebLogic installer download, and a JRE install
      and the `wlsdev` type to the WLS developer install.
      See
      [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
-     for a discussion of each installation type.
+     for a description of each installation type.
    - The `--recommendedPatches` parameter finds and applies the latest PatchSet Update (PSU)
      and recommended patches for each of the products included in the installer. For example, for WebLogic Server, the recommended patches for Coherence and TopLink are included.
    - These sample commands use a default base image, which is an Oracle Linux OS image,
