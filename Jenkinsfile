@@ -593,42 +593,33 @@ EOF
                             fi
                         '''
                     }
-                }
-
-                stage('Collect logs') {
-                    environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
-                    }
-                    steps {
-                        sh '''
-                            export PATH=${runtime_path}
-                            export KUBECONFIG=${kubeconfig_file}
-                            mkdir -m777 -p ${result_root}/kubelogs
-                            if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
+                    post {
+                        always {
+                            sh '''
+                                export PATH="${WORKSPACE}/bin:${PATH}"
+                                export KUBECONFIG=${kubeconfig_file}
+                                mkdir -m777 -p ${result_root}/kubelogs
+                                if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
                                 echo "Failed to export kind logs for kind cluster ${kind_name}"
-                            fi
-                            if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
+                                fi
+                                if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
                                 echo "Failed to run journalctl for kind worker"
-                            fi
-                            if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
+                                fi
+                                if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
                                 echo "Failed to run journalctl for kind control plane"
-                            fi
-                            if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
+                                fi
+                                if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
                                 echo "Failed to run journalctl for compute node"
-                            fi
-        
-                            mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                            sudo mv -f ${result_root}/* ${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results
-                            # pushd ${result_root}
-                            # tar zcf "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz" *
-                            # popd
-                        '''
-                        // archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/wl_k8s_test_results/results.tar.gz", allowEmptyArchive: true)
-                        archiveArtifacts(artifacts: "logdir/${BUILD_TAG}/**/*")
-                        junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                                fi
+    
+                                mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                                sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                            '''
+                            archiveArtifacts(artifacts: "logdir/**/*")
+                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                        }
                     }
                 }
-
             }
             post {
                 always {
