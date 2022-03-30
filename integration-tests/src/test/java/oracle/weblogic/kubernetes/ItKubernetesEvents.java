@@ -151,6 +151,7 @@ class ItKubernetesEvents {
   final String cluster1Name = "mycluster";
   final String cluster2Name = "cl2";
   final String adminServerName = "admin-server";
+  final String domainUid = "k8seventsdomain";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
@@ -159,7 +160,6 @@ class ItKubernetesEvents {
 
   final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
   final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
-  private static final String domainUid = "k8seventsdomain";
   private final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
@@ -730,7 +730,7 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
-    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace2, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
     timestamp = now();
 
@@ -741,7 +741,7 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, domainUid, "Normal", timestamp,
         enableClusterRoleBinding);
   }
 
@@ -788,11 +788,11 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace3);
-    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace3, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
     // verify there is no event logged in domainNamespace4
     logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
-    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, domainUid, NAMESPACE_WATCHING_STARTED,
         "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
         + domainNamespace4 + ", expected no such event will be logged");
 
@@ -807,7 +807,7 @@ class ItKubernetesEvents {
         .execute();
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, domainUid, "Normal", timestamp,
         enableClusterRoleBinding);
 
     if (enableClusterRoleBinding) {
@@ -823,11 +823,11 @@ class ItKubernetesEvents {
           .execute();
 
       logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", newNSWithLabels);
-      checkEvent(opNamespace, newNSWithLabels, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+      checkEvent(opNamespace, newNSWithLabels, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
       // verify there is no event logged in domainNamespace4
       logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
-      assertFalse(domainEventExists(opNamespace, newNSWithoutLabels, null, NAMESPACE_WATCHING_STARTED,
+      assertFalse(domainEventExists(opNamespace, newNSWithoutLabels, domainUid, NAMESPACE_WATCHING_STARTED,
           "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
           + newNSWithoutLabels + ", expected no such event will be logged");
     }
@@ -873,11 +873,11 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in {0}", domainNamespace5);
-    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace5, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
     // verify there is no event logged in domainNamespace4
     logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
-    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, domainUid, NAMESPACE_WATCHING_STARTED,
         "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
         + domainNamespace4 + ", expected no such event will be logged");
 
@@ -892,11 +892,11 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace5);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, domainUid, "Normal", timestamp,
         enableClusterRoleBinding);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace4);
-    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace4, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
   }
 
   /**
@@ -920,10 +920,10 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in {0}", opNamespace);
-    checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+    checkEvent(opNamespace, opNamespace, domainUid, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
     logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, domainUid, "Normal", timestamp, false);
   }
 
   /**
