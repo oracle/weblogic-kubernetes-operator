@@ -17,11 +17,22 @@ Check that the user name and password credentials stored in the Kubernetes Secre
 Then [stop all WebLogic Server instances](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers)
 in the domain before restarting so that the operator will repeat its introspection and generate the corrected `boot.properties` files.
 
-If the "Boot identity not valid" error is still not resolved, and the error is logged on a WebLogic Managed Server, then the server may be failing to contact the Administration Server. Check carefully for any errors or exceptions logged before the "Boot identity not valid" error in the Managed Server log file and look for indications of communication failure. For example:
+If the "Boot identity not valid" error is still not resolved, and the error is logged on a WebLogic Managed Server, then the server may be failing to contact the Administration Server. Check carefully for any errors or exceptions logged before the "Boot identity not valid" error in the Managed Server log file and look for indications of communication failure.
+
+For example:
+
 - If you have enabled SSL for the Administration Server default channel or have configured an administration port on the Administration Server, and the SSL port is using the demo identity certificates, then a Managed Server may fail to establish an SSL connection to the Administration Server due to a hostname verification exception (such as the "SSLKeyException: Hostname verification failed"). For non-production environments, you can turn off the hostname verification by setting the `-Dweblogic.security.SSL.ignoreHostnameVerification=true` property in the Java options for starting the WebLogic Server.
 
   **NOTE**: Turning off hostname verification leaves WebLogic Server vulnerable to man-in-the-middle attacks. Oracle recommends leaving hostname verification on in production environments.
 
 - For other SSL-related errors, make sure the keystores and passwords are specified correctly in the Java options for starting the WebLogic Server. See [Configuring SSL](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/secmg/ssl.html#GUID-5274E688-51EC-4A63-A35E-FC718B35C897) for details on configuring SSL in the Oracle WebLogic Server environment.
+
+- If the domain has enabled Istio and Istio is setup incorrectly,
+  then you may see "Info", "Alert", "Warning", or "Error" messages such as
+  `<BEA-141298> <Could not register with the Administration Server: java.rmi.RemoteException: [Deployer:149150]An IOException occurred while reading the input.; nested exception is: java.io.EOFException: Response had end of stream after 0 bytes>`
+  or `<BEA-141151> <The Administration Server could not be reached at http://billingcare-domain-admin-server:7011.>`.
+  Make sure the domain is configured correctly for your Istio version. In particular,
+  make sure `spec.configuration.istio.localHostBindingsEnabled` is correctly set.
+  See [Istio]({{< relref "/userguide/istio/istio.md" >}}).
 
 - If the DNS hostname of the Administration Server can't be resolved during Managed Server startup with errors such as "java.net.UnknownHostException: domain1-admin-server", then check the DNS server pod logs for any errors and take corrective actions to resolve those errors.
