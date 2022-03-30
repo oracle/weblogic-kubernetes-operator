@@ -88,6 +88,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -856,7 +857,7 @@ class ItMiiUpdateDomainConfig {
     javapCmd.append(" -it ");
     javapCmd.append(adminServerPodName);
     javapCmd.append(" -- /bin/bash -c \"");
-    javapCmd.append("java -cp ");
+    javapCmd.append("cd /u01; java -cp ");
     javapCmd.append(jarLocation);
     javapCmd.append(":.");
     javapCmd.append(" JmsTestClient ");
@@ -867,13 +868,10 @@ class ItMiiUpdateDomainConfig {
     javapCmd.append(":8001 4 true");
     javapCmd.append(" \"");
     logger.info("java command to be run {0}", javapCmd.toString());
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javapCmd)));
+    testUntil(
+        runJmsClient(new String(javapCmd)),
+        logger,
+        "Wait for t3 JMS Client to access WLS");
 
     // Since the MinDynamicClusterSize is set to 2 in the configmap
     // and allowReplicasBelowMinDynClusterSize is set false, the replica
