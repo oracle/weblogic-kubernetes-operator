@@ -33,7 +33,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -75,8 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test liveness probe customization in a multicluster mii domain.
- * Build model in image with liveness probe custom script named customLivenessProbe.sh
- * Enable
+ * Build model in image with liveness probe custom script named 
+ * customLivenessProbe.sh
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify liveness probe customization")
@@ -136,15 +135,15 @@ class ItLivenessProbeCustomization {
 
   /**
    * Verify the customization of liveness probe.
-   * Build model in image with liveness probe custom script named customLivenessProbe.sh
-   * for a 2 clusters domain.
+   * Build model in image with liveness probe custom script named 
+   * customLivenessProbe.sh for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * After the domain is created copy the file named tempfile.txt into tested managed server pods for
-   * both clusters, which is used by custom script to trigger liveness probe.
+   * After the domain is created copy the file named tempfile.txt into tested 
+   * managed server pods for both clusters, which is used by custom script to 
+   * trigger liveness probe.
    * Verify the container managed server pods in both clusters are restarted
    */
   @Test
-  @Order(1)
   @DisplayName("Test customization of the liveness probe")
   void testCustomLivenessProbe() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -202,22 +201,16 @@ class ItLivenessProbeCustomization {
             managedServerPodName, domainNamespace));
       }
     }
-  }
-
-  /**
-   * Verify the negative test case of customization of liveness probe.
-   * Build model in image with liveness probe custom script named customLivenessProbe.sh
-   * for a 2 clusters domain.
-   * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * Since there is no temp file named "tempFile.txt" in the tested managed server pods, based on
-   * custom script logic, liveness probe will not be triggered.
-   * Verify the container managed server pods in both clusters are NOT restarted
-   */
-  @Test
-  @Order(2)
-  @DisplayName("Test custom liveness probe is not trigged")
-  void testCustomLivenessProbeNotTrigged() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    // Verify the negative test case of customization of liveness probe.
+    // Build model in image with liveness probe custom script named 
+    // customLivenessProbe.sh for a 2 clusters domain.
+    // Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
+    // Since there is no temp file named "tempFile.txt" in tested managed 
+    // server pods, based on custom script logic, liveness probe will not be 
+    // activated. Verify the container managed server pods in both clusters 
+    // are NOT restarted
+    
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
@@ -226,7 +219,6 @@ class ItLivenessProbeCustomization {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
-
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
         checkAppIsRunning(
