@@ -254,28 +254,19 @@ public class JobHelper {
       }
 
       private boolean hasImageChanged(@Nonnull V1Job job) {
-        return getImageFromJob(job).map(this::isImageDifferentFromContextJobModel).orElse(false);
+        return !Objects.equals(getImageFromJob(job), getJobModelPodSpecImage());
       }
 
       private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
-        return getAuxiliaryImageFromJob(job)
-            .map(this::isAuxiliaryImageDifferentFromContextJobModel).orElse(false);
+        return !Objects.equals(getAuxiliaryImageFromJob(job), getJobModelPodSpecAuxiliaryImage());
       }
 
-      Optional<String> getImageFromJob(V1Job job) {
-        return getPodSpecFromJob(job).map(this::getImageFromPodSpec);
+      String getImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
       }
 
-      private boolean isImageDifferentFromContextJobModel(@Nonnull String image) {
-        return !image.equals(getJobModelPodSpecImage());
-      }
-
-      private boolean isAuxiliaryImageDifferentFromContextJobModel(@Nonnull String auxiliaryImage) {
-        return !auxiliaryImage.equals(getJobModelPodSpecAuxiliaryImage());
-      }
-
-      Optional<String> getAuxiliaryImageFromJob(V1Job job) {
-        return getPodSpecFromJob(job).map(this::getAuxiliaryImageFromPodSpec);
+      String getAuxiliaryImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getAuxiliaryImageFromPodSpec).orElse(null);
       }
 
       Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
