@@ -209,7 +209,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 ##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
-The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the Domain.
+The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
 {{% notice note %}}

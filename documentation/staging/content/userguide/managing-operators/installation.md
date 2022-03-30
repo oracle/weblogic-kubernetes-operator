@@ -38,7 +38,7 @@ Minimally you should specify:
 - The Helm chart location
 - The operator namespace
 - The platform (if required)
-- The name space selection settings
+- The namespace selection settings
 
 A typical Helm release name is `weblogic-operator`.
 The operator samples and documentation
@@ -142,7 +142,7 @@ and deploys the operator.
 You can verify the operator installation by examining the output from the `helm install` command.
 
 To check if the operator is deployed and running,
-see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting.md">}}).
+see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting#check-the-operator-deployment">}}).
 
 **Notes**:
 - In this example, you have not set the `kubernetesPlatform`, but this may be required
@@ -178,7 +178,6 @@ Example updates:
 ### Upgrade the operator
 
 You can upgrade a 3.x operator while the operator's domain resources are deployed and running.
-
 The following instructions will be applicable to upgrade operators
 as additional versions are released.
 
@@ -188,9 +187,9 @@ When upgrading the operator:
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
 
-The rationale for this is because, even with a new version of the Helm chart,
-`--reuse-values` will retain the previous image value from when it was installed.  To upgrade,
-you must override the image value to use the new operator image version.
+The rationale for supplying a new `image` value is because, even with a new version of the Helm chart,
+`--reuse-values` will retain the previous `image` value from when it was installed.  To upgrade,
+you must override the `image` value to use the new operator image version.
 
 For example:
 

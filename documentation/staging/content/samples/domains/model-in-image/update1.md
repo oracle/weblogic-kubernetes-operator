@@ -163,7 +163,7 @@ Here are the steps:
 
    Now that the data source is deployed in a ConfigMap and its secret is also deployed, and you have applied an updated Domain YAML file with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, tell the operator to roll the domain.
 
-   When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
+   When a model domain restarts, it will rerun its introspector job to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. To do this:
 
    - Option 1: Edit your domain custom resource.

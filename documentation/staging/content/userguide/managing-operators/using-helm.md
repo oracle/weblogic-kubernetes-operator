@@ -65,13 +65,13 @@ and [Installation and upgrade]({{< relref "/userguide/managing-operators/install
 
 - You can find out the configuration values that the operator Helm chart supports,
   as well as the default values, using the `helm show` command.
-    - First, access the operator Helm chart from a GitHub chart repository using
+    - First, access the GitHub chart repository version of the operator Helm chart using
     this format, `helm repo add <helm-repo-name> <helm-repo-url>`:
       ```text
       $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
       ```
     - Then, use the `helm show` command. For example,
-    using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
+    using `helm show` with the operator Helm chart where the repository is named `weblogic-operator`:
       ```text
       $ helm show chart weblogic-operator/weblogic-operator
       ```
