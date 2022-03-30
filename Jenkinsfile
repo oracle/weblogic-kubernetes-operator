@@ -104,7 +104,6 @@ pipeline {
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
         sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
-        jacoco_report_path = "${WORKSPACE}/buildtime-reports/target/site/jacoco-aggregate/jacoco.xml"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -332,7 +331,6 @@ pipeline {
                             mkdir -p ${WORKSPACE}/.mvn
                             touch ${WORKSPACE}/.mvn/maven.config
                             echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path}"  >> ${WORKSPACE}/.mvn/maven.config
                             if [ -z "${CHANGE_ID}" ]; then
                                 echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
                             else
@@ -348,7 +346,7 @@ pipeline {
                         withSonarQubeEnv('SonarCloud') {
                             // For whatever reason, defining this property in the maven.config file is not working...
                             //
-                            sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
+                            sh "mvn sonar:sonar"
                         }
                     }
                 }
