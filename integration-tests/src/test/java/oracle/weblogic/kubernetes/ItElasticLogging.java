@@ -286,6 +286,11 @@ class ItElasticLogging {
   @Test
   @DisplayName("Use Elasticsearch Count API to query logs of level=INFO and verify")
   void testLogLevelSearch() {
+    // debug
+    String queryCriteria0 = "/_search?q=level:INFO";
+    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
+    logger.info("_search?q=level:INFO resultin testLogLevelSearch ===> " + results0);
+
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
@@ -302,6 +307,11 @@ class ItElasticLogging {
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
   void testOperatorLogSearch() {
+    // debug    
+    String queryCriteria0 = "/_search?q=level:INFO";
+    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
+    logger.info("_search?q=level:INFO result in testOperatorLogSearch ===> " + results0);
+
     // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";

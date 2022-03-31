@@ -289,6 +289,11 @@ class ItElasticLoggingFluentd {
   @Test
   @DisplayName("Use Fluentd to send log information to Elasticsearch and verify")
   void testFluentdQuery() {
+    //debug
+    String queryCriteria0 = "/_search?q=serverName:" + adminServerPodName;
+    String results0 = execSearchQuery(queryCriteria0, FLUENTD_INDEX_KEY);
+    logger.info("_search?q=serverName:{0} result ===> {1}", adminServerPodName, results0);
+
     // Verify that number of logs is not zero and failed if count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
