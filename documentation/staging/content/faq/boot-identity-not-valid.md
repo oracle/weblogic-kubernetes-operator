@@ -30,7 +30,7 @@ For example:
 - If the domain has enabled Istio and Istio is setup incorrectly,
   then you may see "Info", "Alert", "Warning", or "Error" messages such as
   `<BEA-141298> <Could not register with the Administration Server: java.rmi.RemoteException: [Deployer:149150]An IOException occurred while reading the input.; nested exception is: java.io.EOFException: Response had end of stream after 0 bytes>`
-  or `<BEA-141151> <The Administration Server could not be reached at http://billingcare-domain-admin-server:7011.>`.
+  or `<BEA-141151> <The Administration Server could not be reached at http://my-domain-admin-server:7011.>`.
   Make sure the domain is configured correctly for your Istio version. In particular,
   make sure `spec.configuration.istio.localHostBindingsEnabled` is correctly set.
   See [Istio]({{< relref "/userguide/istio/istio.md" >}}).
