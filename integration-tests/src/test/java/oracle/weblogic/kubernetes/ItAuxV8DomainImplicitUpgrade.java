@@ -83,6 +83,7 @@ class ItAuxV8DomainImplicitUpgrade {
   private static String encryptionSecretName;
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private boolean foundCompatiblityContainer = false;
+  private String domainUid = "implicit-upg";
 
   /**
    * Install Operator.
@@ -126,6 +127,12 @@ class ItAuxV8DomainImplicitUpgrade {
             .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
             .appName(MII_BASIC_APP_NAME)),
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+    // Remove any weblogic crd creaated from previous test class
+    // Note: This class must not be run in parallel with other class
+    new Command()
+          .withParams(new CommandParams()
+              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+          .execute();
   }
 
   /**
@@ -146,10 +153,12 @@ class ItAuxV8DomainImplicitUpgrade {
   @DisplayName("Test implicit upgrade of v8 version of Auxiliary Domain")
   void testMultipleAuxImagesV8Domain() {
 
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
     String modelOnlyImageTag = "model-only-image";
     String wdtOnlyImageTag = "wdt-only-image";
     String configOnlyImageTag = "config-only-image";
-    String domainUid = "upg-domain1";
 
     String modelOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  modelOnlyImageTag;
     String wdtOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  wdtOnlyImageTag;
@@ -270,7 +279,6 @@ class ItAuxV8DomainImplicitUpgrade {
     }
     );
     assertTrue(foundCompatiblityContainer, "The Compatiblity Init Container NOT found");  
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**
@@ -281,18 +289,17 @@ class ItAuxV8DomainImplicitUpgrade {
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathV8DomainMissingWDTBinary() {
 
-    final String domainUid = "upg-domain2";
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
     String missingWdtTag = "missing-wdtbinary-image";
     String missingWdtImage = MII_AUXILIARY_IMAGE_NAME + ":" +  missingWdtTag;
 
-    //In case the previous test failed, ensure the created domain in the 
-    //same namespace is deleted.
-    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
-      deleteDomainResource(domainNamespace, domainUid);
-    }
+
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     WitParams witParams =
@@ -318,7 +325,6 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     CommandParams params = new CommandParams().defaults();
@@ -339,8 +345,6 @@ class ItAuxV8DomainImplicitUpgrade {
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
     logger.info("Auxiliary Image Error(missing wdt) reported in operator log");
 
-    // delete domain
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**
@@ -352,18 +356,16 @@ class ItAuxV8DomainImplicitUpgrade {
   @DisplayName("Negative Test to create domain without model file")
   void testErrorPathV8DomainMissingDomainConfig() {
 
-    final String domainUid = "upg-domain3";
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
     String missingModelTag = "missing-model-image";
     String missingModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + missingModelTag;
 
-    //In case the previous test failed, ensure the created domain in the 
-    //same namespace is deleted.
-    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
-      deleteDomainResource(domainNamespace, domainUid);
-    }
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     WitParams witParams =
@@ -407,9 +409,6 @@ class ItAuxV8DomainImplicitUpgrade {
     // check the operator pod log contains the expected error message
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
     logger.info("Auxiliary Image Error(missing model) reported in operator log");
-
-    // delete domain
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**
@@ -420,7 +419,10 @@ class ItAuxV8DomainImplicitUpgrade {
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathV8DomaineFilePermission() {
 
-    final String domainUid = "upg-domain4";
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
@@ -477,9 +479,6 @@ class ItAuxV8DomainImplicitUpgrade {
     // check the operator pod log contains the expected error message
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
     logger.info("Auxiliary Image Error(permission issue model) reported in operator log");
-
-    // delete domain
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**
@@ -491,7 +490,10 @@ class ItAuxV8DomainImplicitUpgrade {
   @DisplayName("Test to update Base Weblogic Image Name")
   void testUpdateBaseImageV8AuxDomain() {
 
-    final String domainUid = "upg-domain5";
+    if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
+      deleteDomainResource(domainNamespace, domainUid);
+    }
+
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
 
@@ -604,8 +606,6 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // check configuration for JMS
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
-    // delete domain
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   /**

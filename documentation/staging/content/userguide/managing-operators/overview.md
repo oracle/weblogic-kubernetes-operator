@@ -1,7 +1,7 @@
 ---
 title: "Overview"
 date: 2021-12-05T16:47:21-05:00
-weight: 8
+weight: 1
 description: "An introduction to the operator runtime."
 ---
 
@@ -80,5 +80,5 @@ There can be multiple operators in a Kubernetes cluster,
 and in that case, you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
 In addition, you cannot deploy more than operator to a particular namespace.
-See [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
+See [Common mistakes and solutions]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
 {{% /notice %}}

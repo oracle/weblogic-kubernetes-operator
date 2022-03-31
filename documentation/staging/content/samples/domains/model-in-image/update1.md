@@ -10,7 +10,7 @@ This use case demonstrates dynamically adding a data source to your running doma
 - A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
 - Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.
 
-For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
+For a detailed description of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
 
 {{% notice warning %}}
 The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.

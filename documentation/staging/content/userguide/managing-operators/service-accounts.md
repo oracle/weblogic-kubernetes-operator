@@ -1,7 +1,7 @@
 ---
 title: "Service accounts"
 date: 2019-02-23T17:36:12-05:00
-weight: 100
+weight: 6
 description: "Kubernetes ServiceAccounts for the operator."
 ---
 
