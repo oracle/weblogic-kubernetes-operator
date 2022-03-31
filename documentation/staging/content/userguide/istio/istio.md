@@ -200,7 +200,7 @@ See the following description of each `spec.configuration.istio` attribute:
 __Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then:
 
-- The Managed Weblogic Servers that are running in the managed server pods
+- The Managed WebLogic Servers that are running in the managed server pods
   may not be able to contact the WebLogic Administration Server.
   They will consequently log networking messages about failures communicating
   with the Administration Server and likely, also a `Boot identity not valid` error.
