@@ -3,23 +3,23 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.IOException;
-
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Types of secrets which can be configured on a domain.
  */
-@JsonAdapter(SecretType.Adapter.class)
 public enum SecretType {
+  @SerializedName("WebLogicCredentials")
   WEBLOGIC_CREDENTIALS("WebLogicCredentials"),
+  @SerializedName("ImagePull")
   IMAGE_PULL("ImagePull"),
+  @SerializedName("ConfigOverride")
   CONFIG_OVERRIDE("ConfigOverride"),
+  @SerializedName("RuntimeEncryption")
   RUNTIME_ENCRYPTION("RuntimeEncryption"),
+  @SerializedName("OpssWalletPassword")
   OPSS_WALLET_PASSWORD("OpssWalletPassword"),
+  @SerializedName("OpssWalletFile")
   OPSS_WALLET_FILE("OpssWalletFile");
 
   private final String value;
@@ -50,16 +50,5 @@ public enum SecretType {
     }
 
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
-
-  public static class Adapter extends TypeAdapter<SecretType> {
-    public void write(JsonWriter jsonWriter, SecretType enumeration) throws IOException {
-      jsonWriter.value(enumeration.getValue());
-    }
-
-    public SecretType read(JsonReader jsonReader) throws IOException {
-      String value = jsonReader.nextString();
-      return SecretType.fromValue(value);
-    }
   }
 }

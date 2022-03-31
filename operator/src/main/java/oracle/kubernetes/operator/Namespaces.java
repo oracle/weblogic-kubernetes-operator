@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,10 +17,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
@@ -81,8 +77,8 @@ public class Namespaces {
     return getSelectionStrategy().getSelection(visitor);
   }
 
-  @JsonAdapter(SelectionStrategy.Adapter.class)
   public enum SelectionStrategy {
+    @SerializedName("List")
     LIST("List") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
@@ -112,6 +108,7 @@ public class Namespaces {
               .orElse(TuningParameters.getInstance().get("targetNamespaces"));
       }
     },
+    @SerializedName("LabelSelector")
     LABEL_SELECTOR("LabelSelector") {
       @Override
       public <V> V getSelection(NamespaceStrategyVisitor<V> visitor) {
@@ -149,6 +146,7 @@ public class Namespaces {
         return value == null || value.equals(labels.get(key));
       }
     },
+    @SerializedName("RegExp")
     REG_EXP("RegExp") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
@@ -173,6 +171,7 @@ public class Namespaces {
         return compiledPatterns.computeIfAbsent(regExp, Pattern::compile);
       }
     },
+    @SerializedName("Dedicated")
     DEDICATED("Dedicated") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
@@ -251,17 +250,6 @@ public class Namespaces {
       }
 
       throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-
-    public static class Adapter extends TypeAdapter<SelectionStrategy> {
-      public void write(JsonWriter jsonWriter, SelectionStrategy enumeration) throws IOException {
-        jsonWriter.value(enumeration.getValue());
-      }
-
-      public SelectionStrategy read(JsonReader jsonReader) throws IOException {
-        String value = jsonReader.nextString();
-        return SelectionStrategy.fromValue(value);
-      }
     }
   }
 

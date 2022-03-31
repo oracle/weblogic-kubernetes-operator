@@ -3,21 +3,17 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
+import com.google.gson.annotations.SerializedName;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-
-@JsonAdapter(DomainSourceType.Adapter.class)
 public enum DomainSourceType {
+  @SerializedName("Image")
   IMAGE("Image") {
     @Override
     public String getDefaultDomainHome(String uid) {
       return "/u01/oracle/user_projects/domains";
     }
   },
+  @SerializedName("PersistentVolume")
   PERSISTENT_VOLUME("PersistentVolume") {
     @Override
     public boolean hasLogHomeByDefault() {
@@ -29,6 +25,7 @@ public enum DomainSourceType {
       return "/shared/domains/" + uid;
     }
   },
+  @SerializedName("FromModel")
   FROM_MODEL("FromModel") {
     @Override
     public String getDefaultDomainHome(String uid) {
@@ -71,16 +68,5 @@ public enum DomainSourceType {
     }
 
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
-
-  public static class Adapter extends TypeAdapter<DomainSourceType> {
-    public void write(JsonWriter jsonWriter, DomainSourceType enumeration) throws IOException {
-      jsonWriter.value(enumeration.getValue());
-    }
-
-    public DomainSourceType read(JsonReader jsonReader) throws IOException {
-      String value = jsonReader.nextString();
-      return DomainSourceType.fromValue(value);
-    }
   }
 }

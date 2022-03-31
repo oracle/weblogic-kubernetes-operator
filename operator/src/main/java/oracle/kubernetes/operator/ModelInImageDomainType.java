@@ -3,16 +3,11 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
+import com.google.gson.annotations.SerializedName;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
-
-@JsonAdapter(ModelInImageDomainType.Adapter.class)
 public enum ModelInImageDomainType {
   WLS("WLS"),
+  @SerializedName("RestrictedJRF")
   RESTRICTED_JRF("RestrictedJRF"),
   JRF("JRF");
 
@@ -44,16 +39,5 @@ public enum ModelInImageDomainType {
     }
 
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
-
-  public static class Adapter extends TypeAdapter<ModelInImageDomainType> {
-    public void write(JsonWriter jsonWriter, ModelInImageDomainType enumeration) throws IOException {
-      jsonWriter.value(enumeration.getValue());
-    }
-
-    public ModelInImageDomainType read(JsonReader jsonReader) throws IOException {
-      String value = jsonReader.nextString();
-      return ModelInImageDomainType.fromValue(value);
-    }
   }
 }

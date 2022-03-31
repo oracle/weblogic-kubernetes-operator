@@ -3,12 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.io.IOException;
-
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Obsoleteable;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
@@ -20,8 +15,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 
-@JsonAdapter(DomainConditionType.Adapter.class)
 public enum DomainConditionType implements Obsoleteable {
+  @SerializedName("Failed")
   FAILED("Failed",null, DOMAIN_FAILURE_RESOLVED) {
     @Override
     boolean allowMultipleConditionsWithThisType() {
@@ -33,15 +28,20 @@ public enum DomainConditionType implements Obsoleteable {
       return false;
     }
   },
+  @SerializedName("Available")
   AVAILABLE("Available", DOMAIN_AVAILABLE, DOMAIN_UNAVAILABLE),
+  @SerializedName("Completed")
   COMPLETED("Completed", DOMAIN_COMPLETE, DOMAIN_INCOMPLETE),
+  @SerializedName("ConfigChangesPendingRestart")
   CONFIG_CHANGES_PENDING_RESTART("ConfigChangesPendingRestart"),
+  @SerializedName("Rolling")
   ROLLING("Rolling", DOMAIN_ROLL_STARTING, DOMAIN_ROLL_COMPLETED) {
     @Override
     boolean statusMayBeFalse() {
       return false;
     }
   },
+  @SerializedName("Progressing")
   PROGRESSING("Progressing") {
     @Override
     public boolean isObsolete() {
@@ -101,16 +101,5 @@ public enum DomainConditionType implements Obsoleteable {
     }
 
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
-
-  public static class Adapter extends TypeAdapter<DomainConditionType> {
-    public void write(JsonWriter jsonWriter, DomainConditionType enumeration) throws IOException {
-      jsonWriter.value(enumeration.getValue());
-    }
-
-    public DomainConditionType read(JsonReader jsonReader) throws IOException {
-      String value = jsonReader.nextString();
-      return DomainConditionType.fromValue(value);
-    }
   }
 }

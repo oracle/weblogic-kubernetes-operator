@@ -3,13 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.io.IOException;
 import java.util.List;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceAttributes;
@@ -213,7 +208,6 @@ public class AuthorizationProxy {
     }
   }
 
-  @JsonAdapter(Operation.Adapter.class)
   public enum Operation {
     GET("get"),
     LIST("list"),
@@ -252,17 +246,6 @@ public class AuthorizationProxy {
       }
 
       throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-
-    public static class Adapter extends TypeAdapter<Operation> {
-      public void write(JsonWriter jsonWriter, Operation enumeration) throws IOException {
-        jsonWriter.value(enumeration.getValue());
-      }
-
-      public Operation read(JsonReader jsonReader) throws IOException {
-        String value = jsonReader.nextString();
-        return Operation.fromValue(value);
-      }
     }
   }
 
