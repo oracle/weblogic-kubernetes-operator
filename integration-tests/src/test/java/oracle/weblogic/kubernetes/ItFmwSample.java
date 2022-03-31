@@ -34,14 +34,21 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.doesPVExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.doesPVCExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -135,8 +142,6 @@ public class ItFmwSample {
           String.format("Failed to create RCU schema for prefix %s in the namespace %s with dbUrl %s",
               rcuSchemaPrefix, dbNamespace, dbUrl));
     }
-
-
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -250,6 +255,22 @@ public class ItFmwSample {
 
     String pvName = domainUid + "-weblogic-sample-pv";
     String pvcName = domainUid + "-weblogic-sample-pvc";
+
+    // delete pvc first if exists
+    if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvcNotExist(pvName, domainNamespace),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
+    // delete pv first if exists
+    if (assertDoesNotThrow(() -> doesPVExist(pvName, null))) {
+      deletePersistentVolume(pvName);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvNotExists(pvName, null),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
