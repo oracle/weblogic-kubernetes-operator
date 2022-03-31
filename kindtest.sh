@@ -210,7 +210,7 @@ if [ "${running}" = 'true' ]; then
 fi
 docker run \
   -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
-  registry:2
+  phx.ocir.io/weblogick8s/test-images/docker/registry:2
 
 reg_host="${reg_name}"
 if [ "${kind_network}" = "bridge" ]; then
