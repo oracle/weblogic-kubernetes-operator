@@ -63,7 +63,7 @@ Supported and unsupported changes are discussed in
 and
 [Unsupported updates](#unsupported-updates).
 
-_It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct approach for an update._
+_It is the administrator's responsibility to make the necessary changes to a domain resource to initiate the correct approach for an update._
 
 {{% notice warning %}}
 Custom configuration overrides, which are WebLogic configuration overrides
@@ -484,7 +484,7 @@ Deletion can be problematic for online updates in two cases:
  - Deleting the parent type section in an MBean hierarchy.
 
 In general, complex deletion should be handled by offline updates
-in order to avoid these problems.
+to avoid these problems.
 
 **Note**: Implicitly removing a model's parent type
 section may sometimes work depending
@@ -693,7 +693,7 @@ _Here is how to interpret each domain resource's `domain.status.conditions` type
       * There were model changes and these changes modify non-dynamic WebLogic configuration.
       * Processing successfully completed, including the introspector job.
       * The administrator has not subsequently rolled/restarted each WebLogic Server pod
-        (in order to propagate the pending non-dynamic changes).
+        (to propagate the pending non-dynamic changes).
         * See the following description of WebLogic pod labels to see which pods are awaiting restart.
     * For example:
       ```
