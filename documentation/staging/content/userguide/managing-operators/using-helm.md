@@ -56,7 +56,7 @@ The operator requires Helm for its installation and tuning,
 and this document is a reference guide for useful Helm commands and operator configuration values.
 
 This document assumes that the operator has been installed using an operator Helm chart.
-An operator Helm chart can be obtained from the GitHub chart repository or can be found in the operator source.
+An operator Helm chart can be obtained from the chart repository or can be found in the operator source.
 For information about operator Helm chart access, installation, and upgrade,
 see [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})
 and [Installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}).
@@ -65,13 +65,13 @@ and [Installation and upgrade]({{< relref "/userguide/managing-operators/install
 
 - You can find out the configuration values that the operator Helm chart supports,
   as well as the default values, using the `helm show` command.
-    - First, access the operator Helm chart from a GitHub chart repository using
-    this format, `helm repo add <helm-repo-name> <helm-repo-url>`:
+    - First, access the operator Helm chart repository using
+    this format, `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`:
       ```text
       $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
       ```
-    - Then, use the `helm show` command. For example,
-    using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
+    - Then, use the `helm show` command with this format: `helm show <helm-chart-repo-name>/weblogic-operator`. For example,
+      with an operator Helm chart where the repository is named `weblogic-operator`:
       ```text
       $ helm show chart weblogic-operator/weblogic-operator
       ```
@@ -84,32 +84,32 @@ and [Installation and upgrade]({{< relref "/userguide/managing-operators/install
   $ helm list --all-namespaces
   ```
 
-- Get the status of the operator Helm release named `weblogic-operator`:
+- Get the status of the operator Helm release named `sample-weblogic-operator`:
   ```shell
-  $ helm status weblogic-operator --namespace <namespace>
+  $ helm status sample-weblogic-operator --namespace <namespace>
   ```
 
-- Show the history of the operator Helm release named `weblogic-operator`:
+- Show the history of the operator Helm release named `sample-weblogic-operator`:
   ```shell
-  $ helm history weblogic-operator --namespace <namespace>
+  $ helm history sample-weblogic-operator --namespace <namespace>
   ```
 
-- Roll back to a previous version of the operator Helm release named `weblogic-operator`, in this case, the first version:
+- Roll back to a previous version of the operator Helm release named `sample-weblogic-operator`, in this case, the first version:
   ```shell
-  $ helm rollback weblogic-operator 1 --namespace <namespace>
+  $ helm rollback sample-weblogic-operator 1 --namespace <namespace>
   ```
 
-- Show the custom values you configured for a operator Helm release named `weblogic-operator`:
+- Show the custom values you configured for a operator Helm release named `sample-weblogic-operator`:
   ```shell
-  $ helm get values weblogic-operator
+  $ helm get values sample-weblogic-operator
   ```
 
-- Show all of the values your operator Helm release named `weblogic-operator` is using:
+- Show all of the values your operator Helm release named `sample-weblogic-operator` is using:
   ```shell
-  $ helm get values --all weblogic-operator
+  $ helm get values --all sample-weblogic-operator
   ```
 
-- Change one or more values in the operator Helm release named `weblogic-operator` using `helm upgrade`, for example:
+- Change one or more values using `helm upgrade`, for example:
   ```shell
   $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
   $ helm upgrade \

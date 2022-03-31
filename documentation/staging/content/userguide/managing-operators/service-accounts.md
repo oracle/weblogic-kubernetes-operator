@@ -16,7 +16,7 @@ The operator will use this service account when calling the Kubernetes API serve
 and the appropriate access controls will be created for this `ServiceAccount` by
 the operator's Helm chart.
 
-In order to display the service account used by the operator,
+To display the service account used by the operator,
 where the operator was installed using the Helm release name `weblogic-operator`,
 look for the `serviceAccount` value using the Helm command:
 
@@ -39,4 +39,4 @@ setting.
 * See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/preparation#prepare-an-operator-namespace-and-service-account">}}).
 * See the Operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
   setting.
-* For more information about access controls, see the [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}) documentation.
+* For more information about access controls, see [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}).
