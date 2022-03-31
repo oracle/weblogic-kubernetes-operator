@@ -46,7 +46,7 @@ then the `helm upgrade` command is used to restart the operator
 with the new or updated Kubernetes `tls secret` that contains
 the desired certificates.
 
-The operator _requires_ a restart in order to begin using the new or updated external
+The operator _requires_ a restart to begin using the new or updated external
 certificate. The Helm `--recreate-pods` flag is used to cause the existing
 Kubernetes Pod to be terminated and a new pod to be started with the updated configuration.
 

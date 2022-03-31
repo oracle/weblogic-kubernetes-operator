@@ -80,11 +80,11 @@ that it creates for you (such as services and pods).
 A Domain UID is set on a domain resource using `spec.domainUID`,
 and defaults to the value of `metadata.name`. The
 `spec.domainUID` domain resource field is usually
-left unset in order to take advantage of this default.
+left unset to take advantage of this default.
 
 It is recommended that a Domain UID be configured to be unique
 across all Kubernetes namespaces and even across different Kubernetes
-clusters in order to assist in future work to identify
+clusters to assist in future work to identify
 related domains in active-passive scenarios across data centers;
 however, it is only required that this value
 be unique within a namespace, similarly to the names of Kubernetes
@@ -163,6 +163,6 @@ This approach also eliminates the need to manage any state created in a running 
 
 When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}) and [Domain life cycle]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
 
-It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
+It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 
 The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.

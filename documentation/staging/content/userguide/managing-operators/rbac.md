@@ -27,7 +27,7 @@ The operator installation Helm chart automatically creates
 RBAC ClusterRoles, ClusterRoleBindings, Roles, and RoleBindings
 for the `ServiceAccount` that is used by the operator.
 A running operator assumes that these roles are created in the
-Kubernetes cluster, and will automatically attempt to verify that
+Kubernetes cluster and will automatically attempt to verify that
 they are correct when it starts.
 
 Note that the operator installation Helm chart
@@ -45,7 +45,7 @@ For more information about:
 - The `enableClusterRoleBinding` operator Helm chart setting, see
   [Choose a security strategy]({{<relref "/userguide/managing-operators/preparation#choose-a-security-strategy">}}).
 - The Kubernetes `ServiceAccount` used by the operator, see
-  [Service Accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}).
+  [Service accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}).
 - Kubernetes Roles, see the Kubernetes
   [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) documentation.
 
