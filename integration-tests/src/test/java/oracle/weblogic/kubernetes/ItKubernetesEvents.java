@@ -741,7 +741,7 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, domainUid, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
         enableClusterRoleBinding);
   }
 
@@ -807,7 +807,7 @@ class ItKubernetesEvents {
         .execute();
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, domainUid, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
         enableClusterRoleBinding);
 
     if (enableClusterRoleBinding) {
@@ -892,7 +892,7 @@ class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace5);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, domainUid, "Normal", timestamp,
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
         enableClusterRoleBinding);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace4);
@@ -923,7 +923,7 @@ class ItKubernetesEvents {
     checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
     logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, domainUid, "Normal", timestamp, false);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
   }
 
   /**
