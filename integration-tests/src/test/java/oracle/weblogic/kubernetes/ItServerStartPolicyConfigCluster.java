@@ -77,8 +77,9 @@ class ItServerStartPolicyConfigCluster {
   /**
    * Install Operator.
    * Create a domain resource.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-  JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
 public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -132,14 +133,14 @@ public static void initAll(@Namespaces(2) List<String> namespaces) {
   }
 
   /**
-  * Stop the configured cluster using the sample script stopCluster.sh
-  * Verify that server(s) in the configured cluster are stopped.
-  * Verify that server(s) in the dynamic cluster are in RUNNING state.
-  * Restart the cluster using the sample script startCluster.sh
-  * Make sure that servers in the configured cluster are in RUNNING state.
-  * The usecase also verify the scripts startCluster.sh/stopCluster.sh make
-  * no changes in a running/stopped cluster respectively.
-  */
+   * Stop the configured cluster using the sample script stopCluster.sh
+   * Verify that server(s) in the configured cluster are stopped.
+   * Verify that server(s) in the dynamic cluster are in RUNNING state.
+   * Restart the cluster using the sample script startCluster.sh
+   * Make sure that servers in the configured cluster are in RUNNING state.
+   * The usecase also verify the scripts startCluster.sh/stopCluster.sh make
+   * no changes in a running/stopped cluster respectively.
+   */
   @Order(1)
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
@@ -194,10 +195,10 @@ public static void initAll(@Namespaces(2) List<String> namespaces) {
    * come up since the replica count for the cluster is set to 1.
    * Update the serverStartPolicy for the server config-cluster-server2 to
    * ALWAYS by patching the resource definition with
-   *  spec/managedServers/1/serverStartPolicy set to ALWAYS
+   * spec/managedServers/1/serverStartPolicy set to ALWAYS
    * Make sure that managed server config-cluster-server2 is up and running
    * Stop the managed server by patching the resource definition
-   *   with spec/managedServers/1/serverStartPolicy set to IF_NEEDED.
+   * with spec/managedServers/1/serverStartPolicy set to IF_NEEDED.
    * Make sure the specified managed server is stopped as per replica count.
    */
   @Order(2)
@@ -233,15 +234,15 @@ public static void initAll(@Namespaces(2) List<String> namespaces) {
    * cluster with serverStartPolicy IF_NEEDED.
    * Initially, the server will come up since the replica count is set to 1.
    * (a) Shutdown config-cluster-server1 using the sample script stopServer.sh
-   *     with keep_replica_constant option set to true
-   *     Make sure that managed server config-cluster-server1 is shutdown.
-   *     Make sure that managed server config-cluster-server2 comes up
-   *       to maintain the replica count of 1.
+   * with keep_replica_constant option set to true
+   * Make sure that managed server config-cluster-server1 is shutdown.
+   * Make sure that managed server config-cluster-server2 comes up
+   * to maintain the replica count of 1.
    * (b) Restart config-cluster-server1 using the sample script startServer.sh
-   *     with keep_replica_constant option set to true
-   *     Make sure that managed server config-cluster-server2 is shutdown.
-   *     Make sure that managed server config-cluster-server1 comes up
-   *       to maintain the replica count of 1.
+   * with keep_replica_constant option set to true
+   * Make sure that managed server config-cluster-server2 is shutdown.
+   * Make sure that managed server config-cluster-server1 comes up
+   * to maintain the replica count of 1.
    */
   @Order(3)
   @Test

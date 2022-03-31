@@ -42,6 +42,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -479,23 +480,21 @@ public class LoggingUtil {
 
   /**
    * Wait and check the pod log contains the expected string.
-   * @param namespace the namespace in which the pod exists
-   * @param podName the pod to get the log
+   *
+   * @param namespace      the namespace in which the pod exists
+   * @param podName        the pod to get the log
    * @param expectedString the expected string to check in the pod log
    */
-  public static  void checkPodLogContainsString(String namespace, String podName, String expectedString) {
+  public static void checkPodLogContainsString(String namespace, String podName, String expectedString) {
 
     getLogger().info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
-                                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                            expectedString,
-                            podName,
-                            namespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
-                    "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+    testUntil(
+            assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+                    "podLogContainsString failed with IOException, ApiException or InterruptedException"),
+            getLogger(),
+            "string {0} existing in pod {1} in namespace {2}",
+            expectedString,
+            podName,
+            namespace);
   }
 }

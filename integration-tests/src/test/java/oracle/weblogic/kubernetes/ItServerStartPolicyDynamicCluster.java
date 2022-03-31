@@ -76,11 +76,12 @@ class ItServerStartPolicyDynamicCluster {
   private static String samplePath = "sample-testing-dynamic-cluster";
 
   /**
-  * Install Operator.
-  * Create a domain resource.
-  * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-  Unit engine parameter resolution mechanism
-  */
+   * Install Operator.
+   * Create a domain resource.
+   *
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   *                   Unit engine parameter resolution mechanism
+   */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
@@ -101,9 +102,9 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Verify all server pods are running.
-  * Verify k8s services for all servers are created.
-  */
+   * Verify all server pods are running.
+   * Verify k8s services for all servers are created.
+   */
   @BeforeEach
   public void beforeEach() {
 
@@ -133,14 +134,14 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Stop the dynamic cluster using the sample script stopCluster.sh.
-  * Verify that server(s) in the dynamic cluster are stopped.
-  * Verify that server(s) in the configured cluster are in the RUNNING state.
-  * Restart the dynamic cluster using the sample script startCluster.sh
-  * Make sure that servers in the dynamic cluster are in RUNNING state again.
-  * The usecase also verify the scripts startCluster.sh/stopCluster.sh make
-  * no changes in a running/stopped cluster respectively.
-  */
+   * Stop the dynamic cluster using the sample script stopCluster.sh.
+   * Verify that server(s) in the dynamic cluster are stopped.
+   * Verify that server(s) in the configured cluster are in the RUNNING state.
+   * Restart the dynamic cluster using the sample script startCluster.sh
+   * Make sure that servers in the dynamic cluster are in RUNNING state again.
+   * The usecase also verify the scripts startCluster.sh/stopCluster.sh make
+   * no changes in a running/stopped cluster respectively.
+   */
   @Order(1)
   @Test
   @DisplayName("Restart the dynamic cluster with serverStartPolicy")
@@ -186,18 +187,18 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Verify ALWAYS serverStartPolicy (dynamic cluster) overrides replica count.
-  * The dynamic cluster has a second managed server(managed-server2)
-  * with serverStartPolicy set to IF_NEEDED. Initially, the server will not
-  * come up since the replica count for the cluster is set to 1.
-  * Update the ServerStartPolicy for managed-server2 to ALWAYS
-  * by patching the resource definition with
-  *  spec/managedServers/2/serverStartPolicy set to ALWAYS.
-  * Make sure that managed server managed-server2 is up and running
-  * Stop the managed server by patching the resource definition
-  *   with spec/managedServers/2/serverStartPolicy set to IF_NEEDED.
-  * Make sure the specified managed server is stopped as per replica count.
-  */
+   * Verify ALWAYS serverStartPolicy (dynamic cluster) overrides replica count.
+   * The dynamic cluster has a second managed server(managed-server2)
+   * with serverStartPolicy set to IF_NEEDED. Initially, the server will not
+   * come up since the replica count for the cluster is set to 1.
+   * Update the ServerStartPolicy for managed-server2 to ALWAYS
+   * by patching the resource definition with
+   * spec/managedServers/2/serverStartPolicy set to ALWAYS.
+   * Make sure that managed server managed-server2 is up and running
+   * Stop the managed server by patching the resource definition
+   * with spec/managedServers/2/serverStartPolicy set to IF_NEEDED.
+   * Make sure the specified managed server is stopped as per replica count.
+   */
   @Order(2)
   @Test
   @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
@@ -227,20 +228,20 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Add the first managed server (managed-server1) in a dynamic
-  * cluster with serverStartPolicy IF_NEEDED.
-  * Initially, the server will come up since the replica count is set to 1.
-  * (a) Shutdown config-cluster-server1 using the sample script stopServer.sh
-  *     with keep_replica_constant option set to true
-  *     Make sure that managed server managed-server1 is shutdown.
-  *     Make sure that managed server managed-server2 comes up
-  *       to maintain the replica count of 1.
-  * (b) Restart config-cluster-server1 using the sample script startServer.sh
-  *     with keep_replica_constant option set to true
-  *     Make sure that managed server managed-server2 is shutdown.
-  *     Make sure that managed server managed-server1 comes up
-  *       to maintain the replica count of 1.
-  */
+   * Add the first managed server (managed-server1) in a dynamic
+   * cluster with serverStartPolicy IF_NEEDED.
+   * Initially, the server will come up since the replica count is set to 1.
+   * (a) Shutdown config-cluster-server1 using the sample script stopServer.sh
+   * with keep_replica_constant option set to true
+   * Make sure that managed server managed-server1 is shutdown.
+   * Make sure that managed server managed-server2 comes up
+   * to maintain the replica count of 1.
+   * (b) Restart config-cluster-server1 using the sample script startServer.sh
+   * with keep_replica_constant option set to true
+   * Make sure that managed server managed-server2 is shutdown.
+   * Make sure that managed server managed-server1 comes up
+   * to maintain the replica count of 1.
+   */
   @Order(3)
   @Test
   @DisplayName("Stop/Start a running dynamic cluster managed server and verify the replica count ")
@@ -273,12 +274,12 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Make sure the startServer script can start any server (not in order)
-  * in a dynamic cluster within the max cluster size limit.
-  * Say the max cluster size is 3 and managed-server1 is running.
-  * startServer script can start managed-server3 explicitly by skipping
-  * managed-server2.
-  */
+   * Make sure the startServer script can start any server (not in order)
+   * in a dynamic cluster within the max cluster size limit.
+   * Say the max cluster size is 3 and managed-server1 is running.
+   * startServer script can start managed-server3 explicitly by skipping
+   * managed-server2.
+   */
   @Order(4)
   @Test
   @DisplayName("Pick a dynamic cluster managed server randomly within the max cluster size and verify it starts")
@@ -304,20 +305,20 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Once the admin server is stopped, operator can not start a new managed
-  * server from scratch if it has never been started earlier with
-  * administration server. Once the administration server is stopped,
-  * the managed server can only be started in MSI (managed server independence)
-  * mode. To start a managed server in MSI mode, the pre-requisite is that
-  * the managed server MUST be started once before administration server is
-  * shutdown, so that the security configuration is replicated on the managed
-  * server. In this case of MII and DomainInImage model, the server
-  * state/configuration  is not saved once the server is shutdown unless we
-  * use domain-on-pv model. So in MII case, startServer.sh script update the
-  * replica count but the server startup is deferred till we re-start the
-  * adminserver. Here the operator tries to start the managed server but it
-  * will keep on failing  until administration server is available.
-  */
+   * Once the admin server is stopped, operator can not start a new managed
+   * server from scratch if it has never been started earlier with
+   * administration server. Once the administration server is stopped,
+   * the managed server can only be started in MSI (managed server independence)
+   * mode. To start a managed server in MSI mode, the pre-requisite is that
+   * the managed server MUST be started once before administration server is
+   * shutdown, so that the security configuration is replicated on the managed
+   * server. In this case of MII and DomainInImage model, the server
+   * state/configuration  is not saved once the server is shutdown unless we
+   * use domain-on-pv model. So in MII case, startServer.sh script update the
+   * replica count but the server startup is deferred till we re-start the
+   * adminserver. Here the operator tries to start the managed server but it
+   * will keep on failing  until administration server is available.
+   */
   @Order(5)
   @Test
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
@@ -392,11 +393,11 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
-  * stopServer.sh and startServer.sh while keeping the replica count constant.
-  * The test case verifies that scripts work when serverStartState
-  * is set at the managed server level but serverStartPolicy is not set at the managed server level.
-  */
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh while keeping the replica count constant.
+   * The test case verifies that scripts work when serverStartState
+   * is set at the managed server level but serverStartPolicy is not set at the managed server level.
+   */
   @Order(6)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
@@ -419,11 +420,11 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
-  * stopServer.sh and startServer.sh along with changing the replica count.
-  * The test case verifies that scripts work when serverStartState
-  * is set at the managed server level but serverStartPolicy is not set at the managed server level.
-  */
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh along with changing the replica count.
+   * The test case verifies that scripts work when serverStartState
+   * is set at the managed server level but serverStartPolicy is not set at the managed server level.
+   */
   @Order(7)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
@@ -455,10 +456,10 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Rolling restart the dynamic cluster using the sample script rollCluster.sh script
-  * Verify that server(s) in the dynamic cluster are restarted and in RUNNING state.
-  * Verify that server(s) in the configured cluster are not affected.
-  */
+   * Rolling restart the dynamic cluster using the sample script rollCluster.sh script
+   * Verify that server(s) in the dynamic cluster are restarted and in RUNNING state.
+   * Verify that server(s) in the configured cluster are not affected.
+   */
   @Order(8)
   @Test
   @DisplayName("Rolling restart the dynamic cluster with rollCluster.sh script")
@@ -506,11 +507,11 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-  * Scale the dynamic cluster using the sample script scaleCluster.sh script
-  * Verify that server(s) in the dynamic cluster are scaled up and in RUNNING state.
-  * Verify that server(s) in the configured cluster are not affected.
-  * Restore the env using the sample script stopServer.sh.
-  */
+   * Scale the dynamic cluster using the sample script scaleCluster.sh script
+   * Verify that server(s) in the dynamic cluster are scaled up and in RUNNING state.
+   * Verify that server(s) in the configured cluster are not affected.
+   * Restore the env using the sample script stopServer.sh.
+   */
   @Order(9)
   @Test
   @DisplayName("Scale the dynamic cluster with scaleCluster.sh script")
