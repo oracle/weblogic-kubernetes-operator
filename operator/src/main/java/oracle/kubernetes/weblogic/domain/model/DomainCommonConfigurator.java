@@ -18,8 +18,10 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -97,7 +99,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withServerStartState(String startState) {
+  public DomainConfigurator withServerStartState(ServerStartState startState) {
     getDomainSpec().setServerStartState(startState);
     return this;
   }
@@ -415,7 +417,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withDomainType(String type) {
+  public DomainConfigurator withDomainType(ModelInImageDomainType type) {
     getOrCreateModel().withDomainType(type);
     return this;
   }
@@ -484,7 +486,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withDesiredState(String desiredState) {
+    public ServerConfigurator withDesiredState(ServerStartState desiredState) {
       server.setServerStartState(desiredState);
       return this;
     }
@@ -502,7 +504,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withServerStartState(String state) {
+    public ServerConfigurator withServerStartState(ServerStartState state) {
       return withDesiredState(state);
     }
 
@@ -684,7 +686,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withDesiredState(String state) {
+    public ClusterConfigurator withDesiredState(ServerStartState state) {
       cluster.setServerStartState(state);
       return this;
     }
@@ -696,7 +698,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withServerStartState(String state) {
+    public ClusterConfigurator withServerStartState(ServerStartState state) {
       return withDesiredState(state);
     }
 

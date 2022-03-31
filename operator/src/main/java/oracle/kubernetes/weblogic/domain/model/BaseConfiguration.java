@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -48,11 +47,10 @@ public abstract class BaseConfiguration {
   private final ServerService serverService = new ServerService();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @EnumClass(ServerStartState.class)
   @Description(
       "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
+  private ServerStartState serverStartState;
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
@@ -106,11 +104,11 @@ public abstract class BaseConfiguration {
   }
 
   @Nullable
-  String getServerStartState() {
+  ServerStartState getServerStartState() {
     return serverStartState;
   }
 
-  void setServerStartState(@Nullable String serverStartState) {
+  void setServerStartState(@Nullable ServerStartState serverStartState) {
     this.serverStartState = serverStartState;
   }
 

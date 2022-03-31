@@ -871,11 +871,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  String getWdtDomainType() {
+  ModelInImageDomainType getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
         .map(Model::getDomainType)
-        .orElse(ModelInImageDomainType.WLS.toString());
+        .orElse(ModelInImageDomainType.WLS);
   }
 
   String getOpssWalletPasswordSecret() {

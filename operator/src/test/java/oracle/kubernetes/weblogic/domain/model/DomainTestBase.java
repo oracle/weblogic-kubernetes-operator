@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -217,7 +218,7 @@ public abstract class DomainTestBase {
 
   @Test
   void whenSpecified_adminServerDesiredStateIsAsSpecified() {
-    configureAdminServer().withDesiredState("ADMIN");
+    configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
     ServerSpec spec = domain.getAdminServerSpec();
 
@@ -244,16 +245,16 @@ public abstract class DomainTestBase {
 
   @Test
   void whenSpecified_managedServerDesiredStateIsAsSpecified() {
-    configureServer(SERVER1).withDesiredState("STAND-BY");
+    configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(spec.getDesiredState(), equalTo("STAND-BY"));
+    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
   void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
-    configureAdminServer().withDesiredState("ADMIN");
+    configureAdminServer().withDesiredState(ServerStartState.ADMIN);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
@@ -262,11 +263,11 @@ public abstract class DomainTestBase {
 
   @Test
   void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
-    configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
+    configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.ADMIN);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(spec.getDesiredState(), equalTo("NEVER"));
+    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   protected ClusterConfigurator configureCluster(String clusterName) {
@@ -444,12 +445,12 @@ public abstract class DomainTestBase {
 
   @Test
   void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
-    configureServer(SERVER1).withDesiredState("STAND-BY");
-    configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
+    configureServer(SERVER1).withDesiredState(ServerStartState.ADMIN);
+    configureCluster(CLUSTER_NAME).withDesiredState(ServerStartState.RUNNING);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(spec.getDesiredState(), equalTo("STAND-BY"));
+    assertThat(spec.getDesiredState(), equalTo("ADMIN"));
   }
 
   @Test
@@ -477,7 +478,7 @@ public abstract class DomainTestBase {
   @Test
   void whenDesiredStateAdminAndSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
     configureCluster(CLUSTER_NAME)
-        .withDesiredState("ADMIN")
+        .withDesiredState(ServerStartState.ADMIN)
         .withEnvironmentVariable("JAVA_OPTIONS", "value");
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);

@@ -24,6 +24,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
@@ -199,10 +201,10 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenServerStartStateConfiguredOnClusterAndServer_useServerSetting() {
-    configureCluster("cluster1").withServerStartState("cluster");
-    configureServer("server1").withServerStartState("server");
+    configureCluster("cluster1").withServerStartState(ServerStartState.ADMIN);
+    configureServer("server1").withServerStartState(ServerStartState.RUNNING);
 
-    assertThat(domain.getServer("server1", "cluster1").getDesiredState(), equalTo("server"));
+    assertThat(domain.getServer("server1", "cluster1").getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
@@ -1246,7 +1248,7 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getSpec().getShutdown();
-    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
     assertThat(shutdown.getTimeoutSeconds(), is(45L));
   }
 
@@ -1255,7 +1257,7 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
-    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
     assertThat(shutdown.getTimeoutSeconds(), is(45L));
     assertThat(shutdown.getIgnoreSessions(), is(true));
   }
@@ -1265,7 +1267,7 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
-    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
     assertThat(shutdown.getTimeoutSeconds(), is(60L));
     assertThat(shutdown.getIgnoreSessions(), is(false));
   }

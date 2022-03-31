@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -112,11 +113,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public String getDesiredState() {
-    return getEffectiveServerStartPolicy() == ServerStartPolicy.NEVER ? SHUTDOWN_STATE
-            : Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
+    return getEffectiveServerStartPolicy().equals(ServerStartPolicy.NEVER) ? SHUTDOWN_STATE
+            : Optional.ofNullable(getConfiguredDesiredState()).orElse(ServerStartState.RUNNING).toString();
   }
 
-  private String getConfiguredDesiredState() {
+  private ServerStartState getConfiguredDesiredState() {
     return server.getServerStartState();
   }
 

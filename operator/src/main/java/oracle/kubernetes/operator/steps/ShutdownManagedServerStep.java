@@ -168,7 +168,7 @@ public class ShutdownManagedServerStep extends Step {
       String shutdownType = getEnvValue(envVarList, "SHUTDOWN_TYPE");
 
       shutdownType = shutdownType == null ? Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
-          .orElse(ShutdownType.GRACEFUL.getValue()) : shutdownType;
+          .orElse(ShutdownType.GRACEFUL).getValue() : shutdownType;
 
 
       return shutdownType.equalsIgnoreCase(ShutdownType.GRACEFUL.getValue());

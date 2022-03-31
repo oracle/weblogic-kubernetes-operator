@@ -19,8 +19,10 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -316,7 +318,7 @@ public abstract class DomainConfigurator {
    * @param startState the server start state
    * @return this object
    */
-  public abstract DomainConfigurator withServerStartState(String startState);
+  public abstract DomainConfigurator withServerStartState(ServerStartState startState);
 
   /**
    * Add an environment variable with the given name and value to the domain.
@@ -619,5 +621,5 @@ public abstract class DomainConfigurator {
    * @param type the domain type
    * @return this object
    */
-  public abstract DomainConfigurator withDomainType(String type);
+  public abstract DomainConfigurator withDomainType(ModelInImageDomainType type);
 }

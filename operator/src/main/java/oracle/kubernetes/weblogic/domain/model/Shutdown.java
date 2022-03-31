@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -21,8 +20,7 @@ public class Shutdown {
   @Description(
       "Specifies how the operator will shut down server instances."
           + " Defaults to graceful shutdown.")
-  @EnumClass(ShutdownType.class)
-  private String shutdownType;
+  private ShutdownType shutdownType;
 
   @Description(
       "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down"
@@ -57,11 +55,11 @@ public class Shutdown {
     }
   }
 
-  public String getShutdownType() {
-    return Optional.ofNullable(shutdownType).orElse(ShutdownType.GRACEFUL.getValue());
+  public ShutdownType getShutdownType() {
+    return Optional.ofNullable(shutdownType).orElse(ShutdownType.GRACEFUL);
   }
 
-  public Shutdown shutdownType(String shutdownType) {
+  public Shutdown shutdownType(ShutdownType shutdownType) {
     this.shutdownType = shutdownType;
     return this;
   }

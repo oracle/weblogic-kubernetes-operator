@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -51,15 +52,15 @@ public abstract class BaseConfigurationTestBase {
 
   @Test
   void whenServerStartStatesAreSame_objectsAreEqual() {
-    instance1.setServerStartState("ADMIN");
-    instance2.setServerStartState("ADMIN");
+    instance1.setServerStartState(ServerStartState.ADMIN);
+    instance2.setServerStartState(ServerStartState.ADMIN);
 
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
   void whenServerStartStatesDiffer_objectsAreNotEqual() {
-    instance1.setServerStartState("ADMIN");
+    instance1.setServerStartState(ServerStartState.ADMIN);
 
     assertThat(instance1, not(equalTo(instance2)));
   }

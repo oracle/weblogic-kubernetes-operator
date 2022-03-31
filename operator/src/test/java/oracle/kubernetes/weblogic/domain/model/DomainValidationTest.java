@@ -12,6 +12,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -776,7 +777,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
-        .withDomainType("JRF");
+        .withDomainType(ModelInImageDomainType.JRF);
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -787,7 +788,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
-        .withDomainType("JRF")
+        .withDomainType(ModelInImageDomainType.JRF)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
 
@@ -811,7 +812,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(IMAGE)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .withOpssWalletFileSecret("wallet-file-secret");
 
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -825,7 +826,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain)
         .withDomainHomeSourceType(IMAGE)
         .withIstio()
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -842,7 +843,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -858,7 +859,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -875,7 +876,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -891,7 +892,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -909,7 +910,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer();
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
@@ -925,7 +926,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -943,7 +944,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -964,7 +965,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer();
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(
@@ -981,7 +982,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1000,7 +1001,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1018,7 +1019,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1034,7 +1035,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1058,7 +1059,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1079,7 +1080,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1101,7 +1102,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1129,7 +1130,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1159,7 +1160,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1186,7 +1187,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain2)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1214,7 +1215,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1241,7 +1242,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1259,7 +1260,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1277,7 +1278,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1303,7 +1304,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1329,7 +1330,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1355,7 +1356,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1382,7 +1383,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS")
+        .withDomainType(ModelInImageDomainType.WLS)
         .configureAdminServer()
         .configureAdminService()
         .withChannel("default");
@@ -1409,7 +1410,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withDomainType("WLS");
+        .withDomainType(ModelInImageDomainType.WLS);
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
 
