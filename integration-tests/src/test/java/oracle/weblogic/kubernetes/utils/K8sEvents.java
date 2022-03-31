@@ -222,14 +222,16 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
+        if ((reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
                 && (event.getMetadata().getLabels() != null
-                && event.getMetadata().getLabels().containsValue(domainUid))) {
+                && event.getMetadata().getLabels().containsValue(domainUid)))
+                || ((NAMESPACE_WATCHING_STARTED.equals(event.getReason())
+                || NAMESPACE_WATCHING_STOPPED.equals(event.getReason())) && isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
           logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
-              type, reason, domainUid, domainNamespace);
+                  type, reason, domainUid, domainNamespace);
           assertEquals(event.getType(), type);
           return true;
         }
