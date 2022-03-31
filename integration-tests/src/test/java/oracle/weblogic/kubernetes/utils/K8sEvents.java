@@ -118,7 +118,7 @@ public class K8sEvents {
     return () -> {
       if (enableClusterRoleBinding) {
         if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
-            && domainEventExists(opNamespace, opNamespace, "", STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
           logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
               NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
           return true;
@@ -128,7 +128,7 @@ public class K8sEvents {
         }
       } else {
         if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
-            && domainEventExists(opNamespace, opNamespace, "", STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
           logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
               NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
           return true;
@@ -143,7 +143,7 @@ public class K8sEvents {
               domainNamespace);
           String operatorLog = getPodLog(operatorPodName, opNamespace);
           if (operatorLog.contains(expectedErrorMsg)
-              && domainEventExists(opNamespace, opNamespace, "", STOP_MANAGING_NAMESPACE, type, timestamp)) {
+              && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
             logger.info("Got expected error msg \"{0}\" in operator log and event {1} is logged in namespace {2}",
                 expectedErrorMsg, STOP_MANAGING_NAMESPACE, opNamespace);
             return true;
@@ -166,6 +166,7 @@ public class K8sEvents {
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
+   * @return true if event exists otherwise false
    */
   public static boolean domainEventExists(
       String opNamespace, String domainNamespace, String domainUid, String reason,
@@ -174,9 +175,9 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))
-                && (event.getMetadata().getLabels() != null
-                && event.getMetadata().getLabels().containsValue(domainUid))) {
+        if (((domainUid != null && event.getMetadata().getLabels().containsValue(domainUid))
+                || domainUid == null)
+                && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
