@@ -192,7 +192,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED, NONCLUSTERED_SERVER));
+    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(NONCLUSTERED_SERVER));
     logRecords.clear();
   }
 
@@ -212,9 +212,9 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInOrder(
-        containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER2_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER10_NAME)
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
   }
 
@@ -227,7 +227,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME));
+    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
   }
 
   @Test
@@ -242,9 +242,9 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInOrder(
-        containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER2_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER10_NAME)
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
   }
 

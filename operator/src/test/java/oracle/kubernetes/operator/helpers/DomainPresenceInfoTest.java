@@ -21,7 +21,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -132,18 +131,6 @@ class DomainPresenceInfoTest {
     info.setPodDisruptionBudget("cluster", pdb);
 
     assertThat(info.getPodDisruptionBudget("cluster"), sameInstance(pdb));
-  }
-
-  @Test
-  void afterValidationWarningsAdded_nextCallReturnsThem() {
-    final String warning1 = "warning1";
-    final String warning2 = "warning2";
-
-    info.addValidationWarning(warning1);
-    info.addValidationWarning(warning2);
-
-    assertThat(info.getValidationWarningsAsString(), containsString(warning1));
-    assertThat(info.getValidationWarningsAsString(), containsString(warning2));
   }
 
   @Test

@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -34,13 +35,21 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -71,7 +80,7 @@ class DomainValidationStepTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED);
+    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords);
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
@@ -101,8 +110,19 @@ class DomainValidationStepTest {
   }
 
   @Test
+  void whenDomainIsValid_removeOldDomainInvalidCondition() {
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("Placeholder"));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("Placeholder"));
+
+    testSupport.runSteps(domainValidationSteps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(updatedDomain, hasCondition(FAILED).withReason(INTROSPECTION));
+    assertThat(updatedDomain, not(hasCondition(FAILED).withReason(DOMAIN_INVALID)));
+  }
+
+  @Test
   void whenDomainIsNotValid_dontRunNextStep() {
-    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
     testSupport.runSteps(domainValidationSteps);
@@ -112,7 +132,6 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainIsNotValid_updateStatus() {
-    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
     testSupport.runSteps(domainValidationSteps);
@@ -123,12 +142,33 @@ class DomainValidationStepTest {
   }
 
   @Test
+  void whenDomainIsNotValid_removePreviousDomainInvalidCondition() {
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("obsolete"));
+    defineDuplicateServerNames();
+
+    testSupport.runSteps(domainValidationSteps);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(updatedDomain, not(hasCondition(FAILED).withReason(DOMAIN_INVALID).withMessageContaining("obsolete")));
+  }
+
+  @Test
   void whenDomainIsNotValid_logSevereMessage() {
+    consoleControl.trackMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
     testSupport.runSteps(domainValidationSteps);
 
     assertThat(logRecords, containsSevere(DOMAIN_VALIDATION_FAILED));
+  }
+
+  @Test
+  void whenDomainIsNotValid_generateEvent() {
+    defineDuplicateServerNames();
+
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(DOMAIN_INVALID_ERROR));
   }
 
   private String getStatusReason(Domain updatedDomain) {
@@ -146,7 +186,6 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainRefersToUnknownSecret_updateStatus() {
-    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
     testSupport.runSteps(domainValidationSteps);
@@ -158,7 +197,6 @@ class DomainValidationStepTest {
 
   @Test
   void whenDomainRefersToUnknownSecret_dontRunNextStep() {
-    consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
     testSupport.runSteps(domainValidationSteps);

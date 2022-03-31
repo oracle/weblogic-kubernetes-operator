@@ -71,6 +71,10 @@ public class WlsClusterConfig {
     return this;
   }
 
+  public WlsClusterConfig addWlsServer(String name, String listenAddress, int port) {
+    return addServerConfig(new WlsServerConfig(name, listenAddress, port));
+  }
+
   /**
    * Returns the number of servers that are statically configured in this cluster.
    *

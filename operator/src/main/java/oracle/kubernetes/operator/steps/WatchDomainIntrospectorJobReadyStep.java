@@ -22,7 +22,7 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
       JobAwaiterStepFactory jw = packet.getSpi(JobAwaiterStepFactory.class);
       return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
     } else {
-      return doNext(Step.chain(DomainStatusUpdater.createRemoveFailuresStep(), getNext()), packet);
+      return doNext(DomainStatusUpdater.createRemoveFailuresStep(getNext()), packet);
     }
   }
 

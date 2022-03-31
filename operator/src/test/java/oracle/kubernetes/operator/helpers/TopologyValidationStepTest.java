@@ -120,7 +120,7 @@ class TopologyValidationStepTest {
     final String message = getFormattedMessage(messageKey, parameters);
 
     assertThat(domain, hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessageContaining(message));
-    assertThat(logRecords, containsWarning(messageKey, parameters));
+    assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(TOPOLOGY_MISMATCH_ERROR, message));
   }
 
