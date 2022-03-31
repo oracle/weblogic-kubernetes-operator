@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.deletePVPVCAndVerify;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -446,8 +445,8 @@ class ItWlsSamples {
   // create persistent volume and persistent volume claims used by the samples
   private void createPvPvc(String domainName) {
 
-    String pvName = getUniquePvOrPvcName(domainName + "-weblogic-sample-pv");
-    String pvcName = getUniquePvOrPvcName(domainName + "-weblogic-sample-pvc");
+    String pvName = domainName + "-weblogic-sample-pv";
+    String pvcName = domainName + "-weblogic-sample-pvc";
 
     // delete pv and pvc if exists
     deletePVPVCAndVerify(pvName, null, pvcName, domainNamespace);
