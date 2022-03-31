@@ -123,6 +123,14 @@ public class Secret {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
           if (v1Secret.getData() != null) {
             byte[] encodedToken = v1Secret.getData().get("token");
+            getLogger().info(new String(encodedToken));
+            Base64.Encoder encoder = Base64.getEncoder();
+            if (encoder != null) {
+              String encodeToString = encoder.encodeToString(encodedToken);
+              getLogger().info(encodeToString);
+            } else {
+              getLogger().info("encoder is null");
+            }
             return Base64.getEncoder().encodeToString(encodedToken);
           }
         }
