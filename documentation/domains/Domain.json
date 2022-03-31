@@ -86,8 +86,8 @@
           "type": "string",
           "enum": [
             "Always",
-            "Never",
-            "IfNotPresent"
+            "IfNotPresent",
+            "Never"
           ]
         },
         "sourceModelHome": {
@@ -414,8 +414,8 @@
           "type": "string",
           "enum": [
             "Always",
-            "Never",
-            "IfNotPresent"
+            "IfNotPresent",
+            "Never"
           ]
         },
         "maxClusterConcurrentStartup": {
@@ -672,8 +672,8 @@
           "type": "string",
           "enum": [
             "Always",
-            "Never",
-            "IfNotPresent"
+            "IfNotPresent",
+            "Never"
           ]
         },
         "configuration": {
@@ -872,7 +872,12 @@
         },
         "restartPolicy": {
           "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "OnFailure"
+          ]
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
@@ -945,7 +950,14 @@
         },
         "podPhase": {
           "description": "Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "Failed",
+            "Pending",
+            "Running",
+            "Succeeded",
+            "Unknown"
+          ]
         },
         "clusterName": {
           "description": "WebLogic cluster name, if the server is a member of a cluster.",

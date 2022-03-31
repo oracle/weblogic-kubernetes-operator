@@ -7,20 +7,23 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
 public interface ServerConfigurator extends ServiceConfigurator {
-  ServerConfigurator withDesiredState(String desiredState);
+  ServerConfigurator withDesiredState(ServerStartState desiredState);
 
   ServerConfigurator withEnvironmentVariable(String name, String value);
 
   ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
-  ServerConfigurator withServerStartState(String state);
+  ServerConfigurator withServerStartState(ServerStartState state);
 
-  ServerConfigurator withServerStartPolicy(String startNever);
+  ServerConfigurator withServerStartPolicy(ServerStartPolicy startNever);
 
   ServerConfigurator withLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
 
@@ -113,7 +116,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
    */
   ServerConfigurator withRestartVersion(String restartVersion);
 
-  ServerConfigurator withRestartPolicy(String restartPolicy);
+  ServerConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
 
   ServerConfigurator withAffinity(V1Affinity affinity);
 

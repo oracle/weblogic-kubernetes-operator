@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -117,7 +118,7 @@ public class LoadBalancerUtils {
         .name("http")
         .port(portshttp)
         .targetPort(new IntOrString(portshttp))
-        .protocol("TCP"));
+        .protocol(V1ServicePort.ProtocolEnum.TCP));
 
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -128,8 +129,8 @@ public class LoadBalancerUtils {
         .spec(new V1ServiceSpec()
             .ports(ports)
             .selector(selectors)
-            .sessionAffinity("None")
-            .type("LoadBalancer"));
+            .sessionAffinity(V1ServiceSpec.SessionAffinityEnum.NONE)
+            .type(V1ServiceSpec.TypeEnum.LOADBALANCER));
     LoggingFacade logger = getLogger();
     assertNotNull(service, "Can't create ocilb service, returns null");
     assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
@@ -353,7 +354,7 @@ public class LoadBalancerUtils {
         .helmParams(apacheHelmParams)
         .imagePullSecrets(secretNameMap)
         .image(image)
-        .imagePullPolicy("IfNotPresent")
+        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
         .domainUID(domainUid);
 
     if (httpNodePort >= 0 && httpsNodePort >= 0) {

@@ -200,7 +200,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("MODEL_ONLY_IMAGE", modelOnlyImage);
@@ -312,7 +312,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", missingWdtImage);
@@ -378,7 +378,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", missingModelImage);
@@ -448,7 +448,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", permModelImage);
@@ -521,7 +521,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Generate a v8 version of domain.yaml file from a template file 
     // replacing domain namespace, domain uid, base image and aux image
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", patchBaseImage);

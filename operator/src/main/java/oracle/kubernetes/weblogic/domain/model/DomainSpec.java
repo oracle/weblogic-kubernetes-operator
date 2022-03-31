@@ -12,11 +12,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.common.ImagePullPolicy;
 import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
@@ -79,7 +79,7 @@ public class DomainSpec extends BaseConfiguration {
       + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private String serverStartPolicy;
+  private ServerStartPolicy serverStartPolicy;
 
   /**
    * Reference to secret containing WebLogic startup credentials user name and password. Secret must
@@ -177,8 +177,7 @@ public class DomainSpec extends BaseConfiguration {
       "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  @EnumClass(ImagePullPolicy.class)
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
 
   /**
    * The image pull secrets for the WebLogic Server image.
@@ -334,7 +333,7 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImage();
   }
 
-  String getMonitoringExporterImagePullPolicy() {
+  V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
@@ -356,7 +355,7 @@ public class DomainSpec extends BaseConfiguration {
    * Specifies the pull policy for the exporter image.
    * @param pullPolicy a Kubernetes pull policy
    */
-  public void setMonitoringExporterImagePullPolicy(String pullPolicy) {
+  public void setMonitoringExporterImagePullPolicy(V1Container.ImagePullPolicyEnum pullPolicy) {
     assert monitoringExporter != null : "May not set image pull policy without configuration";
 
     monitoringExporter.setImagePullPolicy(pullPolicy);
@@ -496,12 +495,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   @Override
-  public String getServerStartPolicy() {
-    return Optional.ofNullable(serverStartPolicy).orElse(ConfigurationConstants.START_IF_NEEDED);
+  public ServerStartPolicy getServerStartPolicy() {
+    return Optional.ofNullable(serverStartPolicy).orElse(ServerStartPolicy.IF_NEEDED);
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 
@@ -546,11 +545,11 @@ public class DomainSpec extends BaseConfiguration {
     this.image = image;
   }
 
-  public String getImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
+  public void setImagePullPolicy(@Nullable V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
@@ -872,11 +871,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  String getWdtDomainType() {
+  ModelInImageDomainType getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
         .map(Model::getDomainType)
-        .orElse(ModelInImageDomainType.WLS.toString());
+        .orElse(ModelInImageDomainType.WLS);
   }
 
   String getOpssWalletPasswordSecret() {

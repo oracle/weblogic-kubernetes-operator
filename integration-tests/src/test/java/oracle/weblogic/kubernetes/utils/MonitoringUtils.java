@@ -16,6 +16,7 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -126,12 +127,12 @@ public class MonitoringUtils {
         monitoringExporterRelease,
         monitoringExporterWebAppVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(curlDownloadCmd))
         .execute(), "Failed to download monitoring exporter webapp");
     String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to download monitoring exporter webapp");
@@ -142,7 +143,7 @@ public class MonitoringUtils {
         configFile);
 
     testUntil(
-        (() -> new Command()
+        (() -> Command
           .withParams(
               new CommandParams()
               .verbose(true)
@@ -172,7 +173,7 @@ public class MonitoringUtils {
     Path srcFile = Paths.get(monitoringExporterSrcDir,
         "target", "wls-exporter.war");
 
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter webapp");
@@ -599,7 +600,7 @@ public class MonitoringUtils {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(appPath);
     appList.add(appName);
 
@@ -717,7 +718,7 @@ public class MonitoringUtils {
         e.printStackTrace();
       }
 
-      String imagePullPolicy = "IfNotPresent";
+      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
           .imagePullPolicy(imagePullPolicy)
@@ -1007,7 +1008,7 @@ public class MonitoringUtils {
           + monitoringExporterSrcDir);
     }
     logger.info("Executing command " + command);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter image");

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -322,7 +323,7 @@ class ItMiiCreateAuxImageWithImageTool {
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
 

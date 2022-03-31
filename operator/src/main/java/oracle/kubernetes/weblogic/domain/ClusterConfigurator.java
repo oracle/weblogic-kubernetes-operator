@@ -6,7 +6,10 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -15,13 +18,13 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withMaxUnavailable(int maxUnavailable);
 
-  ClusterConfigurator withDesiredState(String state);
+  ClusterConfigurator withDesiredState(ServerStartState state);
 
   ClusterConfigurator withEnvironmentVariable(String name, String value);
 
-  ClusterConfigurator withServerStartState(String cluster);
+  ClusterConfigurator withServerStartState(ServerStartState cluster);
 
-  ClusterConfigurator withServerStartPolicy(String policy);
+  ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy);
 
   ClusterConfigurator withReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period);
 
@@ -114,7 +117,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
    */
   ClusterConfigurator withRestartVersion(String restartVersion);
 
-  ClusterConfigurator withRestartPolicy(String restartPolicy);
+  ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
 
   ClusterConfigurator withAffinity(V1Affinity affinity);
 

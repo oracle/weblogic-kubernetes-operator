@@ -361,7 +361,7 @@ class ItInitContainers {
         domain.getSpec().getServerPod().addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
             .name("busybox")
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .image("busybox").addEnvItem(new V1EnvVar()
                                     .name("DOMAIN_NAME")
                                     .value("xyz")));
@@ -372,7 +372,7 @@ class ItInitContainers {
             .addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
             .name("busybox")
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .image("busybox")));
         setPodAntiAffinity(domain);
         break;
@@ -388,7 +388,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
                     .name("busybox")
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .image("busybox"));
         break;
       case "managedServers":
@@ -398,7 +398,7 @@ class ItInitContainers {
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from managed-server1\"")
                     .name("busybox")
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .image("busybox"))));
         setPodAntiAffinity(domain);
         break;

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -24,7 +24,7 @@ public class Server extends BaseConfiguration {
       + "Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private String serverStartPolicy;
+  private ServerStartPolicy serverStartPolicy;
 
   protected Server getConfiguration() {
     Server configuration = new Server();
@@ -72,12 +72,12 @@ public class Server extends BaseConfiguration {
   }
 
   @Override
-  public String getServerStartPolicy() {
+  public ServerStartPolicy getServerStartPolicy() {
     return serverStartPolicy;
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 }

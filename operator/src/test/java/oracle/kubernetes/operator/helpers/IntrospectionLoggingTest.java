@@ -109,7 +109,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(updatedDomain.getStatus().getMessage(),
             equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
   }
@@ -150,7 +150,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.label()));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
         equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));

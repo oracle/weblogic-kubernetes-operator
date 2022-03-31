@@ -288,7 +288,7 @@ class ItElasticLoggingFluentd {
   }
 
   private static void configFluentd() {
-    Class thisClass = new Object(){}.getClass();
+    Class<?> thisClass = new Object(){}.getClass();
     String srcFluentdYamlFile =  MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML;
     String destFluentdYamlFile =
         RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName() + "/" + FLUENTD_CONFIGMAP_YAML;
@@ -312,7 +312,7 @@ class ItElasticLoggingFluentd {
         "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command("kubectl create -f " + destFluentdYamlFile))
         .execute(), "kubectl create failed");
@@ -464,7 +464,7 @@ class ItElasticLoggingFluentd {
                                     .name("weblogic-credentials"))))
                         .name(FLUENTD_NAME)
                         .image(FLUENTD_IMAGE)
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .resources(new V1ResourceRequirements())
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -505,11 +505,11 @@ class ItElasticLoggingFluentd {
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
-    String indexName = (String) testVarMap.get(index);
-    StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
-        .append(" --max-time " + waittime)
+    String indexName = testVarMap.get(index);
+    StringBuilder curlOptions = new StringBuilder(" --connect-timeout " + waittime)
+        .append(" --max-time ").append(waittime)
         .append(" -X GET ");
-    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
+    StringBuilder k8sExecCmdPrefixBuff = new StringBuilder(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String cmd = k8sExecCmdPrefixBuff

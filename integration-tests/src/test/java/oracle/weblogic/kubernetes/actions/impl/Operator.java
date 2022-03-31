@@ -95,7 +95,7 @@ public class Operator {
    */
   public static boolean buildImage(String image) {
     String command = String.format("%s -t %s", OPERATOR_DOCKER_BUILD_SCRIPT, image);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(command))
         .execute();

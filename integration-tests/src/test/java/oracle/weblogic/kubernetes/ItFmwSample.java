@@ -256,7 +256,7 @@ public class ItFmwSample {
       Files.createDirectories(pvHostPath);
       String command1  = "chmod -R 777 " + pvHostPathBase;
       logger.info("Command1 to be executed: " + command1);
-      assertTrue(new Command()
+      assertTrue(Command
           .withParams(new CommandParams()
             .command(command1))
           .execute(), "Failed to chmod " + PV_ROOT);
@@ -329,7 +329,7 @@ public class ItFmwSample {
 
     String command = "chmod -R 755 " + tempSamplePath;
     logger.info("The command to be executed: " + command);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to chmod tempSamplePath");

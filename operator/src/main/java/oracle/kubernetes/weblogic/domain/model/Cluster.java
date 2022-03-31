@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -58,7 +59,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private String serverStartPolicy;
+  private ServerStartPolicy serverStartPolicy;
 
   @Description(
       "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
@@ -158,12 +159,12 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   @Nullable
   @Override
-  public String getServerStartPolicy() {
+  public ServerStartPolicy getServerStartPolicy() {
     return serverStartPolicy;
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 
@@ -196,7 +197,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     clusterService.addAnnotations(name, value);
   }
 
-  public String getClusterSessionAffinity() {
+  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
     return clusterService.getSessionAffinity();
   }
 
