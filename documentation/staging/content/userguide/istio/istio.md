@@ -200,10 +200,10 @@ See the following description of each `spec.configuration.istio` attribute:
 __Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then:
 
-- The managed Weblogic Servers that are running in the managed server pods
+- The Managed Weblogic Servers that are running in the managed server pods
   may not be able to contact the WebLogic Administration Server.
   They will consequently log networking messages about failures communicating
-  with the administration server and likely also a `Boot identity not valid` error.
+  with the Administration Server and likely, also a `Boot identity not valid` error.
 
 - The `weblogic-server` container in the managed server pods will
   fail to reach a `ready` state due to readiness probe failures.
@@ -219,7 +219,7 @@ then:
   sample-domain1-admin-server      1/2     Running   0          2m
   ```
 
-  Using the `kubectl describe pod` command will show a readiness probe event failure:
+  The `kubectl describe pod` command will show a readiness probe event failure:
 
   ```text
   $ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
