@@ -89,12 +89,13 @@ public class ServerStartPolicyUtils {
   private static LoggingFacade logger = getLogger();
 
   /**
-  * Create operator and domain in specified namespaces, setup sample scripts directory.
-  * @param domainNamespace - domain namespace
-  * @param domainUid - domain uid
-  * @param opNamespace - operator namespace
-  * @param samplePath -name for samples script directory
-  */
+   * Create operator and domain in specified namespaces, setup sample scripts directory.
+   *
+   * @param domainNamespace - domain namespace
+   * @param domainUid       - domain uid
+   * @param opNamespace     - operator namespace
+   * @param samplePath      -name for samples script directory
+   */
   public static void prepare(String domainNamespace, String domainUid, String opNamespace, String samplePath) {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -145,15 +146,16 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-   *  Scaling cluster util method.
-   * @param domainUid - domain uid
+   * Scaling cluster util method.
+   *
+   * @param domainUid       - domain uid
    * @param domainNamespace - domain namespace
-   * @param clusterName - cluster name
-   * @param serverPodName -server pod name
-   * @param replicaNum -number of servers to scale
-   * @param regex - regex
-   * @param checkPodExist - to check if pod exists
-   * @param samplePathDir - name of sample script dir
+   * @param clusterName     - cluster name
+   * @param serverPodName   -server pod name
+   * @param replicaNum      -number of servers to scale
+   * @param regex           - regex
+   * @param checkPodExist   - to check if pod exists
+   * @param samplePathDir   - name of sample script dir
    */
   public static void scalingClusters(String domainUid, String domainNamespace,
                                      String clusterName, String serverPodName, int replicaNum,
@@ -182,11 +184,12 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * Restore env to original.
-  * @param domainUid - domain uid
-  * @param domainNamespace - domain namespace
-  * @param samplePathDir -name of sample script dir
-  */
+   * Restore env to original.
+   *
+   * @param domainUid       - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir   -name of sample script dir
+   */
   public static void restoreEnv(String domainUid, String domainNamespace, String samplePathDir) {
     int newReplicaCount = 2;
     String configServerName = "config-cluster-server" + newReplicaCount;
@@ -210,13 +213,15 @@ public class ServerStartPolicyUtils {
     logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
   }
 
-  /** Create domain resource.
-  * @param domNamespace - domain namespace
-  * @param domainUid -domain uid
-  * @param adminSecretName - adminserver secret name
-  * @param encryptionSecretName - encryption secret name
-  * @param configmapName - config map name
-  */
+  /**
+   * Create domain resource.
+   *
+   * @param domNamespace         - domain namespace
+   * @param domainUid            -domain uid
+   * @param adminSecretName      - adminserver secret name
+   * @param encryptionSecretName - encryption secret name
+   * @param configmapName        - config map name
+   */
   public static void createDomainResource(
             String domNamespace, String domainUid, String adminSecretName,
             String encryptionSecretName,
@@ -303,10 +308,11 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * Verify the server MBEAN configuration through rest API.
-  * @param managedServer name of the managed server
-  * @returns true if MBEAN is found otherwise false
-  **/
+   * Verify the server MBEAN configuration through rest API.
+   *
+   * @param managedServer name of the managed server
+   * @returns true if MBEAN is found otherwise false
+   **/
   public static boolean checkManagedServerConfiguration(String ingressHost, String managedServer,
                                                           String domainNamespace, String adminServerPodName) {
     ExecResult result;
@@ -335,9 +341,10 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * copy samples directory to a temporary location.
-  * @param samplePathDir - name of sample script dir
-  */
+   * copy samples directory to a temporary location.
+   *
+   * @param samplePathDir - name of sample script dir
+   */
   public static void setupSample(String samplePathDir) {
     Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
     Path tempSamplePath = Paths.get(WORK_DIR, samplePathDir);
@@ -351,15 +358,16 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * Function to execute domain lifecyle scripts.
-  * @param domainUid - domain uid
-  * @param domainNamespace - domain namespace
-  * @param samplePathDir - name of sample script dir
-  * @param script - script name
-  * @param scriptType -script type
-  * @param entityName - entity name
-  * @return status
-  */
+   * Function to execute domain lifecyle scripts.
+   *
+   * @param domainUid       - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir   - name of sample script dir
+   * @param script          - script name
+   * @param scriptType      -script type
+   * @param entityName      - entity name
+   * @return status
+   */
   public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir,
                                                 String script, String scriptType, String entityName) {
     return executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
@@ -367,16 +375,17 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * Function to execute domain lifecyle scripts.
-  * @param domainUid - domain uid
-  * @param domainNamespace - domain namespace
-  * @param samplePathDir - name of sample script dir
-  * @param script - script name
-  * @param scriptType -script type
-  * @param entityName entity name
-  * @param extraParams - extra params
-  * @return result
-  */
+   * Function to execute domain lifecyle scripts.
+   *
+   * @param domainUid       - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir   - name of sample script dir
+   * @param script          - script name
+   * @param scriptType      -script type
+   * @param entityName      entity name
+   * @param extraParams     - extra params
+   * @return result
+   */
   public static String executeLifecycleScript(String domainUid, String domainNamespace,
                                                 String samplePathDir, String script,
                                                 String scriptType, String entityName, String extraParams) {
@@ -385,18 +394,19 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  * Function to execute domain lifecyle scripts.
-  * @param domainUid - domain uid
-  * @param domainNamespace - domain namespace
-  * @param samplePathDir - name of sample script dir
-  * @param script - script name
-  * @param scriptType -script type
-  * @param entityName - entity name
-  * @param extraParams -extra params
-  * @param checkResult -specify if need to check result
-  * @param args - extra args
-  * @return result
-  */
+   * Function to execute domain lifecyle scripts.
+   *
+   * @param domainUid       - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir   - name of sample script dir
+   * @param script          - script name
+   * @param scriptType      -script type
+   * @param entityName      - entity name
+   * @param extraParams     -extra params
+   * @param checkResult     -specify if need to check result
+   * @param args            - extra args
+   * @return result
+   */
   public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir,
                                                 String script,
                                                 String scriptType,
@@ -438,11 +448,12 @@ public class ServerStartPolicyUtils {
   }
 
   /**
-  *  Verify result.
-  * @param result - result object
-  * @param regex - check string
-  * @return true or false
-  */
+   * Verify result.
+   *
+   * @param result - result object
+   * @param regex  - check string
+   * @return true or false
+   */
   public static boolean verifyExecuteResult(String result, String regex) {
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(result);

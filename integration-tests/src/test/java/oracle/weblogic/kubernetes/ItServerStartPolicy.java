@@ -75,11 +75,12 @@ class ItServerStartPolicy {
   private static String ingressHost = null; //only used for OKD
 
   /**
-     * Install Operator.
-     * Create a domain resource definition.
-     * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-    JUnit engine parameter resolution mechanism
-  */
+   * Install Operator.
+   * Create a domain resource definition.
+   *
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   *                   JUnit engine parameter resolution mechanism
+   */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
@@ -101,9 +102,9 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Verify all server pods are running.
-  * Verify k8s services for all servers are created.
-  */
+   * Verify all server pods are running.
+   * Verify k8s services for all servers are created.
+   */
   @BeforeEach
   public void beforeEach() {
 
@@ -133,14 +134,14 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Verify the script stopServer.sh can not stop a server below the minimum
-  * DynamicServer count when allowReplicasBelowMinDynClusterSize is false.
-  * In the current domain configuration the minimum replica count is 1.
-  * The managed-server1 is up and running.
-  * Shutdown the managed-server1 using the script stopServer.sh.
-  * managed-server1 is shutdown and managed-server2 comes up to mantain the
-  * minimum replica count.
-  */
+   * Verify the script stopServer.sh can not stop a server below the minimum
+   * DynamicServer count when allowReplicasBelowMinDynClusterSize is false.
+   * In the current domain configuration the minimum replica count is 1.
+   * The managed-server1 is up and running.
+   * Shutdown the managed-server1 using the script stopServer.sh.
+   * managed-server1 is shutdown and managed-server2 comes up to mantain the
+   * minimum replica count.
+   */
   @Order(0)
   @Test
   @DisplayName("Stop a server below Limit")
@@ -174,11 +175,11 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Stop the Administration server by using stopServer.sh sample script.
-  * Make sure that Only the Administration server is stopped.
-  * Restart the Administration server by using startServer.sh sample script.
-  * Make sure that the Administration server is in RUNNING state.
-  */
+   * Stop the Administration server by using stopServer.sh sample script.
+   * Make sure that Only the Administration server is stopped.
+   * Restart the Administration server by using startServer.sh sample script.
+   * Make sure that the Administration server is in RUNNING state.
+   */
   @Order(1)
   @Test
   @DisplayName("Restart the Administration server with serverStartPolicy")
@@ -222,14 +223,14 @@ class ItServerStartPolicy {
    * Stop the entire domain using the sample script stopDomain.sh
    * Make sure that all servers in the domain are stopped.
    * Restart the domain by patching the resource definition with
-   *  spec/serverStartPolicy set to ADMIN_ONLY.
+   * spec/serverStartPolicy set to ADMIN_ONLY.
    * Make sure that ONLY administration server is in RUNNING state.
    * Make sure that no managed server can be started with ADMIN_ONLY policy.
    * Restart the domain using the sample script startDomain.sh
    * Make sure that all servers in the domain are in RUNNING state.
    * The usecase also verify the scripts startDomain.sh/stopDomain.sh make
    * no changes in a running/stopped domain respectively.
-  */
+   */
   @Order(2)
   @Test
   @DisplayName("Restart the Domain with serverStartPolicy")
@@ -313,7 +314,7 @@ class ItServerStartPolicy {
    * Start an independent managed server with serverStartPolicy to IF_NEEDED.
    * The serverStartPolicy transition is IF_NEEDED-->NEVER-->ALWAYS
    * Stop an independent managed server by patching the domain resource with
-   *  spec/managedServers/0/serverStartPolicy set to NEVER.
+   * spec/managedServers/0/serverStartPolicy set to NEVER.
    * Make sure that ONLY the specified managed server is stopped.
    * Restart the independent managed server by patching the resource definition
    * with spec/managedServers/0/serverStartPolicy set to ALWAYS.
@@ -350,15 +351,15 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Start an independent managed server with serverStartPolicy to IF_NEEDED.
-  * The serverStartPolicy transition is IF_NEEDED-->NEVER-->IF_NEEDED
-  * Stop an independent managed server by patching the domain resource with
-  *  spec/managedServers/0/serverStartPolicy set to NEVER.
-  * Make sure that ONLY the specified managed server is stopped.
-  * Restart the independent managed server by patching the resource definition
-  * with spec/managedServers/0/serverStartPolicy set to IF_NEEDED.
-  * Make sure that the specified managed server is in RUNNING state
-  */
+   * Start an independent managed server with serverStartPolicy to IF_NEEDED.
+   * The serverStartPolicy transition is IF_NEEDED-->NEVER-->IF_NEEDED
+   * Stop an independent managed server by patching the domain resource with
+   * spec/managedServers/0/serverStartPolicy set to NEVER.
+   * Make sure that ONLY the specified managed server is stopped.
+   * Restart the independent managed server by patching the resource definition
+   * with spec/managedServers/0/serverStartPolicy set to IF_NEEDED.
+   * Make sure that the specified managed server is in RUNNING state
+   */
   @Order(4)
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy IF_NEEDED")
@@ -389,11 +390,11 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Stop the independent managed server using the sample script stopServer.sh
-  * Start the independent managed server using the sample script startServer.sh
-  * The usecase also verify the scripts startServer.sh/stopServer.sh make
-  * no changes in a running/stopped server respectively.
-  */
+   * Stop the independent managed server using the sample script stopServer.sh
+   * Start the independent managed server using the sample script startServer.sh
+   * The usecase also verify the scripts startServer.sh/stopServer.sh make
+   * no changes in a running/stopped server respectively.
+   */
   @Order(5)
   @Test
   @DisplayName("Restart the standalone managed server with sample script")
@@ -436,11 +437,11 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Negative tests to verify:
-  * (a) the sample script can not stop or start a non-existing server
-  * (b) the sample script can not stop or start a non-existing cluster
-  * (c) the sample script can not stop or start a non-existing domain.
-  */
+   * Negative tests to verify:
+   * (a) the sample script can not stop or start a non-existing server
+   * (b) the sample script can not stop or start a non-existing cluster
+   * (c) the sample script can not stop or start a non-existing domain.
+   */
   @Order(6)
   @Test
   @DisplayName("Verify that the sample script can not stop or start non-existing components")
@@ -513,21 +514,21 @@ class ItServerStartPolicy {
   }
 
   /**
-  * Once the admin server is stopped, operator can not start a new managed
-  * server from scratch if it has never been started earlier with
-  * administration Server. Once the administration server is stopped, the
-  * managed server can only be started in MSI (managed server independence)
-  * mode. To start a managed server in MSI mode, the pre-requisite is that the
-  * managed server MUST be started once before administration server is
-  * shutdown, so that the security configuration is replicated to the managed
-  * server. In this case of MII and DomainInImage model, the server
-  * state/configuration is lost once the server is shutdown unless we use
-  * domain-on-pv model. So in MII case, startServer.sh script update the
-  * replica count but the server startup is deferred till we re-start the
-  * administration server. Here the operator tries to start the managed
-  * server but it will keep on failing  until administration server is
-  * available.
-  */
+   * Once the admin server is stopped, operator can not start a new managed
+   * server from scratch if it has never been started earlier with
+   * administration Server. Once the administration server is stopped, the
+   * managed server can only be started in MSI (managed server independence)
+   * mode. To start a managed server in MSI mode, the pre-requisite is that the
+   * managed server MUST be started once before administration server is
+   * shutdown, so that the security configuration is replicated to the managed
+   * server. In this case of MII and DomainInImage model, the server
+   * state/configuration is lost once the server is shutdown unless we use
+   * domain-on-pv model. So in MII case, startServer.sh script update the
+   * replica count but the server startup is deferred till we re-start the
+   * administration server. Here the operator tries to start the managed
+   * server but it will keep on failing  until administration server is
+   * available.
+   */
   @Order(8)
   @Test
   @DisplayName("Manage configured cluster server in absence of Administration Server")
