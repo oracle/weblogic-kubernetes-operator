@@ -202,6 +202,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void listServices_returnsListAsJson() throws InterruptedException {
     V1ServiceList list = new V1ServiceList().items(Arrays.asList(new V1Service(), new V1Service()));
     defineHttpGetResponse(SERVICE_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
@@ -216,6 +217,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void createService_returnsNewService() throws InterruptedException {
     V1Service service = new V1Service().metadata(createMetadata());
     defineHttpPostResponse(
@@ -231,6 +233,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void deleteService_returnsDeletedService() throws InterruptedException {
     V1Service service = new V1Service().metadata(createMetadata());
     defineHttpDeleteResponse(
@@ -291,6 +294,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void createCRD_returnsNewResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPostResponse(
@@ -306,6 +310,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void replaceCRD_returnsUpdatedResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPutResponse(
@@ -322,6 +327,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void createConfigMap_returnsNewResource() throws InterruptedException {
     V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
     defineHttpPostResponse(
@@ -337,6 +343,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @Disabled
   void replaceConfigMap_returnsUpdatedResource() throws InterruptedException {
     V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
     defineHttpPutResponse(
