@@ -7,12 +7,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -126,8 +126,8 @@ class ItMiiDynamicUpdatePart3 {
     assertDoesNotThrow(() -> Files.write(pathToChangeDomainNameYaml, yamlToChangeDomainName.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(pathToChangeDomainNameYaml.toString()), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(pathToChangeDomainNameYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -137,8 +137,8 @@ class ItMiiDynamicUpdatePart3 {
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector pods
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -172,8 +172,8 @@ class ItMiiDynamicUpdatePart3 {
 
     OffsetDateTime timestamp = now();
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(pathToChangeListenPortYaml.toString()), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(pathToChangeListenPortYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -187,8 +187,8 @@ class ItMiiDynamicUpdatePart3 {
         "Warning", timestamp, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -222,8 +222,8 @@ class ItMiiDynamicUpdatePart3 {
     assertDoesNotThrow(() -> Files.write(pathToChangeSSLYaml, yamlToChangeSSL.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(pathToChangeSSLYaml.toString()), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(pathToChangeSSLYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -233,8 +233,8 @@ class ItMiiDynamicUpdatePart3 {
     checkPodLogContainsString(helper.opNamespace, operatorPodName, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -286,8 +286,8 @@ class ItMiiDynamicUpdatePart3 {
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges
     patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
@@ -335,8 +335,8 @@ class ItMiiDynamicUpdatePart3 {
     }
 
     // Replace contents of an existing configMap with cm config
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -379,7 +379,7 @@ class ItMiiDynamicUpdatePart3 {
     // check the status phase of the introspector pod is failed
     logger.info("verifying the status phase of the introspector pod is failed");
     testUntil(
-        () -> podStatusPhaseContainsString(helper.domainNamespace, introspectJobName, "Failed"),
+        () -> podStatusPhaseContainsString(helper.domainNamespace, introspectJobName, V1PodStatus.PhaseEnum.FAILED),
         logger,
         "Checking for status phase of introspector pod is failed");
 
@@ -416,7 +416,7 @@ class ItMiiDynamicUpdatePart3 {
         expectedErrorMsg);
   }
 
-  boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
+  boolean podStatusPhaseContainsString(String namespace, String jobName, V1PodStatus.PhaseEnum expectedPhase) {
     String introspectPodName;
     V1Pod introspectorPod;
 
@@ -435,7 +435,7 @@ class ItMiiDynamicUpdatePart3 {
     }
 
     try {
-      return getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase);
+      return getPodStatusPhase(namespace, labelSelector, introspectPodName).equals(expectedPhase);
     } catch (ApiException apiEx) {
       logger.severe("Got ApiException while getting pod status phase: {0}", apiEx);
       return false;

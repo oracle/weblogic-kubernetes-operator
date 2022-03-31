@@ -56,7 +56,7 @@ public class ExecCommand {
     } else {
       // Combine new env vars with existing ones and generate a string array with those values
       // If the 2 maps have a dup key then the additional env map entry will replace the existing.
-      Map<String, String> combinedEnvMap = new HashMap();
+      Map<String, String> combinedEnvMap = new HashMap<>();
       combinedEnvMap.putAll(System.getenv());
       combinedEnvMap.putAll(additionalEnvMap);
       String[] envParams = generateNameValueArrayFromMap(combinedEnvMap);

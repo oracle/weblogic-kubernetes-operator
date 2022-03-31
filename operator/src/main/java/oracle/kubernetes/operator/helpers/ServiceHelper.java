@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -64,8 +63,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
 import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
-  public static final String CLUSTER_IP_TYPE = "ClusterIP";
-  public static final String NODE_PORT_TYPE = "NodePort";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ServiceHelper() {
@@ -133,11 +130,11 @@ public class ServiceHelper {
   }
 
   static boolean isNodePortType(V1Service service) {
-    return NODE_PORT_TYPE.equals(getSpecType(service));
+    return V1ServiceSpec.TypeEnum.NODEPORT.equals(getSpecType(service));
   }
 
-  private static String getSpecType(V1Service service) {
-    return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse("");
+  private static V1ServiceSpec.TypeEnum getSpecType(V1Service service) {
+    return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse(null);
   }
 
   /**
@@ -338,8 +335,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return CLUSTER_IP_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.CLUSTERIP;
     }
 
     @Override
@@ -456,10 +453,10 @@ public class ServiceHelper {
 
     private boolean isProtocolMatch(V1ServicePort one, V1ServicePort two) {
       if (one.getProtocol() == null) {
-        return two.getProtocol() == null || "TCP".equals(two.getProtocol());
+        return two.getProtocol() == null || V1ServicePort.ProtocolEnum.TCP.equals(two.getProtocol());
       }
       if (two.getProtocol() == null) {
-        return "TCP".equals(one.getProtocol());
+        return V1ServicePort.ProtocolEnum.TCP.equals(one.getProtocol());
       }
       return one.getProtocol().equals(two.getProtocol());
     }
@@ -468,7 +465,7 @@ public class ServiceHelper {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
-          .protocol("TCP");
+          .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
     V1ServicePort createSipUdpServicePort(String portName, Integer port) {
@@ -480,7 +477,7 @@ public class ServiceHelper {
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
           .port(port)
-          .protocol("UDP");
+          .protocol(V1ServicePort.ProtocolEnum.UDP);
     }
 
     protected boolean isSipProtocol(String protocol) {
@@ -530,13 +527,13 @@ public class ServiceHelper {
 
     abstract Map<String, String> getServiceAnnotations();
 
-    String getSessionAffinity() {
+    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
       return null;
     }
 
     protected abstract void logServiceCreated(String messageKey);
 
-    protected abstract String getSpecType();
+    protected abstract V1ServiceSpec.TypeEnum getSpecType();
 
     protected abstract List<V1ServicePort> createServicePorts();
 
@@ -659,20 +656,20 @@ public class ServiceHelper {
       }
     }
 
-    private class DeleteServiceResponse extends ResponseStep<V1Status> {
+    private class DeleteServiceResponse extends ResponseStep<V1Service> {
       DeleteServiceResponse(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
         return callResponse.getStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
         return doNext(createReplacementService(getNext()), packet);
       }
     }
@@ -791,8 +788,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return CLUSTER_IP_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.CLUSTERIP;
     }
 
     @Override
@@ -854,7 +851,7 @@ public class ServiceHelper {
     }
 
     @Override
-    String getSessionAffinity() {
+    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
       return getClusterSpec().getClusterSessionAffinity();
     }
   }
@@ -896,8 +893,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return NODE_PORT_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.NODEPORT;
     }
 
     @Override

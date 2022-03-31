@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -32,7 +32,9 @@ public abstract class StepContextBase implements StepContextConstants {
 
   @SuppressWarnings("unchecked")
   private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
-    if (obj instanceof String) {
+    if (obj instanceof Enum) {
+      return obj;
+    } else if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
     } else if (obj instanceof List) {
       List<Object> result = new ArrayList<>();

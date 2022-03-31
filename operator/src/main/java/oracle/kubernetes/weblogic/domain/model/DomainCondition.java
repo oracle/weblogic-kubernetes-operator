@@ -293,6 +293,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   boolean isSpecifiedFailure(DomainFailureReason reason) {
-    return hasType(FAILED) && reason.label().equals(getReason());
+    return hasType(FAILED) && reason.toString().equals(getReason());
   }
 }

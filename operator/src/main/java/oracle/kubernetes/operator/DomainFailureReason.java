@@ -6,14 +6,13 @@ package oracle.kubernetes.operator;
 import java.util.Optional;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
 
-public enum DomainFailureReason implements Labeled {
+public enum DomainFailureReason {
   @SerializedName("DomainInvalid")
   DOMAIN_INVALID("DomainInvalid") {
     @Override
@@ -131,19 +130,14 @@ public enum DomainFailureReason implements Labeled {
     return DomainFailureReason.getAdditionalMessageFromStatus(info) + getRetryMessage();
   }
 
-  private final String label;
+  private final String value;
 
-  DomainFailureReason(String label) {
-    this.label = label;
-  }
-
-  @Override
-  public String label() {
-    return label;
+  DomainFailureReason(String value) {
+    this.value = value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 }

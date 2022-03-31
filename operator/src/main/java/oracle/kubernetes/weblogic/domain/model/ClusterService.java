@@ -1,24 +1,23 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ClusterService extends KubernetesResource {
 
-  @EnumClass(SessionAffinity.class)
   @Description(
       "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. "
           + "Must be ClientIP or None. Defaults to None. More info: "
           + "https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies")
-  private String sessionAffinity;
+  private V1ServiceSpec.SessionAffinityEnum sessionAffinity;
 
   void fillInFrom(ClusterService clusterService1) {
     super.fillInFrom(clusterService1);
@@ -26,15 +25,15 @@ public class ClusterService extends KubernetesResource {
         Optional.ofNullable(sessionAffinity).orElse(clusterService1.sessionAffinity);
   }
 
-  public String getSessionAffinity() {
+  public V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
     return sessionAffinity;
   }
 
-  public void setSessionAffinity(String sessionAffinity) {
+  public void setSessionAffinity(V1ServiceSpec.SessionAffinityEnum sessionAffinity) {
     this.sessionAffinity = sessionAffinity;
   }
 
-  public ClusterService withSessionAffinity(String sessionAffinity) {
+  public ClusterService withSessionAffinity(V1ServiceSpec.SessionAffinityEnum sessionAffinity) {
     this.sessionAffinity = sessionAffinity;
     return this;
   }

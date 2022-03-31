@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -153,16 +154,17 @@ class HelmOperatorValuesTest {
 
   @Test
   void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
-    operatorValues.weblogicOperatorImagePullPolicy(stringValue);
+    operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
-    assertThat(operatorValues.createMap(), hasEntry("imagePullPolicy", stringValue));
+    assertThat(operatorValues.createMap(),
+        hasEntry("imagePullPolicy", V1Container.ImagePullPolicyEnum.IFNOTPRESENT.toString()));
   }
 
   @Test
   void weblogicOperatorImagePullPolicyIsGettableStringValue() {
-    operatorValues.weblogicOperatorImagePullPolicy(stringValue);
+    operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
-    assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
+    assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -175,9 +177,9 @@ class HelmOperatorValuesTest {
   @Test
   void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", stringValue));
+        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", V1Container.ImagePullPolicyEnum.ALWAYS.toString()));
 
-    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
+    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
