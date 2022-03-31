@@ -72,8 +72,8 @@ For example, using Helm 3.x, with the following settings:
 |Setting|Value and Notes|
 |-|-|
 |Helm release name|`sample-weblogic-operator` (you may choose any name)|
-|Helm chart repo location|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
-|Helm repo name|`weblogic-operator`|
+|Helm chart repo URL|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
+|Helm chart repo name|`weblogic-operator`|
 |`namespace`|`sample-weblogic-operator-ns`|
 |`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
 |`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
@@ -82,13 +82,13 @@ For example, using Helm 3.x, with the following settings:
 ```text
 $ kubectl create namespace sample-weblogic-operator-ns
 ```
-Access the operator Helm chart using this format: `helm repo add <helm-repo-name> <helm-repo-url>`.
-Each version of the Helm chart defaults to using an image from the matching version.
+Access the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`.
+Each version of the Helm chart defaults to using an operator image from the matching version.
 ```text
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
 ```
-- To get information about the operator Helm chart, use the `helm show` command. For example,
-  using `helm show` with an operator Helm chart where the repository is named `weblogic-operator`:
+- To get information about the operator Helm chart, use the `helm show` command with this format: `helm show <helm-chart-repo-name>/weblogic-operator`.
+  For example, with an operator Helm chart where the repository is named `weblogic-operator`:
 
   ```text
   $ helm show chart weblogic-operator/weblogic-operator
@@ -104,7 +104,7 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
 - For a specified version of the Helm chart and operator, use the `--version <value>` option with `helm install`
   to choose the version that you want, with the `latest` value being the default.
 
-Install the operator using this format: `helm install <helm-release-name> <helm-repo-name>/weblogic-operator ...`
+Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator ...`
 ```text
 $ helm install sample-weblogic-operator \
   weblogic-operator/weblogic-operator \

@@ -64,15 +64,15 @@ The operator Helm chart includes:
 - Helm configuration value settings for fine tuning operator behavior.
 - Commands for deploying (installing) or undeploying the operator.
 
-You can set up access to the operator Helm chart using the GitHub chart repository.
+You can set up access to the operator Helm chart using the chart repository.
 
-- Use the GitHub chart repository version of the operator Helm chart
+- Use the operator Helm chart repository
   that is located at `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   or in a custom repository that you control.
 - To set up your Helm installation so that it can access the
   `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   repository and name the repository reference `weblogic-operator`, use
-  the following command, `helm repo add <helm-repo-name> <helm-repo-url>`:
+  the following command, `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`:
   ```text
   $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
   ```
