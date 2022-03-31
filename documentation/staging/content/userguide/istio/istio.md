@@ -197,71 +197,78 @@ See the following description of each `spec.configuration.istio` attribute:
    |1.10 and later|3.x|`false`|Supported.|
    |1.10 and later|4.x|N/A|Supported. Operator will not create localhost bindings because Istio 1.10 does not need them.|
 
-If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
-then the `weblogic-server` container in the managed server pods will
-fail to reach a `ready` state due to readiness probe failures.
-For example, if the `localhostBindingsEnabled` is set to
-`true` in operator version 3.x when running Istio versions 1.10 and later,
-then a `kubectl get pods` will have output like this:
+__Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
+then:
 
-```text
-$ kubectl -n sample-domain1-ns get pods
-```
-```text
-NAME                             READY   STATUS    RESTARTS   AGE
-sample-domain1-admin-server      1/2     Running   0          2m
-```
+- The Managed WebLogic Servers that are running in the managed server pods
+  may not be able to contact the WebLogic Administration Server.
+  They will consequently log networking messages about failures communicating
+  with the Administration Server and likely, also a `Boot identity not valid` error.
 
-Using the `kubectl describe pod` command will show a readiness probe event failure:
+- The `weblogic-server` container in the managed server pods will
+  fail to reach a `ready` state due to readiness probe failures.
+  For example, if the `localhostBindingsEnabled` is set to
+  `true` in operator version 3.x when running Istio versions 1.10 and later,
+  then a `kubectl get pods` will have output like this:
 
-```text
-$ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
-```
-```text
-Events:
+  ```text
+  $ kubectl -n sample-domain1-ns get pods
+  ```
+  ```text
+  NAME                             READY   STATUS    RESTARTS   AGE
+  sample-domain1-admin-server      1/2     Running   0          2m
+  ```
+
+  The `kubectl describe pod` command will show a readiness probe event failure:
+
+  ```text
+  $ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
+  ```
+  ```text
+  Events:
      Type     Reason       Age                  From      Message
      ----     ------       ----                 ----      -------
 
     Warning  Unhealthy    60s (x10 over 105s)  kubelet   Readiness probe failed: HTTP probe failed with statuscode: 500
-```
+  ```
 
-Also, viewing the logging output of the `istio-proxy` container in a managed server pod
-will show that the
-readiness probe was unable to successfully establish
-a connection to the endpoint of the managed server:
+  Also, viewing the logging output of the `istio-proxy` container in a managed server pod
+  will show that the
+  readiness probe was unable to successfully establish
+  a connection to the endpoint of the managed server:
 
-```text
-$ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
-```
-```text
-2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
-app URL path = /weblogic/ready
-```
+  ```text
+  $ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
+  ```
+  ```text
+  2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
+  app URL path = /weblogic/ready
+  ```
 
-When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must
+__Note:__ When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must
 set the annotation for pod-level sidecar injection in the domain resource, as follows:
 
-```yaml
-apiVersion: "weblogic.oracle/v9"
-kind: Domain
-metadata:
- name: domain2
- namespace: domain1
- labels:
-   weblogic.domainUID: domain2
-spec:
- ... other content ...
- serverPod:
-    ...
-    annotations:
-      sidecar.istio.io/inject: "true"
- configuration:
-   istio:
-     enabled: true
-     readinessPort: 8888
-     replicationChannelPort: 4564
-     localhostBindingsEnabled: false
-```
+- ```yaml
+  apiVersion: "weblogic.oracle/v9"
+  kind: Domain
+  metadata:
+   name: domain2
+   namespace: domain1
+   labels:
+     weblogic.domainUID: domain2
+  spec:
+   ... other content ...
+   serverPod:
+      ...
+      annotations:
+        sidecar.istio.io/inject: "true"
+   configuration:
+     istio:
+       enabled: true
+       readinessPort: 8888
+       replicationChannelPort: 4564
+       localhostBindingsEnabled: false
+  ```
 
 ##### Applying a Domain YAML file
 
