@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.json.Obsoleteable;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
@@ -16,7 +15,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 
-public enum DomainConditionType implements Obsoleteable, Labeled {
+public enum DomainConditionType implements Obsoleteable {
   @SerializedName("Failed")
   FAILED("Failed",null, DOMAIN_FAILURE_RESOLVED) {
     @Override
@@ -50,12 +49,12 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
     }
   };
 
-  private final String label;
+  private final String value;
   private final EventHelper.EventItem addedEvent;
   private final EventHelper.EventItem removedEvent;
 
-  DomainConditionType(String label, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
-    this.label = label;
+  DomainConditionType(String value, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
+    this.value = value;
     this.addedEvent = addedEvent;
     this.removedEvent = removedEvent;
   }
@@ -81,12 +80,7 @@ public enum DomainConditionType implements Obsoleteable, Labeled {
   }
 
   @Override
-  public String label() {
-    return label;
-  }
-
-  @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 }

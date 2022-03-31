@@ -175,7 +175,7 @@ class ItExternalLbTunneling {
 
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
-    Map<String, String> configTemplateMap  = new HashMap();
+    Map<String, String> configTemplateMap  = new HashMap<>();
     configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
@@ -259,7 +259,7 @@ class ItExternalLbTunneling {
 
     // Prepare the ingress file from the template file by replacing
     // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
@@ -318,7 +318,7 @@ class ItExternalLbTunneling {
 
     // Prepare the ingress file from the template file by replacing
     // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
@@ -593,7 +593,7 @@ class ItExternalLbTunneling {
   // Create and display SSL certificate and key using openSSL with SAN extension
   private static void createCertKeyFiles(String cn) {
 
-    Map<String, String> sanConfigTemplateMap  = new HashMap();
+    Map<String, String> sanConfigTemplateMap  = new HashMap<>();
     sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
@@ -610,12 +610,12 @@ class ItExternalLbTunneling {
           + " -subj \"/CN=" + cn + "\" -extensions san"
           + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(opcmd)).execute(), "openssl req command fails");
 
     String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(opcmd2)).execute(), "openssl list command fails");
   }
 
@@ -628,13 +628,13 @@ class ItExternalLbTunneling {
         + " --keystore " + jksTrustFile
         + " -storetype jks -storepass password -noprompt ";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(keycmd)).execute(), "keytool import command fails");
 
     String keycmd2 = "keytool -list -keystore " + jksTrustFile
                    + " -storepass password -noprompt";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(keycmd2)).execute(), "keytool list command fails");
   }
 
@@ -643,7 +643,7 @@ class ItExternalLbTunneling {
     String kcmd = "kubectl create secret tls " + tlsSecretName + " --key "
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(kcmd)).execute(), "kubectl create secret command fails");
   }
 

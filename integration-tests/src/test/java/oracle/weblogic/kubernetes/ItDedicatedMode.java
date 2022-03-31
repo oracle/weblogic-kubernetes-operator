@@ -120,7 +120,7 @@ class ItDedicatedMode {
             .chartDir(OPERATOR_CHART_DIR);
 
     // delete existing CRD
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
@@ -128,7 +128,7 @@ class ItDedicatedMode {
     // install CRD
     String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + CRD_V16;
     logger.info("Creating CRD with command {0}", createCrdCommand);
-    new Command()
+    Command
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
 
@@ -330,7 +330,7 @@ class ItDedicatedMode {
         String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
 
     // delete secret/ocir-secret
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete secret/ocir-secret -n " + opNamespace + " --ignore-not-found"))
         .execute();

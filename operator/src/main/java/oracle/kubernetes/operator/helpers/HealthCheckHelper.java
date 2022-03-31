@@ -169,7 +169,7 @@ public final class HealthCheckHelper {
    */
   public static boolean check(
       List<V1ResourceRule> rules, Resource res, Operation op) {
-    String verb = op.label();
+    String verb = op.toString();
     String apiGroup = res.getApiGroup();
     String resource = res.getResource();
     String sub = res.getSubResource();

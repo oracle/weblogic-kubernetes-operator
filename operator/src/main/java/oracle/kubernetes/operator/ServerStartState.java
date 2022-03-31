@@ -3,19 +3,7 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.common.Labeled;
-
-public enum ServerStartState implements Labeled {
+public enum ServerStartState {
   RUNNING,
   ADMIN;
-
-  @Override
-  public String label() {
-    return name();
-  }
-
-  @Override
-  public String toString() {
-    return label();
-  }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -155,7 +155,7 @@ public class Kubernetes {
           && pod.getStatus().getConditions().stream() != null) {
         // get the podCondition with the 'Ready' type field
         V1PodCondition v1PodInitializedCondition = pod.getStatus().getConditions().stream()
-            .filter(v1PodCondition -> "Initialized".equals(v1PodCondition.getType()))
+            .filter(v1PodCondition -> V1PodCondition.TypeEnum.INITIALIZED.equals(v1PodCondition.getType()))
             .findAny()
             .orElse(null);
 
@@ -201,7 +201,7 @@ public class Kubernetes {
           && pod.getStatus().getConditions().stream() != null) {
         // get the podCondition with the 'Ready' type field
         V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-            .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+            .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
             .findAny()
             .orElse(null);
 
@@ -376,7 +376,7 @@ public class Kubernetes {
     if (pod != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 
@@ -822,15 +822,15 @@ public class Kubernetes {
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition
-                -> "Complete".equalsIgnoreCase(v1JobCondition.getType())
-                || "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+                -> V1JobCondition.TypeEnum.COMPLETE.equals(v1JobCondition.getType())
+                || V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
-          if (jobCondition.getType().equalsIgnoreCase("failed")) {
+          if (jobCondition.getType().equals(V1JobCondition.TypeEnum.FAILED)) {
             logger.severe("Job {0} failed", jobName);
-          } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
+          } else if (jobCondition.getType().equals(V1JobCondition.TypeEnum.COMPLETE)) {
             logger.info("Job {0} completed successfully ", jobName);
           }
         }
@@ -948,7 +948,7 @@ public class Kubernetes {
     if (pod != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 

@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -408,7 +409,7 @@ public class IstioUtils {
         e.printStackTrace();
         fail("Failed to read configuration file");
       }
-      String imagePullPolicy = "IfNotPresent";
+      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(monexpImage)
           .imagePullPolicy(imagePullPolicy)

@@ -64,15 +64,15 @@ The operator Helm chart includes:
 - Helm configuration value settings for fine tuning operator behavior.
 - Commands for deploying (installing) or undeploying the operator.
 
-You can set up access to the operator Helm chart using the GitHub chart repository.
+You can set up access to the operator Helm chart using the chart repository.
 
-- Use the GitHub chart repository version of the operator Helm chart
+- Use the operator Helm chart repository
   that is located at `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   or in a custom repository that you control.
 - To set up your Helm installation so that it can access the
   `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   repository and name the repository reference `weblogic-operator`, use
-  the following `helm repo add` command:
+  the following command, `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`:
   ```text
   $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
   ```
@@ -89,14 +89,14 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
   use `weblogic-operator/weblogic-operator` in your Helm
   commands when specifying the chart location.
 
-- To list the versions of the operator that you can install from the Helm chart repository:
+    - To list the versions of the operator that you can install from the Helm chart repository:
 
-  ```text
-  $ helm search repo weblogic-operator/weblogic-operator --versions
-  ```
+      ```text
+      $ helm search repo weblogic-operator/weblogic-operator --versions
+      ```
 
-- For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
-  to choose the version that you want, with the `latest` value being the default.
+    - For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
+      to choose the version that you want, with the `latest` value being the default.
 
 #### Inspect the operator Helm chart
 
@@ -108,15 +108,15 @@ as well as the default values, using the `helm show` command.
   ```
 
 
-Alternatively, you can view most of the configuration values
+- Alternatively, you can view most of the configuration values
 and their defaults in the operator source in the
 `./kubernetes/charts/weblogic-operator/values.yaml` file.
 
-The available configuration values are explained by category in the
+- The available configuration values are explained by category in the
 [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}})
 section of the operator Configuration Reference.
 
-Helm commands are explained in more detail here, see
+- Helm commands are explained in more detail here, see
 [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
 
 #### Prepare an operator namespace and service account
@@ -188,7 +188,7 @@ see the [Developer Guide]({{<relref "/developerguide/_index.md">}}).
 Each Helm chart version defaults to using an operator image from the matching version.
 To find the default image name that will be used when installing the operator,
 see [Inspect the operator Helm chart](#inspect-the-operator-helm-chart) and look for the `image` value.
-The value will look something like `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
+The value will look something like this, `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
 
 ##### Pulling operator image
 
@@ -219,7 +219,7 @@ A private image registry requires using a custom image name for the operator
 where the first part of the name up to the first slash (`/`) character
 is the DNS location of the registry and the remaining part refers
 to the image location within the registry. A private image registry
-may also require an image pull registry secret in order to
+may also require an image pull registry secret to
 provide security credentials.
 
 - To reference a custom image name, specify the `image=` operator Helm chart configuration setting

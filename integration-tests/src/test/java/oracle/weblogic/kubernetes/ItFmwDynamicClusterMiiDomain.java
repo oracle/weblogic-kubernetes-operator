@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.util.Collections;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -238,7 +239,7 @@ class ItFmwDynamicClusterMiiDomain {
                 .domainUid(domainUid)
                 .domainHomeSourceType("FromModel")
                 .image(miiImage)
-                .imagePullPolicy("IfNotPresent")
+                .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                 .addImagePullSecretsItem(new V1LocalObjectReference()
                     .name(repoSecretName))
                 .webLogicCredentialsSecret(new V1SecretReference()
