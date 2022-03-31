@@ -389,7 +389,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBE_VERSION}"
+                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
