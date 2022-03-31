@@ -46,27 +46,8 @@ public enum DomainSourceType {
     this.value = value;
   }
 
-  public String getValue() {
-    return this.value;
-  }
-
   @Override
   public String toString() {
     return String.valueOf(this.value);
-  }
-
-  /**
-   * Locate enum type from value.
-   * @param value Value
-   * @return Domain source type
-   */
-  public static DomainSourceType fromValue(String value) {
-    for (DomainSourceType testValue : values()) {
-      if (testValue.value.equals(value)) {
-        return testValue;
-      }
-    }
-
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 }

@@ -28,27 +28,8 @@ public enum SecretType {
     this.value = value;
   }
 
-  public String getValue() {
-    return this.value;
-  }
-
   @Override
   public String toString() {
     return String.valueOf(this.value);
-  }
-
-  /**
-   * Locate enum type from value.
-   * @param value Value
-   * @return Secret type
-   */
-  public static SecretType fromValue(String value) {
-    for (SecretType testValue : values()) {
-      if (testValue.value.equals(value)) {
-        return testValue;
-      }
-    }
-
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 }

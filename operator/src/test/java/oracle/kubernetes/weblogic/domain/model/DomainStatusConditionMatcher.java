@@ -37,7 +37,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
   }
 
   DomainStatusConditionMatcher withReason(@NotNull DomainFailureReason reason) {
-    expectedReason = reason.getValue();
+    expectedReason = reason.toString();
     return this;
   }
 

@@ -17,27 +17,8 @@ public enum ShutdownType {
     this.value = value;
   }
 
-  public String getValue() {
-    return this.value;
-  }
-
   @Override
   public String toString() {
     return String.valueOf(this.value);
-  }
-
-  /**
-   * Locate enum type from value.
-   * @param value Value
-   * @return Shutdown type
-   */
-  public static ShutdownType fromValue(String value) {
-    for (ShutdownType testValue : values()) {
-      if (testValue.value.equals(value)) {
-        return testValue;
-      }
-    }
-
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 }

@@ -224,28 +224,9 @@ public class AuthorizationProxy {
       this.value = value;
     }
 
-    public String getValue() {
-      return this.value;
-    }
-
     @Override
     public String toString() {
       return String.valueOf(this.value);
-    }
-
-    /**
-     * Locate enum type from value.
-     * @param value Value
-     * @return Operation type
-     */
-    public static Operation fromValue(String value) {
-      for (Operation testValue : values()) {
-        if (testValue.value.equals(value)) {
-          return testValue;
-        }
-      }
-
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
     }
   }
 
@@ -291,10 +272,6 @@ public class AuthorizationProxy {
       return apiGroup;
     }
 
-    public String getValue() {
-      return this.resource;
-    }
-
     @Override
     public String toString() {
       return String.valueOf(this.resource);
@@ -309,10 +286,6 @@ public class AuthorizationProxy {
 
     Scope(String value) {
       this.value = value;
-    }
-
-    public String getValue() {
-      return this.value;
     }
 
     @Override

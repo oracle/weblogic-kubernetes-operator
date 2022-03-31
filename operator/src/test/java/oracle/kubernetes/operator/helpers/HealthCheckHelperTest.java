@@ -230,7 +230,7 @@ class HealthCheckHelperTest {
     }
 
     private List<String> toVerbs(List<Operation> operations) {
-      return operations.stream().map(Operation::getValue).collect(Collectors.toList());
+      return operations.stream().map(Operation::toString).collect(Collectors.toList());
     }
   }
 }

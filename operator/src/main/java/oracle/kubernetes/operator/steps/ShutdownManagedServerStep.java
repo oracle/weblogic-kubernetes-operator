@@ -168,10 +168,10 @@ public class ShutdownManagedServerStep extends Step {
       String shutdownType = getEnvValue(envVarList, "SHUTDOWN_TYPE");
 
       shutdownType = shutdownType == null ? Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
-          .orElse(ShutdownType.GRACEFUL).getValue() : shutdownType;
+          .orElse(ShutdownType.GRACEFUL).toString() : shutdownType;
 
 
-      return shutdownType.equalsIgnoreCase(ShutdownType.GRACEFUL.getValue());
+      return shutdownType.equalsIgnoreCase(ShutdownType.GRACEFUL.toString());
     }
 
     private Boolean getWaitForAllSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {

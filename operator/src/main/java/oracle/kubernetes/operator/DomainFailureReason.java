@@ -136,27 +136,8 @@ public enum DomainFailureReason {
     this.value = value;
   }
 
-  public String getValue() {
-    return this.value;
-  }
-
   @Override
   public String toString() {
     return String.valueOf(this.value);
-  }
-
-  /**
-   * Locate enum type from value.
-   * @param value Value
-   * @return Domain failure reason type
-   */
-  public static DomainFailureReason fromValue(String value) {
-    for (DomainFailureReason testValue : values()) {
-      if (testValue.value.equals(value)) {
-        return testValue;
-      }
-    }
-
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 }
