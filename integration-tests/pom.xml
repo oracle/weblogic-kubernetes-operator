@@ -594,7 +594,8 @@
                     **/ItMiiAuxiliaryImage,
                     **/ItMultiDomainModels,
                     **/ItPodsRestart,
-                    **/ItTwoDomainsManagedByTwoOperators
+                    **/ItTwoDomainsManagedByTwoOperators,
+                    **/ItWlsSamples
                 </includes-failsafe>
             </properties>
         </profile>
