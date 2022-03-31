@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -142,7 +142,8 @@ class MonitoringExporterStepsTest {
   }
 
   private V1PodStatus setReady(V1PodStatus status) {
-    status.phase("Running").setConditions(List.of(new V1PodCondition().type("Ready").status("True")));
+    status.phase(V1PodStatus.PhaseEnum.RUNNING).setConditions(
+        List.of(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
     return status;
   }
 
@@ -312,7 +313,7 @@ class MonitoringExporterStepsTest {
   }
 
   private void setNotReadyState(V1PodStatus status) {
-    status.phase("Idle");
+    status.phase(V1PodStatus.PhaseEnum.PENDING);
   }
 
   @Test

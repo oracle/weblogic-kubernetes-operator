@@ -231,7 +231,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 
 #### Operator 3.0.4
 
-* The operator now correctly completes restarting Managed Server pods in order to complete a rolling activity. This fix is already present in 3.1.0.
+* The operator now correctly completes restarting Managed Server pods to complete a rolling activity. This fix is already present in 3.1.0.
 
 #### Operator 3.0.3
 

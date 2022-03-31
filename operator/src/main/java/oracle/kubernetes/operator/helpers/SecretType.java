@@ -3,32 +3,33 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import oracle.kubernetes.common.Labeled;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Types of secrets which can be configured on a domain.
  */
-public enum SecretType implements Labeled {
+public enum SecretType {
+  @SerializedName("WebLogicCredentials")
   WEBLOGIC_CREDENTIALS("WebLogicCredentials"),
+  @SerializedName("ImagePull")
   IMAGE_PULL("ImagePull"),
+  @SerializedName("ConfigOverride")
   CONFIG_OVERRIDE("ConfigOverride"),
+  @SerializedName("RuntimeEncryption")
   RUNTIME_ENCRYPTION("RuntimeEncryption"),
+  @SerializedName("OpssWalletPassword")
   OPSS_WALLET_PASSWORD("OpssWalletPassword"),
+  @SerializedName("OpssWalletFile")
   OPSS_WALLET_FILE("OpssWalletFile");
 
-  private final String label;
+  private final String value;
 
-  SecretType(String label) {
-    this.label = label;
-  }
-
-  @Override
-  public String label() {
-    return label;
+  SecretType(String value) {
+    this.value = value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 }

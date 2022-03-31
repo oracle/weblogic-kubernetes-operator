@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -160,7 +160,7 @@ class ItIstioCrossDomainTransaction {
     updatePropertyFile();
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
@@ -345,7 +345,7 @@ class ItIstioCrossDomainTransaction {
 
     String clusterService = domainUid1 + "-cluster-" + clusterName + "." + domain1Namespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domain1Namespace);
     templateMap.put("ADMIN_SERVICE",domain1AdminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);

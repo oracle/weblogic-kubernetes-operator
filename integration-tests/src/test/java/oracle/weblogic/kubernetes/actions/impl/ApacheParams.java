@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 /**
@@ -29,7 +30,7 @@ public class ApacheParams {
   private static final String DOMAIN_UID = "domainUID";
 
   private String image = null;
-  private String imagePullPolicy = null;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy = null;
   private Map<String, Object> imagePullSecrets = null;
   private String pvcName = null;
   private int httpNodePort = 0;
@@ -46,7 +47,7 @@ public class ApacheParams {
     return this;
   }
 
-  public ApacheParams imagePullPolicy(String imagePullPolicy) {
+  public ApacheParams imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }

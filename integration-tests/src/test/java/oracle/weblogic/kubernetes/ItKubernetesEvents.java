@@ -775,7 +775,7 @@ class ItKubernetesEvents {
 
     logger.info("Labeling namespace {0} to enable it in the operator watch list", domainNamespace3);
     // label domainNamespace3
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
@@ -801,7 +801,7 @@ class ItKubernetesEvents {
         + "watch list", domainNamespace3);
 
     // label domainNamespace3 to weblogic-operator=disabled
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
         .execute();
@@ -817,7 +817,7 @@ class ItKubernetesEvents {
       assertDoesNotThrow(() -> createNamespaces(newNSWithoutLabels, newNSWithLabels),
           "Failed to create new namespaces");
 
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
           .execute();
@@ -1037,7 +1037,7 @@ class ItKubernetesEvents {
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster

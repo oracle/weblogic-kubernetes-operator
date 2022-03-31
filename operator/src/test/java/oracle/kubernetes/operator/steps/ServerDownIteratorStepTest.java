@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -113,8 +113,8 @@ class ServerDownIteratorStepTest {
   private static V1Pod createReadyPod(String serverName) {
     return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName))
             .spec(new V1PodSpec().nodeName("Node1"))
-            .status(new V1PodStatus().phase("Running")
-            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+            .status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
   }
 
   private static V1Pod createPod(String serverName) {

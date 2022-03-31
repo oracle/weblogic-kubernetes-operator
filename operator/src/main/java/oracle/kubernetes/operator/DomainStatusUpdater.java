@@ -617,7 +617,7 @@ public class DomainStatusUpdater {
         } else if (hasPodNotReadyInTime()) {
           addFailure(status, SERVER_POD, formatPodNotReadyMessage());
         } else {
-          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD.label().equals(c.getReason()));
+          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD.toString().equals(c.getReason()));
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
             status.removeConditionsWithType(CONFIG_CHANGES_PENDING_RESTART);
           }
@@ -646,7 +646,7 @@ public class DomainStatusUpdater {
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
           this.status.removeConditionsMatching(c -> c.hasType(FAILED)
-              && REPLICAS_TOO_HIGH.label().equals(c.getReason()));
+              && REPLICAS_TOO_HIGH.toString().equals(c.getReason()));
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
           conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
@@ -913,11 +913,12 @@ public class DomainStatusUpdater {
         }
 
         private boolean isReadyCondition(Object condition) {
-          return (condition instanceof V1PodCondition) && "Ready".equals(((V1PodCondition)condition).getType());
+          return (condition instanceof V1PodCondition)
+              && V1PodCondition.TypeEnum.READY.equals(((V1PodCondition)condition).getType());
         }
 
         private boolean isPhaseRunning(V1PodStatus status) {
-          return "Running".equals(status.getPhase());
+          return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {
@@ -1256,7 +1257,7 @@ public class DomainStatusUpdater {
 
     @Override
     protected String getDetail() {
-      return reason.label();
+      return reason.toString();
     }
 
     @Override

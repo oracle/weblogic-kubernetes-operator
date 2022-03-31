@@ -164,12 +164,11 @@ public class IntrospectionStatus {
   static class FailedPhase extends PodStatus {
 
     static boolean inFailedPhase(@Nonnull V1Pod pod) {
-      return getPodPhase(pod).equals("Failed");
+      return V1PodStatus.PhaseEnum.FAILED.equals(getPodPhase(pod));
     }
 
-    @Nonnull
-    private static String getPodPhase(@Nonnull V1Pod pod) {
-      return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse("");
+    private static V1PodStatus.PhaseEnum getPodPhase(@Nonnull V1Pod pod) {
+      return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse(null);
     }
 
     FailedPhase(V1Pod pod) {

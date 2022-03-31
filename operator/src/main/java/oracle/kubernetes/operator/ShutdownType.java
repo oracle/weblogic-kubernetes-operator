@@ -4,27 +4,21 @@
 package oracle.kubernetes.operator;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.common.Labeled;
 
-public enum ShutdownType implements Labeled {
+public enum ShutdownType {
   @SerializedName("Graceful")
   GRACEFUL("Graceful"),
   @SerializedName("Forced")
   FORCED("Forced");
 
-  private final String label;
+  private final String value;
 
-  ShutdownType(String label) {
-    this.label = label;
-  }
-
-  @Override
-  public String label() {
-    return label;
+  ShutdownType(String value) {
+    this.value = value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 }
