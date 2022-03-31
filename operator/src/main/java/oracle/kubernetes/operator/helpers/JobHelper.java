@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -42,7 +43,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -147,8 +147,8 @@ public class JobHelper {
     }
 
     // Returns true if the specified server start policy will allow starting a server.
-    private boolean shouldStart(String serverStartPolicy) {
-      return !ConfigurationConstants.START_NEVER.equals(serverStartPolicy);
+    private boolean shouldStart(ServerStartPolicy serverStartPolicy) {
+      return !ServerStartPolicy.NEVER.equals(serverStartPolicy);
     }
 
     @Nonnull

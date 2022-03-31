@@ -16,6 +16,7 @@ import com.meterware.simplestub.Stub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -27,7 +28,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -252,7 +252,7 @@ class TopologyValidationStepTest {
     Cluster cluster = new Cluster();
     cluster.setClusterName(clusterName);
     cluster.setReplicas(1);
-    cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    cluster.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     return cluster;
   }
 

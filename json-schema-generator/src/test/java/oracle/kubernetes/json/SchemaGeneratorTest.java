@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -52,6 +52,8 @@ class SchemaGeneratorTest {
   @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
   private String twoColorString;
   @SuppressWarnings("unused")
+  @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
+  private TrafficLightColors otherTwoColorString;
   @Range(minimum = 7)
   private int valueWithMinimum;
   @SuppressWarnings("unused")
@@ -167,6 +169,15 @@ class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.twoColorString.type", equalTo("string")));
     assertThat(
         schema, hasJsonPath("$.twoColorString.enum", arrayContainingInAnyOrder("RED", "GREEN")));
+  }
+
+  @Test
+  void generateSchemaForEnumAnnotatedEnumWithQualifier() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("otherTwoColorString"));
+
+    assertThat(schema, hasJsonPath("$.otherTwoColorString.type", equalTo("string")));
+    assertThat(
+        schema, hasJsonPath("$.otherTwoColorString.enum", arrayContainingInAnyOrder("RED", "GREEN")));
   }
 
   @Test

@@ -491,7 +491,7 @@ public class SchemaGenerator {
 
     private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum<?>> enumType) {
       result.put(TYPE, STRING);
-      addEnumValues(result, enumType, "");
+      addEnumValues(result, enumType, getEnumQualifier(field));
     }
 
     @SuppressWarnings("unchecked")

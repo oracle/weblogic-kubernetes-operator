@@ -104,7 +104,7 @@ class ItIstioMonitoringExporter {
     domain2Namespace = namespaces.get(2);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
@@ -158,7 +158,7 @@ class ItIstioMonitoringExporter {
     // create image with model files
     logger.info("Create image with model file and verify");
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add("sessmigr-app");
 
     // build the model file list
@@ -205,7 +205,7 @@ class ItIstioMonitoringExporter {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(monexpAppDir);
     appList.add("sessmigr-app");
 
@@ -255,7 +255,7 @@ class ItIstioMonitoringExporter {
         String.format("createSecret failed for %s", encryptionSecretName));
 
     // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
     Domain domain = createIstioDomainResource(domainUid,
@@ -298,7 +298,7 @@ class ItIstioMonitoringExporter {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);

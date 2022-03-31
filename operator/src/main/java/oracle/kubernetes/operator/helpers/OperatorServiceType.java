@@ -6,10 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Service;
-import oracle.kubernetes.common.Labeled;
 
 /** Describes the service types supported by the operator. */
-public enum OperatorServiceType implements Labeled {
+public enum OperatorServiceType {
   SERVER {
     @Override
     void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
@@ -127,15 +126,5 @@ public enum OperatorServiceType implements Labeled {
 
   boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
     return false;
-  }
-
-  @Override
-  public String label() {
-    return name();
-  }
-
-  @Override
-  public String toString() {
-    return label();
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -132,15 +132,16 @@ class PodPresenceTest {
 
   @Test
   void whenPodRunningButNoConditionsDefined_reportNotReady() {
-    pod.status(new V1PodStatus().phase("Running"));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
 
   @Test
   void whenPodRunningButNoReadyConditionsDefined_reportNotReady() {
-    List<V1PodCondition> conditions = Collections.singletonList(new V1PodCondition().type("Huge"));
-    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
+    List<V1PodCondition> conditions = Collections.singletonList(
+        new V1PodCondition().type(V1PodCondition.TypeEnum.INITIALIZED));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
@@ -148,8 +149,8 @@ class PodPresenceTest {
   @Test
   void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() {
     List<V1PodCondition> conditions =
-        Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
-    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
+        Collections.singletonList(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False"));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
@@ -163,8 +164,8 @@ class PodPresenceTest {
 
   private void makePodReady(V1Pod pod) {
     List<V1PodCondition> conditions =
-        Collections.singletonList(new V1PodCondition().type("Ready").status("True"));
-    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
+        Collections.singletonList(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True"));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
   }
 
   @Test
@@ -174,14 +175,14 @@ class PodPresenceTest {
 
   @Test
   void whenPodPhaseNotFailed_reportNotFailed() {
-    pod.status(new V1PodStatus().phase("Running"));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
   }
 
   @Test
   void whenPodPhaseIsFailed_reportFailed() {
-    pod.status(new V1PodStatus().phase("Failed"));
+    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.FAILED));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(true));
   }

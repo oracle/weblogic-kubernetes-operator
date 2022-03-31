@@ -470,7 +470,7 @@ class ItMonitoringExporterSideCar {
     // create image with model files
     logger.info("Create image with model file and verify");
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
