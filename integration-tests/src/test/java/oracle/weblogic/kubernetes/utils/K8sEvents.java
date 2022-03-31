@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -166,6 +166,7 @@ public class K8sEvents {
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
+   * @return true if event exists otherwise false
    */
   public static boolean domainEventExists(
       String opNamespace, String domainNamespace, String domainUid, String reason,
@@ -174,7 +175,10 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+        if (((domainUid != null && (event.getMetadata().getLabels() != null
+                && event.getMetadata().getLabels().containsValue(domainUid)))
+                || domainUid == null)
+                && (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event)))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
@@ -274,7 +278,9 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))
+                  && (event.getMetadata().getLabels() != null
+                  && event.getMetadata().getLabels().containsValue(domainUid))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
