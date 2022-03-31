@@ -62,7 +62,7 @@ public class IntegrationTestWatcher implements
 
   private String className;
   private String methodName;
-  private List namespaces = null;
+  private List<String> namespaces = null;
   private static final String START_TIME = "start time";
 
   /**
@@ -90,7 +90,7 @@ public class IntegrationTestWatcher implements
   public Object resolveParameter(ParameterContext parameterContext,
       ExtensionContext extensionContext) throws ParameterResolutionException {
     Namespaces ns = parameterContext.findAnnotation(Namespaces.class).get();
-    List<String> namespaces = new ArrayList();
+    List<String> namespaces = new ArrayList<>();
     for (int i = 1; i <= ns.value(); i++) {
       String namespace = assertDoesNotThrow(() -> createUniqueNamespace(),
           "Failed to create unique namespace due to ApiException");
@@ -359,7 +359,7 @@ public class IntegrationTestWatcher implements
       getLogger().warning(ex.getMessage());
     }
     for (var namespace : namespaces) {
-      LoggingUtil.collectLogs((String)namespace, resultDir.toString());
+      LoggingUtil.collectLogs(namespace, resultDir.toString());
     }
     // collect the logs in default namespace
     LoggingUtil.collectLogs("default", resultDir.toString());

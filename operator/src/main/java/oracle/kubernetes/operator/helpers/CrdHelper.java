@@ -53,6 +53,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
@@ -238,7 +239,9 @@ public class CrdHelper {
     }
 
     private static org.yaml.snakeyaml.Yaml getSnakeYaml(Class<?> type) {
-      return type != null ? new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(type),
+      LoaderOptions loaderOptions = new LoaderOptions();
+      loaderOptions.setEnumCaseSensitive(false);
+      return type != null ? new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(type, loaderOptions),
           new Yaml.CustomRepresenter()) :
           new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
     }

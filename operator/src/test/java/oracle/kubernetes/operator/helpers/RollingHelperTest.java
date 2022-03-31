@@ -178,8 +178,8 @@ class RollingHelperTest {
   }
 
   private void setPodStatusReady(V1Pod pod) {
-    pod.setStatus(new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+    pod.setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
   }
 
   @Test
@@ -257,8 +257,8 @@ class RollingHelperTest {
   }
 
   private void setPodNotReady(V1Pod pod) {
-    pod.setStatus(new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("False")));
+    pod.setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False")));
   }
 
   @Test

@@ -49,7 +49,7 @@ public class OKDUtils {
         serviceName = routeName[0];
       }
       if (!routeExists) {
-        assertTrue(new Command()
+        assertTrue(Command
             .withParams(new CommandParams()
               .command(command))
             .execute(), "oc expose service failed");
@@ -346,7 +346,7 @@ public class OKDUtils {
    * @param namespace - namespace to which the service account belongs
    */
   public static void addSccToNsSvcAccount(String serviceAccount, String namespace) {
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command("oc adm policy add-scc-to-user privileged -z " + serviceAccount + " -n " + namespace))
         .execute(), "oc expose service failed");

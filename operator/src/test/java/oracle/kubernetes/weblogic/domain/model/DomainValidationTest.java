@@ -11,6 +11,8 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
@@ -749,8 +751,8 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
-          .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
-          .withDomainType("JRF");
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType(ModelInImageDomainType.JRF);
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -761,9 +763,9 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
-          .withDomainType("JRF")
-          .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
-          .withOpssWalletPasswordSecret("wallet-password-secret-good");
+        .withDomainType(ModelInImageDomainType.JRF)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
 
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
@@ -784,9 +786,9 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(IMAGE)
-          .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
-          .withDomainType("WLS")
-          .withOpssWalletFileSecret("wallet-file-secret");
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType(ModelInImageDomainType.WLS)
+        .withOpssWalletFileSecret("wallet-file-secret");
 
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
@@ -797,12 +799,12 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenExposingDefaultChannelIfIstio_Enabled() {
     configureDomain(domain)
-          .withDomainHomeSourceType(IMAGE)
-          .withIstio()
-          .withDomainType("WLS")
-          .configureAdminServer()
-          .configureAdminService()
-          .withChannel("default");
+        .withDomainHomeSourceType(IMAGE)
+        .withIstio()
+        .withDomainType(ModelInImageDomainType.WLS)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
 
     assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
           "Istio is enabled and the domain resource specified to expose channel",
@@ -814,12 +816,12 @@ class DomainValidationTest extends DomainValidationTestBase {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-          .withDomainHomeSourceType(IMAGE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
-          .withDomainType("WLS")
-          .configureAdminServer()
-          .configureAdminService()
-          .withChannel("default");
+        .withDomainHomeSourceType(IMAGE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType(ModelInImageDomainType.WLS)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
 
     assertThat(myDomain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
           "DomainUID ", domainUID, "exceeds maximum allowed length")));
@@ -830,12 +832,12 @@ class DomainValidationTest extends DomainValidationTestBase {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-          .withDomainHomeSourceType(IMAGE)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
-          .withDomainType("WLS")
-          .configureAdminServer()
-          .configureAdminService()
-          .withChannel("default");
+        .withDomainHomeSourceType(IMAGE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType(ModelInImageDomainType.WLS)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
 
     TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "introspect-domain-job");
     assertThat(myDomain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
@@ -847,10 +849,12 @@ class DomainValidationTest extends DomainValidationTestBase {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
-          .configureAdminServer()
-          .configureAdminService()
-          .withChannel("default");
+        .withDomainHomeSourceType(IMAGE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType(ModelInImageDomainType.WLS)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
 
     TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-job");
     assertThat(myDomain.getValidationFailures(resourceLookup), empty());
@@ -861,13 +865,15 @@ class DomainValidationTest extends DomainValidationTestBase {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
-          .withWebLogicCredentialsSecret(SECRET_NAME, null)
-          .configureAdminServer()
-          .configureAdminService()
-          .withChannel("default");
+        .withDomainHomeSourceType(IMAGE)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType(ModelInImageDomainType.WLS)
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
 
-    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
-    assertThat(myDomain.getValidationFailures(resourceLookup), empty());
+    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
+    assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

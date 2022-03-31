@@ -162,8 +162,8 @@ class DomainPresenceInfoTest {
 
   private void setReady(V1Pod pod) {
     pod.status(new V1PodStatus()
-          .phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+          .phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
 
   }
 

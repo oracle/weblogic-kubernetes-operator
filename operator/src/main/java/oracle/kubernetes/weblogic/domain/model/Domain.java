@@ -282,7 +282,7 @@ public class Domain implements KubernetesObject {
     return spec.getMonitoringExporterImage();
   }
 
-  public String getMonitoringExporterImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
     return spec.getMonitoringExporterImagePullPolicy();
   }
 
@@ -515,7 +515,7 @@ public class Domain implements KubernetesObject {
     return spec.getDataHome();
   }
 
-  public String getWdtDomainType() {
+  public ModelInImageDomainType getWdtDomainType() {
     return spec.getWdtDomainType();
   }
 
@@ -1226,7 +1226,7 @@ public class Domain implements KubernetesObject {
         } else {
           verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RUNTIME_ENCRYPTION);
         }
-        if (ModelInImageDomainType.JRF.toString().equals(getWdtDomainType()) 
+        if (ModelInImageDomainType.JRF.equals(getWdtDomainType())
             && getOpssWalletPasswordSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredOpssSecret(
               "spec.configuration.opss.walletPasswordSecret"));

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.google.gson.Gson;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -30,7 +31,7 @@ public class MonitoringExporterSpecification {
   @ApiModelProperty(
       "The image pull policy for the WebLogic Monitoring Exporter sidecar image. "
           + "Legal values are Always, Never, and IfNotPresent. ")
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
 
 
   public MonitoringExporterConfiguration configuration() {
@@ -51,11 +52,11 @@ public class MonitoringExporterSpecification {
     return this;
   }
 
-  public String imagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum imagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public MonitoringExporterSpecification imagePullPolicy(String imagePullPolicy) {
+  public MonitoringExporterSpecification imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }

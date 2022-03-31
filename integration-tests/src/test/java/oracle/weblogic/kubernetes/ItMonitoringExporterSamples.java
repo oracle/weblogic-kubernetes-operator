@@ -512,7 +512,7 @@ class ItMonitoringExporterSamples {
                                                            Map<String, String> labels,
                                                            String secretName) throws ApiException {
     //build webhook image
-    String imagePullPolicy = "IfNotPresent";
+    V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
@@ -545,10 +545,10 @@ class ItMonitoringExporterSamples {
    * @param secretName webhook image secret name
    */
   private static void createWebHook(String image,
-                                    String imagePullPolicy,
+                                    V1Container.ImagePullPolicyEnum imagePullPolicy,
                                     String namespace,
                                     String secretName) throws ApiException {
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", "webhook");
 
     webhookDepl = new V1Deployment()
@@ -600,7 +600,7 @@ class ItMonitoringExporterSamples {
             .ports(Arrays.asList(
                 new V1ServicePort()
                     .port(8080)
-                    .protocol("TCP")))
+                    .protocol(V1ServicePort.ProtocolEnum.TCP)))
             .selector(labels));
 
     logger.info("Create service for webhook in namespace {0}",
@@ -666,11 +666,11 @@ class ItMonitoringExporterSamples {
    * @param secretName coordinator secret name
    */
   private static void createCoordinator(String image,
-                                        String imagePullPolicy,
+                                        V1Container.ImagePullPolicyEnum imagePullPolicy,
                                         String namespace,
                                         String secretName) throws ApiException {
     if (coordinatorDepl == null) {
-      Map labels = new HashMap<String, String>();
+      Map<String, String> labels = new HashMap<>();
       labels.put("app", "coordinator");
       coordinatorDepl = new V1Deployment()
           .apiVersion("apps/v1")
@@ -684,7 +684,7 @@ class ItMonitoringExporterSamples {
               .selector(new V1LabelSelector()
                   .matchLabels(labels))
               .strategy(new V1DeploymentStrategy()
-                  .type("Recreate"))
+                  .type(V1DeploymentStrategy.TypeEnum.RECREATE))
               .template(new V1PodTemplateSpec()
                   .metadata(new V1ObjectMeta()
                       .labels(labels))
@@ -728,7 +728,7 @@ class ItMonitoringExporterSamples {
                   new V1ServicePort()
                       .port(8999)
                       .targetPort(new IntOrString(8999))))
-              .type("NodePort")
+              .type(V1ServiceSpec.TypeEnum.NODEPORT)
               .selector(labels));
 
       logger.info("Create service for coordinator in namespace {0}",
@@ -751,7 +751,7 @@ class ItMonitoringExporterSamples {
     String app1Path = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
     String app2Path = String.format("%s/../operator/integration-tests/apps/testwebapp.war", ITTESTS_DIR);
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(app1Path);
     appList.add(app2Path);
 

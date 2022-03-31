@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -20,9 +19,8 @@ public class Model {
   public static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
   public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
 
-  @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
-  private String domainType;
+  private ModelInImageDomainType domainType;
 
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
@@ -85,15 +83,15 @@ public class Model {
   private String runtimeEncryptionSecret;
 
   @Nullable
-  public String getDomainType() {
+  public ModelInImageDomainType getDomainType() {
     return domainType;
   }
 
-  public void setDomainType(@Nullable String domainType) {
+  public void setDomainType(@Nullable ModelInImageDomainType domainType) {
     this.domainType = domainType;
   }
 
-  public Model withDomainType(@Nullable String domainType) {
+  public Model withDomainType(@Nullable ModelInImageDomainType domainType) {
     this.domainType = domainType;
     return this;
   }

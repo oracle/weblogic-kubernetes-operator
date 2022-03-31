@@ -26,7 +26,7 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned
 where the optimal values depend on your workload, applications, and the Kubernetes environment.
 Requests and limits should be configured based on the expected traffic during peak usage.
-For example: 
+For example:
 
 - Tune CPU and memory high enough
   to handle expected peak workloads for applications
@@ -110,7 +110,7 @@ A Pod's Quality of Service (QoS) is based on whether it's configured with resour
 - **Guaranteed QoS** (highest priority): If you set a Pod's requests and the limits to equal values, then the Pod will have a `guaranteed` QoS. These settings indicate that your Pod will consume a fixed amount of memory and CPU. With this configuration, if a Node runs out of shareable resources, then the Node's `kubelet` will evict `best-effort` and `burstable` QoS Pods before terminating `guaranteed` QoS Pods.
 
 {{% notice note %}}
-For most use cases, Oracle recommends configuring WebLogic Pods with memory and CPU requests and limits, and furthermore, setting requests equal to their respective limits in order to ensure a `guaranteed` QoS.
+For most use cases, Oracle recommends configuring WebLogic Pods with memory and CPU requests and limits, and furthermore, setting requests equal to their respective limits to ensure a `guaranteed` QoS.
 {{% /notice %}}
 
 {{% notice note %}}
@@ -163,7 +163,7 @@ If you specify Pod memory limits, Oracle recommends configuring WebLogic Server 
 Additionally, there's a `node-manager` process that's running in the same container as the WebLogic Server, which has its own heap and native memory requirements. Its heap is tuned by using `-Xms` and `-Xmx` in the `NODEMGR_MEM_ARGS` environment variable. Oracle recommends setting the Node Manager heap memory to fixed sizes, instead of percentages, where [the default tuning]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) is usually sufficient.
 
 {{% notice note %}}
-Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command. We have included this property in the above example for specifying a custom `USER_MEM_ARGS` value in order to preserve this speedup. See the [environment variable defaults]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) documentation for more information.
+Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command. We have included this property in the above example for specifying a custom `USER_MEM_ARGS` value to preserve this speedup. See the [environment variable defaults]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) documentation for more information.
 {{% /notice %}}
 
 In some cases, you might only want to configure memory resource requests but not configure memory resource limits. In such scenarios, you can use the traditional fixed heap size settings (`-Xms` and `-Xmx`) in your WebLogic Server `USER_MEM_ARGS` instead of the percentage settings (`-XX:MinRAMPercentage` and `-XX:MaxRAMPercentage`).

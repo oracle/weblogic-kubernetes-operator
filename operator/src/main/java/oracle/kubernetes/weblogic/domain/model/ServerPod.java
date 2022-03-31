@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PreferredSchedulingTerm;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -41,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -116,7 +118,7 @@ class ServerPod extends KubernetesResource {
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
-  private String restartPolicy = null;
+  private V1PodSpec.RestartPolicyEnum restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
       + "this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, "
@@ -412,7 +414,7 @@ class ServerPod extends KubernetesResource {
     return this.shutdown;
   }
 
-  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions, Boolean waitForAllSessions) {
+  void setShutdown(ShutdownType shutdownType, Long timeoutSeconds, Boolean ignoreSessions, Boolean waitForAllSessions) {
     this.shutdown
         .shutdownType(shutdownType)
         .timeoutSeconds(timeoutSeconds)
@@ -736,11 +738,11 @@ class ServerPod extends KubernetesResource {
     readinessGates.add(readinessGate);
   }
 
-  String getRestartPolicy() {
+  V1PodSpec.RestartPolicyEnum getRestartPolicy() {
     return restartPolicy;
   }
 
-  void setRestartPolicy(String restartPolicy) {
+  void setRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
     this.restartPolicy = restartPolicy;
   }
 
