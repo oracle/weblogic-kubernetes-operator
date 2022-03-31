@@ -222,8 +222,10 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (((domainUid != null && event.getMetadata().getLabels().containsValue(domainUid)) || domainUid == null)
-                && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+        if (((domainUid != null && (event.getMetadata().getLabels() != null
+                && event.getMetadata().getLabels().containsValue(domainUid)))
+                || domainUid == null)
+                && (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event)))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
