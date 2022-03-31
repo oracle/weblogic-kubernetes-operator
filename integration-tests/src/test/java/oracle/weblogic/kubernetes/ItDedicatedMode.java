@@ -132,27 +132,39 @@ class ItDedicatedMode {
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
 
-  }
-
-  /**
-   * (a)Install the Operator in a ns (say op) with helm parameter 
-   * domainNamespaceSelectionStrategy set to Dedicated and set 
-   * domainNamespaces parameter to something other than Operator ns (say wls)
-   * (b) Create WebLogic Domain in a namespace (say wls) that is different 
-   * from the Operator's namespace. Verify that the domain does not come up.
-   * (c) Create WebLogic Domain in a namespace (say op) that is same as  
-   * Operator's namespace. Verify that the domain does come up and can be 
-   * scaled up using Operator
-   */
-  @Test
-  @DisplayName("Verify domainNamespaceSelectionStrategy in both positive and negative case")
-  void testDedicatedModeDomainNamespaceSelectionStrategy() {
-    // install and verify operator
+    // Install the Operator in a ns (say op) with helm parameter 
+    // domainNamespaceSelectionStrategy set to Dedicated and set 
+    // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         true, 0, opHelmParams, domainNamespaceSelectionStrategy,
         false, domain2Namespace);
     logger.info("Operator installed on namespace {0} and domainNamespaces set to {1} ", opNamespace, domain2Namespace);
+
+  }
+
+  /**
+   * Create WebLogic Domain in a namespace (say wls) that is different 
+   * from the Operator's namespace. Verify that the domain does not come up.
+   */
+  @Test
+  @DisplayName("Verify in Dedicated NamespaceSelectionStrategy domain on non-operator namespace does not started")
+  void testDedicatedModeDiffNamespace() {
+    // create and verify the domain
+    logger.info("Creating a domain in non-operator namespace {1}", domain2Namespace);
+    createDomain(domain2Namespace);
+    verifyDomainNotRunning(domain2Namespace);
+    logger.info("WebLogic domain is not managed in non-operator namespace");
+  }
+
+  /**
+   * Create WebLogic Domain in a namespace (say op) that is same as  
+   * Operator's namespace. Verify that the domain does come up and can be 
+   * scaled up using Operator
+   */
+  @Test
+  @DisplayName("Verify in Dedicated NamespaceSelectionStrategy domain on operator namespace gets started")
+  void testDedicatedModeSameNamespace() {
 
     // This test uses the operator restAPI to scale the doamin. 
     // To do this in OKD cluster, we need to expose the external service as 
@@ -162,12 +174,6 @@ class ItDedicatedMode {
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     
-    // create and verify the domain
-    logger.info("Creating a domain in non-operator namespace {1}", domain2Namespace);
-    createDomain(domain2Namespace);
-    verifyDomainNotRunning(domain2Namespace);
-    logger.info("WebLogic domain is not managed in non-operator namespace");
-
     logger.info("Creating a domain in perator namespace {1}", domain1Namespace);
     createDomain(domain1Namespace);
     verifyDomainRunning(domain1Namespace);

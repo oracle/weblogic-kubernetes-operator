@@ -119,26 +119,25 @@ class ItLivenessProbeCustomization {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create mii with additional livenessprobecustom script
+    // Build model in image with liveness probe custom script named 
+    // customLivenessProbe.sh for a 2 clusters domain.
+    // Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
+    
     String imageName = createAndVerifyDomainImage();
-
-    // create a basic model in image domain
     createAndVerifyMiiDomain(imageName);
 
-    // create temp file to be copied to managed server pod which will be used in customLivenessProbe.sh
+    // create temp file to be copied to managed server pods which will be used 
+    // in customLivenessProbe.sh
     String fileName = "tempFile";
     tempFile = assertDoesNotThrow(() -> createTempfile(fileName), "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
   }
 
   /**
-   * Verify the customization of liveness probe.
-   * Build model in image with liveness probe custom script named 
-   * customLivenessProbe.sh for a 2 clusters domain.
-   * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * After the domain is created copy the file named tempfile.txt into tested 
    * managed server pods for both clusters, which is used by custom script to 
    * trigger liveness probe.
-   * Verify the container managed server pods in both clusters are restarted
+   * Verify the managed server pods in both clusters are restarted
    */
   @Test
   @DisplayName("Test customization of the liveness probe")
@@ -198,10 +197,7 @@ class ItLivenessProbeCustomization {
             managedServerPodName, domainNamespace));
       }
     }
-    // Verify the negative test case of customization of liveness probe.
-    // Build model in image with liveness probe custom script named 
-    // customLivenessProbe.sh for a 2 clusters domain.
-    // Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
+
     // Since there is no temp file named "tempFile.txt" in tested managed 
     // server pods, based on custom script logic, liveness probe will not be 
     // activated. Verify the container managed server pods in both clusters 
