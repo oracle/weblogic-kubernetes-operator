@@ -291,7 +291,7 @@ public class K8sEvents {
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
             logger.info("Verifying domain event type {0}", type);
-            assertTrue(event.getType().equals(type));
+            assertEquals(type, event.getType());
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
             return (countAfter >= countBefore + 1);
           }
@@ -435,14 +435,14 @@ public class K8sEvents {
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
     if (domainUid != null) {
-      assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
+      assertEquals(TestConstants.DOMAIN_API_VERSION, event.getInvolvedObject().getApiVersion(),
           "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
     }
     //verify reporting component to be operator release
-    assertTrue(event.getReportingComponent().equals("weblogic.operator"),
+    assertEquals("weblogic.operator", event.getReportingComponent(),
         "Didn't get reporting component as " + "weblogic.operator");
     //verify reporting instance to be operator instance
-    assertTrue(event.getReportingInstance().equals(operatorPodName),
+    assertEquals(operatorPodName, event.getReportingInstance(),
         "Didn't get reporting instance as " + operatorPodName);
     //verify the event was created by operator
     Map<String, String> labels = event.getMetadata().getLabels();

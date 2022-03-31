@@ -16,13 +16,14 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -46,11 +47,10 @@ public abstract class BaseConfiguration {
   private final ServerService serverService = new ServerService();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @EnumClass(ServerStartState.class)
   @Description(
       "The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start "
           + "in the admin state. Defaults to RUNNING.")
-  private String serverStartState;
+  private ServerStartState serverStartState;
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
@@ -96,19 +96,19 @@ public abstract class BaseConfiguration {
   }
 
   boolean isStartAdminServerOnly() {
-    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.ADMIN_ONLY);
   }
 
   private boolean isStartNever() {
-    return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_NEVER);
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
   }
 
   @Nullable
-  String getServerStartState() {
+  ServerStartState getServerStartState() {
     return serverStartState;
   }
 
-  void setServerStartState(@Nullable String serverStartState) {
+  void setServerStartState(@Nullable ServerStartState serverStartState) {
     this.serverStartState = serverStartState;
   }
 
@@ -129,7 +129,7 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(envVar);
   }
 
-  public abstract String getServerStartPolicy();
+  public abstract ServerStartPolicy getServerStartPolicy();
 
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
@@ -140,7 +140,7 @@ public abstract class BaseConfiguration {
    * @since 2.0
    * @param serverStartPolicy start policy
    */
-  public abstract void setServerStartPolicy(String serverStartPolicy);
+  public abstract void setServerStartPolicy(ServerStartPolicy serverStartPolicy);
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -202,11 +202,11 @@ public abstract class BaseConfiguration {
     serverPod.addReadinessGate(readinessGate);
   }
 
-  public String getRestartPolicy() {
+  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
     return serverPod.getRestartPolicy();
   }
 
-  void setRestartPolicy(String restartPolicy) {
+  void setRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
     serverPod.setRestartPolicy(restartPolicy);
   }
 

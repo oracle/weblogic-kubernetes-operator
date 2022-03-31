@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -209,7 +208,7 @@ public class AuthorizationProxy {
     }
   }
 
-  public enum Operation implements Labeled {
+  public enum Operation {
     GET("get"),
     LIST("list"),
     CREATE("create"),
@@ -219,24 +218,19 @@ public class AuthorizationProxy {
     DELETE("delete"),
     DELETECOLLECTION("deletecollection");
 
-    private final String label;
+    private final String value;
 
-    Operation(String label) {
-      this.label = label;
-    }
-
-    @Override
-    public String label() {
-      return label;
+    Operation(String value) {
+      this.value = value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
   }
 
-  public enum Resource implements Labeled {
+  public enum Resource {
     CONFIGMAPS("configmaps", ""),
     PODS("pods", ""),
     LOGS("pods", "log", ""),
@@ -279,34 +273,24 @@ public class AuthorizationProxy {
     }
 
     @Override
-    public String label() {
-      return name();
-    }
-
-    @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.resource);
     }
   }
 
-  public enum Scope implements Labeled {
+  public enum Scope {
     NAMESPACE("namespace"),
     CLUSTER("cluster");
 
-    private final String label;
+    private final String value;
 
-    Scope(String label) {
-      this.label = label;
-    }
-
-    @Override
-    public String label() {
-      return label;
+    Scope(String value) {
+      this.value = value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
   }
 }

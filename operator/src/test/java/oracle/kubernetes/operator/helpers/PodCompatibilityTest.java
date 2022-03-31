@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -260,21 +260,23 @@ class PodCompatibilityTest {
   void whenImagePullPoliciesDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
-            new V1Container().imagePullPolicy("abcde"), new V1Container().imagePullPolicy("cdefg"));
+            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER),
+            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS));
 
     assertThat(
         compatibility.getScopedIncompatibility(DOMAIN),
-        both(containsString("abcde")).and(containsString("cdefg")));
+        both(containsString("Never")).and(containsString("Always")));
     assertThat(
         compatibility.getScopedIncompatibility(POD),
-        both(containsString("abcde")).and(containsString("cdefg")));
+        both(containsString("Never")).and(containsString("Always")));
   }
 
   @Test
   void whenImagePullPoliciesDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
-            new V1Container().imagePullPolicy("abcde"), new V1Container().imagePullPolicy("cdefg"));
+            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER),
+            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS));
 
     assertThat(
         compatibility.getScopedIncompatibility(UNKNOWN), blankOrNullString());

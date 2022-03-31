@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -44,7 +45,6 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
@@ -59,9 +59,6 @@ import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_M
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -195,7 +192,7 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenStartPolicyIfNeeded_startServers() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     invokeStepWithConfiguredServer();
 
@@ -212,11 +209,11 @@ class ManagedServersUpStepTest {
   }
 
   private void startAllServers() {
-    configurator.withDefaultServerStartPolicy(START_ALWAYS);
+    configurator.withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
   }
 
   private void startConfiguredServers() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private void assertManagedServersUpStepCreated() {
@@ -234,9 +231,9 @@ class ManagedServersUpStepTest {
 
   private void startAdminServerOnly() {
     configurator
-        .withDefaultServerStartPolicy(START_NEVER)
+        .withDefaultServerStartPolicy(ServerStartPolicy.NEVER)
         .configureAdminServer()
-        .withServerStartPolicy(START_ALWAYS);
+        .withServerStartPolicy(ServerStartPolicy.ALWAYS);
   }
 
   @Test
@@ -249,7 +246,7 @@ class ManagedServersUpStepTest {
   }
 
   private void startNoServers() {
-    configurator.withDefaultServerStartPolicy(START_NEVER);
+    configurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
   }
 
   @Test
@@ -377,7 +374,7 @@ class ManagedServersUpStepTest {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
 
-    configureCluster("cluster1").withServerStartPolicy(START_IF_NEEDED);
+    configureCluster("cluster1").withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     invokeStep();
 
@@ -420,7 +417,7 @@ class ManagedServersUpStepTest {
 
   @Test
   void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -531,7 +528,7 @@ class ManagedServersUpStepTest {
   void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true);
     addWlsCluster("cluster1", "ms1", "ms2");
-    configureAdminServer().withServerStartPolicy(START_NEVER);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     invokeStep();
 
@@ -540,7 +537,8 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
-    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    configureCluster("cluster1").withPrecreateServerService(true)
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
 
     invokeStep();
@@ -550,9 +548,10 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
-    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    configureCluster("cluster1").withPrecreateServerService(true)
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
-    configureAdminServer().withServerStartPolicy(START_NEVER);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     invokeStep();
 
@@ -754,7 +753,7 @@ class ManagedServersUpStepTest {
 
   private ServerConfigurator configureServerToStart(String serverName) {
     ServerConfigurator serverConfigurator = configurator.configureServer(serverName);
-    serverConfigurator.withServerStartPolicy(START_ALWAYS);
+    serverConfigurator.withServerStartPolicy(ServerStartPolicy.ALWAYS);
     return serverConfigurator;
   }
 
@@ -770,7 +769,7 @@ class ManagedServersUpStepTest {
     assertThat(TestStepFactory.next, sameInstance(nextStep));
   }
 
-  private void setDefaultServerStartPolicy(String startPolicy) {
+  private void setDefaultServerStartPolicy(ServerStartPolicy startPolicy) {
     configurator.withDefaultServerStartPolicy(startPolicy);
   }
 

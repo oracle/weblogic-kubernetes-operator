@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.common.utils;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.kubernetes.common.CommonConstants;
 
 public class CommonUtils {
@@ -15,9 +16,9 @@ public class CommonUtils {
    * Returns the image pull policy to use by default, for the specified image.
    * @param imageName the image name to test
    */
-  public static String getInferredImagePullPolicy(String imageName) {
+  public static V1Container.ImagePullPolicyEnum getInferredImagePullPolicy(String imageName) {
     return useLatestImage(imageName)
-        ? CommonConstants.ALWAYS_IMAGEPULLPOLICY : CommonConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+        ? V1Container.ImagePullPolicyEnum.ALWAYS : V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
   }
 
   private static boolean useLatestImage(String imageName) {

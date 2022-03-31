@@ -4,27 +4,21 @@
 package oracle.kubernetes.operator;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.common.Labeled;
 
-public enum ModelInImageDomainType implements Labeled {
+public enum ModelInImageDomainType {
   WLS("WLS"),
   @SerializedName("RestrictedJRF")
   RESTRICTED_JRF("RestrictedJRF"),
   JRF("JRF");
 
-  private final String label;
+  private final String value;
 
-  ModelInImageDomainType(String label) {
-    this.label = label;
-  }
-
-  @Override
-  public String label() {
-    return label;
+  ModelInImageDomainType(String value) {
+    this.value = value;
   }
 
   @Override
   public String toString() {
-    return label();
+    return String.valueOf(this.value);
   }
 }

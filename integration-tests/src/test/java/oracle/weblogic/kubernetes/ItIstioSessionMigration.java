@@ -84,7 +84,7 @@ class ItIstioSessionMigration {
     domainNamespace = namespaces.get(1);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
@@ -96,7 +96,7 @@ class ItIstioSessionMigration {
     String destSessionMigrYamlFile =
         generateNewModelFileWithUpdatedDomainUid(domainUid, "ItIstioSessionMigration", getOrigModelFile());
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list

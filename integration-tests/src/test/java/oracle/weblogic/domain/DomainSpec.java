@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.swagger.annotations.ApiModel;
@@ -79,7 +80,7 @@ public class DomainSpec {
       "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
 
   @ApiModelProperty("A list of image pull secrets for the WebLogic Server image.")
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
@@ -338,20 +339,20 @@ public class DomainSpec {
     this.image = image;
   }
 
-  public DomainSpec imagePullPolicy(String imagePullPolicy) {
+  public DomainSpec imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
 
-  public String imagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum imagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public String getImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public void setImagePullPolicy(String imagePullPolicy) {
+  public void setImagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 

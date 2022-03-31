@@ -147,7 +147,7 @@ class ItExternalNodePortService {
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
     nextFreePort = getNextFreePort();
-    Map<String, String> configTemplateMap  = new HashMap();
+    Map<String, String> configTemplateMap  = new HashMap<>();
     configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
     configTemplateMap.put("FREE_PORT", String.valueOf(nextFreePort));
 
@@ -214,7 +214,7 @@ class ItExternalNodePortService {
 
     // Prepare the Nodeport service yaml file from the template file by 
     // replacing domain namespace, domain UID, cluster name and host name 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);

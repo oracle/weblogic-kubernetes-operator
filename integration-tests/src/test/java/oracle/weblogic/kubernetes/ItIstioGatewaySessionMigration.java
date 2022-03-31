@@ -101,7 +101,7 @@ class ItIstioGatewaySessionMigration {
     domainNamespace = namespaces.get(1);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
@@ -113,7 +113,7 @@ class ItIstioGatewaySessionMigration {
     String destSessionMigrYamlFile = generateNewModelFileWithUpdatedDomainUid(domainUid,
         "ItIstioGatewaySessionMigration", getOrigModelFile());
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
@@ -217,7 +217,7 @@ class ItIstioGatewaySessionMigration {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);

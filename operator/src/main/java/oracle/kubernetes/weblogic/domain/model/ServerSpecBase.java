@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -9,10 +9,12 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -36,7 +38,7 @@ public abstract class ServerSpecBase implements ServerSpec {
   }
 
   @Override
-  public String getImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
     return domainSpec.getImagePullPolicy();
   }
 
@@ -85,7 +87,7 @@ public abstract class ServerSpecBase implements ServerSpec {
   }
 
   @Override
-  public String getRestartPolicy() {
+  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
     return null;
   }
 
