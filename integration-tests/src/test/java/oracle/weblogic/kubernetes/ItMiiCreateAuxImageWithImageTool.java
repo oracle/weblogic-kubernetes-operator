@@ -219,7 +219,7 @@ class ItMiiCreateAuxImageWithImageTool {
         new WitParams()
         .modelImageName(MII_AUXILIARY_IMAGE_NAME)
         .modelImageTag(miiAuxiliaryImageTag)
-        .baseImageName("oraclelinux")
+        .baseImageName("ghcr.io/oracle/oraclelinux")
         .baseImageTag(ORACLELINUX_TEST_VERSION)
         .wdtHome(auxiliaryImagePath2)
         .modelArchiveFiles(archiveList)
