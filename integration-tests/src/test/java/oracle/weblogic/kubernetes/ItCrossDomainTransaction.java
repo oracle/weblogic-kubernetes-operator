@@ -46,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -470,24 +469,17 @@ class ItCrossDomainTransaction {
 
   private boolean checkLocalQueue() {
     String curlString = String.format("curl -v --show-error --noproxy '*' "
-            + "\"http://%s:%s/jmsservlet/jmstest?"
-            + "url=t3://localhost:7001&"
-            + "action=receive&dest=jms.testAccountingQueue\"",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort);
+        + "\"http://%s/jmsservlet/jmstest?"
+        + "url=t3://localhost:7001&"
+        + "action=receive&dest=jms.testAccountingQueue\"",
+        hostAndPort);
 
     logger.info("curl command {0}", curlString);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for local queue to be updated "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("Messages are distributed");
-          };
-        }));
+    testUntil(
+        () -> exec(new String(curlString), true).stdout().contains("Messages are distributed"),
+        logger,
+        "local queue to be updated");
     return true;
   }
 
