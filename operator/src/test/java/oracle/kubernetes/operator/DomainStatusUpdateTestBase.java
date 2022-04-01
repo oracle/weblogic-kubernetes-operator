@@ -87,7 +87,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -297,16 +296,6 @@ abstract class DomainStatusUpdateTestBase {
 
     assertThat(getRecordedDomain(),
           hasStatusForServer("server1").withState(SHUTDOWN_STATE).withDesiredState(SHUTDOWN_STATE));
-  }
-
-  @Test
-  void statusStep_containsValidationWarnings() {
-    info.addValidationWarning(validationWarning);
-    defineScenario().build();
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
   }
 
   @Test
