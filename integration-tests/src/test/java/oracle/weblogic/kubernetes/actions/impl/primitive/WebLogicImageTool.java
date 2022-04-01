@@ -8,6 +8,8 @@ import java.util.List;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
@@ -326,6 +328,8 @@ public class WebLogicImageTool {
 
     if (params.baseImageName() != null && params.baseImageTag() != null) {
       command += " --fromImage " + params.baseImageName() + ":" + params.baseImageTag();
+    } else {
+      command += " --fromImage " + BUSYBOX_IMAGE + ":" + BUSYBOX_TAG;
     }
 
     if (params.useridGroupid() != null) {

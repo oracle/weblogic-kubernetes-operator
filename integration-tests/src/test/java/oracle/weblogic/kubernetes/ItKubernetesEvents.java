@@ -151,6 +151,7 @@ class ItKubernetesEvents {
   final String cluster1Name = "mycluster";
   final String cluster2Name = "cl2";
   final String adminServerName = "admin-server";
+  final String domainUid = "k8seventsdomain";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
@@ -159,7 +160,6 @@ class ItKubernetesEvents {
 
   final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
   final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
-  private static final String domainUid = "k8seventsdomain";
   private final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
