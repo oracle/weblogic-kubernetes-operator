@@ -136,14 +136,14 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod exists in a given namespace and in Running state.
+   * Checks if a pod exists in a given namespace and in Initialized state.
    * @param namespace in which to check for the pod running
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodInitialized(String namespace, String domainUid, String podName) throws ApiException {
     final LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, null, podName);
