@@ -93,9 +93,10 @@ public class PortInuseEventWatcher extends Thread {
       for (String ns : namespaces) {
         if (ns.startsWith("ns-") || ns.equals("default")) {
           writeToFile(Kubernetes.listServices(ns), dest.toString(), ns + ".list.services.log", true);
+          writeToFile(Kubernetes.listNamespacedEvents(ns), dest.toString(), ns + ".list.events.log", true);
         }
       }
-    } catch (IOException | InterruptedException ex) {
+    } catch (IOException | InterruptedException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
   }
