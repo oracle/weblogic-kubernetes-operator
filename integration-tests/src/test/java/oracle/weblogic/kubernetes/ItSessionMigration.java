@@ -261,7 +261,7 @@ class ItSessionMigration {
     String destSessionMigrYamlFile =
         generateNewModelFileWithUpdatedDomainUid(domainUid, "ItSessionMigration", getOrigModelFile());
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
@@ -328,7 +328,7 @@ class ItSessionMigration {
                                               String encryptionSecretName,
                                               String miiImage) {
 
-    Map<String, String> annotationKeyValues = new HashMap();
+    Map<String, String> annotationKeyValues = new HashMap<>();
     annotationKeyValues.put(annotationKey, annotationValue);
     annotationKeyValues.put(annotationKey2, annotationValue2);
     annotationKeyValues.put(annotationKey3, annotationValue3);

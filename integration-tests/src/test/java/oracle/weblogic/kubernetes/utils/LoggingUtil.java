@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -57,7 +57,7 @@ public class LoggingUtil {
    * @param itInstance the integration test instance
    * @param namespaces list of namespaces used by the test instance
    */
-  public static void generateLog(Object itInstance, List namespaces) {
+  public static void generateLog(Object itInstance, List<String> namespaces) {
     LoggingFacade logger = getLogger();
     logger.info("Generating logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
@@ -65,8 +65,8 @@ public class LoggingUtil {
       Path resultDir = Files.createDirectories(
           Paths.get(TestConstants.LOGS_DIR, itInstance.getClass().getSimpleName(),
               resultDirExt));
-      for (var namespace : namespaces) {
-        LoggingUtil.collectLogs((String) namespace, resultDir.toString());
+      for (String namespace : namespaces) {
+        LoggingUtil.collectLogs(namespace, resultDir.toString());
       }
     } catch (IOException ex) {
       logger.severe(ex.getMessage());
@@ -345,7 +345,7 @@ public class LoggingUtil {
                 new V1Container()
                     .name("pv-container")
                     .image("ghcr.io/oracle/oraclelinux:7")
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName) // mount the persistent volume to /shared inside the pod

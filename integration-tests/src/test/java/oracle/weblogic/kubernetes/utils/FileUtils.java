@@ -364,7 +364,7 @@ public class FileUtils {
           .download(downloadDir), "WDT download failed");
     }
     String cmdToExecute = String.format("unzip %s -d %s", wlDeployZipFile, unzipLocation);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute(), String.format("Failed to unzip %s", wlDeployZipFile));

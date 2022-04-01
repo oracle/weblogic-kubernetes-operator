@@ -3,9 +3,7 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.common.Labeled;
-
-public enum ServerStartPolicy implements Labeled {
+public enum ServerStartPolicy {
   ALWAYS {
     @Override
     public boolean forDomain() {
@@ -45,15 +43,5 @@ public enum ServerStartPolicy implements Labeled {
 
   public boolean forServer() {
     return true;
-  }
-
-  @Override
-  public String label() {
-    return name();
-  }
-
-  @Override
-  public String toString() {
-    return label();
   }
 }

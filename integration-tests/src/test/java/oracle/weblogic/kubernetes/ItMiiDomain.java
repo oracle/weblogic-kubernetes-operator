@@ -815,7 +815,7 @@ class ItMiiDomain {
           String repoSecretName, String encryptionSecretName, 
           int replicaCount, String miiImage, String configmapName) {
 
-    Map keyValueMap = new HashMap<String, String>();
+    Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR

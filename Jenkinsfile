@@ -371,8 +371,8 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
-                            tar zxf helm-v${HELM_VERSION}-linux-amd64.tar.gz
+                            curl -Lo "helm.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/helm%2Fhelm-v${HELM_VERSION}.tar.gz"
+                            tar zxf helm.tar.gz
                             mv linux-amd64/helm ${WORKSPACE}/bin/helm
                             rm -rf linux-amd64
                             helm version
@@ -387,7 +387,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -L --retry 3 -o "${WORKSPACE}/bin/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
@@ -401,7 +401,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kind" --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
+                            curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
                             chmod +x "${WORKSPACE}/bin/kind"
                             kind version
                         '''
@@ -430,8 +430,8 @@ pipeline {
                               docker stop "${registry_name}"
                               docker rm --force "${registry_name}"
                             fi
-
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" registry:2
+        
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" phx.ocir.io/weblogick8s/test-images/docker/registry:2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }

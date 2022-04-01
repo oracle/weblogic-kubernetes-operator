@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -93,7 +93,8 @@ public class JobUtils {
    * @param podAnnotationsMap annotations for the job pod
    */
   public static void createDomainJob(String image, String pvName, String pvcName, String domainScriptCM,
-                                     String namespace, V1Container jobContainer, Map podAnnotationsMap) {
+                                     String namespace, V1Container jobContainer,
+                                     Map<String, String> podAnnotationsMap) {
 
     LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to create domain for image: {0}"
@@ -101,11 +102,11 @@ public class JobUtils {
         pvName, pvcName, domainScriptCM, namespace);
 
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy("Never")
+        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
         .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
             .name("create-weblogic-domain-onpv-container")
             .image(image)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .ports(Arrays.asList(new V1ContainerPort()
                 .containerPort(7001)))
             .volumeMounts(Arrays.asList(
@@ -165,7 +166,7 @@ public class JobUtils {
         "Getting the job failed");
     if (job != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {

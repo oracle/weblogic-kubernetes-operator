@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import oracle.kubernetes.common.Labeled;
-
 import static oracle.kubernetes.operator.work.Fiber.DEBUG_FIBER;
 
 /**
@@ -143,22 +141,12 @@ public final class NextAction implements BreadCrumbFactory {
     this.comment = " ((" + comment + "))";
   }
 
-  public enum Kind implements Labeled {
+  public enum Kind {
     INVOKE,
     SUSPEND,
     THROW;
     Kind getPreviousKind(BreadCrumb previous) {
       return (previous instanceof NextActionBreadCrumb) ? ((NextActionBreadCrumb) previous).na.kind : null;
-    }
-
-    @Override
-    public String label() {
-      return name();
-    }
-
-    @Override
-    public String toString() {
-      return label();
     }
   }
 

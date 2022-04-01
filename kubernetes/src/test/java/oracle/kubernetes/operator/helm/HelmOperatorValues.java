@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -113,7 +113,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
-    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
+    addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicyAsString, "imagePullPolicy");
     addStringMapEntry(map, this::getExternalOperatorSecret, "externalOperatorSecret");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");

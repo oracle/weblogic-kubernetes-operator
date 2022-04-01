@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -342,7 +343,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Found the DataResource configuration");
 
     // get the map with server pods and their original creation timestamps
-    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1,
@@ -374,7 +375,7 @@ class ItMiiAuxiliaryImage {
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
-    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
     //print out the original image name
@@ -614,7 +615,8 @@ class ItMiiAuxiliaryImage {
 
     // add the sourceWDTInstallHome and sourceModelHome for both aux images.
     for (String cmImageName : images) {
-      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       auxImage.sourceWDTInstallHome(auxiliaryImagePathCustom + "/weblogic-deploy")
           .sourceModelHome(auxiliaryImagePathCustom + "/models");
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
@@ -1358,7 +1360,8 @@ class ItMiiAuxiliaryImage {
             encryptionSecretName, replicaCount, clusterNames);
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
-      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(sourceWDTInstallHome + "/weblogic-deploy")

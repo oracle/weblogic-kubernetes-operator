@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -313,7 +314,7 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain resource with incorrect image pull secret");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image);
-    domain.getSpec().imagePullPolicy("Always");
+    domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
     try {
       logger.info("Creating domain");
@@ -359,7 +360,7 @@ class ItDiagnosticsFailedCondition {
               .domainHome("/shared/domains/" + domainName) // point to domain home in pv
               .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
               .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-              .imagePullPolicy("IfNotPresent")
+              .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
               .imagePullSecrets(Arrays.asList(
                   new V1LocalObjectReference()
                       .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
@@ -672,7 +673,7 @@ class ItDiagnosticsFailedCondition {
           String repoSecretName, String encryptionSecretName,
           int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
 
-    Map keyValueMap = new HashMap<String, String>();
+    Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR

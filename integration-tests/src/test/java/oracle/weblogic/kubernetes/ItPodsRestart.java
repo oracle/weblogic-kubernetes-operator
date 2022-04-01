@@ -12,6 +12,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -494,7 +495,7 @@ class ItPodsRestart {
     podsWithTimeStamps = getPodsWithTimeStamps();
 
     //print out the original imagePullPolicy
-    String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
+    V1Container.ImagePullPolicyEnum imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
     //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
@@ -519,7 +520,7 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
+    assertEquals(V1Container.ImagePullPolicyEnum.NEVER, imagePullPolicy, "imagePullPolicy was not updated"
         + " in the new patched domain");
 
     //get current timestamp before domain rolling restart to verify domain roll events

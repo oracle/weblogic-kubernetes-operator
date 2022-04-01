@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -114,6 +115,6 @@ class ClusterServiceHelperTest extends ServiceHelperTest {
 
     assertThat(
         model.getSpec().getSessionAffinity(),
-        is("ClientIP"));
+        is(V1ServiceSpec.SessionAffinityEnum.CLIENTIP));
   }
 }

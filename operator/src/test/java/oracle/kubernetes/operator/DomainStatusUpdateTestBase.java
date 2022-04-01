@@ -41,7 +41,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -175,7 +174,7 @@ abstract class DomainStatusUpdateTestBase {
                 .withDesiredState(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
-                .withPodPhase("Running")
+                .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
                 .withPodReady("True")
                 .withHealth(overallHealth("health1"))));
     assertThat(
@@ -187,7 +186,7 @@ abstract class DomainStatusUpdateTestBase {
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
-                .withPodPhase("Running")
+                .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
                 .withPodReady("True")
                 .withHealth(overallHealth("health2"))));
   }
@@ -532,7 +531,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private boolean isReadyTrue(V1PodCondition condition) {
-    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private void setNotReady(V1PodCondition condition) {
@@ -787,19 +786,20 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void failPod(String serverName) {
-    getPod(serverName).setStatus(new V1PodStatus().phase("Failed"));
+    getPod(serverName).setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.FAILED));
     getServerStateMap().put(serverName, UNKNOWN_STATE);
   }
 
   @SuppressWarnings("SameParameterValue")
   private void unreadyPod(String serverName) {
     getPod(serverName).setStatus(
-        new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().type("Ready").status("False")));
+        new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).addConditionsItem(
+            new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False")));
   }
 
   @SuppressWarnings("SameParameterValue")
   private void markPodRunningPhaseFalse(String serverName) {
-    getPod(serverName).setStatus(new V1PodStatus().phase("Pending"));
+    getPod(serverName).setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
   }
 
   @Nonnull
@@ -909,7 +909,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
   }
 
   @Test
@@ -922,7 +922,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
   }
 
   @Test
@@ -932,9 +932,9 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server1").withPodReady("True").withPodPhase("Running"));
+        hasStatusForServer("server1").withPodReady("True").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("True").withPodPhase("Running"));
+        hasStatusForServer("server2").withPodReady("True").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
   }
 
   @Test
@@ -945,7 +945,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
   }
 
   @Test
@@ -1417,7 +1417,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnly_availableIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     updateDomainStatus();
@@ -1427,7 +1427,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnly_completedIsTrue() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     updateDomainStatus();
@@ -1437,7 +1437,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnlyAndAdminIsNotYetRunning_completedIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
     deactivateServer(ADMIN);
@@ -1448,7 +1448,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAdminOnlyAndAManagedServersShuttingDown_completedIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario()
           .withServers("server1", "server2")
           .withServersReachingState(SHUTTING_DOWN_STATE, "server1", "server2")
@@ -1602,8 +1602,8 @@ abstract class DomainStatusUpdateTestBase {
 
       Objects.requireNonNull(pod.getSpec()).setNodeName(toNodeName(serverName));
       pod.setStatus(new V1PodStatus()
-            .phase("Running")
-            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+            .phase(V1PodStatus.PhaseEnum.RUNNING)
+            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
     }
 
     private void markServerTerminating(String serverName) {
@@ -1645,7 +1645,7 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @SuppressWarnings("SameParameterValue")
-    ServerStatusMatcher withPodPhase(String expectedValue) {
+    ServerStatusMatcher withPodPhase(V1PodStatus.PhaseEnum expectedValue) {
       matcher.addField("pod phase", ServerStatus::getPodPhase, expectedValue);
       return this;
     }

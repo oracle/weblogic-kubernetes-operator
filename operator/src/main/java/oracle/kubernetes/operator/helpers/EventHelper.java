@@ -11,7 +11,6 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainNamespaces;
@@ -314,7 +313,7 @@ public class EventHelper {
     return (long) (Math.random() * Long.MAX_VALUE);
   }
 
-  public enum EventItem implements Labeled {
+  public enum EventItem {
     DOMAIN_AVAILABLE {
       @Override
       public String getReason() {
@@ -726,16 +725,6 @@ public class EventHelper {
     public abstract String getPattern();
 
     public abstract String getReason();
-
-    @Override
-    public String label() {
-      return name();
-    }
-
-    @Override
-    public String toString() {
-      return label();
-    }
   }
 
   public static class EventData {

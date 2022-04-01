@@ -227,7 +227,7 @@ class ItOperatorWlsUpgrade {
     // Generate a v8 version of domain.yaml file from a template file 
     // by replacing domain namespace, domain uid, base image and aux image
     String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("AUX_IMAGE", auxImage);
@@ -280,7 +280,7 @@ class ItOperatorWlsUpgrade {
   public void tearDown() {
     if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
           .execute();
@@ -305,7 +305,7 @@ class ItOperatorWlsUpgrade {
     String opServiceAccount = opNamespace + "-sa";
     int externalRestHttpsPort = getServiceNodePort(
         opNamespace, "external-weblogic-operator-svc");
-    assertTrue(externalRestHttpsPort != -1,
+    assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
@@ -520,7 +520,7 @@ class ItOperatorWlsUpgrade {
   private HelmParams installOperator(String operatorVersion, 
       String opNamespace, String domainNamespace) {
     // delete existing CRD if any
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
@@ -543,13 +543,11 @@ class ItOperatorWlsUpgrade {
   }
 
   private Callable<Boolean> checkCrdVersion() {
-    return () -> {
-      return new Command()
-          .withParams(new CommandParams()
-              .command("kubectl get crd domains.weblogic.oracle -o "
-                  + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
-          .executeAndVerify(TestConstants.DOMAIN_VERSION);
-    };
+    return () -> Command
+        .withParams(new CommandParams()
+            .command("kubectl get crd domains.weblogic.oracle -o "
+                + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
+        .executeAndVerify(TestConstants.DOMAIN_VERSION);
   }
 
   private void checkDomainStarted(String domainUid, String domainNamespace) {

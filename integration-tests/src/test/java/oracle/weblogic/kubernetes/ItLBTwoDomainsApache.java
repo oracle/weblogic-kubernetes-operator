@@ -244,7 +244,7 @@ class ItLBTwoDomainsApache {
             .storageClassName("apache-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("1Gi"))
-            .persistentVolumeReclaimPolicy("Retain"))
+            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
         .metadata(new V1ObjectMetaBuilder()
             .withName(apachePvName)
             .build()
