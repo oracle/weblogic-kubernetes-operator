@@ -37,6 +37,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -375,7 +377,7 @@ public class LoggingExporter {
                 .spec(new V1PodSpec()
                     .initContainers(List.of(new V1Container()
                         .name("set-vm-max-map-count")
-                        .image("busybox")
+                        .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
                         .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
                         .securityContext(new V1SecurityContext().privileged(true))))
@@ -468,7 +470,7 @@ public class LoggingExporter {
 
     String kibanaName = params.getKibanaName();
     String namespace = params.getLoggingExporterNamespace();
-    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.valueOf(params.getKibanaType());
+    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.fromValue(params.getKibanaType());
     int kibanaContainerPort = params.getKibanaContainerPort();
     Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
