@@ -79,6 +79,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -289,6 +290,14 @@ class ItElasticLoggingFluentd {
   @Test
   @DisplayName("Use Fluentd to send log information to Elasticsearch and verify")
   void testFluentdQuery() {
+    // verify Fluentd query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(queryAndVerify(),
+            String.format("Query logs of serverName=%s failed", adminServerPodName)));
+
+    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
+
+    /*
     //debug
     String queryCriteria0 = "/_search?q=serverName:" + adminServerPodName;
     String results0 = execSearchQuery(queryCriteria0, FLUENTD_INDEX_KEY);
@@ -312,7 +321,36 @@ class ItElasticLoggingFluentd {
     assertTrue(failedCount == 0, "Total failed count should be 0!");
     logger.info("Total failed count: " + failedCount);
 
-    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
+    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);*/
+  }
+
+  private boolean queryAndVerify() {
+    //debug
+    String queryCriteria0 = "/_search?q=serverName:" + adminServerPodName;
+    String results0 = execSearchQuery(queryCriteria0, FLUENTD_INDEX_KEY);
+    logger.info("_search?q=serverName:{0} result ===> {1}", adminServerPodName, results0);
+
+    // Verify that number of logs is not zero and failed if count is zero
+    String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
+    String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
+    int count = -1;
+    int failedCount = -1;
+    String results = execSearchQuery(queryCriteria, FLUENTD_INDEX_KEY);
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(results);
+    if (matcher.find()) {
+      count = Integer.parseInt(matcher.group(1));
+      failedCount = Integer.parseInt(matcher.group(2));
+    }
+
+    logger.info("Total count of logs: " + count);
+    logger.info("Total failed count: " + failedCount);
+
+    if (count > 0 && failedCount == 0) {
+      return true;
+    }
+
+    return false;
   }
 
   private static void configFluentd() {

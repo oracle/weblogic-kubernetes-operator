@@ -286,16 +286,16 @@ class ItElasticLogging {
   @Test
   @DisplayName("Use Elasticsearch Count API to query logs of level=INFO and verify")
   void testLogLevelSearch() {
-    // debug
-    String queryCriteria0 = "/_search?q=level:INFO";
-    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
-    logger.info("_search?q=level:INFO resultin testLogLevelSearch ===> " + results0);
-
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    //verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+
+    // verify log level query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(verifyCountsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY),
+            String.format("Query logs of level=INFO failed")));
 
     logger.info("Query logs of level=INFO succeeded");
   }
@@ -515,6 +515,32 @@ class ItElasticLogging {
 
     String queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
     logger.info("query result is {0}", queryResult);
+  }
+
+  private boolean verifyCountsInSearchResults(String queryCriteria, String regex, String index) {
+    // debug
+    String queryCriteria0 = "/_search?q=level:INFO";
+    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
+    logger.info("_search?q=level:INFO resultin testLogLevelSearch ===> " + results0);
+
+    int count = -1;
+    int failedCount = -1;
+    String results = execSearchQuery(queryCriteria, index);
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(results);
+    if (matcher.find()) {
+      count = Integer.parseInt(matcher.group(1));
+      failedCount = Integer.parseInt(matcher.group(2));
+    }
+
+    logger.info("Total count of logs: " + count);
+    logger.info("Total failed count: " + failedCount);
+
+    if (count > 0 && failedCount == 0) {
+      return true;
+    }
+
+    return false;
   }
 
   private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
