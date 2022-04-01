@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -22,14 +22,16 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -108,25 +110,43 @@ public class PodUtils {
   }
 
   /**
-   * Checks that pod is initializing.
+   * Check pod is ready.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodReady(ConditionFactory conditionFactory, String podName,
+                                   String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+            assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+                    String.format("podReady failed with ApiException for pod %s in namespace %s",
+                            podName, domainNamespace)),
+            logger,
+            "pod {0} to be ready in namespace {1}",
+            podName,
+            domainNamespace);
+  }
+
+  /**
+   * Checks that pod is initialized.
    *
    * @param podName pod name to check
    * @param domainUid the label the pod is decorated with
    * @param domainNamespace the domain namespace in which the domain exists
    */
-  public static void checkPodInitializing(String podName, String domainUid, String domainNamespace) {
+  public static void checkPodInitialized(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be initializing in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
-            String.format("podReady failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+    testUntil(
+            assertDoesNotThrow(() -> podInitialized(podName, domainUid, domainNamespace),
+                    String.format("podInitialized failed with ApiException for pod %s in namespace %s",
+                            podName, domainNamespace)),
+            logger,
+            "pod {0} to be initialized in namespace {1}",
+            podName,
+            domainNamespace);
   }
 
   /**

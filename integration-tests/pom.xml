@@ -297,6 +297,8 @@
                 <includes-failsafe>
                   **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
+                  **/ItServerStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
                   **/ItFmwDomainInPV,
