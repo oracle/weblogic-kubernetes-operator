@@ -63,7 +63,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
@@ -637,16 +636,6 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getEvents(), empty());
-  }
-
-  @Test
-  void withValidReplicas_noValidationWarnings() {
-    setCluster1Replicas(2);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(), emptyOrNullString());
   }
 
   @Test

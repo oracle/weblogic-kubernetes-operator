@@ -537,7 +537,7 @@ class EventHelperTest {
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
+    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN).withParams(NAMESPACE_WATCHING_STOPPED_EVENT, NS));
   }
 
   @Test
@@ -565,7 +565,7 @@ class EventHelperTest {
 
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
-    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
+    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN).withParams(NAMESPACE_WATCHING_STOPPED_EVENT, NS));
   }
 
   @Test

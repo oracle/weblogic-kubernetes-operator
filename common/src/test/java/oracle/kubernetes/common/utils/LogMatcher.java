@@ -41,12 +41,8 @@ public class LogMatcher extends TypeSafeDiagnosingMatcher<Collection<LogRecord>>
     return new LogMatcher(Level.INFO, expectedMessage);
   }
 
-  public static LogMatcher containsInfo(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.INFO, expectedMessage, expectedParameters);
-  }
-
-  public static LogMatcher containsWarning(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.WARNING, expectedMessage, expectedParameters);
+  public static LogMatcher containsWarning(String expectedMessage) {
+    return new LogMatcher(Level.WARNING, expectedMessage);
   }
 
   public static LogMatcher containsSevere(String expectedMessage) {
@@ -59,6 +55,11 @@ public class LogMatcher extends TypeSafeDiagnosingMatcher<Collection<LogRecord>>
 
   public static LogMatcher containsFine(String expectedMessage) {
     return new LogMatcher(Level.FINE, expectedMessage);
+  }
+
+  public LogMatcher withParams(Object... expectedParameters) {
+    this.expectedParameters = expectedParameters;
+    return this;
   }
 
   public static LogMatcher containsInOrder(LogMatcher... logMatchers) {

@@ -116,7 +116,7 @@ class StuckPodTest {
 
     processing.checkStuckPods(NS);
 
-    assertThat(logMessages, containsInfo(POD_FORCE_DELETED, SERVER_POD_1, NS));
+    assertThat(logMessages, containsInfo(POD_FORCE_DELETED).withParams(SERVER_POD_1, NS));
   }
 
   @Test
