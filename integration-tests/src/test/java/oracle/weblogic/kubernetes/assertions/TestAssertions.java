@@ -286,15 +286,15 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a Kubernetes pod is in initializing state.
+   * Check if a Kubernetes pod is in initialized state.
    *
    * @param podName   name of the pod to check for
    * @param domainUid WebLogic domain uid in which the pod belongs
-   * @param namespace in which the pod is initializing
-   * @return true if the pod is initializing otherwise false
+   * @param namespace in which the pod is initialized
+   * @return true if the pod is initialized otherwise false
    */
-  public static Callable<Boolean> podInitializing(String podName, String domainUid, String namespace) {
-    return Pod.podInitializing(namespace, domainUid, podName);
+  public static Callable<Boolean> podInitialized(String podName, String domainUid, String namespace) {
+    return Pod.podInitialized(namespace, domainUid, podName);
   }
 
   /**
