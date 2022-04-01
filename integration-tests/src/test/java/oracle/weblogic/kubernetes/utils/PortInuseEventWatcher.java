@@ -63,7 +63,6 @@ public class PortInuseEventWatcher extends Thread {
                     + "collecting services objects across all namespaces....", n);
                 logger.info(Yaml.dump(event));
                 collectLogs(ns);
-                //grab all processes using lsof netstat
               }
             }
           }
@@ -84,6 +83,7 @@ public class PortInuseEventWatcher extends Thread {
   private void collectLogs(List<String> namespaces) {
     try {
       Path dest = Files.createDirectories(Paths.get(TestConstants.LOGS_DIR, "portinuselogs", now().toString()));
+      //grab all processes using lsof
       ExecResult exec = ExecCommand.exec("sudo lsof -i");
       if (exec.exitValue() == 0 && exec.stdout() != null) {
         writeToFile(exec.stderr(), dest.toString(), "lsof", false);
