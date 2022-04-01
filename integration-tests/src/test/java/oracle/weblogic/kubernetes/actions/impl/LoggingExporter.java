@@ -470,7 +470,7 @@ public class LoggingExporter {
 
     String kibanaName = params.getKibanaName();
     String namespace = params.getLoggingExporterNamespace();
-    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.valueOf(params.getKibanaType());
+    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.fromValue(params.getKibanaType());
     int kibanaContainerPort = params.getKibanaContainerPort();
     Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
