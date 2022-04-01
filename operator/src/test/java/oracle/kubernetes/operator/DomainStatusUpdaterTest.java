@@ -201,7 +201,7 @@ class DomainStatusUpdaterTest {
   void whenDomainStatusIsNull_removeFailuresStepDoesNothing() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
+    testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep(null));
 
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }
@@ -210,7 +210,7 @@ class DomainStatusUpdaterTest {
   void whenDomainHasFailedCondition_removeFailureStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES));
 
-    testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
+    testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep(null));
 
     assertThat(getRecordedDomain(), not(hasCondition(FAILED)));
   }

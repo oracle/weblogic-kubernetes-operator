@@ -14,7 +14,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -31,7 +30,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-
 public class AuxiliaryImageUtils {
 
   /**
@@ -47,51 +45,6 @@ public class AuxiliaryImageUtils {
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using imagetool.sh", witParams.modelImageName(), witParams.modelImageTag());
     return createAuxImage(newWitParams);
-  }
-
-  /**
-   * Create a AuxImage and push it to repository.
-   *
-   * @param imageName image name
-   * @param archiveList app archive
-   * @param modelList model list
-   * @param modelOnly true or false for model only
-   * @param wdtHome directory for wdtHome
-   * @param wdtModelHome directory for wdtModelHome
-   * @param wdtVersion wdt version
-   */
-  public static void createPushAuxiliaryImage(String imageName, List<String> archiveList,
-                                           List<String> modelList,
-                                           String wdtVersion, boolean modelOnly, String wdtHome,
-                                           String wdtModelHome) {
-    LoggingFacade logger = getLogger();
-    WitParams witParams =
-        new WitParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .wdtModelOnly(modelOnly)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtHome(wdtHome)
-            .wdtModelHome(wdtModelHome)
-            .wdtVersion(wdtVersion);
-    // create auxiliary image using imagetool command if does not exists
-    if (! dockerImageExists(imageName, MII_BASIC_IMAGE_TAG)) {
-      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, MII_BASIC_IMAGE_TAG);
-      testUntil(
-          withStandardRetryPolicy,
-          createAuxiliaryImage(witParams),
-          logger,
-          "createAuxImage to be successful");
-    } else {
-      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", imageName, MII_BASIC_IMAGE_TAG);
-    }
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + MII_BASIC_IMAGE_TAG);
-    }
   }
 
   /**
@@ -162,7 +115,7 @@ public class AuxiliaryImageUtils {
    * @param witParams wit params
    *
    */
-  public static void createAndPushAuxiliaryImage(String imageName,String imageTag, WitParams witParams) {
+  public static void createAndPushAuxiliaryImage(String imageName, String imageTag, WitParams witParams) {
     // create auxiliary image using imagetool command if does not exists
     LoggingFacade logger = getLogger();
     if (! dockerImageExists(imageName, imageTag)) {

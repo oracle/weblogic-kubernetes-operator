@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -36,6 +35,9 @@ import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 
 public class DomainValidationSteps {
 
@@ -118,12 +120,13 @@ public class DomainValidationSteps {
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
-        return doNext(packet).withDebugComment(packet, this::domainValidated);
+        return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet)
+              .withDebugComment(packet, this::domainValidated);
+      } else {
+        LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+        return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures)), packet);
       }
 
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
-      return doNext(step, packet);
     }
 
     private String perLine(List<String> validationFailures) {
@@ -169,7 +172,6 @@ public class DomainValidationSteps {
     ValidateDomainTopologyStep(Step next) {
       super(next);
     }
-
 
     private void logAndAddValidationWarning(DomainPresenceInfo info, String msgId, Object... messageParams) {
       LOGGER.warning(msgId, messageParams);
@@ -267,8 +269,7 @@ public class DomainValidationSteps {
           ? next
           : Optional.ofNullable((message))
               .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureSteps(m), next))
-              .orElse(Step.chain(
-                    DomainStatusUpdater.createRemoveSelectedFailuresStep(DomainFailureReason.TOPOLOGY_MISMATCH), next));
+              .orElse(createRemoveSelectedFailuresStep(next, TOPOLOGY_MISMATCH));
     }
   }
 
@@ -320,14 +321,13 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
-      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(packet);
+      List<String> validationFailures = new WlsConfigValidator(packet).getFailures();
 
       if (validationFailures.isEmpty()) {
         return doNext(packet);
       }
 
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, info.getDomainUid(), perLine(validationFailures));
       Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
       return doNext(step, packet);
     }

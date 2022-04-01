@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
@@ -206,7 +208,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
 
-    // create a new auxiliary image with Alpine base image instead of busybox
+    // create a new auxiliary image with oraclelinux base image
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -217,7 +219,7 @@ class ItMiiCreateAuxImageWithImageTool {
         new WitParams()
         .modelImageName(MII_AUXILIARY_IMAGE_NAME)
         .modelImageTag(miiAuxiliaryImageTag)
-        .baseImageName("oraclelinux")
+        .baseImageName("ghcr.io/oracle/oraclelinux")
         .baseImageTag(ORACLELINUX_TEST_VERSION)
         .wdtHome(auxiliaryImagePath2)
         .modelArchiveFiles(archiveList)
@@ -280,7 +282,6 @@ class ItMiiCreateAuxImageWithImageTool {
   void testCreateDomainUsingAuxImageCustomizedWdtmodelhome() {
     // admin/managed server name here should match with model yaml
 
-    // create a new auxiliary image with Alpine base image instead of busybox
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -396,14 +397,15 @@ class ItMiiCreateAuxImageWithImageTool {
   @Test
   @DisplayName("Test createAuxImage with --pull option")
   void testCreateAuxImagePullOption() {
-    // docker pull busybox:latest first
+    // docker pull base image first
+    String imageAndTag = BUSYBOX_IMAGE + ":" + BUSYBOX_TAG;
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker pull busybox:latest")
+        .command("docker pull " + imageAndTag)
         .saveResults(true)
         .redirect(true);
 
-    assertTrue(Command.withParams(params).execute(), "failed to pull busybox:latest");
+    assertTrue(Command.withParams(params).execute(), "failed to pull " + imageAndTag);
 
     String auxImageName = "auximagewithpulloption";
     WitParams witParams = new WitParams()
@@ -416,14 +418,14 @@ class ItMiiCreateAuxImageWithImageTool {
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
     assertEquals(0, result.exitValue());
 
-    // verify that busybox and aux image have the same RootFS
+    // verify that base and aux image have the same RootFS
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' busybox:latest")
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
             .saveResults(true)
             .redirect(true);
 
-    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of busybox:latest");
+    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of " + imageAndTag);
     String rootFS = params.stdout();
 
     params = Command

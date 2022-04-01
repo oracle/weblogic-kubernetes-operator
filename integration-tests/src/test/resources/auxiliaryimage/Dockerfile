@@ -16,7 +16,7 @@
 #   Default '/auxiliary'.
 #
 
-FROM busybox
+FROM phx.ocir.io/weblogick8s/test-images/docker/busybox:1.34.1
 ARG AUXILIARY_IMAGE_PATH=/auxiliary
 ARG USER=oracle
 ARG USERID=1000
