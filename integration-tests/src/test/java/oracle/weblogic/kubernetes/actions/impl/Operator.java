@@ -16,6 +16,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BRANCH_NAME_FROM_JENKINS;
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
@@ -64,8 +65,7 @@ public class Operator {
    */
   public static String getImageName() {
     String image = "";
-    String imageName = Optional.ofNullable(System.getenv("IMAGE_NAME_OPERATOR"))
-        .orElse(IMAGE_NAME_OPERATOR);
+    String imageName = IMAGE_NAME_OPERATOR;
     // use branch name and build id for Jenkins runs in image tag
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       imageName = DOMAIN_IMAGES_REPO + imageName;
@@ -91,8 +91,7 @@ public class Operator {
         branchName = params.stdout();
       }
     }
-    String imageTag = Optional.ofNullable(System.getenv("IMAGE_TAG_OPERATOR"))
-        .orElse(branchName + BUILD_ID);
+    String imageTag = IMAGE_TAG_OPERATOR != null ? IMAGE_TAG_OPERATOR : branchName + BUILD_ID;
     image = imageName + ":" + imageTag;
     return image;
   }
