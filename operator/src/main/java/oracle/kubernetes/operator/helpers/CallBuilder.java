@@ -443,6 +443,12 @@ public class CallBuilder {
           new AuthenticationV1Api(client)
               .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
 
+  private final SynchronousCallFactory<CoreV1Event> createEventCall =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .createNamespacedEvent(requestParams.namespace, (CoreV1Event) requestParams.body, pretty, dryRun, null);
+
+
   public CallBuilder() {
     this(getCallBuilderTuning(), ClientPool.getInstance());
   }
@@ -1053,7 +1059,7 @@ public class CallBuilder {
           String name, String namespace, V1Secret body, ResponseStep<V1Secret> responseStep) {
     return createRequestAsync(
             responseStep,
-            new RequestParams("replaceSecretAsync", namespace, name, body, ""),
+            new RequestParams("replaceSecret", namespace, name, body, ""),
             replaceSecret);
   }
 
@@ -1778,6 +1784,19 @@ public class CallBuilder {
     return createRequestAsync(
         responseStep, new RequestParams("readEvent", namespace, name, null, callParams),
         readEvent);
+  }
+
+  /**
+   * Create Event.
+   *
+   * @param namespace Namespace
+   * @param body Request body
+   * @return Created event
+   * @throws ApiException API exception
+   */
+  public CoreV1Event createEvent(String namespace, CoreV1Event body) throws ApiException {
+    RequestParams requestParams = new RequestParams("createEvent", namespace, null, body, callParams);
+    return executeSynchronousCall(requestParams, createEventCall);
   }
 
   /**

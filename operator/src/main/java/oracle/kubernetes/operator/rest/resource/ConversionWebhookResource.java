@@ -16,6 +16,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -23,6 +24,11 @@ import oracle.kubernetes.operator.rest.model.ConversionRequest;
 import oracle.kubernetes.operator.rest.model.ConversionResponse;
 import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
 import oracle.kubernetes.operator.rest.model.Result;
+
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -59,16 +65,28 @@ public class ConversionWebhookResource extends BaseResource {
       conversionReview = readConversionReview(body);
       conversionResponse = createConversionResponse(conversionReview.getRequest());
     } catch (Exception e) {
+      LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage());
       conversionResponse = new ConversionResponse()
-              .uid(getUid(conversionReview))
-              .result(new Result().status(FAILED_STATUS)
-                      .message("Exception: " + e.getMessage()));
+          .uid(getUid(conversionReview))
+          .result(new Result().status(FAILED_STATUS)
+              .message("Exception: " + e.getMessage()));
+      generateFailedEvent(e);
     }
     LOGGER.exiting(conversionResponse);
     return writeConversionReview(new ConversionReviewModel()
-            .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
-            .kind(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getKind).orElse(null))
-            .response(conversionResponse));
+        .apiVersion(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getApiVersion).orElse(null))
+        .kind(Optional.ofNullable(conversionReview).map(ConversionReviewModel::getKind).orElse(null))
+        .response(conversionResponse));
+  }
+
+  private void generateFailedEvent(Exception exception) {
+    EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_FAILED, exception.getMessage())
+        .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(getAdditionalMessage(exception));
+    createConversionWebhookEvent(eventData);
+  }
+
+  private String getAdditionalMessage(Exception e) {
+    return Optional.ofNullable(e.getCause()).map(Throwable::getMessage).orElse("");
   }
 
   private String getUid(ConversionReviewModel conversionReview) {
