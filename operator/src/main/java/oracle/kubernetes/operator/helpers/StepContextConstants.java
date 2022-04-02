@@ -13,6 +13,7 @@ public interface StepContextConstants {
   String RUNTIME_ENCRYPTION_SECRET_VOLUME = "weblogic-domain-runtime-encryption-volume";
   String FLUENTD_CONFIGMAP_VOLUME = "weblogic-fluentd-configmap-volume";
   String FLUENTD_CONFIGMAP_NAME = "weblogic-fluentd-configmap";
+  String FLUENTD_CONFIG_DATA_NAME = "fluentd.conf";
   String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   String OPSS_KEY_MOUNT_PATH = "/weblogic-operator/opss-walletkey-secret";
   String RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH = "/weblogic-operator/model-runtime-secret";

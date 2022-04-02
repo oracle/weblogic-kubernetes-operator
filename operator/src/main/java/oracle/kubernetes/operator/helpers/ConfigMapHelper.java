@@ -62,6 +62,8 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 
 public class ConfigMapHelper {
 
@@ -951,17 +953,17 @@ public class ConfigMapHelper {
     }
   }
 
-  //  private static Step replaceFluentdConfigMap(DomainPresenceInfo info) {
-  //    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-  //    if (fluentdSpecification != null) {
-  //      return new CallBuilder()
-  //              .replaceConfigMapAsync(fluentdSpecification.getConfigurationConfigMap(), info.getNamespace(),
-  //                      getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
-  //                      new FluentdConfigMapResponseStep());
-  //    } else {
-  //      return new EmptyStep();
-  //    }
-  //  }
+  private static Step replaceFluentdConfigMap(DomainPresenceInfo info) {
+    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+    if (fluentdSpecification != null) {
+      return new CallBuilder()
+              .replaceConfigMapAsync(fluentdSpecification.getConfigurationConfigMap(), info.getNamespace(),
+                      getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
+                      new FluentdConfigMapResponseStep());
+    } else {
+      return new EmptyStep();
+    }
+  }
 
   public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
     // TODO handle replace
@@ -970,7 +972,7 @@ public class ConfigMapHelper {
 
   protected static V1ConfigMap getFluentdConfigMap(FluentdSpecification fluentdSpecification, String domainUid,
                                             String namespace) {
-    String contents = "   <match fluent.**>\n"
+    String fluentdConfigXML = "   <match fluent.**>\n"
             + "      @type null\n"
             + "    </match>\n"
             + "    <source>\n"
@@ -1000,6 +1002,8 @@ public class ConfigMapHelper {
             + "        # instead of the time the message was actually read\n"
             + "        time_key timestamp\n"
             + "        keep_time_key true\n"
+            + "      </parse>\n"
+            + "    </source>\n"
             + "    </source>\n"
             + "    <match **>\n"
             + "      @type elasticsearch\n"
@@ -1010,20 +1014,23 @@ public class ConfigMapHelper {
             + "      index_name \"#{ENV['DOMAIN_UID']}\"\n"
             + "      scheme https\n"
             + "      ssl_version TLSv1_2\n"
+            + "      ssl_verify false\n"
             + "      key_name timestamp\n"
             + "      types timestamp:time\n"
             + "      # inject the @timestamp special field (as type time) into the record\n"
             + "      # so you will be able to do time based queries.\n"
             + "      # not to be confused with timestamp which is of type string!!!\n"
             + "      include_timestamp true\n"
-            + "    </match>";
-    HashMap<String, String> data = new HashMap<>();
-    data.put("fluentd-config", contents);
-    HashMap<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
+            + "    </match>\n";
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUID", domainUid);
+
+    Map<String, String> data = new HashMap<>();
+    data.put(FLUENTD_CONFIG_DATA_NAME, fluentdConfigXML);
 
     V1ObjectMeta meta = new V1ObjectMeta()
-            .name("fluentd-config")
+            .name(FLUENTD_CONFIGMAP_NAME)
             .labels(labels)
             .namespace(namespace);
 
@@ -1055,6 +1062,7 @@ public class ConfigMapHelper {
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
       return doNext(packet);
     }
+
   }
 
 }

@@ -555,6 +555,15 @@ public class JobStepContext extends BasePodStepContext {
     return new ArrayList<>();
   }
 
+  protected List<V1Volume> getFluentdVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(Domain::getFluentdSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+    return volumes;
+  }
+
   protected String getDomainHome() {
     return getDomain().getDomainHome();
   }

@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -31,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -740,6 +742,15 @@ public abstract class PodStepContext extends BasePodStepContext {
     return containers;
   }
 
+  protected List<V1Volume> getFluentdVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(Domain::getFluentdSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+    return volumes;
+  }
+
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
     if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
@@ -755,11 +766,11 @@ public abstract class PodStepContext extends BasePodStepContext {
       .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
   }
 
-  private V1VolumeMount createFluentdConfigmapVolume() {
+  private V1VolumeMount createFluentdConfigmapVolumeMount() {
     return new V1VolumeMount()
       .name(FLUENTD_CONFIGMAP_VOLUME)
       .mountPath("/fluentd/etc/fluentd.conf")
-      .subPath("fluentd.conf");
+      .subPath(FLUENTD_CONFIG_DATA_NAME);
   }
 
 
@@ -822,10 +833,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     addFluentdContainerEnvList(fluentdSpecification, fluentdContainer);
 
-    fluentdSpecification.getVolumeMounts().stream()
-      .map(c -> fluentdContainer.addVolumeMountsItem(c));
+    fluentdSpecification.getVolumeMounts()
+            .forEach(fluentdContainer::addVolumeMountsItem);
 
-    fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolume());
+    fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolumeMount());
     containers.add(fluentdContainer);
   }
 
@@ -840,13 +851,38 @@ public abstract class PodStepContext extends BasePodStepContext {
     addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer,
             "ELASTICSEARCH_PASSWORD", "elasticsearchpassword");
 
-    if (!hasFluentdContainerEnv(fluentdSpecification, "ELASTICSEARCH_SED_DISABLE")) {
-      V1EnvVar sedDisable = new V1EnvVar().name("ELASTICSEARCH_SED_DISABLE").value("true");
-      fluentdContainer.addEnvItem(sedDisable);
-    }
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "FLUENT_ELASTICSEARCH_SED_DISABLE",
+            "true",
+            false);
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "FLUENTD_CONF", FLUENTD_CONFIG_DATA_NAME,
+            false);
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "DOMAIN_UID",
+            "metadata.labels['weblogic.domainUID']",
+            false);
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "SERVER_NAME",
+            "metadata.labels['weblogic.serverName']",
+            false);
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
+            this.getDomain().getEffectiveLogHome() + "/$(SERVER_NAME).log",
+            false);
 
-    fluentdSpecification.getEnv().stream()
-            .map(c -> fluentdContainer.addEnvItem(c));
+    fluentdSpecification.getEnv()
+            .forEach(fluentdContainer::addEnvItem);
+
+  }
+
+  private void addFluentdContainerEnvItem(FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
+                                          String name, String value, boolean useValueFromFieldRef) {
+    if (!hasFluentdContainerEnv(fluentdSpecification, name)) {
+      V1EnvVar item;
+      if (!useValueFromFieldRef) {
+        item = new V1EnvVar().name(name).value(value);
+      } else {
+        item = new V1EnvVar().name(name)
+                .valueFrom(new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(value)));
+      }
+      fluentdContainer.addEnvItem(item);
+    }
 
   }
 

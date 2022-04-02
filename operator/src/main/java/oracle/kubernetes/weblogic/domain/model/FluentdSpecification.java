@@ -87,7 +87,7 @@ public class FluentdSpecification {
   }
 
   public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
-    this.volumeMounts = volumeMounts;
+    this.volumeMounts.addAll(volumeMounts);
   }
 
   public String getConfigurationConfigMap() {
