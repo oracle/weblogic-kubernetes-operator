@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.PortInuseEventWatcher;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -117,6 +118,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       .and().with().pollInterval(10, SECONDS)
       .atMost(30, MINUTES).await();
 
+  PortInuseEventWatcher portInuseEventWatcher;
+
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
@@ -130,6 +133,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
      */
     if (!started.getAndSet(true)) {
       try {
+        portInuseEventWatcher = new PortInuseEventWatcher();
+        portInuseEventWatcher.start();
         // clean up the download directory so that we always get the latest
         // versions of the WDT and WIT tools in every run of the test suite.
         try {
@@ -383,6 +388,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
     }
+    portInuseEventWatcher.interrupt();
   }
 
   private String getOcirToken() {
