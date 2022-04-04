@@ -31,7 +31,13 @@ spec:
         cpu: "250m"
         memory: "768Mi"
     auxiliaryImages:
-    - image: "AUX_IMAGE"
+    - image: "MODEL_ONLY_IMAGE"
+      imagePullPolicy: IfNotPresent
+      volume: auxiliaryImageVolume
+    - image: "WDT_ONLY_IMAGE"
+      imagePullPolicy: IfNotPresent
+      volume: auxiliaryImageVolume
+    - image: "CONFIG_ONLY_IMAGE"
       imagePullPolicy: IfNotPresent
       volume: auxiliaryImageVolume
   adminServer:
@@ -65,3 +71,4 @@ spec:
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
       runtimeEncryptionSecret: encryptionsecret
+
