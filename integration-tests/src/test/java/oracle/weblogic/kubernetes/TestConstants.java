@@ -218,6 +218,8 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
   public static final String SKIP_BUILD_IMAGES_IF_EXISTS =
       Optional.ofNullable(System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS")).orElse("false");
+  public static final String BUSYBOX_IMAGE = "phx.ocir.io/weblogick8s/test-images/docker/busybox";
+  public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
   public static final String MII_BASIC_IMAGE_TAG =
