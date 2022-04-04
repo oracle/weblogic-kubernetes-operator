@@ -272,31 +272,6 @@ class ItElasticLoggingFluentd {
             String.format("Query logs of serverName=%s failed", adminServerPodName)));
 
     logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
-    /*
-    //debug
-    String queryCriteria0 = "/_search?q=serverName:" + adminServerPodName;
-    String results0 = execSearchQuery(queryCriteria0, FLUENTD_INDEX_KEY);
-    logger.info("_search?q=serverName:{0} result ===> {1}", adminServerPodName, results0);
-
-    // Verify that number of logs is not zero and failed if count is zero
-    String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
-    String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
-    int count = -1;
-    int failedCount = -1;
-    String results = execSearchQuery(queryCriteria, FLUENTD_INDEX_KEY);
-    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
-    Matcher matcher = pattern.matcher(results);
-    if (matcher.find()) {
-      count = Integer.parseInt(matcher.group(1));
-      failedCount = Integer.parseInt(matcher.group(2));
-    }
-
-    logger.info("Total count of logs: " + count);
-    assertTrue(count > 0, "Total count of logs should be more than 0!");
-    assertEquals(0, failedCount, "Total failed count should be 0!");
-    logger.info("Total failed count: " + failedCount);
-
-    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);*/
   }
 
   private boolean queryAndVerify() {
