@@ -201,10 +201,19 @@ public class PersistentVolumeUtils {
               .server(NFS_SERVER)
               .readOnly(false));
     } else if (OKD) {
+      try {
+        pvHostPath = Files.createDirectories(pvHostPath);
+        getLogger().info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+      } catch (IOException ioex) {
+        getLogger().severe(ioex.getMessage());
+        fail("Create persistent volume host path failed");
+      }
       v1pv.getSpec()
           .storageClassName("okd-nfsmnt")
           .nfs(new V1NFSVolumeSource()
-              .path(PV_ROOT)
+              .path(pvHostPath.toString())
               .server(NFS_SERVER)
               .readOnly(false));
     } else {
