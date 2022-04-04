@@ -39,6 +39,8 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -388,7 +390,7 @@ public class LoggingExporter {
                 .spec(new V1PodSpec()
                     .initContainers(Arrays.asList(new V1Container()
                         .name("set-vm-max-map-count")
-                        .image("busybox")
+                        .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
                         .imagePullPolicy("IfNotPresent")
                         .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
                         .securityContext(new V1SecurityContext().privileged(true))))
