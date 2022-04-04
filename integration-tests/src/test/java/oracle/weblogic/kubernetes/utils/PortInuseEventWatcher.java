@@ -45,6 +45,7 @@ public class PortInuseEventWatcher extends Thread {
 
   @Override
   public void run() {
+    logger.info("Starting port in use debugger thread");
     timestamp = now();
     while (!this.isInterrupted()) {
       timestamp = now().minusSeconds(collectionDelay);
@@ -78,6 +79,7 @@ public class PortInuseEventWatcher extends Thread {
         logger.info("Thread interrupted");
       }
     }
+    logger.info("port in use debugger thread ended");
   }
 
   private void collectLogs(List<String> namespaces) {
