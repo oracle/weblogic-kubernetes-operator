@@ -41,7 +41,7 @@ validateKubectlAvailable() {
 usage() {
   echo usage: "${script}" -u username -p password [-d domainUID] [-n namespace] [-s secretName] [-h]
   echo "  -u username, must be specified."
-  echo "  -p password, must be provided using -p argument or user will be prompted to enter a value."
+  echo "  -p password, must be provided using the -p argument or user will be prompted to enter a value."
   echo "  -d domainUID, optional. The default value is domain1. If specified, the secret will be labeled with the domainUID unless the given value is an empty string."
   echo "  -n namespace, optional. Use the default namespace if not specified"
   echo "  -s secretName, optional. If not specified, the secret name will be determined based on the domainUID value"
