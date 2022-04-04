@@ -16,7 +16,7 @@ The parameters are as follows:
 
 ```  
   -u user name, must be specified.
-  -p password, must be specified.
+  -p password, must be provided using the -p argument or user will be prompted to enter a value.
   -d domainUID, optional. The default value is domain1. If specified, the secret will be labeled with the domainUID unless the given value is an empty string.
   -n namespace, optional. Use the default namespace if not specified.
   -s secretName, optional. If not specified, the secret name will be determined based on the domainUID value.
