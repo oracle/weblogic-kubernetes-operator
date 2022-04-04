@@ -167,8 +167,8 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction logNoRetry(CallResponse<T> callResponse) {
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
+    if (LOGGER.isWarningEnabled()) {
+      LOGGER.warning(MessageKeys.ASYNC_NO_RETRY,
             Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
             callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
     }
