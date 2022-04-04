@@ -698,7 +698,7 @@ class ItMiiAuxiliaryImage {
   void testCreateDomainWithConfigMapAndEmptryModelFileDir() {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
-    String domainUid = "domain8";
+    String domainUid = "testdomain8";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");

@@ -222,12 +222,15 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))) {
+        if (((domainUid != null && (event.getMetadata().getLabels() != null
+                && event.getMetadata().getLabels().containsValue(domainUid)))
+                || domainUid == null)
+                && (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event)))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
           logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
-              type, reason, domainUid, domainNamespace);
+                  type, reason, domainUid, domainNamespace);
           assertEquals(event.getType(), type);
           return true;
         }
@@ -286,7 +289,9 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          if (((domainUid != null && event.getMetadata().getLabels().containsValue(domainUid))
+                  || domainUid == null)
+                  && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
