@@ -321,14 +321,11 @@
                   **/ItCrossDomainTransaction,
                   **/ItKubernetesEvents,
                   **/ItMiiAuxiliaryImage,
-                  **/ItMiiCreateAuxImageWithImageTool,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
                   **/ItMiiMultiModel,
-                  **/ItMiiNewCreateAuxImage,
                   **/ItMiiUpdateDomainConfig,
-                  **/ItMiiNewCreateAuxImage,
                   **/ItMultiDomainModels,
                   **/ItPodsRestart
                 </includes-failsafe>
