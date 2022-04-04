@@ -665,7 +665,7 @@ public class CommonTestUtils {
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort, 
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort,
                                             String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
 
@@ -926,7 +926,7 @@ public class CommonTestUtils {
     return port;
   }
 
-  private static int port = 30000;
+  private static int port = 32000;
   private static final int END_PORT = 32767;
 
   /**
@@ -997,7 +997,7 @@ public class CommonTestUtils {
     return hostAndPort;
   }
 
-  /** 
+  /**
    * Verify the command result contains expected message.
    *
    * @param command the command to execute
@@ -1086,8 +1086,8 @@ public class CommonTestUtils {
                                        int port) {
     LoggingFacade logger = getLogger();
     // Create a unique stdout file for kubectl port-forward command
-    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace 
-                    + "-" + port + ".out"; 
+    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace
+                    + "-" + port + ".out";
 
     logger.info("Start port forward process");
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -1109,14 +1109,14 @@ public class CommonTestUtils {
         String.format("Failed to forward port by running command %s", cmd));
     assertEquals(0, result.exitValue(),
         String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
-    assertNotNull(getForwardedPort(pfFileName), 
+    assertNotNull(getForwardedPort(pfFileName),
           "port-forward command fails to assign a local port");
     return getForwardedPort(pfFileName);
   }
 
   /**
    * Stop port-forward process(es) started through startPortForwardProcess.
-   * @param domainNamespace namespace where port-forward procees were started 
+   * @param domainNamespace namespace where port-forward procees were started
    */
   public static void stopPortForwardProcess(String domainNamespace) {
     LoggingFacade logger = getLogger();
