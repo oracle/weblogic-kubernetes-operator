@@ -24,6 +24,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
@@ -52,12 +54,13 @@ public class ConversionWebhookMain extends BaseMain {
 
     @Override
     public String getWebhookCertUri() {
-      return "/secrets/webhookCert";
+      return SECRETS_WEBHOOK_CERT;
     }
 
     @Override
+
     public String getWebhookKeyUri() {
-      return "/secrets/webhookKey";
+      return SECRETS_WEBHOOK_KEY;
     }
   }
 

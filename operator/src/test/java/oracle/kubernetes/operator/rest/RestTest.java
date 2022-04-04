@@ -48,7 +48,7 @@ import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
@@ -341,7 +341,7 @@ class RestTest extends JerseyTest {
   }
 
   @Test
-  void whenConversionWebhookHasAnException_responseHasFailedStatus() {
+  void whenConversionWebhookHasAnException_responseHasFailedStatusAndFailedEventGenerated() {
 
     String conversionReview = "some_unexpected_string";
     Response response = sendConversionWebhookRequest(conversionReview);
@@ -351,7 +351,7 @@ class RestTest extends JerseyTest {
 
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_FAILED_EVENT, 1), is(true));
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   private void excludeRequestedByHeader() {

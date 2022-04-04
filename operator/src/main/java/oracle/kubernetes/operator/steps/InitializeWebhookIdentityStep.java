@@ -101,7 +101,6 @@ public class InitializeWebhookIdentityStep extends Step {
     // to the locations the webhook runtime expects
     FileUtils.copyFile(certFile, webhookCertFile);
     FileUtils.copyFile(keyFile, webhookKeyFile);
-
   }
 
   private NextAction createIdentity(Packet packet) throws IdentityInitializationException {
@@ -182,7 +181,7 @@ public class InitializeWebhookIdentityStep extends Step {
         try {
           reuseExistingIdentity(data);
         } catch (Exception e) {
-          LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
+          LOGGER.severe(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
           packet.getComponents().put(EXCEPTION, Component.createFor(Exception.class, e));
         }
         return doNext(getNext(), packet);

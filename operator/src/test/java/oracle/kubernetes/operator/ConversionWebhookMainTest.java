@@ -41,13 +41,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
@@ -153,7 +155,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenConversionWebhookCreated_restServerStarted() {
+  void whenConversionWebhookCompleteBeginFailsWithException_conversionWebhookFailedEventGenerated() {
     InMemoryCertificates.defineWebhookCertificateFile("asdf");
     inMemoryFileSystem.defineFile("/deployment/webhook-identity/webhookKey", "xyz");
     loggerControl.ignoringLoggedExceptions(RuntimeException.class, NoSuchFileException.class);
@@ -162,7 +164,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
 
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_FAILED_EVENT, 1), is(true));
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   private void simulateMissingCRD() {
@@ -240,12 +242,12 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
 
     @Override
     public String getWebhookCertUri() {
-      return "/secrets/webhookCert";
+      return SECRETS_WEBHOOK_CERT;
     }
 
     @Override
     public String getWebhookKeyUri() {
-      return "/secrets/webhookKey";
+      return SECRETS_WEBHOOK_KEY;
     }
   }
 

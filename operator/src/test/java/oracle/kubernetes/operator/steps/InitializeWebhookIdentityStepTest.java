@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.DEFAULT_NAMESPACE;
@@ -97,7 +97,7 @@ class InitializeWebhookIdentityStepTest {
     testSupport.runSteps(initializeWebhookIdentityStep);
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_FAILED_EVENT, 1), is(true));
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -113,7 +113,7 @@ class InitializeWebhookIdentityStepTest {
 
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_FAILED_EVENT, 1), is(true));
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   @Test
@@ -146,7 +146,7 @@ class InitializeWebhookIdentityStepTest {
     testSupport.runSteps(initializeWebhookIdentityStep);
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_FAILED_EVENT, 1), is(true));
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   @Test

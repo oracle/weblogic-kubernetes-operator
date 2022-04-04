@@ -12,8 +12,7 @@ public interface EventConstants {
   String DOMAIN_AVAILABLE_EVENT = "Available";
   String DOMAIN_COMPLETED_EVENT = "Completed";
   String DOMAIN_FAILED_EVENT = "Failed";
-  String CONVERSION_FAILED_EVENT = "ConversionFailed";
-  String DEPLOYMENT_FAILED_EVENT = "DeploymentFailed";
+  String CONVERSION_WEBHOOK_FAILED_EVENT = "ConversionWebhookFailed";
   String DOMAIN_ROLL_COMPLETED_EVENT = "RollCompleted";
   String DOMAIN_ROLL_STARTING_EVENT = "RollStarting";
   String POD_CYCLE_STARTING_EVENT = "PodCycleStarting";
@@ -82,5 +81,4 @@ public interface EventConstants {
   String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase the number "
       + "of WebLogic servers in the WebLogic domain configuration for the cluster.";
   String DOMAIN_CONVERSION_FAILED_PATTERN = "Domain conversion webhook failed due to '%s' %s";
-  String DEPLOYMENT_FAILED_PATTERN = "Deployment failed due to '%s' %s";
 }

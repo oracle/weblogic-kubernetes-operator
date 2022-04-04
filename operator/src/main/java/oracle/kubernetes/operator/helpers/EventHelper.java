@@ -33,8 +33,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -632,7 +632,7 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return CONVERSION_FAILED_EVENT;
+        return CONVERSION_WEBHOOK_FAILED_EVENT;
       }
 
       @Override
