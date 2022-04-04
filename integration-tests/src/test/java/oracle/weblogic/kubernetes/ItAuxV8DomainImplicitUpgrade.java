@@ -137,16 +137,16 @@ class ItAuxV8DomainImplicitUpgrade {
 
   /**
    * Create v8 domain resource with auxiliary image(s).
-   * The first image (model-only-image) only contains wls model file 
+   * The first image (model-only-image) only contains wls model file
    * The second image (wdt-only-image) only contains wdt installation
    * The third image (config-only-image) only contains JMS/JDBC configuration
    * Use an domain.yaml file with API Version expliciltly set to v8.
    * Use the v8 style auxililiary configuration supported in WKO v3.3.x
    * Start the Operator with latest version
-   * Here the webhook infra started in Operator namespace should implicitly 
-   *  upgrade the domain resource to native k8s format with initContainer 
-   *  configuration in ServerPod section and start the domain 
-   * Check the upgraded domain schema for a Compatiblity InitContainer in 
+   * Here the webhook infra started in Operator namespace should implicitly
+   *  upgrade the domain resource to native k8s format with initContainer
+   *  configuration in ServerPod section and start the domain
+   * Check the upgraded domain schema for a Compatiblity InitContainer in
    * Spec/ServerPod section of the domain resource
    */
   @Test
@@ -198,7 +198,7 @@ class ItAuxV8DomainImplicitUpgrade {
     logger.info("Creating auxiliary image {0} using imagetool.sh ", wdtOnlyImage);
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, wdtOnlyImageTag, witParams);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // replacing domain namespace, domain uid, base image and aux image
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -234,7 +234,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
-    
+
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -271,14 +271,14 @@ class ItAuxV8DomainImplicitUpgrade {
     List<V1Container> containerList = domain.getSpec().getServerPod().getInitContainers();
     assertNotNull(containerList, "/spec/serverPod/InitContainers is null");
     containerList.forEach(container -> {
-      logger.info("The Init Container name is: {0} ", container.getName());  
+      logger.info("The Init Container name is: {0} ", container.getName());
       if (container.getName().equalsIgnoreCase("compatibility-mode-operator-aux-container1")) {
-        logger.info("The Compatiblity Init Container found");  
+        logger.info("The Compatiblity Init Container found");
         foundCompatiblityContainer = true;
       }
     }
     );
-    assertTrue(foundCompatiblityContainer, "The Compatiblity Init Container NOT found");  
+    assertTrue(foundCompatiblityContainer, "The Compatiblity Init Container NOT found");
   }
 
   /**
@@ -310,7 +310,7 @@ class ItAuxV8DomainImplicitUpgrade {
             .wdtVersion("NONE");
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, missingWdtTag, witParams);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // replacing domain namespace, domain uid, base image and aux image
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -319,7 +319,7 @@ class ItAuxV8DomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.single.image.template.yaml");
+        "upgrade", "auxilary.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -376,7 +376,7 @@ class ItAuxV8DomainImplicitUpgrade {
             .wdtVersion("latest");
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, missingModelTag, witParams);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // replacing domain namespace, domain uid, base image and aux image
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -385,7 +385,7 @@ class ItAuxV8DomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.single.image.template.yaml");
+        "upgrade", "auxilary.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -429,7 +429,7 @@ class ItAuxV8DomainImplicitUpgrade {
     String permModelTag = "perm-model-image";
     String permModelImage = MII_AUXILIARY_IMAGE_NAME + ":" + permModelTag;
 
-    //In case the previous test failed, ensure the created domain in the 
+    //In case the previous test failed, ensure the created domain in the
     //same namespace is deleted.
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);
@@ -446,7 +446,7 @@ class ItAuxV8DomainImplicitUpgrade {
             .wdtVersion("latest");
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, permModelTag, witParams);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // replacing domain namespace, domain uid, base image and aux image
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -455,7 +455,7 @@ class ItAuxV8DomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.single.image.template.yaml");
+        "upgrade", "auxilary.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -500,7 +500,7 @@ class ItAuxV8DomainImplicitUpgrade {
     String patchBaseTag = "patch-base-image";
     String patchBaseImage = MII_AUXILIARY_IMAGE_NAME + ":" + patchBaseTag;
 
-    //In case the previous test failed, ensure the created domain in the 
+    //In case the previous test failed, ensure the created domain in the
     //same namespace is deleted.
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);
@@ -519,7 +519,7 @@ class ItAuxV8DomainImplicitUpgrade {
             .wdtVersion("latest");
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, patchBaseTag, witParams);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // replacing domain namespace, domain uid, base image and aux image
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
@@ -528,7 +528,7 @@ class ItAuxV8DomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.single.image.template.yaml");
+        "upgrade", "auxilary.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -560,7 +560,7 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
-      
+
     //print out the original image name
     String imageName = domain.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
