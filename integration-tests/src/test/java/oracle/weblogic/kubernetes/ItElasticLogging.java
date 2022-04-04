@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -88,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -290,11 +292,9 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    //verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
-
     // verify log level query results
     withStandardRetryPolicy.untilAsserted(
-        () -> assertTrue(verifyCountsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY),
+        () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
             String.format("Query logs of level=INFO failed")));
 
     logger.info("Query logs of level=INFO succeeded");
@@ -307,11 +307,6 @@ class ItElasticLogging {
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
   void testOperatorLogSearch() {
-    // debug    
-    String queryCriteria0 = "/_search?q=level:INFO";
-    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
-    logger.info("_search?q=level:INFO result in testOperatorLogSearch ===> " + results0);
-
     // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
@@ -517,38 +512,14 @@ class ItElasticLogging {
     logger.info("query result is {0}", queryResult);
   }
 
-  private boolean verifyCountsInSearchResults(String queryCriteria, String regex, String index) {
-    // debug
-    String queryCriteria0 = "/_search?q=level:INFO";
-    String results0 = execSearchQuery(queryCriteria0, LOGSTASH_INDEX_KEY);
-    logger.info("_search?q=level:INFO resultin testLogLevelSearch ===> " + results0);
-
-    int count = -1;
-    int failedCount = -1;
-    String results = execSearchQuery(queryCriteria, index);
-    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
-    Matcher matcher = pattern.matcher(results);
-    if (matcher.find()) {
-      count = Integer.parseInt(matcher.group(1));
-      failedCount = Integer.parseInt(matcher.group(2));
-    }
-
-    logger.info("Total count of logs: " + count);
-    logger.info("Total failed count: " + failedCount);
-
-    if (count > 0 && failedCount == 0) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
-                                   String index, boolean checkCount, String... args) {
+  private boolean verifyCountsHitsInSearchResults(String queryCriteria, String regex,
+                                                  String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
+    boolean testResult = false;
     int count = -1;
     int failedCount = -1;
     String hits = "";
+
     String results = execSearchQuery(queryCriteria, index);
     Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(results);
@@ -563,17 +534,21 @@ class ItElasticLogging {
 
     logger.info("Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
-      assertTrue(kibanaParams != null, "Failed to install Kibana");
+      assertNotNull(kibanaParams, "Failed to install Kibana");
       assertTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        assertTrue(failedCount == 0, "Total failed count should be 0!");
         logger.info("Total failed count: " + failedCount);
+        assertEquals(0, failedCount, "Total failed count should be 0!");
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
+      testResult = true;
     } else {
-      assertTrue(count == 0, "Total count of logs should be zero!");
+      assertEquals(0, count, "Total count of logs should be zero!");
+      testResult = true;
     }
+
+    return testResult;
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
