@@ -323,10 +323,9 @@ public abstract class BasePodStepContext extends StepContextBase {
     return name.startsWith(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX);
   }
 
-  protected Optional<V1Container> getAuxiliaryContainer(V1PodSpec v1PodSpec) {
+  protected Stream<V1Container> getAuxiliaryContainers(V1PodSpec v1PodSpec) {
     return Stream.ofNullable(v1PodSpec.getInitContainers())
         .flatMap(Collection::stream)
-        .filter(this::isAuxiliaryContainer)
-        .findFirst();
+        .filter(this::isAuxiliaryContainer);
   }
 }

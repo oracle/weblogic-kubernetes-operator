@@ -617,12 +617,28 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(createIntrospectorJob());
   }
 
-  private void defineIntrospectionWithAuxiliaryImage(String auxiliaryImage) {
+  private void defineIntrospectionWithAuxiliaryImage(String... auxiliaryImages) {
+    if (auxiliaryImages != null) {
+      V1Job job = createIntrospectorJob();
+      int index = 1;
+      for (String auxiliaryImage: auxiliaryImages) {
+        job.getSpec()
+            .getTemplate()
+            .getSpec()
+            .addInitContainersItem(
+                new V1Container().name("operator-aux-container" + index++).image(auxiliaryImage));
+      }
+      testSupport.defineResources(job);
+    }
+  }
+
+  private void defineIntrospectionWithInitContainer() {
     V1Job job = createIntrospectorJob();
     job.getSpec()
         .getTemplate()
         .getSpec()
-        .addInitContainersItem(new V1Container().name("operator-aux-container1").image(auxiliaryImage));
+        .addInitContainersItem(
+            new V1Container().name("some-init-container").image("i-am-not-an-auxiliary-image"));
     testSupport.defineResources(job);
   }
 
@@ -698,7 +714,24 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobInProgressAndAuxiliaryImageAdded_createNewJob() {
+  void whenJobInProgressAndOneOfTwoAuxiliaryImagesChanged_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator()
+        .withAuxiliaryImages(List.of(getAuxiliaryImage("wdt-image1:v1"), getAuxiliaryImage("wdt-image2:v2")));
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithAuxiliaryImage("wdt-image1:v1", "wdt-image2:v1");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndFirstAuxiliaryImageAdded_createNewJob() {
     ignoreIntrospectorFailureLogs();
     ignoreJobCreatedAndDeletedLogs();
 
@@ -707,6 +740,41 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
     defineIntrospection();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndAdditaionalAuxiliaryImageAdded_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator()
+        .withAuxiliaryImages(List.of(getAuxiliaryImage("wdt-image:v1"), getAuxiliaryImage("wdt-image2:v1")));
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithAuxiliaryImage("wdt-image:v1");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+
+  @Test
+  void whenJobInProgressAndAuxiliaryImageRemoved_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator()
+        .withAuxiliaryImages(List.of(getAuxiliaryImage("wdt-image:v1")));
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithAuxiliaryImage("wdt-image:v1", "wdt-image2:v1");
     testSupport.doOnCreate(JOB, this::recordJob);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
@@ -746,6 +814,52 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     assertThat(affectedJob, nullValue());
   }
+
+  @Test
+  void whenJobInProgressAndNoImageChanged_withoutAuxiliaryImage_doNotCreateNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospection();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndNoImageChanged_mulitipleAuxImages_doNotCreateNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator()
+        .withAuxiliaryImages(List.of(getAuxiliaryImage("wdt-image1:v1"), getAuxiliaryImage("wdt-image2:v1")));
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithAuxiliaryImage("wdt-image2:v1", "wdt-image1:v1");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressWithNonAuxImageInitContainer_doNotCreateNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithInitContainer();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, nullValue());
+  }
+
 
   private void replaceFailedJobPodWithSuccess() {
     testSupport.deleteResources(createIntrospectorJobPod());

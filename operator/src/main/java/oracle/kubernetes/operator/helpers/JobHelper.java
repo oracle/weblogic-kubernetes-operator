@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -258,15 +260,19 @@ public class JobHelper {
       }
 
       private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
-        return !Objects.equals(getAuxiliaryImageFromJob(job), getJobModelPodSpecAuxiliaryImage());
+        return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
       }
 
       String getImageFromJob(V1Job job) {
         return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
       }
 
-      String getAuxiliaryImageFromJob(V1Job job) {
-        return getPodSpecFromJob(job).map(this::getAuxiliaryImageFromPodSpec).orElse(null);
+      List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
+        return getAuxiliaryImagesFromJob(job).sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getAuxiliaryImagesFromPodSpec).orElse(Stream.empty());
       }
 
       Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
@@ -283,11 +289,9 @@ public class JobHelper {
             .orElse(null);
       }
 
-      @Nullable
-      String getAuxiliaryImageFromPodSpec(@Nonnull V1PodSpec pod) {
-        return getAuxiliaryContainer(pod)
-            .map(V1Container::getImage)
-            .orElse(null);
+      Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getAuxiliaryContainers(pod)
+            .map(V1Container::getImage);
       }
 
       @Nullable
@@ -295,9 +299,14 @@ public class JobHelper {
         return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
       }
 
-      @Nullable
-      String getJobModelPodSpecAuxiliaryImage() {
-        return Optional.ofNullable(getJobModelPodSpec()).map(this::getAuxiliaryImageFromPodSpec).orElse(null);
+      List<String> getSortedJobModelPodSpecAuxiliaryImages() {
+        return getJobModelPodSpecAuxiliaryImages().sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getJobModelPodSpecAuxiliaryImages() {
+        return Optional.ofNullable(getJobModelPodSpec())
+            .map(this::getAuxiliaryImagesFromPodSpec)
+            .orElse(Stream.empty());
       }
 
       private boolean isKnownFailedJob(V1Job job) {
