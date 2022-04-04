@@ -34,10 +34,14 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.doesPVExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.doesPVCExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -283,17 +287,50 @@ public class PersistentVolumeUtils {
     return container;
   }
 
+
+  /**
+   * Delete PV and PVC and verify that they are deleted.
+   * @param pvName pv name
+   * @param labelSelector label selector for PV
+   * @param pvcName pvc name
+   * @param domainNamespace domain namespace where the pvc exists
+   */
+  public static void deletePVPVCAndVerify(String pvName, String labelSelector, String pvcName, String domainNamespace) {
+    // delete pvc first if exists
+    if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvcNotExist(pvName, domainNamespace),
+            String.format("pvNotExists failed for pv %s", pvName)),
+        getLogger(), "pv {0} to be deleted", pvName);
+
+    // delete pv first if exists
+    if (assertDoesNotThrow(() -> doesPVExist(pvName, labelSelector))) {
+      deletePersistentVolume(pvName);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvNotExists(pvName, labelSelector),
+            String.format("pvNotExists failed for pv %s", pvName)),
+        getLogger(), "pv {0} to be deleted", pvName);
+  }
+
   /**
    * Get a unique name for pv or pvc with a supplied prefix.
    * @param prefix prefix for pv or pvc name
+   * @param suffix suffix for pv or pvc name
    * @return full pv or pvc name
    */
-  public static String getUniquePvOrPvcName(String prefix) {
+  public static String getUniquePvOrPvcName(String prefix, String... suffix) {
     char[] name = new char[6];
     for (int i = 0; i < name.length; i++) {
       name[i] = (char) (random.nextInt(25) + (int) 'a');
     }
     String pvOrPvcName = prefix + new String(name);
+    for (String s : suffix) {
+      pvOrPvcName += s;
+    }
+
     getLogger().info("Creating unique pv|pvc name {0}", pvOrPvcName);
     return pvOrPvcName;
   }

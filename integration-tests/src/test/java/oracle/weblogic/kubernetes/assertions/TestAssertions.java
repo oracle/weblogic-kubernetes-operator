@@ -701,6 +701,17 @@ public class TestAssertions {
   }
 
   /**
+   * Check whether persistent volume claims with pvcName does NOT exist in the specified namespace.
+   *
+   * @param pvcName persistent volume claim to check
+   * @param namespace the namespace in which the persistent volume claim to be checked
+   * @return true if the persistent volume claim exists in the namespace, false otherwise
+   */
+  public static Callable<Boolean> pvcNotExist(String pvcName, String namespace) {
+    return PersistentVolumeClaim.pvcNotExist(pvcName, namespace);
+  }
+
+  /**
    * Check whether the cluster role exists.
    *
    * @param clusterRoleName name of the cluster role
