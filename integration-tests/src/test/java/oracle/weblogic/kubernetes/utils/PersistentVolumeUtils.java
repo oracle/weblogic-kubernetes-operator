@@ -187,6 +187,7 @@ public class PersistentVolumeUtils {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     setVolumeSource(pvHostPath, v1pv);
+    setupOKDVolumeSource(Paths.get(PV_ROOT, className, pvName), v1pv);
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
@@ -200,28 +201,30 @@ public class PersistentVolumeUtils {
               .path(FSS_DIR)
               .server(NFS_SERVER)
               .readOnly(false));
-    } else if (OKD) {
-      try {
-        pvHostPath = Files.createDirectories(pvHostPath);
-        getLogger().info("Creating PV directory host path {0}", pvHostPath);
-        deleteDirectory(pvHostPath.toFile());
-        createDirectories(pvHostPath);
-      } catch (IOException ioex) {
-        getLogger().severe(ioex.getMessage());
-        fail("Create persistent volume host path failed");
-      }
-      v1pv.getSpec()
-          .storageClassName("okd-nfsmnt")
-          .nfs(new V1NFSVolumeSource()
-              .path(pvHostPath.toString())
-              .server(NFS_SERVER)
-              .readOnly(false));
     } else {
       v1pv.getSpec()
           .storageClassName("weblogic-domain-storage-class")
           .hostPath(new V1HostPathVolumeSource()
               .path(pvHostPath.toString()));
     }
+  }
+
+  private static void setupOKDVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
+    try {
+      pvHostPath = Files.createDirectories(pvHostPath);
+      getLogger().info("Creating PV directory host path {0}", pvHostPath);
+      deleteDirectory(pvHostPath.toFile());
+      createDirectories(pvHostPath);
+    } catch (IOException ioex) {
+      getLogger().severe(ioex.getMessage());
+      fail("Create persistent volume host path failed");
+    }
+    v1pv.getSpec()
+        .storageClassName("okd-nfsmnt")
+        .nfs(new V1NFSVolumeSource()
+            .path(pvHostPath.toString())
+            .server(NFS_SERVER)
+            .readOnly(false));
   }
 
   @NotNull
