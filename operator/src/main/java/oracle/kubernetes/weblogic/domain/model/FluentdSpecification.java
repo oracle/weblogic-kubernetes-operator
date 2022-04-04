@@ -25,10 +25,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_FLUENTD_IMA
 
 public class FluentdSpecification {
 
-  @Description("The configuration configmap name for the Fluentd. If WebLogic Server instances "
-      + "are already running and have the fluentd sidecar container, then changes to this field "
-      + "will be propagated to the exporter without requiring the restart of the WebLogic Server instances.")
-  private String configurationConfigMap;
+  @Description("The fluentd configuration text, specify your own custom fluentd configuration.")
+  private String fluentdConfiguration;
 
   /**
    * The Fluentd sidecar image.
@@ -90,12 +88,12 @@ public class FluentdSpecification {
     this.volumeMounts.addAll(volumeMounts);
   }
 
-  public String getConfigurationConfigMap() {
-    return configurationConfigMap;
+  public String getFluentdConfiguration() {
+    return fluentdConfiguration;
   }
 
-  void setConfigurationConfigMap(String configurationConfigMapMapName) {
-    this.configurationConfigMap = configurationConfigMapMapName;
+  void setFluentdConfiguration(String configurationConfigMapMapName) {
+    this.fluentdConfiguration = configurationConfigMapMapName;
   }
 
   public String getImage() {
@@ -141,7 +139,7 @@ public class FluentdSpecification {
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-          .append("configurationMap", configurationConfigMap)
+          .append("fluentdConfiguration", fluentdConfiguration)
           .append("image", image)
           .append("imagePullPolicy", imagePullPolicy)
           .append("env", env)
@@ -160,7 +158,7 @@ public class FluentdSpecification {
 
   private boolean equals(FluentdSpecification that) {
     return new EqualsBuilder()
-          .append(configurationConfigMap, that.configurationConfigMap)
+          .append(fluentdConfiguration, that.fluentdConfiguration)
           .append(image, that.image)
           .append(imagePullPolicy, that.imagePullPolicy)
           .append(env, that.env)
@@ -174,7 +172,7 @@ public class FluentdSpecification {
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-          .append(configurationConfigMap)
+          .append(fluentdConfiguration)
           .append(image)
           .append(imagePullPolicy)
           .append(env)

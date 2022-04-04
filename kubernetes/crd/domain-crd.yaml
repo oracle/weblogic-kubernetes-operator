@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1a93c4f149a7cbc10e9fb12249b06a5dc4a84c416c164b08eab428371b73904f
+    weblogic.sha256: c6d083d369f355f924c2a6e8e52f3eb806f92ec42b96db0901bcd46ea9d81186
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -369,15 +369,12 @@ spec:
                     - Never
                     - IfNotPresent
                     type: string
+                  fluentdConfiguration:
+                    description: The fluentd configuration text, specify your own
+                      custom fluentd configuration.
+                    type: string
                   elasticSearchCredentials:
                     description: Fluentd elastic search credentials
-                    type: string
-                  configurationConfigMap:
-                    description: The configuration configmap name for the Fluentd.
-                      If WebLogic Server instances are already running and have the
-                      fluentd sidecar container, then changes to this field will be
-                      propagated to the exporter without requiring the restart of
-                      the WebLogic Server instances.
                     type: string
                   resources:
                     description: Memory and CPU minimum requirements and limits for
