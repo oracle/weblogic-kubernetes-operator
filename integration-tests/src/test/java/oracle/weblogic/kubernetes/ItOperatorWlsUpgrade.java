@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Install a released version of Operator from GitHub chart repository.
  * Create a domain using Domain-In-Image or Model-In-Image model with a dynamic cluster.
- * Deploy an application to the cluster in domain and verify the application 
+ * Deploy an application to the cluster in domain and verify the application
  * can be accessed while the operator is upgraded and after the upgrade.
  * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
@@ -150,7 +150,7 @@ class ItOperatorWlsUpgrade {
     assertNotNull(namespaces.get(0), "Namespace[0] is null");
     assertNotNull(namespaces.get(1), "Namespace[1] is null");
   }
-  
+
   /**
    * Does some initialization of logger, conditionfactory, etc common
    * to all test methods.
@@ -214,7 +214,7 @@ class ItOperatorWlsUpgrade {
 
     installOldOperator("3.3.8");
     createSecrets();
-   
+
     // Creating an aux image domain with v8 version
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -224,7 +224,7 @@ class ItOperatorWlsUpgrade {
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage, MII_BASIC_IMAGE_TAG);
     createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
 
-    // Generate a v8 version of domain.yaml file from a template file 
+    // Generate a v8 version of domain.yaml file from a template file
     // by replacing domain namespace, domain uid, base image and aux image
     String auxImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
     Map<String, String> templateMap  = new HashMap<>();
@@ -234,7 +234,7 @@ class ItOperatorWlsUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.single.image.template.yaml");
+        "upgrade", "auxilary.single.image.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));
@@ -263,7 +263,7 @@ class ItOperatorWlsUpgrade {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
-    // verify there is no status condition type Completed 
+    // verify there is no status condition type Completed
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
@@ -295,8 +295,8 @@ class ItOperatorWlsUpgrade {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
-    // install operator with older release 
-    HelmParams opHelmParams = installOperator(operatorVersion, 
+    // install operator with older release
+    HelmParams opHelmParams = installOperator(operatorVersion,
                  opNamespace, domainNamespace);
   }
 
@@ -322,7 +322,7 @@ class ItOperatorWlsUpgrade {
 
   }
 
-  // upgrade to operator to current version 
+  // upgrade to operator to current version
   private void upgradeOperatorToCurrent() {
     latestOperatorImageName = getOperatorImageName();
     HelmParams upgradeHelmParams = new HelmParams()
@@ -362,20 +362,20 @@ class ItOperatorWlsUpgrade {
   }
 
   private void installDomainResource(
-      String domainType, 
-      String domainVersion, 
+      String domainType,
+      String domainVersion,
       String externalServiceNameSuffix) {
 
     // create WLS domain and verify
-    createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
+    createWlsDomainAndVerify(domainType, domainNamespace, domainVersion,
            externalServiceNameSuffix);
   }
 
-  // Since Operator version 3.1.0 the service pod prefix has been changed 
+  // Since Operator version 3.1.0 the service pod prefix has been changed
   // from -external to -ext e.g.
-  // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
-  private void installAndUpgradeOperator(String domainType, 
-      String operatorVersion, String domainVersion, 
+  // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP
+  private void installAndUpgradeOperator(String domainType,
+      String operatorVersion, String domainVersion,
       String externalServiceNameSuffix) {
 
     installOldOperator(operatorVersion);
@@ -384,7 +384,7 @@ class ItOperatorWlsUpgrade {
     installDomainResource(domainType, domainVersion, externalServiceNameSuffix);
 
     // upgrade to current operator
-    upgradeOperatorAndVerify(externalServiceNameSuffix, 
+    upgradeOperatorAndVerify(externalServiceNameSuffix,
           opNamespace, domainNamespace);
   }
 
@@ -393,7 +393,7 @@ class ItOperatorWlsUpgrade {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
-    // deploy application and access the application once 
+    // deploy application and access the application once
     // to make sure the app is accessible
     deployAndAccessApplication(domainNamespace,
           domainUid, "cluster-1", "admin-server",
@@ -411,7 +411,7 @@ class ItOperatorWlsUpgrade {
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
 
-    // start a new thread to collect the availability data of 
+    // start a new thread to collect the availability data of
     // the application while the main thread performs operator upgrade
     List<Integer> appAvailability = new ArrayList<Integer>();
     logger.info("Start a thread to keep track of application availability");
@@ -435,8 +435,8 @@ class ItOperatorWlsUpgrade {
         } catch (InterruptedException ie) {
           // do nothing
         }
-        // check the application availability data that we have collected, 
-        // and see if the application has been available all the time 
+        // check the application availability data that we have collected,
+        // and see if the application has been available all the time
         // during the upgrade
         logger.info("Verify that the application was available when the operator was being upgraded");
         assertTrue(appAlwaysAvailable(appAvailability),
@@ -444,7 +444,7 @@ class ItOperatorWlsUpgrade {
       }
     }
     scaleClusterUpAndDown();
-    
+
     // check CRD version is updated
     logger.info("Checking CRD version");
     testUntil(
@@ -482,7 +482,7 @@ class ItOperatorWlsUpgrade {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, 
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     logger.info("Create encryption secret");
@@ -491,8 +491,8 @@ class ItOperatorWlsUpgrade {
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
   }
 
-  private void createWlsDomainAndVerify(String domainType, 
-        String domainNamespace, String domainVersion, 
+  private void createWlsDomainAndVerify(String domainType,
+        String domainNamespace, String domainVersion,
         String externalServiceNameSuffix) {
 
     createSecrets();
@@ -505,7 +505,7 @@ class ItOperatorWlsUpgrade {
     }
 
     // create domain
-    createDomainResource(domainNamespace, domainVersion, 
+    createDomainResource(domainNamespace, domainVersion,
                          domainType, domainImage);
     checkDomainStarted(domainUid, domainNamespace);
     logger.info("Getting node port for default channel");
@@ -513,11 +513,11 @@ class ItOperatorWlsUpgrade {
         domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
         "Getting admin server node port failed");
     logger.info("Validating WebLogic admin server access by login to console");
-    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST, 
+    verifyAdminConsoleAccessible(domainNamespace, K8S_NODEPORT_HOST,
            String.valueOf(serviceNodePort), false);
   }
 
-  private HelmParams installOperator(String operatorVersion, 
+  private HelmParams installOperator(String operatorVersion,
       String opNamespace, String domainNamespace) {
     // delete existing CRD if any
     Command
@@ -611,7 +611,7 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Restart the domain after upgrade by changing serverStartPolicy. 
+   * Restart the domain after upgrade by changing serverStartPolicy.
    */
   private void restartDomain(String domainUid, String domainNamespace) {
 
@@ -629,8 +629,8 @@ class ItOperatorWlsUpgrade {
   }
 
   private void createDomainResource(
-      String domainNamespace, 
-      String domVersion, 
+      String domainNamespace,
+      String domVersion,
       String domainHomeSourceType,
       String domainImage) {
 
@@ -689,7 +689,7 @@ class ItOperatorWlsUpgrade {
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
           String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
           domainUid, domainNamespace));
-    assertTrue(domCreated, 
+    assertTrue(domCreated,
          String.format("Create domain custom resource failed with ApiException "
              + "for %s in namespace %s", domainUid, domainNamespace));
     setPodAntiAffinity(domain);
@@ -700,8 +700,8 @@ class ItOperatorWlsUpgrade {
   // if exist, so that the Operator release default will be effective.
   // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
   // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
-  // so the patch command to remove this attribute fails. So we do not assert 
-  // the result of patch command 
+  // so the patch command to remove this attribute fails. So we do not assert
+  // the result of patch command
   // assertTrue(result, "Failed to remove PortForwardingAttribute");
   private void removePortForwardingAttribute(
       String domainNamespace, String  domainUid) {
@@ -714,7 +714,7 @@ class ItOperatorWlsUpgrade {
     StringBuffer commandStr = new StringBuffer("kubectl patch domain ");
     commandStr.append(domainUid)
               .append(" -n " + domainNamespace)
-              .append(" --type 'json' -p='") 
+              .append(" --type 'json' -p='")
               .append(patchStr)
               .append("'");
     logger.info("The Command String: {0}", commandStr);
@@ -723,7 +723,7 @@ class ItOperatorWlsUpgrade {
     params.command(new String(commandStr));
     boolean result = Command.withParams(params).execute();
   }
-  
+
   void checkDomainStatus(String domainNamespace) {
 
     // verify the condition type Completed exists
@@ -752,11 +752,11 @@ class ItOperatorWlsUpgrade {
     assertNotNull(forwardPort, "port-forward fails to assign local port");
     logger.info("Forwarded admin-port is {0}", forwardPort);
     if (successExpected) {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+      verifyAdminConsoleAccessible(domainNamespace, "localhost",
            forwardPort, false);
       logger.info("WebLogic console is accessible thru port forwarding");
     } else {
-      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+      verifyAdminConsoleAccessible(domainNamespace, "localhost",
            forwardPort, false, false);
       logger.info("WebLogic console shouldn't accessible thru port forwarding");
     }
