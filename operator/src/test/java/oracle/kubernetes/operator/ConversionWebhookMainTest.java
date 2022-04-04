@@ -155,9 +155,9 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenConversionWebhookCompleteBeginFailsWithException_conversionWebhookFailedEventGenerated() {
+  void whenConversionWebhookCompleteBeginFailsWithException_failedEventIsGenerated() {
     InMemoryCertificates.defineWebhookCertificateFile("asdf");
-    inMemoryFileSystem.defineFile("/deployment/webhook-identity/webhookKey", "xyz");
+    inMemoryFileSystem.defineFile("/deployment/webhook-identity/webhookKey", "asdf");
     loggerControl.ignoringLoggedExceptions(RuntimeException.class, NoSuchFileException.class);
 
     ConversionWebhookMain.createMain(buildProperties).completeBegin();

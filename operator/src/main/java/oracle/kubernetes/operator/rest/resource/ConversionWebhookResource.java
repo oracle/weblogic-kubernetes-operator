@@ -27,7 +27,7 @@ import oracle.kubernetes.operator.rest.model.Result;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 
 /**
@@ -80,7 +80,7 @@ public class ConversionWebhookResource extends BaseResource {
   }
 
   private void generateFailedEvent(Exception exception) {
-    EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_FAILED, exception.getMessage())
+    EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
         .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(getAdditionalMessage(exception));
     createConversionWebhookEvent(eventData);
   }

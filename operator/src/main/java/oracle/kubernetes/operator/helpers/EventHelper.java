@@ -624,7 +624,7 @@ public class EventHelper {
         return generateOperatorNSEventName(eventData);
       }
     },
-    CONVERSION_FAILED {
+    CONVERSION_WEBHOOK_FAILED {
       @Override
       protected String getType() {
         return EVENT_WARNING;

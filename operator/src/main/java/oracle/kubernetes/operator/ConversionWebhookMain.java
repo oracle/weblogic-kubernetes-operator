@@ -27,7 +27,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -58,7 +58,6 @@ public class ConversionWebhookMain extends BaseMain {
     }
 
     @Override
-
     public String getWebhookKeyUri() {
       return SECRETS_WEBHOOK_KEY;
     }
@@ -122,7 +121,7 @@ public class ConversionWebhookMain extends BaseMain {
 
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
-      EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_FAILED, e.getMessage())
+      EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, e.getMessage())
           .resourceName(CONVERSION_WEBHOOK_COMPONENT);
       createConversionWebhookEvent(eventData);
 
@@ -191,7 +190,7 @@ public class ConversionWebhookMain extends BaseMain {
     public NextAction apply(Packet packet) {
       Exception failure = packet.getSpi(Exception.class);
       if (failure != null) {
-        return doNext(createEventStep(new EventHelper.EventData(CONVERSION_FAILED, failure.getMessage())
+        return doNext(createEventStep(new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, failure.getMessage())
             .namespace(getWebhookNamespace())), packet);
       }
       return doNext(getNext(), packet);
