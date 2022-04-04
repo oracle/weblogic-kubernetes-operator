@@ -165,19 +165,6 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
             CONVERSION_FAILED_EVENT, 1), is(true));
   }
 
-  @Test
-  void whenConversionWebhookCreated_logWebhookNamespace2() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WEBHOOK_CONFIG_NAMESPACE);
-
-    try {
-      ConversionWebhookMain.createMain(buildProperties).stopWebhookRestServer();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
-    assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace()));
-  }
-
   private void simulateMissingCRD() {
     testSupport.failOnResource(DOMAIN, null, getWebhookNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
   }

@@ -168,7 +168,7 @@ public class ConversionWebhookMain extends BaseMain {
     BaseRestServer.getInstance().start(container);
   }
 
-  static void stopWebhookRestServer() {
+  private static void stopWebhookRestServer() {
     BaseRestServer.getInstance().stop();
     BaseRestServer.destroy();
   }

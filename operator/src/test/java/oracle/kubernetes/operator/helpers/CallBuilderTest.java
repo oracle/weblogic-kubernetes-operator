@@ -140,7 +140,6 @@ class CallBuilderTest {
     assertThat(requestBody, equalTo(domain));
   }
 
-
   @Test
   void replaceDomain_errorResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
