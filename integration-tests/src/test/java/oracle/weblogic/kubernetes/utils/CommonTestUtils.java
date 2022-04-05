@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -940,6 +941,7 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       if (isLocalPortFree(freePort)) {
+        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(3));
         logger.info("next free port is: {0}", freePort);
         return freePort;
       }
@@ -973,12 +975,10 @@ public class CommonTestUtils {
     } catch (IOException ignored) {
       return true;
     } finally {
-      if (socket != null) {
-        try {
-          socket.close();
-        } catch (IOException ex) {
-          logger.severe("can not close Socket {0}", ex.getMessage());
-        }
+      try {
+        socket.close();
+      } catch (Exception ex) {
+        logger.severe("can not close Socket {0}", ex.getMessage());
       }
     }
   }
