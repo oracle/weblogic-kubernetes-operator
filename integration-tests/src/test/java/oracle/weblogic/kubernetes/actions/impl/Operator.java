@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.util.Optional;
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
