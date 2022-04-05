@@ -11,9 +11,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -23,7 +26,9 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.IntrospectionStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -220,7 +225,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
@@ -235,6 +240,73 @@ public class JobHelper {
       private String jobDescription(@Nonnull V1Job job) {
         return "found introspection job " + job.getMetadata().getName()
                          + ", started at " + job.getMetadata().getCreationTimestamp();
+      }
+
+      private boolean isInProgressJobOutdated(V1Job job) {
+        return hasNotCompleted(job)
+            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
+      }
+
+      private boolean hasNotCompleted(V1Job job) {
+        return job != null && !JobWatcher.isComplete(job);
+      }
+
+      private boolean hasAnyImageChanged(V1Job job) {
+        return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
+      }
+
+      private boolean hasImageChanged(@Nonnull V1Job job) {
+        return !Objects.equals(getImageFromJob(job), getJobModelPodSpecImage());
+      }
+
+      private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
+        return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
+      }
+
+      String getImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
+      }
+
+      List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
+        return getAuxiliaryImagesFromJob(job).sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getAuxiliaryImagesFromPodSpec).orElse(Stream.empty());
+      }
+
+      Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
+        return Optional.ofNullable(job)
+            .map(V1Job::getSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec);
+      }
+
+      @Nullable
+      String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getContainer(pod)
+            .map(V1Container::getImage)
+            .orElse(null);
+      }
+
+      Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getAuxiliaryContainers(pod)
+            .map(V1Container::getImage);
+      }
+
+      @Nullable
+      String getJobModelPodSpecImage() {
+        return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
+      }
+
+      List<String> getSortedJobModelPodSpecAuxiliaryImages() {
+        return getJobModelPodSpecAuxiliaryImages().sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getJobModelPodSpecAuxiliaryImages() {
+        return Optional.ofNullable(getJobModelPodSpec())
+            .map(this::getAuxiliaryImagesFromPodSpec)
+            .orElse(Stream.empty());
       }
 
       private boolean isKnownFailedJob(V1Job job) {
