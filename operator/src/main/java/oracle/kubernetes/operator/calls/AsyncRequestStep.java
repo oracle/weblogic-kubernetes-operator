@@ -218,9 +218,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       if (firstTimeResumed()) {
         if (statusCode != HTTP_NOT_FOUND) {
           addDomainFailureStatus(ae);
-          if (LOGGER.isFineEnabled()) {
-            logFailure(ae, statusCode, responseHeaders);
-          }
+          logFailure(ae, statusCode, responseHeaders);
         }
 
         if (ae.getCause() instanceof java.net.ProtocolException) {
