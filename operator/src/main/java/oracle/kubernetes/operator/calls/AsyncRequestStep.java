@@ -306,9 +306,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
             requestParams.call,
             requestParams.namespace,
             requestParams.name,
-            requestParams.body != null
-                ? LoggingFactory.getJson().serialize(requestParams.body)
-                : "",
+            Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
             fieldSelector,
             labelSelector,
             resourceVersion);
@@ -339,18 +337,16 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                setThreadContext()
                    .namespace(requestParams.namespace)
                    .domainUid(requestParams.domainUid)) {
-        LOGGER.fine(
+        LOGGER.warning(
             MessageKeys.ASYNC_FAILURE,
             identityHash(),
+            requestParams.call,
             ae.getMessage(),
             statusCode,
             responseHeaders,
-            requestParams.call,
             requestParams.namespace,
             requestParams.name,
-            requestParams.body != null
-                ? LoggingFactory.getJson().serialize(requestParams.body)
-                : "",
+            Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
             fieldSelector,
             labelSelector,
             resourceVersion,
@@ -425,7 +421,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         requestParams.call,
         requestParams.namespace,
         requestParams.name,
-        requestParams.body != null ? LoggingFactory.getJson().serialize(requestParams.body) : "",
+        Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
         fieldSelector,
         labelSelector,
         resourceVersion);
@@ -435,24 +431,18 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     // called from the apply method where we have the necessary information for logging context
     LOGGER.warning(
         MessageKeys.ASYNC_FAILURE,
+        identityHash(),
+        requestParams.call,
         t.getMessage(),
         0,
         null,
-        requestParams,
         requestParams.namespace,
         requestParams.name,
-        requestParams.body != null
-            ? LoggingFactory.getJson().serialize(requestParams.body)
-            : "",
+        Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
         fieldSelector,
         labelSelector,
         resourceVersion,
         responseBody);
-  }
-
-  // creates a unique ID that allows matching requests to responses
-  private String identityHash() {
-    return Integer.toHexString(System.identityHashCode(this));
   }
 
   private final class DefaultRetryStrategy implements RetryStrategy {

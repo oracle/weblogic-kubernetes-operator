@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -135,6 +135,11 @@ public abstract class Step {
 
   protected String getDetail() {
     return null;
+  }
+
+  // creates a unique ID that allows matching requests to responses
+  public String identityHash() {
+    return Integer.toHexString(System.identityHashCode(this));
   }
 
   @Override
