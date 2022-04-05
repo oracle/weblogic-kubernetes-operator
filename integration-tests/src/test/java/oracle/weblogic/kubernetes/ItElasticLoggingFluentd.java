@@ -296,11 +296,7 @@ class ItElasticLoggingFluentd {
     logger.info("Total count of logs: " + count);
     logger.info("Total failed count: " + failedCount);
 
-    if (count > 0 && failedCount == 0) {
-      return true;
-    }
-
-    return false;
+    return count > 0 && failedCount == 0;
   }
 
   private static void configFluentd() {
