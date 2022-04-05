@@ -10,9 +10,12 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -167,10 +170,25 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction logNoRetry(CallResponse<T> callResponse) {
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-            Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
-            callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+    if (LOGGER.isWarningEnabled()) {
+      LOGGER.warning(
+          MessageKeys.ASYNC_NO_RETRY,
+          Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.call).orElse("--no call--"),
+          callResponse.getExceptionString(),
+          callResponse.getStatusCode(),
+          callResponse.getHeadersString(),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.namespace).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.name).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.body)
+              .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getFieldSelector).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getLabelSelector).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getResourceVersion).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getE).map(ApiException::getResponseBody).orElse(""));
     }
     return null;
   }
