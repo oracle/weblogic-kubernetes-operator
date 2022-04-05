@@ -1452,4 +1452,5 @@ class ManagedPodHelperTest extends PodHelperTestBase {
       description.appendText("JAVA_OPTS containing ").appendValue(expectedOption);
     }
   }
+
 }

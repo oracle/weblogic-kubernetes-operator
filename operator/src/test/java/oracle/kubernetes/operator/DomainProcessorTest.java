@@ -959,7 +959,7 @@ class DomainProcessorTest {
   @Test
   void whenFluentdSpecified_verifyConfigMapAndContainers() {
     domainConfigurator
-            .withFluentdConfiguration(true, true)
+            .withFluentdConfiguration(true, true, "fluentd-cred")
             .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
