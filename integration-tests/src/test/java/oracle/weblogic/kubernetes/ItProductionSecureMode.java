@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -210,7 +209,6 @@ class ItProductionSecureMode {
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
-  @Tag("gate")
   void testVerifyProductionSecureMode() {
     int defaultAdminPort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");

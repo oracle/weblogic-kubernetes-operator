@@ -128,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-@Tag("gate")
 class ItTwoDomainsManagedByTwoOperators {
 
   private static final int numberOfDomains = 2;
@@ -248,6 +247,7 @@ class ItTwoDomainsManagedByTwoOperators {
    * shutdown both domains
    */
   @Test
+  @Tag("gate")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createMultipleDomainsSharingPVUsingWlstAndVerify(
