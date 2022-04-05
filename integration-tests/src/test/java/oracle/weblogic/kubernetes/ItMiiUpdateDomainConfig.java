@@ -779,7 +779,7 @@ class ItMiiUpdateDomainConfig {
   private static void createDatabaseSecret(
         String secretName, String username, String password,
         String dburl, String domNamespace) throws ApiException {
-    Map<String, String> secretMap = new HashMap();
+    Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
     secretMap.put("url", dburl);
@@ -794,7 +794,7 @@ class ItMiiUpdateDomainConfig {
 
   private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
-    Map<String, String> secretMap = new HashMap();
+    Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()

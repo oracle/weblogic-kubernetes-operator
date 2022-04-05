@@ -39,7 +39,7 @@ To check, verify that the following command lists a CRD with the name `domains.w
 $ kubectl get crd
 ```
 
-The command's output should look something like the following:
+The command output should look something like the following:
 
 ```text
 NAME                                   CREATED AT
@@ -48,7 +48,9 @@ domains.weblogic.oracle                2021-09-27T18:46:38Z
 
 When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like `kubectl get domains` will fail.
 
-If the domain CRD is not installed, then refer to the operator [Prepare for installation]({{< relref "/userguide/managing-operators/preparation#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed" >}}) documentation.
+Typically, the operator automatically installs the CRD for the Domain type when the operator first starts. However,
+if the domain CRD was not installed, for example, if the operator lacked sufficient permission to install it, then
+refer to the operator [Prepare for installation]({{< relref "/userguide/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}}) documentation.
 
 ### Check the operator deployment
 
@@ -64,14 +66,14 @@ Check the operator deployment's detailed status:
 $ kubectl -n OP_NAMESPACE get deployments/weblogic-operator -o yaml
 ```
 
-and/or:
+And/or:
 
 ```text
 $ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator
 ```
 
 Each operator deployment will have a corresponding Kubernetes pod
-with a name that has a prefix that matches the deployment name
+with a name that has a prefix that matches the deployment name,
 plus a unique suffix that changes every time the deployment restarts.
 
 To find operator pods and check their high-level status:
@@ -132,40 +134,47 @@ When you restart an operator:
 * This will not shut down your current domains or affect their resources.
 * The restarted operator will rediscover existing domains and manage them.
 
-Here are two approaches for restarting an operator:
+There are several approaches for restarting an operator:
+
+* Most simply, use the `helm upgrade` command: `helm upgrade <release-name> --reuse-values --recreate-pods`
+
+   ```text
+   $ helm upgrade weblogic-operator --reuse-values --recreate-pods
+   ```
 
 * Delete the operator pod, and let Kubernetes restart it.
 
-  First, find the operator pod you wish to delete:
+  a. First, find the operator pod you wish to delete:
 
-  ```text
-  $ kubectl get pods --all-namespaces=true -l weblogic.operatorName
-  ```
+     ```text
+     $ kubectl get pods --all-namespaces=true -l weblogic.operatorName
+     ```
 
-  Second, delete the pod. For example:
+  b. Second, delete the pod. For example:
 
-  ```text
-  $ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n OP_NAMESPACE
-  ```
+     ```text
+     $ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n OP_NAMESPACE
+     ```
 
-* Scale the operator deployment to `0` and then back to `1` by changing the value of the `replicas`.
+* Scale the operator deployment to `0`, and then back to `1`, by changing the value of the `replicas`.
 
-  First, find the namespace of the operator deployment you wish to restart:
+  a. First, find the namespace of the operator deployment you wish to restart:
 
-  ```text
-  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-  ```
+     ```text
+     $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+     ```
 
-  Second, scale the deployment down to zero replicas:
+  b. Second, scale the deployment down to zero replicas:
 
-  ```text
-  $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=0
-  ```
-  Finally, scale the deployament back up to one replica:
+     ```text
+     $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=0
+     ```
+  c. Finally, scale the deployment back up to one replica:
 
-  ```text
-  $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=1
-  ```
+     ```text
+     $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=1
+
+     ```
 
 ### Operator logging level
 
@@ -191,7 +200,7 @@ $ cd /tmp/weblogic-kubernetes-operator
 ```
 $ helm upgrade \
   sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator \
+  weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --reuse-values \
   --set "javaLoggingLevel=FINE" \
@@ -203,7 +212,7 @@ To set the operator `javaLoggingLevel` back to `INFO`:
 ```
 $ helm upgrade \
   sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator \
+  weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --reuse-values \
   --set "javaLoggingLevel=INFO" \
@@ -217,4 +226,4 @@ For more information, see the
 
 If you have set up either of the following, then these documents may be helpful in debugging:
 - [Operator REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
-- [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})
+- [Elastic Stack (Elasticsearch, Logstash, and Kibana)]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) integration

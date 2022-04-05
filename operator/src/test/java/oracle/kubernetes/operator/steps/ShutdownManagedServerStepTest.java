@@ -198,7 +198,7 @@ class ShutdownManagedServerStepTest {
   @NotNull
   private List<V1EnvVar> addShutdownEnvVars() {
     List<V1EnvVar> env = new ArrayList<>();
-    addEnvVar(env, "SHUTDOWN_TYPE", KubernetesConstants.GRACEFUL_SHUTDOWNTYPE);
+    addEnvVar(env, "SHUTDOWN_TYPE", ShutdownType.GRACEFUL.toString());
     addEnvVar(env, "SHUTDOWN_TIMEOUT", String.valueOf(Shutdown.DEFAULT_TIMEOUT));
     addEnvVar(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(Shutdown.DEFAULT_IGNORESESSIONS));
     addEnvVar(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS));
@@ -354,7 +354,7 @@ class ShutdownManagedServerStepTest {
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
     for (V1EnvVar var : vars) {
       if (var.getName().equals("SHUTDOWN_TYPE")) {
-        var.setValue(ShutdownType.FORCED.label());
+        var.setValue(ShutdownType.FORCED.toString());
       }
     }
   }

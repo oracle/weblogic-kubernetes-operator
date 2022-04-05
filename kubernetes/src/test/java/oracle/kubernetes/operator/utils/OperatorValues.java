@@ -1,10 +1,11 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
 import java.util.Objects;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
@@ -15,9 +16,6 @@ public class OperatorValues {
   public static final String JAVA_LOGGING_LEVEL_FINE = "FINE";
   public static final String JAVA_LOGGING_LEVEL_FINER = "FINER";
   public static final String JAVA_LOGGING_LEVEL_FINEST = "FINEST";
-  public static final String IMAGE_PULL_POLICY_IF_NOT_PRESENT = "IfNotPresent";
-  public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
-  public static final String IMAGE_PULL_POLICY_NEVER = "Never";
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
@@ -29,7 +27,7 @@ public class OperatorValues {
   private String domainNamespaceLabelSelector = "";
   private String domainNamespaceRegExp = "";
   private String weblogicOperatorImage = "";
-  private String weblogicOperatorImagePullPolicy = "";
+  private V1Container.ImagePullPolicyEnum weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.NEVER;
   private String weblogicOperatorImagePullSecretName = "";
   private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
@@ -57,7 +55,7 @@ public class OperatorValues {
         .domainNamespaceSelectionStrategy("List")
         .domainNamespaces("test-domain-namespace1,test-domain-namespace2")
         .weblogicOperatorImage("test-operator-image")
-        .weblogicOperatorImagePullPolicy("Never")
+        .weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER)
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
         .elasticSearchHost("test-elastic-search_host")
@@ -197,16 +195,20 @@ public class OperatorValues {
     return this;
   }
 
-  public String getWeblogicOperatorImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getWeblogicOperatorImagePullPolicy() {
     return weblogicOperatorImagePullPolicy;
   }
 
-  public void setWeblogicOperatorImagePullPolicy(String val) {
-    weblogicOperatorImagePullPolicy = convertNullToEmptyString(val);
+  public String getWeblogicOperatorImagePullPolicyAsString() {
+    return weblogicOperatorImagePullPolicy.toString();
   }
 
-  public OperatorValues weblogicOperatorImagePullPolicy(String val) {
-    setWeblogicOperatorImagePullPolicy(val);
+  public void setWeblogicOperatorImagePullPolicy(String val) {
+    weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.valueOf(val);
+  }
+
+  public OperatorValues weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum val) {
+    weblogicOperatorImagePullPolicy = val;
     return this;
   }
 

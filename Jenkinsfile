@@ -104,7 +104,6 @@ pipeline {
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
         sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
-        jacoco_report_path = "${WORKSPACE}/buildtime-reports/target/site/jacoco-aggregate/jacoco.xml"
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -122,20 +121,18 @@ pipeline {
     }
 
     parameters {
-        string(name: 'IT_TEST',
-               description: 'Comma separated ItClasses to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
-               defaultValue: '**/It*'
-        )
         choice(name: 'MAVEN_PROFILE_NAME',
-               description: 'Profile to use in mvn command to run the tests.  Possible values are integration-tests, toolkits-srg, kind-sequential, wls-image-cert, fmw-image-cert, and fmw-srg.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-               choices: [
-                   'integration-tests',
-                   'toolkits-srg',
-                   'kind-sequential',
-                   'wls-image-cert',
-                   'fmw-image-cert',
-                   'fmw-srg'
-               ]
+                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                choices: [
+                        'wls-srg',
+                        'integration-tests',
+                        'kind-sequential',
+                        'toolkits-srg'
+                ]
+        )
+        string(name: 'IT_TEST',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               defaultValue: ''
         )
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
@@ -332,7 +329,6 @@ pipeline {
                             mkdir -p ${WORKSPACE}/.mvn
                             touch ${WORKSPACE}/.mvn/maven.config
                             echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path}"  >> ${WORKSPACE}/.mvn/maven.config
                             if [ -z "${CHANGE_ID}" ]; then
                                 echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
                             else
@@ -348,7 +344,7 @@ pipeline {
                         withSonarQubeEnv('SonarCloud') {
                             // For whatever reason, defining this property in the maven.config file is not working...
                             //
-                            sh "mvn -Dsonar.coverage.jacoco.xmlReportPaths=${jacoco_report_path} sonar:sonar"
+                            sh "mvn sonar:sonar"
                         }
                     }
                 }
@@ -356,7 +352,7 @@ pipeline {
                 // stage('Verify Sonar Quality Gate') {
                 //    steps {
                 //        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                //            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
                 //            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
                 //        }
                 //    }
@@ -375,8 +371,8 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
-                            tar zxf helm-v${HELM_VERSION}-linux-amd64.tar.gz
+                            curl -Lo "helm.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/helm%2Fhelm-v${HELM_VERSION}.tar.gz"
+                            tar zxf helm.tar.gz
                             mv linux-amd64/helm ${WORKSPACE}/bin/helm
                             rm -rf linux-amd64
                             helm version
@@ -391,7 +387,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -L --retry 3 -o "${WORKSPACE}/bin/kubectl" "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
@@ -405,7 +401,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kind" --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
+                            curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
                             chmod +x "${WORKSPACE}/bin/kind"
                             kind version
                         '''
@@ -435,7 +431,7 @@ pipeline {
                               docker rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" registry:2
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" phx.ocir.io/weblogick8s/test-images/docker/registry:2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }
@@ -470,14 +466,14 @@ nodes:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
 EOF
-        
+
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
-        
+
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
                             done
-                            
+
                             if [ "${kind_network}" != "bridge" ]; then
                                 containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
                                 needs_connect="true"
@@ -490,7 +486,7 @@ EOF
                                     docker network connect "${kind_network}" "${registry_name}" || true
                                 fi
                             fi
-        
+
                             # Document the local registry
                             # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
                             cat <<EOF | kubectl apply -f -
@@ -526,15 +522,15 @@ EOF
                             export PATH=${runtime_path}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
-                            
+
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
-        
-                            if [ "${IT_TEST}" != '**/It*' ]; then
-                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
-                            elif [ "${MAVEN_PROFILE_NAME}" != "toolkits-srg" ] && [ "${MAVEN_PROFILE_NAME}" != "fmw-image-cert" ] && [ "${MAVEN_PROFILE_NAME}" != "kind-sequential" ]; then
+
+                            if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                 echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
+                            elif [ ! -z "${IT_TEST}" ]; then
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
@@ -557,11 +553,11 @@ EOF
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
-        
+
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-        
+
                             export TWO_CLUSTERS=${TWO_CLUSTERS}
                             export OCR_USERNAME=${OCR_USERNAME}
                             export OCR_PASSWORD=${OCR_PASSWORD}
@@ -569,25 +565,25 @@ EOF
                             export OCIR_USERNAME=${OCIR_USERNAME}
                             export OCIR_PASSWORD=${OCIR_PASSWORD}
                             export OCIR_EMAIL=$OCIR_EMAIL}
-                            
+
                             if [ ! -z "${http_proxy}" ]; then
                                 export http_proxy
                             elif [ ! -z "${HTTP_PROXY}" ]; then
                                 export HTTP_PROXY
                             fi
-        
+
                             if [ ! -z "${https_proxy}" ]; then
                                 export https_proxy
                             elif [ ! -z "${HTTPS_PROXY}" ]; then
                                 export HTTPS_PROXY
                             fi
-                            
+
                             if [ ! -z "${no_proxy}" ]; then
                                 export no_proxy
                             elif [ ! -z "${NO_PROXY}" ]; then
                                 export NO_PROXY
                             fi
-                            
+
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
@@ -600,18 +596,18 @@ EOF
                                 export KUBECONFIG=${kubeconfig_file}
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
-                                echo "Failed to export kind logs for kind cluster ${kind_name}"
+                                    echo "Failed to export kind logs for kind cluster ${kind_name}"
                                 fi
                                 if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
-                                echo "Failed to run journalctl for kind worker"
+                                    echo "Failed to run journalctl for kind worker"
                                 fi
                                 if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
-                                echo "Failed to run journalctl for kind control plane"
+                                    echo "Failed to run journalctl for kind control plane"
                                 fi
                                 if ! journalctl --utc --dmesg --system --since "$start_time" > "${result_root}/journalctl-compute.out"; then
-                                echo "Failed to run journalctl for compute node"
+                                    echo "Failed to run journalctl for compute node"
                                 fi
-    
+
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
@@ -627,9 +623,9 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}"
                         running="$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)"
                         if [ "${running}" = 'true' ]; then
-                          echo "Stopping the registry container ${registry_name}"
-                          docker stop "${registry_name}"
-                          docker rm --force "${registry_name}"
+                            echo "Stopping the registry container ${registry_name}"
+                            docker stop "${registry_name}"
+                            docker rm --force "${registry_name}"
                         fi
                         echo 'Remove old Kind cluster (if any)...'
                         if ! kind delete cluster --name ${kind_name} --kubeconfig "${kubeconfig_file}"; then

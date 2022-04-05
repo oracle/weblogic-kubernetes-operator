@@ -16,6 +16,7 @@ import java.util.Set;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -619,7 +620,8 @@ public class CommonMiiTestUtils {
         encryptionSecretName, replicaCount, clusterNames);
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
-      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
@@ -1038,7 +1040,7 @@ public class CommonMiiTestUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedStatusCode);
@@ -1102,7 +1104,7 @@ public class CommonMiiTestUtils {
               .backoffLimit(0) // try only once
               .template(new V1PodTemplateSpec()
                   .spec(new V1PodSpec()
-                      .restartPolicy("Never")
+                      .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
                       .addContainersItem(
                           createfixPVCOwnerContainer(pvName,
                               "/shared")) // mounted under /shared inside pod
@@ -1123,7 +1125,7 @@ public class CommonMiiTestUtils {
           "Getting the job failed");
       if (job != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-            v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+            v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
         if (jobCondition != null) {
@@ -1184,7 +1186,7 @@ public class CommonMiiTestUtils {
   public static void createDatabaseSecret(
       String secretName, String username, String password,
       String dburl, String domNamespace)  {
-    Map<String, String> secretMap = new HashMap();
+    Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
     secretMap.put("url", dburl);
@@ -1204,7 +1206,7 @@ public class CommonMiiTestUtils {
    * @param domNamespace Kubernetes namespace to create the secret in
    */
   public static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
-    Map<String, String> secretMap = new HashMap();
+    Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
@@ -1723,7 +1725,7 @@ public class CommonMiiTestUtils {
           String repoSecretName, String encryptionSecretName,
           int replicaCount, String miiImage, String configmapName) {
 
-    Map keyValueMap = new HashMap<String, String>();
+    Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
@@ -1894,7 +1896,7 @@ public class CommonMiiTestUtils {
         String.format("createSecret failed for %s", encryptionSecretName));
 
     // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
     // create the domain object
     Domain domain = createIstioDomainResource(domainUid,

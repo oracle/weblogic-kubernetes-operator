@@ -123,7 +123,6 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int SIP_CLEAR_NAP_PORT = 8003;
   private static final int SIP_SECURE_NAP_PORT = 8004;
   public static final String STRANDED = "Stranded";
-  public static final String NODE_PORT = "NodePort";
   private static final String FAILURE_MESSAGE = "Test this failure";
   private final TerminalStep terminalStep = new TerminalStep();
   public TestFacade testFacade;
@@ -269,10 +268,10 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   void whenCreated_modelHasServiceType() {
     V1Service model = createService();
 
-    assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType().toString()));
+    assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType()));
   }
 
-  private String getServiceType(V1Service service) {
+  private V1ServiceSpec.TypeEnum getServiceType(V1Service service) {
     return service.getSpec().getType();
   }
 
@@ -304,8 +303,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 
-  private String getExpectedProtocol(String portName) {
-    return portName.startsWith("udp-") ? "UDP" : "TCP";
+  private V1ServicePort.ProtocolEnum getExpectedProtocol(String portName) {
+    return portName.startsWith("udp-") ? V1ServicePort.ProtocolEnum.UDP : V1ServicePort.ProtocolEnum.TCP;
   }
 
   @Test
@@ -532,7 +531,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     labels.put(LabelConstants.DOMAINUID_LABEL, UID);
     labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     V1Service strandedService = new V1Service().metadata(new V1ObjectMeta().name(STRANDED).namespace(NS)
-            .labels(labels)).spec(new V1ServiceSpec().type(NODE_PORT));
+            .labels(labels)).spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT));
     testSupport.defineResources(strandedService);
     testFacade.recordService(domainPresenceInfo, strandedService);
   }
@@ -608,11 +607,6 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return testSupport.getResources(SERVICE);
   }
 
-  enum ServiceType {
-    ClusterIP,
-    NodePort
-  }
-
   abstract static class TestFacade {
     private final Map<String, Integer> expectedNapPorts = new HashMap<>();
     private final Map<String, Integer> expectedNodePorts = new HashMap<>();
@@ -639,8 +633,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     abstract Integer getExpectedListenPort();
 
-    ServiceType getExpectedServiceType() {
-      return ServiceType.ClusterIP;
+    V1ServiceSpec.TypeEnum getExpectedServiceType() {
+      return V1ServiceSpec.TypeEnum.CLUSTERIP;
     }
 
     Integer getExpectedSslListenPort() {
@@ -766,14 +760,15 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   static class PortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
-    private final String expectedProtocol;
+    private final V1ServicePort.ProtocolEnum expectedProtocol;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
-      this(expectedName, "TCP", expectedValue);
+      this(expectedName, V1ServicePort.ProtocolEnum.TCP, expectedValue);
     }
 
-    private PortMatcher(@Nonnull String expectedName, String expectedProtocol, Integer expectedValue) {
+    private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
+                        Integer expectedValue) {
       this.expectedName = expectedName;
       this.expectedProtocol = expectedProtocol;
       this.expectedValue = expectedValue;
@@ -784,7 +779,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     static PortMatcher containsPort(@Nonnull String expectedName,
-                                    @Nonnull String expectedProtocol, Integer expectedValue) {
+                                    @Nonnull V1ServicePort.ProtocolEnum expectedProtocol, Integer expectedValue) {
       return new PortMatcher(expectedName, expectedProtocol, expectedValue);
     }
 

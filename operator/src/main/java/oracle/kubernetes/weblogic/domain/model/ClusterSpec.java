@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -9,6 +9,8 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
 public abstract class ClusterSpec {
 
@@ -28,7 +30,7 @@ public abstract class ClusterSpec {
   @Nonnull
   public abstract Map<String, String> getClusterAnnotations();
 
-  public abstract String getClusterSessionAffinity();
+  public abstract V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity();
 
   /**
    * Returns the list of initContainers.
@@ -58,7 +60,7 @@ public abstract class ClusterSpec {
   @Nonnull
   public abstract Shutdown getShutdown();
 
-  public abstract String getRestartPolicy();
+  public abstract V1PodSpec.RestartPolicyEnum getRestartPolicy();
 
   public abstract String getRuntimeClassName();
 

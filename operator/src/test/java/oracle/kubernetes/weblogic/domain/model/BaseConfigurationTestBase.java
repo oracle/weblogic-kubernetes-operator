@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -6,6 +6,8 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -50,30 +52,30 @@ public abstract class BaseConfigurationTestBase {
 
   @Test
   void whenServerStartStatesAreSame_objectsAreEqual() {
-    instance1.setServerStartState("ADMIN");
-    instance2.setServerStartState("ADMIN");
+    instance1.setServerStartState(ServerStartState.ADMIN);
+    instance2.setServerStartState(ServerStartState.ADMIN);
 
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
   void whenServerStartStatesDiffer_objectsAreNotEqual() {
-    instance1.setServerStartState("ADMIN");
+    instance1.setServerStartState(ServerStartState.ADMIN);
 
     assertThat(instance1, not(equalTo(instance2)));
   }
 
   @Test
   void whenServerStartPolicyAreSame_objectsAreEqual() {
-    instance1.setServerStartPolicy("IF_NEEDED");
-    instance2.setServerStartPolicy("IF_NEEDED");
+    instance1.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+    instance2.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
   void whenServerStartPoliciesDiffer_objectsAreNotEqual() {
-    instance1.setServerStartPolicy("NEVER");
+    instance1.setServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(instance1, not(equalTo(instance2)));
   }

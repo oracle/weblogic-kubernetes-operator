@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,6 @@ import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -79,7 +77,7 @@ public class Namespaces {
     return getSelectionStrategy().getSelection(visitor);
   }
 
-  public enum SelectionStrategy implements Labeled {
+  public enum SelectionStrategy {
     @SerializedName("List")
     LIST("List") {
       @Override
@@ -224,35 +222,32 @@ public class Namespaces {
       return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
     }
 
-    private static final Map<String, SelectionStrategy> BY_LABEL = new HashMap<>();
+    private final String value;
 
-    static {
-      for (SelectionStrategy ss : values()) {
-        BY_LABEL.put(ss.label, ss);
-      }
-    }
-
-    private final String label;
-
-    SelectionStrategy(String label) {
-      this.label = label;
-    }
-
-    @Override
-    public String label() {
-      return label;
+    SelectionStrategy(String value) {
+      this.value = value;
     }
 
     @Override
     public String toString() {
-      return label();
+      return String.valueOf(this.value);
     }
 
-    public static SelectionStrategy valueOfLabel(String label) {
-      return BY_LABEL.get(label);
+    /**
+     * Locate enum type from value.
+     * @param value Value
+     * @return Selection strategy type
+     */
+    public static SelectionStrategy fromValue(String value) {
+      for (SelectionStrategy testValue : values()) {
+        if (testValue.value.equals(value)) {
+          return testValue;
+        }
+      }
+
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
     }
   }
-
 
   /**
    * Gets the configured domain namespace selection strategy.
@@ -262,7 +257,7 @@ public class Namespaces {
   static SelectionStrategy getSelectionStrategy() {
     SelectionStrategy strategy =
           Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
-                .map(SelectionStrategy::valueOfLabel)
+                .map(SelectionStrategy::fromValue)
                 .orElse(SelectionStrategy.LIST);
 
     if (SelectionStrategy.LIST.equals(strategy) && isDeprecatedDedicated()) {

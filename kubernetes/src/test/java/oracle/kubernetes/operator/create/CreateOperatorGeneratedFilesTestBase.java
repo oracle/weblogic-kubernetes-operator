@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -287,7 +287,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
       return null;
     }
     V1ServiceSpec spec =
-        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
+        newServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT).putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(
           newServicePort()
@@ -331,7 +331,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(
             newServiceSpec()
-                .type("ClusterIP")
+                .type(V1ServiceSpec.TypeEnum.CLUSTERIP)
                 .putSelectorItem(APP_LABEL, "weblogic-operator")
                 .addPortsItem(newServicePort().name("rest").port(8082)));
   }
@@ -702,7 +702,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
   protected V1Service getExpectedExternalOperatorService(
       boolean debuggingEnabled, boolean externalRestEnabled) {
     V1ServiceSpec spec =
-        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
+        newServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT).putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(
           newServicePort()

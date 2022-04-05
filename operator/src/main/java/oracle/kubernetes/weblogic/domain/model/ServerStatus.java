@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -7,6 +7,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
@@ -46,7 +47,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Description("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, "
       + "or Unknown.")
   @Expose
-  private String podPhase;
+  private V1PodStatus.PhaseEnum podPhase;
 
 
   @Description("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, otherwise Unknown. "
@@ -246,8 +247,17 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    *
    * @return podPhase
    */
-  public String getPodPhase() {
+  public V1PodStatus.PhaseEnum getPodPhase() {
     return podPhase;
+  }
+
+  /**
+   * PodPhase describes the phase of a WebLogic server pod status.
+   *
+   * @return podPhase as String
+   */
+  public String getPodPhaseAsString() {
+    return Optional.ofNullable(podPhase).map(Object::toString).orElse(null);
   }
 
   /**
@@ -256,7 +266,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    * @param podPhase  phase of server pod
    * @return this
    */
-  public ServerStatus withPodPhase(String podPhase) {
+  public ServerStatus withPodPhase(V1PodStatus.PhaseEnum podPhase) {
     this.podPhase = podPhase;
     return this;
   }
@@ -370,7 +380,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
-        .withStringField("podPhase", ServerStatus::getPodPhase)
+        .withStringField("podPhase", ServerStatus::getPodPhaseAsString)
         .withStringField("podReady", ServerStatus::getPodReady)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 

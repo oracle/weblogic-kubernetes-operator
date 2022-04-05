@@ -705,7 +705,7 @@ from a base Oracle Linux image, a WebLogic installer download, and a JRE install
      and downloads (pulls) this image only if it is not already cached locally.
      You can use `docker images` to view your image cache.
    - The `--pull` parameter for WIT is passed to the container build engine which forces a check to the remote repository,
-     if applicable, prior to the build execution of the new image in order to update any image used during the build (updates dependencies).
+     if applicable, prior to the build execution of the new image to update any image used during the build (updates dependencies).
    - For details about each parameter, see the [WebLogic Image Tool User Guide](https://oracle.github.io/weblogic-image-tool/userguide/tools/).
 
 1. After the tool creates the image, verify that the image is in your local repository:
@@ -860,7 +860,7 @@ to create the domain home in Domain in Image.
 
   # Create the image
   # (this will run the latest version of the WIT tool during image creation
-  #  in order to create the domain home from the provided model files)
+  #  to create the domain home from the provided model files)
 
   $imageToolBin/imagetool.sh update \
     --fromImage "$fromImage" \
@@ -951,7 +951,7 @@ to create the domain home in Domain in Image.
 
   # Create the image
   # Notes:
-  # - This will run the provided WLST during image creation in order to create the domain home.
+  # - This will run the provided WLST during image creation to create the domain home.
   # - The wdt parameters are required, but ignored.
   $imageToolBin/imagetool.sh update \
     --fromImage "$fromImage" \

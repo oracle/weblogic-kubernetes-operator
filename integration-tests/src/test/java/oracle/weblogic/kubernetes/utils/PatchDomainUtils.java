@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -13,6 +13,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -74,7 +75,7 @@ public class PatchDomainUtils {
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
     logger.info("Current restartVersion is {0}", updatedVersion);
-    assertTrue(updatedVersion.equals(String.valueOf(newVersion)),
+    assertEquals(String.valueOf(newVersion), updatedVersion,
         String.format("Failed to update the restartVersion of domain %s from %s to %s",
             domainResourceName,
             oldVersion,
