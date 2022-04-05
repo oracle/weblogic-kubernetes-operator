@@ -978,7 +978,7 @@ public class CommonTestUtils {
       try {
         socket.close();
       } catch (Exception ex) {
-        logger.severe("can not close Socket {0}", ex.getMessage());
+        logger.warning("Exception in closing Socket {0}", ex.getMessage());
       }
     }
   }
