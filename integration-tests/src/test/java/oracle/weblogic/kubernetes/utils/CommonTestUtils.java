@@ -930,10 +930,10 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check if the given port number is free. Tries to bind to the given port, if it succeeds it means the given port is
-   * already in use by a process.
+   * Check if the given port is free. Tries to connect to the given port, if it succeeds it means that
+   * the given port is already in use by an another process.
    *
-   * @param port port number to check
+   * @param port port to check
    * @throws java.io.IOException when the port is not used by any socket
    */
   private static void isLocalPortFree(int port) throws IOException {
