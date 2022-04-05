@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,9 +29,9 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -67,7 +67,7 @@ public class DomainPresenceInfo implements PacketComponent {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1beta1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
@@ -317,7 +317,7 @@ public class DomainPresenceInfo implements PacketComponent {
     return service == null ? null : service.getMetadata();
   }
 
-  private V1ObjectMeta getMetadata(V1beta1PodDisruptionBudget pdb) {
+  private V1ObjectMeta getMetadata(V1PodDisruptionBudget pdb) {
     return pdb == null ? null : pdb.getMetadata();
   }
 
@@ -429,11 +429,11 @@ public class DomainPresenceInfo implements PacketComponent {
     clusters.put(clusterName, service);
   }
 
-  void setPodDisruptionBudget(String clusterName, V1beta1PodDisruptionBudget pdb) {
+  void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
     podDisruptionBudgets.put(clusterName, pdb);
   }
 
-  public V1beta1PodDisruptionBudget getPodDisruptionBudget(String clusterName) {
+  public V1PodDisruptionBudget getPodDisruptionBudget(String clusterName) {
     return podDisruptionBudgets.get(clusterName);
   }
 
@@ -448,7 +448,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param clusterName the name of the cluster associated with the event
    * @param event the pod disruption budget associated with the event
    */
-  void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+  void setPodDisruptionBudgetFromEvent(String clusterName, V1PodDisruptionBudget event) {
     if (clusterName == null) {
       return;
     }
@@ -463,7 +463,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param event the pod disruption budget associated with the event
    * @return true if the pod disruption budget was actually removed
    */
-  boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+  boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1PodDisruptionBudget event) {
     return removeIfPresentAnd(
             podDisruptionBudgets,
             clusterName,
@@ -526,7 +526,7 @@ public class DomainPresenceInfo implements PacketComponent {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
   }
 
-  private V1beta1PodDisruptionBudget getNewerPDB(V1beta1PodDisruptionBudget first, V1beta1PodDisruptionBudget second) {
+  private V1PodDisruptionBudget getNewerPDB(V1PodDisruptionBudget first, V1PodDisruptionBudget second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
   }
 

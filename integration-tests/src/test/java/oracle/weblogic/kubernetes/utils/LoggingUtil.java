@@ -233,11 +233,19 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
+
     // get pods
     try {
       writeToFile(Kubernetes.listPods(namespace, null), resultDir, namespace + ".list.pods.log");
     } catch (Exception ex) {
       logger.warning("Listing pods failed, not collecting any data for pod configuration");
+    }
+
+    // get pdbs
+    try {
+      writeToFile(Kubernetes.listPodDisruptionBudgets(namespace, null), resultDir, namespace + ".list.pdbs.log");
+    } catch (Exception ex) {
+      logger.warning("Listing pods disruption budgets failed, not collecting any data for pdbs");
     }
 
     // get domain/operator pods
