@@ -108,6 +108,7 @@ public class PortInuseEventWatcher extends Thread {
       throws IOException {
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
+      Files.createDirectories(Paths.get(resultDir));
       Files.write(Paths.get(resultDir, fileName),
           (asYaml ? dump(obj).getBytes(StandardCharsets.UTF_8) : ((String) obj).getBytes(StandardCharsets.UTF_8))
       );
