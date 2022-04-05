@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify the basic lifecycle operations of the WebLogic server pods by scaling the clusters in the domain"
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
-@Tag("wko-wls-srg")
 class ItMultiDomainModels {
 
   // domain constants
@@ -111,6 +110,7 @@ class ItMultiDomainModels {
   @DisplayName("scale cluster by patching domain resource with three different type of domains and "
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @Tag("gate")
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");

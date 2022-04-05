@@ -85,7 +85,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
-@Tag("wko-wls-srg")
 class ItPodsRestart {
 
   private static String miiImage;
@@ -553,6 +552,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Restart pods using restartVersion flag")
+  @Tag("gate")
   void testRestartVersion() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -606,6 +606,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Check restart of pods after image change")
+  @Tag("gate")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();

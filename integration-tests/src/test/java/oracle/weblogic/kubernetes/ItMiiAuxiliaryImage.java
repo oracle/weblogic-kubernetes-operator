@@ -105,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "Multiple domains are created in the same namespace in this class.")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Tag("wko-wls-srg")
 class ItMiiAuxiliaryImage {
 
   private static String domainNamespace = null;
@@ -281,6 +280,7 @@ class ItMiiAuxiliaryImage {
    */
   @Test
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
+  @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     // create stage dir for auxiliary image

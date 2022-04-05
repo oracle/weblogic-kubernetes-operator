@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -153,6 +154,7 @@ class ItFmwMiiDomain {
   @Order(1)
   @Test
   @DisplayName("Create FMW Domain model in image")
+  @Tag("gate")
   void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

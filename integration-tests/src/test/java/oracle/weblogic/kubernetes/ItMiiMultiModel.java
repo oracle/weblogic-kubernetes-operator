@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -319,6 +320,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create a model-in-image domain with two model files in both the image and the ConfigMap")
+  @Tag("gate")
   void testMiiWithMultiModelImageAndCM() {
     final String adminServerPodName = String.format("%s-%s", domainUid3, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid3, MANAGED_SERVER_NAME_BASE);

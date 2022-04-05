@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
@@ -235,6 +236,7 @@ class ItDiagnosticsFailedCondition {
    */
   @Test
   @DisplayName("Test domain status failed condition with non-existing image")
+  @Tag("gate")
   void testImageDoesnotExist() {
     boolean testPassed = false;
     String domainName = getDomainName();
@@ -269,6 +271,7 @@ class ItDiagnosticsFailedCondition {
    */
   @Test
   @DisplayName("Test domain status condition with missing image pull secret")
+  @Tag("gate")
   void testImagePullSecretDoesnotExist() {
     boolean testPassed = false;
     String domainName = getDomainName();
