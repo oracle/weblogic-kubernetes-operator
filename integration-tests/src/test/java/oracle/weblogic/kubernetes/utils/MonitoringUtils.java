@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -30,6 +29,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
@@ -65,8 +65,7 @@ public class MonitoringUtils {
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     LoggingFacade logger = getLogger();
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
-    String monitoringExporterWebAppVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
-        .orElse(MONITORING_EXPORTER_WEBAPP_VERSION);
+    String monitoringExporterWebAppVersion = MONITORING_EXPORTER_WEBAPP_VERSION;
 
     String monitoringExporterBuildFile = String.format(
         "%s/get%s.sh", applicationDir, monitoringExporterWebAppVersion);
@@ -139,11 +138,9 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
 
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("main");
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
-            + monitoringExporterBranch
+            + MONITORING_EXPORTER_BRANCH
             + " "
             + MONITORING_EXPORTER_DOWNLOAD_URL
             + " " + monitoringTemp)

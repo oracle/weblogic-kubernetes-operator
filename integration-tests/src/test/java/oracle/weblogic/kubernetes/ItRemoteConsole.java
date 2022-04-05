@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
@@ -179,9 +180,7 @@ class ItRemoteConsole {
    */
   @AfterAll
   public void tearDownAll() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false")))  {
+    if (!SKIP_CLEANUP)  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
     }
   }
