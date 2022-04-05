@@ -18,9 +18,9 @@ description: "Obtain and inspect images for WebLogic Server or Fusion Middleware
 - [Inspect images](#inspect-images)
 - [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
 - [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images)
-  - [Option 1: Store images in a central registry and set up image pull secrets on each domain resource](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource)
-  - [Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace)
-  - [Option 3: Manually place images on Kubernetes cluster nodes](#option-3-manually-place-images-on-kubernetes-cluster-nodes)
+  - [Option 1:](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource) Store images in a central registry and set up image pull secrets on each domain resource
+  - [Option 2:](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace) Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
+  - [Option 3:](#option-3-manually-place-images-on-kubernetes-cluster-nodes) Manually place images on Kubernetes cluster nodes
 
 
 
