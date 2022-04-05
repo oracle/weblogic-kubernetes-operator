@@ -220,8 +220,8 @@ public class PersistentVolumeUtils {
     Path pvHostPath = null;
     LoggingFacade logger = getLogger();
     try {
-      logger.info("Creating PV directory host path {0}", pvHostPath);
       pvHostPath = Files.createDirectories(Paths.get(PV_ROOT, className, pvName));
+      logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
     } catch (IOException ioex) {
