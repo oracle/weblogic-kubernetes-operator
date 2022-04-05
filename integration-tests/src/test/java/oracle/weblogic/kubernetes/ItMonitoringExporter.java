@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -104,8 +103,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -1268,10 +1269,8 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
 
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("main");
     //adding ability to build monitoring exporter if branch is not main
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
+    boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
@@ -1290,7 +1289,7 @@ class ItMonitoringExporter {
   }
 
   private static void buildMonitoringExporterImage(String imageName) {
-    String httpsproxy = System.getenv("HTTPS_PROXY");
+    String httpsproxy = HTTPS_PROXY;
     logger.info(" httpsproxy : " + httpsproxy);
     String proxyHost = "";
     String command;
