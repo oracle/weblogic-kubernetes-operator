@@ -191,7 +191,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       del os.environ['ISTIO_ENABLED']
       del os.environ['ISTIO_READINESS_PORT']
 
-  def test_port_forward_network_access_point_when_admin_server_name_not_defined(self):
+  def test_customize_port_forward_network_access_point_admin_port_enabled(self):
     model = self.getModel()
     server = model['topology']['Server']['admin-server']
 
