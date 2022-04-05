@@ -447,7 +447,8 @@ public class CallBuilder {
   private final SynchronousCallFactory<CoreV1Event> createEventCall =
       (client, requestParams) ->
           new CoreV1Api(client)
-              .createNamespacedEvent(requestParams.namespace, (CoreV1Event) requestParams.body, pretty, dryRun, null);
+              .createNamespacedEvent(requestParams.namespace, (CoreV1Event) requestParams.body, pretty, dryRun,
+                  null, null);
 
 
   public CallBuilder() {
