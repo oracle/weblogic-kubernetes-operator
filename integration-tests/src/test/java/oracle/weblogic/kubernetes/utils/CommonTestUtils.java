@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -907,26 +906,6 @@ public class CommonTestUtils {
         "Waiting until each managed server can see other cluster members");
   }
 
-  /**
-   * Get the next free port between from and to.
-   *
-   * @param from range starting point
-   * @param to range ending point
-   * @return the next free port number, if there is no free port between the range, return the ending point
-   */
-  public static synchronized int getNextFreePort(int from, int to) {
-    LoggingFacade logger = getLogger();
-    int port;
-    for (port = from; port < to; port++) {
-      if (isLocalPortFree(port)) {
-        logger.info("next free port is: {0}", port);
-        return port;
-      }
-    }
-    logger.info("Can not find free port between {0} and {1}", from, to);
-    return port;
-  }
-
   private static int port = 32000;
   private static final int END_PORT = 32767;
 
@@ -940,14 +919,27 @@ public class CommonTestUtils {
     int freePort = 0;
     while (port <= END_PORT) {
       freePort = port++;
-      if (isLocalPortFree(freePort)) {
-        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(3));
-        logger.info("next free port is: {0}", freePort);
+      try {
+        isLocalPortFree(freePort);
+      } catch (IOException ex) {
         return freePort;
       }
     }
     logger.warning("Could not get free port below " + END_PORT);
     return -1;
+  }
+
+  /**
+   * Check if the given port number is free. Tries to bind to the given port, if it succeeds it means the given port is
+   * already in use by a process.
+   *
+   * @param port port number to check
+   * @throws java.io.IOException when the port is not used by any socket
+   */
+  private static void isLocalPortFree(int port) throws IOException {
+    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
+      getLogger().info("{0} is already in use", port);
+    }
   }
 
   /**
@@ -958,29 +950,6 @@ public class CommonTestUtils {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     return dateFormat.format(date) + "-" + System.currentTimeMillis();
-  }
-
-  /**
-   * Check if the given port number is free.
-   *
-   * @param port port number to check
-   * @return true if the port is free, false otherwise
-   */
-  private static boolean isLocalPortFree(int port) {
-    LoggingFacade logger = getLogger();
-    Socket socket = null;
-    try {
-      socket = new Socket(K8S_NODEPORT_HOST, port);
-      return false;
-    } catch (IOException ignored) {
-      return true;
-    } finally {
-      try {
-        socket.close();
-      } catch (Exception ex) {
-        logger.warning("Exception in closing Socket {0}", ex.getMessage());
-      }
-    }
   }
 
   /**
