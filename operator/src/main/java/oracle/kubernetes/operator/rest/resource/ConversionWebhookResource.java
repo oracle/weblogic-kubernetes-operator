@@ -69,7 +69,7 @@ public class ConversionWebhookResource extends BaseResource {
       conversionResponse = new ConversionResponse()
           .uid(getUid(conversionReview))
           .result(new Result().status(FAILED_STATUS)
-              .message("Exception: " + e.getMessage()));
+              .message("Exception: " + e.toString()));
       generateFailedEvent(e);
     }
     LOGGER.exiting(conversionResponse);
