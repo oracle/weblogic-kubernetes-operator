@@ -80,5 +80,4 @@ public interface EventConstants {
   String SERVER_POD_ERROR_SUGGESTION = "";
   String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase the number "
       + "of WebLogic servers in the WebLogic domain configuration for the cluster.";
-  String DOMAIN_CONVERSION_FAILED_PATTERN = "WebLogic Domain custom resource conversion webhook failed due to '%s' %s";
 }

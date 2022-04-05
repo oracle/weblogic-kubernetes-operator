@@ -65,12 +65,12 @@ public class ConversionWebhookResource extends BaseResource {
       conversionReview = readConversionReview(body);
       conversionResponse = createConversionResponse(conversionReview.getRequest());
     } catch (Exception e) {
-      LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage());
+      LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
           .uid(getUid(conversionReview))
           .result(new Result().status(FAILED_STATUS)
               .message("Exception: " + e.toString()));
-      generateFailedEvent(e);
+      generateFailedEvent(e, getConversionRequest(conversionReview));
     }
     LOGGER.exiting(conversionResponse);
     return writeConversionReview(new ConversionReviewModel()
@@ -79,14 +79,14 @@ public class ConversionWebhookResource extends BaseResource {
         .response(conversionResponse));
   }
 
-  private void generateFailedEvent(Exception exception) {
-    EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
-        .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(getAdditionalMessage(exception));
-    createConversionWebhookEvent(eventData);
+  private String getConversionRequest(ConversionReviewModel conversionReview) {
+    return Optional.ofNullable(conversionReview).map(c -> c.getRequest()).map(cr -> cr.toString()).orElse(null);
   }
 
-  private String getAdditionalMessage(Exception e) {
-    return Optional.ofNullable(e.getCause()).map(Throwable::getMessage).orElse("");
+  private void generateFailedEvent(Exception exception, String conversionRequest) {
+    EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
+        .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(conversionRequest);
+    createConversionWebhookEvent(eventData);
   }
 
   private String getUid(ConversionReviewModel conversionReview) {

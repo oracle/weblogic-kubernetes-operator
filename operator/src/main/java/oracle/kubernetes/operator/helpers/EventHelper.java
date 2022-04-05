@@ -30,6 +30,7 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
@@ -40,7 +41,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_CONVERSION_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
@@ -636,7 +636,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_CONVERSION_FAILED_PATTERN;
+        return DOMAIN_CONVERSION_FAILED;
       }
 
       @Override
@@ -674,7 +674,7 @@ public class EventHelper {
     }
 
     private static String getMessageFromFailedConversionEventData(EventData eventData) {
-      return String.format(eventData.eventItem.getPattern(),
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
           Optional.ofNullable(eventData.message).orElse(""),
           getAdditionalMessage(eventData));
     }
