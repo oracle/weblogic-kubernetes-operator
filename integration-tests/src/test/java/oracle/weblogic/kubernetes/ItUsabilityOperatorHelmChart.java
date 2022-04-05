@@ -830,7 +830,7 @@ class ItUsabilityOperatorHelmChart {
           "can't start or verify domain5 in namespace " + domain4Namespace);
 
       assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
           "Domain4 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -841,7 +841,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain4 scaled to 3 servers");
 
       assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
           "Domain2 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
