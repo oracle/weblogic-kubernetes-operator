@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -36,6 +37,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -72,7 +75,7 @@ public class LoggingExporter {
   public static boolean installElasticsearch(LoggingExporterParams params) {
     String elasticsearchName = params.getElasticsearchName();
     String namespace = params.getLoggingExporterNamespace();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", elasticsearchName);
 
     // create Elasticsearch deployment CR
@@ -131,7 +134,7 @@ public class LoggingExporter {
   public static boolean installKibana(LoggingExporterParams params) {
     String kibanaName = params.getKibanaName();
     String namespace = params.getLoggingExporterNamespace();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
 
     // create Kibana deployment CR
@@ -353,7 +356,7 @@ public class LoggingExporter {
     String namespace = params.getLoggingExporterNamespace();
     int elasticsearchHttpPort = params.getElasticsearchHttpPort();
     int elasticsearchHttpsPort = params.getElasticsearchHttpsPort();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", elasticsearchName);
 
     // create Elasticsearch deployment CR object
@@ -372,18 +375,18 @@ public class LoggingExporter {
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
                 .spec(new V1PodSpec()
-                    .initContainers(Arrays.asList(new V1Container()
+                    .initContainers(List.of(new V1Container()
                         .name("set-vm-max-map-count")
-                        .image("busybox")
-                        .imagePullPolicy("IfNotPresent")
+                        .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .command(Arrays.asList("sysctl", "-w", "vm.max_map_count=262144"))
                         .securityContext(new V1SecurityContext().privileged(true))))
-                    .containers(Arrays.asList(new V1Container()
+                    .containers(List.of(new V1Container()
                         .name(elasticsearchName)
                         .image(elasticsearchImage)
                         .securityContext(new V1SecurityContext()
                             .capabilities(new V1Capabilities()
-                                .add(Arrays.asList("SYS_CHROOT"))))
+                                .add(List.of("SYS_CHROOT"))))
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(Integer.valueOf(elasticsearchHttpPort)))
                         .addPortsItem(new V1ContainerPort()
@@ -404,7 +407,7 @@ public class LoggingExporter {
     String kibanaImage = params.getKibanaImage();
     String namespace = params.getLoggingExporterNamespace();
     int kibanaContainerPort = params.getKibanaContainerPort();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
 
     // create Kibana deployment CR object
@@ -423,10 +426,10 @@ public class LoggingExporter {
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
                 .spec(new V1PodSpec()
-                    .containers(Arrays.asList(new V1Container()
+                    .containers(List.of(new V1Container()
                         .name(kibanaName)
                         .image(kibanaImage)
-                        .ports(Arrays.asList(new V1ContainerPort()
+                        .ports(List.of(new V1ContainerPort()
                             .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
 
     return kibanaDeployment;
@@ -438,7 +441,7 @@ public class LoggingExporter {
     String namespace = params.getLoggingExporterNamespace();
     int elasticsearchHttpPort = params.getElasticsearchHttpPort();
     int elasticsearchHttpsPort = params.getElasticsearchHttpsPort();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", elasticsearchName);
 
     // create Elasticsearch service CR object
@@ -450,12 +453,12 @@ public class LoggingExporter {
         .spec(new V1ServiceSpec()
             .addPortsItem(new V1ServicePort()
                 .name("http")
-                .protocol("TCP")
+                .protocol(V1ServicePort.ProtocolEnum.TCP)
                 .port(elasticsearchHttpPort)
                 .targetPort(new IntOrString(elasticsearchHttpPort)))
             .addPortsItem(new V1ServicePort()
                 .name("https")
-                .protocol("TCP")
+                .protocol(V1ServicePort.ProtocolEnum.TCP)
                 .port(elasticsearchHttpsPort)
                 .targetPort(new IntOrString(elasticsearchHttpsPort)))
             .selector(labels));
@@ -467,9 +470,9 @@ public class LoggingExporter {
 
     String kibanaName = params.getKibanaName();
     String namespace = params.getLoggingExporterNamespace();
-    String kibanaType = params.getKibanaType();
+    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.fromValue(params.getKibanaType());
     int kibanaContainerPort = params.getKibanaContainerPort();
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
 
     // create Kibana service CR object
@@ -480,7 +483,7 @@ public class LoggingExporter {
             .namespace(namespace))
         .spec(new V1ServiceSpec()
             .type(kibanaType)
-            .ports(Arrays.asList(new V1ServicePort()
+            .ports(List.of(new V1ServicePort()
                 .port(kibanaContainerPort)))
             .selector(labels));
 

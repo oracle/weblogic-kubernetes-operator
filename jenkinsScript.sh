@@ -98,37 +98,19 @@ which mvn
 mvn --version
 
 echo 'Info: Set up helm...'
-curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
-tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz
+curl -Lo "helm.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/helm%2Fhelm-v${HELM_VERSION}.tar.gz"
+tar zxf helm.tar.gz
 cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
 echo 'Info: Set up kubectl...'
-set +e
-echo 'Info: download from object storage'
-curl --ipv4 -LO --retry 3 https://objectstorage.eu-frankfurt-1.oraclecloud.com/n/weblogicondocker/b/bucket-wko-jenkins/o/v${KUBECTL_VERSION}_kubectl
-mv v${KUBECTL_VERSION}_kubectl bin/kubectl
-chmod +x bin/kubectl
-out=$(kubectl version --client=true)
-res=$?
-if [ $res -ne 0 ]; then
-  for i in 1 2 3 ; do
-   curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-   mv kubectl bin/kubectl
-   chmod +x bin/kubectl
-   out=$(kubectl version --client=true)
-   res=$?
-   [ $res -eq 0 ] && break
-   sleep 10
-  done
-fi
-set -e
+curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
+chmod +x ${WORKSPACE}/bin/kubectl
 kubectl version --client=true
 
 echo 'Info: Set up kind...'
-curl --ipv4 -Lo ./kind --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
-chmod +x ./kind
-mv ./kind bin/kind
+curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
+chmod +x "${WORKSPACE}/bin/kind"
 kind version
 
 export TWO_CLUSTERS=false

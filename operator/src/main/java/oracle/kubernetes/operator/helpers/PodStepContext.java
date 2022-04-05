@@ -28,8 +28,8 @@ import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
-import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -288,9 +288,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
     if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
-      addContainerPort(ports, "default", getListenPort(), "TCP");
-      addContainerPort(ports, "default-secure", getSslListenPort(), "TCP");
-      addContainerPort(ports, "default-admin", getAdminPort(), "TCP");
+      addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+      addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+      addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
     }
 
     return ports;
@@ -306,15 +306,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
     String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
-    addContainerPort(ports, name, nap.getListenPort(), "TCP");
+    addContainerPort(ports, name, nap.getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
 
     if (isSipProtocol(nap)) {
-      addContainerPort(ports, "udp-" + name, nap.getListenPort(), "UDP");
+      addContainerPort(ports, "udp-" + name, nap.getListenPort(), V1ContainerPort.ProtocolEnum.UDP);
     }
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, String name,
-                                @Nullable Integer listenPort, String protocol) {
+                                @Nullable Integer listenPort, V1ContainerPort.ProtocolEnum protocol) {
     if (listenPort != null) {
       name = createContainerPortName(ports, name);
       ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
@@ -571,7 +571,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     Shutdown shutdown = getShutdownSpec();
-    addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType().toString());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
     if (!shutdown.getWaitForAllSessions().equals(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS)) {
@@ -819,8 +819,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new V1Lifecycle().preStop(handler(STOP_SERVER));
   }
 
-  private V1Handler handler(String... commandItems) {
-    return new V1Handler().exec(execAction(commandItems));
+  private V1LifecycleHandler handler(String... commandItems) {
+    return new V1LifecycleHandler().exec(execAction(commandItems));
   }
 
   private V1ExecAction execAction(String... commandItems) {
@@ -879,7 +879,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
     if (useHttps) {
-      getAction.scheme("HTTPS");
+      getAction.scheme(V1HTTPGetAction.SchemeEnum.HTTPS);
     }
     return getAction;
   }
@@ -1438,7 +1438,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
-                .name(getMetricsPortName()).protocol("TCP").containerPort(getPort()));
+                .name(getMetricsPortName()).protocol(V1ContainerPort.ProtocolEnum.TCP).containerPort(getPort()));
     }
 
     private String getMetricsPortName() {

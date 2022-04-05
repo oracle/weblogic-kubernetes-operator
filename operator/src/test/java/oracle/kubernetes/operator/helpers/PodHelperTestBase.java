@@ -36,11 +36,11 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
-import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -59,6 +59,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -94,7 +95,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -117,13 +117,13 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZI
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.POD;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
@@ -138,8 +138,6 @@ import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTAT
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
 import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
@@ -421,7 +419,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private V1ContainerPort createContainerPort(String portName) {
-    return new V1ContainerPort().name(portName).containerPort(8001).protocol("TCP");
+    return new V1ContainerPort().name(portName).containerPort(8001).protocol(V1ContainerPort.ProtocolEnum.TCP);
   }
 
   @Test
@@ -495,7 +493,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void monitoringExporterContainer_hasInferredPullPolicy() {
     defineExporterConfiguration();
 
-    assertThat(getExporterContainer().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+    assertThat(getExporterContainer().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -504,7 +502,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
-    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 
@@ -514,7 +512,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
-    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(300));
   }
 
@@ -524,7 +522,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
     assertThat(metricsPort, notNullValue());
-    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 
@@ -545,7 +543,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private Domain createDomain() {
     return new Domain()
         .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
-        .withKind(KubernetesConstants.DOMAIN)
+        .withKind(DOMAIN)
         .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
         .withSpec(createDomainSpec());
   }
@@ -681,7 +679,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private V1Pod loadPodModel(String podYaml) {
-    return new Yaml().loadAs(podYaml, V1Pod.class);
+    return Yaml.loadAs(podYaml, V1Pod.class);
   }
 
   @Test
@@ -692,7 +690,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(v1Container.getName(), equalTo(WLS_CONTAINER_NAME));
     assertThat(v1Container.getImage(), equalTo(LATEST_IMAGE));
-    assertThat(v1Container.getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+    assertThat(v1Container.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -702,7 +700,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     V1Container v1Container = getCreatedPodSpecContainer();
 
     assertThat(v1Container.getImage(), equalTo(VERSIONED_IMAGE));
-    assertThat(v1Container.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
+    assertThat(v1Container.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
   }
 
   @Test
@@ -761,7 +759,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent")));
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -777,7 +775,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "IfNotPresent")));
+                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -822,11 +820,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
-                    .imagePullPolicy("ALWAYS")));
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)));
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "ALWAYS")));
+                "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS)));
   }
 
   @Test
@@ -837,7 +835,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", "IfNotPresent", CUSTOM_WDT_INSTALL_SOURCE_HOME)));
+                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT, CUSTOM_WDT_INSTALL_SOURCE_HOME)));
   }
 
   @Test
@@ -848,7 +846,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", CUSTOM_WDT_INSTALL_SOURCE_HOME,
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT, CUSTOM_WDT_INSTALL_SOURCE_HOME,
                     CUSTOM_MODEL_SOURCE_HOME)));
   }
 
@@ -859,9 +857,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image1:v1", "IfNotPresent"),
+                "wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                    "wdt-image2:v1", "IfNotPresent")));
+                    "wdt-image2:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(5));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
@@ -872,7 +870,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenDomainHasLegacyAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -883,7 +882,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1",
-                    "IfNotPresent",
+                    V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
@@ -916,7 +915,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainHasLegacyAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -933,7 +933,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenDomainHasLegacyAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, null, "Memory");
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -950,7 +951,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenDomainHasLegacyAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH, "100G", null);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -966,7 +968,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainHasLegacyAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "ALWAYS");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -975,7 +978,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS",
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS,
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
                     serverName)));
   }
@@ -1078,22 +1081,23 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return metadata;
   }
 
-  static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy) {
+  static Map<String, Object> createAuxiliaryImage(String image, V1Container.ImagePullPolicyEnum imagePullPolicy) {
     return createAuxiliaryImage(image, imagePullPolicy,
             AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, TEST_VOLUME_NAME);
   }
 
-  static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy, String command) {
+  static Map<String, Object> createAuxiliaryImage(String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                                  String command) {
     return createAuxiliaryImage(image, imagePullPolicy, command,
             TEST_VOLUME_NAME);
   }
 
   @NotNull
-  private static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy, String command,
-                                                          String volume) {
+  private static Map<String, Object> createAuxiliaryImage(String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                                          String command, String volume) {
     Map<String, Object> auxiliaryImage = new LinkedHashMap<>();
     auxiliaryImage.put("image", image);
-    auxiliaryImage.put("imagePullPolicy", imagePullPolicy);
+    auxiliaryImage.put("imagePullPolicy", imagePullPolicy.toString());
     auxiliaryImage.put("volume", volume);
     auxiliaryImage.put("command", command);
     return auxiliaryImage;
@@ -1125,7 +1129,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
     try {
       testSupport.addDomainPresenceInfo(new DomainPresenceInfo(
-              readDomain(conversionUtils.convertDomainSchema(new Yaml().dump(map)))));
+              readDomain(conversionUtils.convertDomainSchema(Yaml.dump(map)))));
       addAuxiliaryImagePathsEnvToPacket();
     } catch (IOException ioe) {
       ioe.printStackTrace();
@@ -1135,7 +1139,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainHasLegacyAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
             CUSTOM_COMMAND_SCRIPT);
 
     convertDomainWithLegacyAuxImages(
@@ -1144,7 +1149,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                             Collections.singletonList(auxiliaryImage))));
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT, serverName)));
+                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT, CUSTOM_COMMAND_SCRIPT, serverName)));
   }
 
   private void addAuxiliaryImagePathsEnvToPacket() {
@@ -1156,8 +1161,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainHasMultipleLegacyAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
-    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image1:v1", "IfNotPresent");
-    Map<String, Object> auxiliaryImage2 = createAuxiliaryImage("wdt-image2:v1", "IfNotPresent");
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+    Map<String, Object> auxiliaryImage2 =
+        createAuxiliaryImage("wdt-image2:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1166,12 +1173,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                             Arrays.asList(auxiliaryImage, auxiliaryImage2))));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image1:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName),
-                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                            "wdt-image2:v1",
-                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+        allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image1:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName),
+            Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                "wdt-image2:v1",
+                V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
@@ -1263,7 +1271,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
     assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
     assertThat(getAction.getPort().getIntValue(), equalTo(adminPort));
-    assertThat(getAction.getScheme(), equalTo("HTTPS"));
+    assertThat(getAction.getScheme(), equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
   }
 
   @Test
@@ -1573,7 +1581,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     final V1ContainerPort plainPort = getContainerPort("default");
 
     assertThat(plainPort, notNullValue());
-    assertThat(plainPort.getProtocol(), equalTo("TCP"));
+    assertThat(plainPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(plainPort.getContainerPort(), equalTo(listenPort));
   }
 
@@ -1588,7 +1596,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     final V1ContainerPort sslPort = getContainerPort("default-secure");
 
     assertThat(sslPort, notNullValue());
-    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(sslPort.getContainerPort(), equalTo(SSL_PORT));
   }
 
@@ -1599,7 +1607,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     final V1ContainerPort sslPort = getContainerPort("default-admin");
 
     assertThat(sslPort, notNullValue());
-    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(sslPort.getContainerPort(), equalTo(adminPort));
   }
 
@@ -1837,7 +1845,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenPodConfigurationChangesImagePullPolicy_replacePod() {
     initializeExistingPod();
 
-    configureDomain().withDefaultImagePullPolicy("NONE");
+    configureDomain().withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER);
 
     verifyPodReplaced();
   }
@@ -2053,7 +2061,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   private V1Lifecycle createLifecycle() {
     return new V1Lifecycle()
         .preStop(
-            new V1Handler()
+            new V1LifecycleHandler()
                 .exec(
                     new V1ExecAction().addCommandItem("/weblogic-operator/scripts/stopServer.sh")));
   }
@@ -2092,10 +2100,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return new V1Container()
         .name(WLS_CONTAINER_NAME)
         .image(LATEST_IMAGE)
-        .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
+        .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)
         .securityContext(new V1SecurityContext())
         .addPortsItem(
-            new V1ContainerPort().name("default").containerPort(listenPort).protocol("TCP"))
+            new V1ContainerPort().name("default").containerPort(listenPort).protocol(V1ContainerPort.ProtocolEnum.TCP))
         .lifecycle(createLifecycle())
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID, 1))
         .command(createStartCommand())
@@ -2167,7 +2175,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
   }
 
-  static V1Toleration createToleration(String key, String operator, String value, String effect) {
+  static V1Toleration createToleration(String key, V1Toleration.OperatorEnum operator, String value,
+                                       V1Toleration.EffectEnum effect) {
     return new V1Toleration().key(key).operator(operator).value(value).effect(effect);
   }
 
@@ -2371,21 +2380,21 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenDomainHasRestartPolicy_createPodWithIt() {
     getConfigurator()
-        .withRestartPolicy("Always");
+        .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
 
     assertThat(
         getCreatedPod().getSpec().getRestartPolicy(),
-        is("Always"));
+        is(V1PodSpec.RestartPolicyEnum.ALWAYS));
   }
 
   @Test
   void whenServerHasRestartPolicy_createPodWithIt() {
     configureServer()
-        .withRestartPolicy("Always");
+        .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
 
     assertThat(
         getCreatedPod().getSpec().getRestartPolicy(),
-        is("Always"));
+        is(V1PodSpec.RestartPolicyEnum.ALWAYS));
   }
 
   @Test
@@ -2458,7 +2467,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenPodCreated_createPodWithOwnerReference() {
     V1OwnerReference expectedReference = new V1OwnerReference()
         .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
-        .kind(KubernetesConstants.DOMAIN)
+        .kind(DOMAIN)
         .name(DOMAIN_NAME)
         .uid(KUBERNETES_UID)
         .controller(true);

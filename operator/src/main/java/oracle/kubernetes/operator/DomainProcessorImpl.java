@@ -323,7 +323,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
 
-    if (Domain.isExternalServiceConfigured(info.getDomain().getSpec())) {
+    if (info.getDomain().isExternalServiceConfigured()) {
       steps.add(ServiceHelper.createForExternalServiceStep(null));
     }
     steps.add(ServiceHelper.createForServerStep(null));

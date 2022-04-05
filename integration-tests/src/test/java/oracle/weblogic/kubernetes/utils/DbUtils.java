@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
 import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
@@ -156,16 +157,16 @@ public class DbUtils {
       addSccToDBSvcAccount("default", dbNamespace);
     }
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", "database");
 
-    Map limits = new HashMap<String, String>();
-    limits.put("cpu", "2");
-    limits.put("memory", "10Gi");
-    limits.put("ephemeral-storage", "8Gi");
-    Map requests = new HashMap<String, String>();
-    requests.put("cpu", "500m");
-    requests.put("ephemeral-storage", "8Gi");
+    Map<String, Quantity> limits = new HashMap<>();
+    limits.put("cpu", Quantity.fromString("2"));
+    limits.put("memory", Quantity.fromString("10Gi"));
+    limits.put("ephemeral-storage", Quantity.fromString("8Gi"));
+    Map<String, Quantity> requests = new HashMap<>();
+    requests.put("cpu", Quantity.fromString("500m"));
+    requests.put("ephemeral-storage", Quantity.fromString("8Gi"));
 
     //create V1Service for Oracle DB
     oracleDBService = new V1Service()
@@ -180,12 +181,12 @@ public class DbUtils {
                 new V1ServicePort()
                     .name("tns")
                     .port(dbListenerPort)
-                    .protocol("TCP")
+                    .protocol(V1ServicePort.ProtocolEnum.TCP)
                     .targetPort(new IntOrString(1521))
                     .nodePort(dbPort)))
             .selector(labels)
-            .sessionAffinity("None")
-            .type("LoadBalancer"));
+            .sessionAffinity(V1ServiceSpec.SessionAffinityEnum.NONE)
+            .type(V1ServiceSpec.TypeEnum.LOADBALANCER));
 
     logger.info("Create service for Oracle DB service in namespace {0}, dbListenerPort: {1}", dbNamespace,
         dbListenerPort);
@@ -213,7 +214,7 @@ public class DbUtils {
                  .rollingUpdate(new V1RollingUpdateDeployment()
                      .maxSurge(new IntOrString(1))
                      .maxUnavailable(new IntOrString(1)))
-                 .type("RollingUpdate"))
+                 .type(V1DeploymentStrategy.TypeEnum.ROLLINGUPDATE))
             .template(new V1PodTemplateSpec()
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
@@ -225,21 +226,21 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
-                            .imagePullPolicy("IfNotPresent")
+                            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                             .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
                                 .containerPort(dbListenerPort)
                                 .name("tns")
-                                .protocol("TCP")
+                                .protocol(V1ContainerPort.ProtocolEnum.TCP)
                                 .hostPort(dbListenerPort)))
                             .resources(new V1ResourceRequirements()
                                 .limits(limits)
                                 .requests(requests))
                             .terminationMessagePath("/dev/termination-log")
-                            .terminationMessagePolicy("File")))
-                    .dnsPolicy("ClusterFirst")
-                    .restartPolicy("Always")
+                            .terminationMessagePolicy(V1Container.TerminationMessagePolicyEnum.FILE)))
+                    .dnsPolicy(V1PodSpec.DnsPolicyEnum.CLUSTERFIRST)
+                    .restartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS)
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
@@ -321,7 +322,7 @@ public class DbUtils {
       throws ApiException {
     LoggingFacade logger = getLogger();
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("ruc", "rcu");
 
     V1Pod podBody = new V1Pod()
@@ -336,7 +337,7 @@ public class DbUtils {
                 new V1Container()
                     .name("rcu")
                     .image(fmwBaseImageName)
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
@@ -372,7 +373,7 @@ public class DbUtils {
 
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 
@@ -521,7 +522,7 @@ public class DbUtils {
 
     try {
       // delete db resources in dbNamespace
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl delete all --all -n " + dbNamespace + " --ignore-not-found"))
           .execute();
@@ -602,7 +603,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
         true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
         String.format("Failed to change permissions for file %s in pod %s", sqlplusLocation, dbPodName));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", sqlplusLocation,
             execResult.stderr(), execResult.stdout()));
     getLogger().info("File permissions changed inside pod");
@@ -612,7 +613,7 @@ public class DbUtils {
     execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, dbPodName,
             null, true, "bin/bash", "-c", cmd));
-    assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
+    assertEquals(0, execResult.exitValue(), "Could not update the RCU schema password");
 
   }
 
@@ -967,7 +968,7 @@ public class DbUtils {
             .apiGroup("rbac.authorization.k8s.io"));
     assertTrue(TestActions.createRoleBinding(namespace, roleBinding), "Failed to create cluster role binding");
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", name);
 
     //create V1Deployment for Oracle DB
@@ -990,7 +991,7 @@ public class DbUtils {
                     .containers(Arrays.asList(new V1Container()
                         .name(name)
                         .image("mauilion/hostpath-provisioner:dev")
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .addEnvItem(new V1EnvVar()
                             .name("NODE_NAME")
                             .valueFrom(new V1EnvVarSource()

@@ -112,7 +112,7 @@ The Domain `spec` section contains elements for configuring the domain operation
 
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
+* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
@@ -189,12 +189,12 @@ Elements related to specifying and overriding WebLogic domain configuration:
     to verify that the pod is ready
     for application traffic. Defaults to 8888.
   * `replicationChannelPort`:
-    The operator will create a `T3` protocol 
+    The operator will create a `T3` protocol
     WebLogic network access point
-    on each WebLogic Server that is part of a cluster with this port 
+    on each WebLogic Server that is part of a cluster with this port
     to handle EJB and servlet session state replication traffic
-    between servers. This setting is ignored for clusters 
-    where the WebLogic cluster configuration already 
+    between servers. This setting is ignored for clusters
+    where the WebLogic cluster configuration already
     defines a `replication-channel` attribute. Defaults to 4564.
   * `localhostBindingsEnabled`:
     This setting was added in operator version 3.3.3,
@@ -250,7 +250,7 @@ You can use the following environment variables to specify JVM memory and JVM op
   * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
-* For a detailed discussion of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
+* For a detailed description of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
 This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.

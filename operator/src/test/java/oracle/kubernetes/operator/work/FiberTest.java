@@ -239,7 +239,7 @@ class FiberTest {
           step1);
 
     final String breadCrumbString = fiber.getBreadCrumbString();
-    assertThat(logRecords, containsInfo(DUMP_BREADCRUMBS, "PREFIX", breadCrumbString));
+    assertThat(logRecords, containsInfo(DUMP_BREADCRUMBS).withParams("PREFIX", breadCrumbString));
     assertThat(breadCrumbString, both(containsString("something")).and(containsString("comment(0)")));
   }
 

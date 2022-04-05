@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,7 +21,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -135,18 +134,6 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void afterValidationWarningsAdded_nextCallReturnsThem() {
-    final String warning1 = "warning1";
-    final String warning2 = "warning2";
-
-    info.addValidationWarning(warning1);
-    info.addValidationWarning(warning2);
-
-    assertThat(info.getValidationWarningsAsString(), containsString(warning1));
-    assertThat(info.getValidationWarningsAsString(), containsString(warning2));
-  }
-
-  @Test
   void countReadyServers() {
     addServer("MS1", "cluster1");
     addReadyServer("MS2", "cluster1");
@@ -175,8 +162,8 @@ class DomainPresenceInfoTest {
 
   private void setReady(V1Pod pod) {
     pod.status(new V1PodStatus()
-          .phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+          .phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
 
   }
 

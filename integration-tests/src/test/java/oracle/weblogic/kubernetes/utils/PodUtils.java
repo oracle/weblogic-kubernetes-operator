@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -231,7 +231,7 @@ public class PodUtils {
    * @param replicaCount replica count of the managed servers
    * @return map of domain admin server pod and managed server pods with their corresponding creationTimestamps
    */
-  public static Map getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
+  public static Map<String, OffsetDateTime> getPodsWithTimeStamps(String domainNamespace, String adminServerPodName,
                                           String managedServerPrefix, int replicaCount) {
 
     // create the map with server pods and their original creation timestamps

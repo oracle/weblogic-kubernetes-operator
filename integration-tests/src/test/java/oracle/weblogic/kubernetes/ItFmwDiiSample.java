@@ -254,7 +254,7 @@ public class ItFmwDiiSample {
 
     String command = "chmod -R 755 " + tempSamplePath;
     logger.info("The command to be executed: " + command);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to chmod tempSamplePath");

@@ -142,7 +142,8 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
 
     ConversionWebhookMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(CONVERSION_WEBHOOK_STARTED, GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+    assertThat(logRecords,
+               containsInfo(CONVERSION_WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
 
   @Test
@@ -151,7 +152,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
 
     ConversionWebhookMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace()));
+    assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE).withParams(getWebhookNamespace()));
   }
 
   @Test

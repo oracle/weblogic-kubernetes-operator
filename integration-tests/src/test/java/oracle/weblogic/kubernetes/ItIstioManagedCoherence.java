@@ -139,7 +139,7 @@ class ItIstioManagedCoherence {
     multiDomainsNamespace = namespaces.get(3);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainInImageNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(miiDomainNamespace, labelMap));
@@ -180,7 +180,7 @@ class ItIstioManagedCoherence {
     createAndVerifyDomain(domImage);
 
     String clusterService = domainUid + "-cluster-cluster-1";
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domainInImageNamespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE", adminServerPodName);
@@ -229,7 +229,7 @@ class ItIstioManagedCoherence {
     // create and verify a two-clusters WebLogic domain with a Coherence cluster
     createMiiDomainWithIstioMultiClusters(miiDomainUid, miiDomainNamespace, miiImage, NUMBER_OF_CLUSTERS, replicaCount);
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", miiDomainNamespace);
     templateMap.put("DUID", miiDomainUid);
     templateMap.put("ADMIN_SERVICE", miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE);
@@ -280,7 +280,7 @@ class ItIstioManagedCoherence {
         .name("tcp-coherence")
         .port(7777)
         .targetPort(new IntOrString(7777))
-        .protocol("TCP"));
+        .protocol(V1ServicePort.ProtocolEnum.TCP));
 
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -291,7 +291,7 @@ class ItIstioManagedCoherence {
             .ports(ports)
             .publishNotReadyAddresses(true)
             .selector(selectors)
-            .type("ClusterIP"));
+            .type(V1ServiceSpec.TypeEnum.CLUSTERIP));
 
     assertNotNull(service, "Can't create multi-domain-svc service, returns null");
     assertDoesNotThrow(() -> createService(service), "Can't create multi-domain-svc service");
@@ -317,7 +317,7 @@ class ItIstioManagedCoherence {
         .name("tcp-coherenceapp")
         .port(8001)
         .targetPort(new IntOrString(8001))
-        .protocol("TCP"));
+        .protocol(V1ServicePort.ProtocolEnum.TCP));
 
     V1Service coherenceappService = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -326,14 +326,14 @@ class ItIstioManagedCoherence {
         .spec(new V1ServiceSpec()
             .ports(ports)
             .selector(selectors)
-            .type("ClusterIP"));
+            .type(V1ServiceSpec.TypeEnum.CLUSTERIP));
 
     assertNotNull(service, "Can't create multi-domain-coherenceapp-svc service, returns null");
     assertDoesNotThrow(() -> createService(coherenceappService),
         "Can't create multi-domain-coherenceapp-svc service");
     checkServiceExists("multi-domain-coherenceapp-svc", multiDomainsNamespace);
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", multiDomainsNamespace);
     templateMap.put("DUID", multiDomainsPrefix + "1");
     templateMap.put("ADMIN_SERVICE", multiDomainsPrefix + "1-" + ADMIN_SERVER_NAME_BASE);

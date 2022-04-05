@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -15,6 +16,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
@@ -45,7 +49,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageEx
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
@@ -160,7 +163,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage);
-    Domain domainCR = createDomainResource40(domain1Uid, domainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage);
@@ -205,7 +208,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
 
-    // create a new auxiliary image with Alpine base image instead of busybox
+    // create a new auxiliary image with oraclelinux base image
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -216,7 +219,7 @@ class ItMiiCreateAuxImageWithImageTool {
         new WitParams()
         .modelImageName(MII_AUXILIARY_IMAGE_NAME)
         .modelImageTag(miiAuxiliaryImageTag)
-        .baseImageName("oraclelinux")
+        .baseImageName("ghcr.io/oracle/oraclelinux")
         .baseImageTag(ORACLELINUX_TEST_VERSION)
         .wdtHome(auxiliaryImagePath2)
         .modelArchiveFiles(archiveList)
@@ -243,7 +246,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
-    Domain domainCR = createDomainResource40(domain2Uid, domainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
         miiAuxiliaryImage);
@@ -279,7 +282,6 @@ class ItMiiCreateAuxImageWithImageTool {
   void testCreateDomainUsingAuxImageCustomizedWdtmodelhome() {
     // admin/managed server name here should match with model yaml
 
-    // create a new auxiliary image with Alpine base image instead of busybox
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
@@ -316,13 +318,13 @@ class ItMiiCreateAuxImageWithImageTool {
     String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domain3Uid, miiAuxiliaryImage);
-    Domain domainCR = createDomainResource40(domain3Uid, domainNamespace,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
 
@@ -395,14 +397,15 @@ class ItMiiCreateAuxImageWithImageTool {
   @Test
   @DisplayName("Test createAuxImage with --pull option")
   void testCreateAuxImagePullOption() {
-    // docker pull busybox:latest first
+    // docker pull base image first
+    String imageAndTag = BUSYBOX_IMAGE + ":" + BUSYBOX_TAG;
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker pull busybox:latest")
+        .command("docker pull " + imageAndTag)
         .saveResults(true)
         .redirect(true);
 
-    assertTrue(Command.withParams(params).execute(), "failed to pull busybox:latest");
+    assertTrue(Command.withParams(params).execute(), "failed to pull " + imageAndTag);
 
     String auxImageName = "auximagewithpulloption";
     WitParams witParams = new WitParams()
@@ -415,14 +418,14 @@ class ItMiiCreateAuxImageWithImageTool {
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
     assertEquals(0, result.exitValue());
 
-    // verify that busybox and aux image have the same RootFS
+    // verify that base and aux image have the same RootFS
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' busybox:latest")
+            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
             .saveResults(true)
             .redirect(true);
 
-    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of busybox:latest");
+    assertTrue(Command.withParams(params).execute(), "failed to inspect RootFS of " + imageAndTag);
     String rootFS = params.stdout();
 
     params = Command

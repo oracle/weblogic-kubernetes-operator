@@ -499,7 +499,7 @@ public class DomainUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle"))
+            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RECYCLE))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .build()
@@ -596,7 +596,7 @@ public class DomainUtils {
             .domainHome("/u01/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET)))
@@ -763,11 +763,11 @@ public class DomainUtils {
                                       V1Container jobContainer) {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy("Never")
+        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
         .addContainersItem(jobContainer  // container containing WLST or WDT details
                .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
                         .volumeMounts(Arrays.asList(
@@ -813,7 +813,7 @@ public class DomainUtils {
         "Getting the job failed");
     if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {

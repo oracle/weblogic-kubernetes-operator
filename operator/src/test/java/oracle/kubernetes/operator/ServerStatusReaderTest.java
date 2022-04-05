@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -150,8 +150,8 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   private void setReadyStatus(V1Pod pod) {
     pod.setStatus(
         new V1PodStatus()
-            .phase("Running")
-            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+            .phase(V1PodStatus.PhaseEnum.RUNNING)
+            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
   }
 
   @Test

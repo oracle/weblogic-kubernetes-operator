@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -27,7 +27,7 @@ public class Docker {
   public static boolean login(String registryName, String username, String password) {
     String cmdToExecute = String.format("docker login %s -u %s -p \"%s\"",
         registryName, username, password);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .verbose(false)
             .command(cmdToExecute))
@@ -41,7 +41,7 @@ public class Docker {
    */
   public static boolean pull(String image) {
     String cmdToExecute = String.format("docker pull %s", image);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute();
@@ -57,7 +57,7 @@ public class Docker {
     if (KIND_REPO != null) {
       cmdToExecute = String.format("kind load docker-image %s --name kind", image);
     }
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute();
@@ -71,7 +71,7 @@ public class Docker {
    */
   public static boolean tag(String originalImage, String taggedImage) {
     String cmdToExecute = String.format("docker tag %s %s", originalImage, taggedImage);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute();
@@ -84,7 +84,7 @@ public class Docker {
    */
   public static boolean deleteImage(String image) {
     String cmdToExecute = String.format("docker rmi -f %s", image);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
                   .command(cmdToExecute))
         .execute();
@@ -109,7 +109,7 @@ public class Docker {
    */
   public static boolean createImage(String dockerFileDir, String image, String extraArgs) {
     String cmdToExecute = String.format("docker build %s -t %s  %s", dockerFileDir, image, extraArgs);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute();

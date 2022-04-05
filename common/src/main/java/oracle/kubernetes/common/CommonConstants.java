@@ -20,7 +20,5 @@ public class CommonConstants {
   public static final String SECRETS_WEBHOOK_KEY = "/secrets/webhookKey";
 
   public static final String LATEST_IMAGE_SUFFIX = ":latest";
-  public static final String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.ALWAYS.label();
-  public static final String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IF_NOT_PRESENT.label();
 
 }

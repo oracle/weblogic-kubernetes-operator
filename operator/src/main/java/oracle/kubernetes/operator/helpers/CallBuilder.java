@@ -370,7 +370,7 @@ public class CallBuilder {
                   requestParams.domainUid,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1Status> deleteService =
+  private final CallFactory<V1Service> deleteService =
       (requestParams, usage, cont, callback) ->
           wrap(
               deleteServiceAsync(
@@ -384,12 +384,13 @@ public class CallBuilder {
           new CoreV1Api(client)
               .patchNamespacedPod(
                   requestParams.name,
-                    requestParams.namespace,
-                    (V1Patch) requestParams.body,
-                    pretty,
-                    dryRun,
-                    null,
-                    null);
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  pretty,
+                  dryRun,
+                  null,
+                  null,
+                  null);
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -427,21 +428,21 @@ public class CallBuilder {
       ((client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSubjectAccessReview(
-                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
+                  (V1SubjectAccessReview) requestParams.body, null, null, null, pretty));
   private final SynchronousCallFactory<V1SelfSubjectAccessReview> createSelfsubjectacessreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectAccessReview(
-                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
+                  (V1SelfSubjectAccessReview) requestParams.body, null, null, null, pretty);
   private final SynchronousCallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreviewCall =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectRulesReview(
-                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
+                  (V1SelfSubjectRulesReview) requestParams.body, null, null, null, pretty);
   private final SynchronousCallFactory<V1TokenReview> createTokenReviewCall =
       (client, requestParams) ->
           new AuthenticationV1Api(client)
-              .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
+              .createTokenReview((V1TokenReview) requestParams.body, null, null, null, pretty);
 
   private final SynchronousCallFactory<CoreV1Event> createEventCall =
       (client, requestParams) ->
@@ -808,7 +809,7 @@ public class CallBuilder {
       ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1Api(client)
-        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
+        .createCustomResourceDefinitionAsync(body, pretty, null, null, null, callback);
   }
 
   /**
@@ -832,7 +833,7 @@ public class CallBuilder {
       ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -910,7 +911,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedConfigMapAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -932,7 +933,7 @@ public class CallBuilder {
           ApiClient client, String namespace, V1Secret body, ApiCallback<V1Secret> callback)
           throws ApiException {
     return new CoreV1Api(client)
-            .createNamespacedSecretAsync(namespace, body, pretty, null, null, callback);
+            .createNamespacedSecretAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1000,7 +1001,7 @@ public class CallBuilder {
       ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, dryRun, null, callback);
+        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, dryRun, null, null, callback);
   }
 
   /**
@@ -1025,7 +1026,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, callback);
+        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, null, callback);
   }
 
   /**
@@ -1071,7 +1072,7 @@ public class CallBuilder {
           ApiCallback<V1Secret> callback)
           throws ApiException {
     return new CoreV1Api(client)
-            .replaceNamespacedSecretAsync(name, namespace, body, pretty, dryRun, null, callback);
+            .replaceNamespacedSecretAsync(name, namespace, body, pretty, dryRun, null, null, callback);
   }
 
   private Call listPodAsync(
@@ -1132,7 +1133,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedPodAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedPodAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1207,7 +1208,8 @@ public class CallBuilder {
   private Call deleteNamespacedPodValidateBeforeCall(ApiClient client, String name, String namespace, String pretty,
                                                      String dryRun, Integer gracePeriodSeconds,
                                                      Boolean orphanDependents, String propagationPolicy,
-                                                     V1DeleteOptions body, ApiCallback callback) throws ApiException {
+                                                     V1DeleteOptions body, ApiCallback<Object> callback)
+      throws ApiException {
     if (name == null) {
       throw new ApiException("Missing the required parameter 'name' when calling deleteNamespacedPod(Async)");
     } else if (namespace == null) {
@@ -1221,7 +1223,7 @@ public class CallBuilder {
 
   private Call deleteNamespacedPodCall(ApiClient client, String name, String namespace, String pretty, String dryRun,
                                        Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
-                                       V1DeleteOptions body, ApiCallback callback) throws ApiException {
+                                       V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
     String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
         client.escapeString(name)).replaceAll("\\{namespace\\}",
         client.escapeString(namespace));
@@ -1285,7 +1287,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Pod> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, null, callback);
+        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, null, null, null, callback);
   }
 
   /**
@@ -1381,7 +1383,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
       throws ApiException {
     return new BatchV1Api(client)
-        .createNamespacedJobAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedJobAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1520,7 +1522,7 @@ public class CallBuilder {
       ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedServiceAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedServiceAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1545,7 +1547,7 @@ public class CallBuilder {
       String name,
       String namespace,
       V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
+      ApiCallback<V1Service> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .deleteNamespacedServiceAsync(
@@ -1575,7 +1577,7 @@ public class CallBuilder {
       String namespace,
       String domainUid,
       V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
+      ResponseStep<V1Service> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("deleteService", namespace, name, deleteOptions, domainUid),
@@ -1641,7 +1643,7 @@ public class CallBuilder {
       ApiCallback<V1beta1PodDisruptionBudget> callback)
       throws ApiException {
     return new PolicyV1beta1Api(client)
-        .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1668,7 +1670,7 @@ public class CallBuilder {
       throws ApiException {
     return new PolicyV1beta1Api(client)
         .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
-            null, null, callback);
+            null, null, null, callback);
   }
 
   /**
@@ -1820,7 +1822,7 @@ public class CallBuilder {
       ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedEventAsync(namespace, body, pretty, null, null, null, callback);
   }
 
   /**
@@ -1847,7 +1849,7 @@ public class CallBuilder {
       ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
+        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, null, callback);
   }
 
   private Call listNamespaceAsync(
@@ -1955,7 +1957,7 @@ public class CallBuilder {
       ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback)
       throws ApiException {
     return new AuthorizationV1Api(client)
-        .createSubjectAccessReviewAsync(body, null, null, pretty, callback);
+        .createSubjectAccessReviewAsync(body, null, null, null, pretty, callback);
   }
 
   /**
@@ -1992,7 +1994,7 @@ public class CallBuilder {
       ApiCallback<V1SelfSubjectRulesReview> callback)
       throws ApiException {
     return new AuthorizationV1Api(client)
-        .createSelfSubjectRulesReviewAsync(body, null, null, pretty, callback);
+        .createSelfSubjectRulesReviewAsync(body, null, null, null, pretty, callback);
   }
 
   /**

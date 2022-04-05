@@ -1,7 +1,7 @@
 ---
 title: "Prepare for installation"
 date: 2021-12-05T16:47:21-05:00
-weight: 10
+weight: 2
 description: "Consult these preparation steps, strategy choices, and prequisites prior to installing an operator."
 ---
 
@@ -47,7 +47,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 1. If it is not already installed, then install Helm.
    To install an operator, it is required to install Helm in your Kubernetes cluster.
-   The operator uses Helm to create necessary resources and then deploy the operator in a Kubernetes cluster.
+   The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster.
 
    To check if you already have Helm available, try the `helm version` command.
 
@@ -64,15 +64,15 @@ The operator Helm chart includes:
 - Helm configuration value settings for fine tuning operator behavior.
 - Commands for deploying (installing) or undeploying the operator.
 
-You can set up access to the operator Helm chart using the GitHub chart repository.
+You can set up access to the operator Helm chart using the chart repository.
 
-- Use the GitHub chart repository version of the operator Helm chart
+- Use the operator Helm chart repository
   that is located at `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   or in a custom repository that you control.
 - To set up your Helm installation so that it can access the
   `https://oracle.github.io/weblogic-kubernetes-operator/charts`
   repository and name the repository reference `weblogic-operator`, use
-  the following `helm repo add` command:
+  the following command, `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`:
   ```text
   $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
   ```
@@ -89,14 +89,14 @@ You can set up access to the operator Helm chart using the GitHub chart reposito
   use `weblogic-operator/weblogic-operator` in your Helm
   commands when specifying the chart location.
 
-- To list the versions of the operator that you can install from the Helm chart repository:
+    - To list the versions of the operator that you can install from the Helm chart repository:
 
-  ```text
-  $ helm search repo weblogic-operator/weblogic-operator --versions
-  ```
+      ```text
+      $ helm search repo weblogic-operator/weblogic-operator --versions
+      ```
 
-- For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
-  to choose the version that you want, with the `latest` value being the default.
+    - For a specified version of the Helm chart and operator, with the `helm pull` and `helm install` commands, use the `--version <value>` option
+      to choose the version that you want, with the `latest` value being the default.
 
 #### Inspect the operator Helm chart
 
@@ -108,15 +108,15 @@ as well as the default values, using the `helm show` command.
   ```
 
 
-Alternatively, you can view most of the configuration values
+- Alternatively, you can view most of the configuration values
 and their defaults in the operator source in the
 `./kubernetes/charts/weblogic-operator/values.yaml` file.
 
-The available configuration values are explained by category in the
+- The available configuration values are explained by category in the
 [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}})
 section of the operator Configuration Reference.
 
-Helm commands are explained in more detail here, see
+- Helm commands are explained in more detail here, see
 [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
 
 #### Prepare an operator namespace and service account
@@ -174,7 +174,7 @@ The operator image must be available to all nodes of your Kubernetes cluster.
 
 ##### Locating an operator image
 
-Production ready operator images for various supported versions of the operator are
+Production-ready operator images for various supported versions of the operator are
 publicly located in the operator
 [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 Operator GitHub container registry images can be directly referenced using an image name similar to
@@ -185,9 +185,10 @@ see the [Developer Guide]({{<relref "/developerguide/_index.md">}}).
 
 ##### Default operator image
 
+Each Helm chart version defaults to using an operator image from the matching version.
 To find the default image name that will be used when installing the operator,
 see [Inspect the operator Helm chart](#inspect-the-operator-helm-chart) and look for the `image` value.
-The value will look something like `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
+The value will look something like this, `ghcr.io/oracle/weblogic-kubernetes-operator:N.N.N`.
 
 ##### Pulling operator image
 
@@ -218,7 +219,7 @@ A private image registry requires using a custom image name for the operator
 where the first part of the name up to the first slash (`/`) character
 is the DNS location of the registry and the remaining part refers
 to the image location within the registry. A private image registry
-may also require an image pull registry secret in order to
+may also require an image pull registry secret to
 provide security credentials.
 
 - To reference a custom image name, specify the `image=` operator Helm chart configuration setting
@@ -226,7 +227,7 @@ provide security credentials.
   for example `--set "image=my-image-registry.io/my-operator-image:1.0"`.
 - To create an image pull registry secret, create a Kubernetes Secret of type `docker-registry`
   in the namespace where the operator is to be deployed, as described
-  in [Specifying ImagePullSecrets on a Pod](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
+  in [Specifying `imagePullSecrets` on a Pod](https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod).
 - To reference an image pull registry secret from an operator installation, there are two options:
   - Use the `imagePullSecrets` operator Helm chart
     configuration setting when installing the operator.
@@ -242,7 +243,7 @@ for the `kubernetesPlatform` Helm chart configuration setting when installing th
 
 In particular, beginning with operator version 3.3.2,
 specify the operator `kubernetesPlatform` Helm chart setting
-with value `OpenShift` when using the `OpenShift` Kubernetes platform,
+with the value `OpenShift` when using the `OpenShift` Kubernetes platform,
 for example `--set "kubernetesPlatform=OpenShift"`.
 This accommodates OpenShift security requirements.
 
@@ -257,7 +258,7 @@ There are three commonly used security strategies for deploying an operator:
 1. [Any namespace with cluster role binding disabled](#any-namespace-with-cluster-role-binding-disabled)
 1. [Local namespace only with cluster role binding disabled](#local-namespace-only-with-cluster-role-binding-disabled)
 
-For a detailed discussion of the operator's security-related resources,
+For a detailed description of the operator's security-related resources,
 see the operator's role-based access control (RBAC) requirements,
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
@@ -311,11 +312,11 @@ choose the value for its `domainNamespaceSelectionStrategy` Helm chart configura
 See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
 Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
-then you should also set `enableClusterRoleBinding` to false.
+then you should also set `enableClusterRoleBinding` to `false`.
 See [Choose a security strategy](#choose-a-security-strategy).
 
-For a discussion about common namespace management issues,
-see [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
+For a description of common namespace management issues,
+see [Common mistakes and solutions]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
 For reference, see [WebLogic domain management]({{<relref "/userguide/managing-operators/using-helm#weblogic-domain-management">}}).
 
 #### Choose a Helm release name
