@@ -232,7 +232,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin2']['ListenPort']
     self.assertEqual(7897, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7897\'")
 
-  def test_customize_port_forward_network_access_point_admin_port_enabled(self):
+  def test_port_forward_network_access_point_when_admin_server_name_not_defined(self):
     model = self.getModelWithoutAdminServerName()
     servers = model['topology']['Server']
     names = servers.keys()
