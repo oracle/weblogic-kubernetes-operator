@@ -318,14 +318,19 @@ def customizeServers(model):
 
 def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
-  adminServer = model['topology']['AdminServerName']
+  try:
+    adminServer = model['topology']['AdminServerName']
+  except KeyError:
+    adminServer = None
   customizeLog(name, server)
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
-  if (name == adminServer):
+  # If the admin server name is not provided in the WDT model,
+  # use the default name 'AdminServer'.
+  if (name == adminServer or  name == 'AdminServer'):
     addAdminChannelPortForwardNetworkAccessPoints(server)
   else:
     customizeIstioReplicationChannel(server, name, listen_address)
