@@ -24,7 +24,7 @@ import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
+import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
@@ -36,6 +36,8 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
@@ -46,8 +48,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
@@ -247,19 +247,19 @@ public class CallBuilder {
                   null,
                   null,
                   callback));
-  private final CallFactory<V1beta1PodDisruptionBudgetList> listPodDisruptionBudget =
+  private final CallFactory<V1PodDisruptionBudgetList> listPodDisruptionBudget =
       (requestParams, usage, cont, callback) ->
           wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
+  private final CallFactory<V1PodDisruptionBudget> readPodDisruptionBudget =
       (requestParams, usage, cont, callback) ->
           wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
+  private final CallFactory<V1PodDisruptionBudget> createPodDisruptionBudget =
       (requestParams, usage, cont, callback) ->
           wrap(
               createPodDisruptionBudgetAsync(
-                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
+                  usage, requestParams.namespace, (V1PodDisruptionBudget)
                       requestParams.body, callback));
-  private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
+  private final CallFactory<V1PodDisruptionBudget> patchPodDisruptionBudget =
       (requestParams, usage, cont, callback) ->
           wrap(
               patchPodDisruptionBudgetAsync(
@@ -1579,9 +1579,9 @@ public class CallBuilder {
   }
 
   private Call listPodDisruptionBudgetAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<V1PodDisruptionBudgetList> callback)
       throws ApiException {
-    return new PolicyV1beta1Api(client)
+    return new PolicyV1Api(client)
         .listNamespacedPodDisruptionBudgetAsync(
             namespace,
             pretty,
@@ -1604,16 +1604,16 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step listPodDisruptionBudgetAsync(String ns, ResponseStep<V1beta1PodDisruptionBudgetList> responseStep) {
+  public Step listPodDisruptionBudgetAsync(String ns, ResponseStep<V1PodDisruptionBudgetList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
         listPodDisruptionBudget);
   }
 
   private Call readPodDisruptionBudgetAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
+      ApiClient client, String name, String namespace, ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
-    return new PolicyV1beta1Api(client)
+    return new PolicyV1Api(client)
         .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, callback);
   }
 
@@ -1626,17 +1626,17 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readPodDisruptionBudgetAsync(
-      String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      String name, String namespace, ResponseStep<V1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
         readPodDisruptionBudget);
   }
 
   private Call createPodDisruptionBudgetAsync(
-      ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
-      ApiCallback<V1beta1PodDisruptionBudget> callback)
+      ApiClient client, String namespace, V1PodDisruptionBudget body,
+      ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
-    return new PolicyV1beta1Api(client)
+    return new PolicyV1Api(client)
         .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, null, callback);
   }
 
@@ -1649,20 +1649,20 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createPodDisruptionBudgetAsync(
-      String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      String namespace, V1PodDisruptionBudget body, ResponseStep<V1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("createPodDisruptionBudget", namespace, null, body,
             getDomainUidLabel(Optional.ofNullable(body)
-                .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
+                .map(V1PodDisruptionBudget::getMetadata).orElse(null))),
         createPodDisruptionBudget);
   }
 
   private Call patchPodDisruptionBudgetAsync(
       ApiClient client, String name, String namespace, V1Patch patch,
-      ApiCallback<V1beta1PodDisruptionBudget> callback)
+      ApiCallback<V1PodDisruptionBudget> callback)
       throws ApiException {
-    return new PolicyV1beta1Api(client)
+    return new PolicyV1Api(client)
         .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
             null, null, null, callback);
   }
@@ -1678,7 +1678,7 @@ public class CallBuilder {
    */
   public Step patchPodDisruptionBudgetAsync(
       String name, String namespace, V1Patch patchBody,
-      ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      ResponseStep<V1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
@@ -1692,7 +1692,7 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ApiCallback<V1Status> callback)
       throws ApiException {
-    return new PolicyV1beta1Api(client)
+    return new PolicyV1Api(client)
         .deleteNamespacedPodDisruptionBudgetAsync(
             name,
             namespace,

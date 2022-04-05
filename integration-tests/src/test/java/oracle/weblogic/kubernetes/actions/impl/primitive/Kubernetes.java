@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.NetworkingV1Api;
+import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
@@ -60,6 +61,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
@@ -113,6 +115,7 @@ public class Kubernetes {
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
+  private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
   private static DeleteOptions deleteOptions = null;
@@ -142,6 +145,7 @@ public class Kubernetes {
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
+      policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
@@ -719,6 +723,36 @@ public class Kubernetes {
       throw apex;
     }
     return v1PodList;
+  }
+
+  /**
+   * List all pod disruption budgets in given namespace.
+   *
+   * @param namespace Namespace in which to list all pods
+   * @param labelSelectors with which the pdbs are decorated
+   * @return V1PodDisruptionBudget list of pdbs or NULL when there is an error
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static V1PodDisruptionBudgetList listPodDisruptionBudgets(String namespace, String labelSelectors)
+      throws ApiException {
+    try {
+      return policyV1Api.listNamespacedPodDisruptionBudget(
+          namespace, // namespace in which to look for the pods.
+          Boolean.FALSE.toString(), // pretty print output.
+          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // continue to query when there is more results to return.
+          null, // selector to restrict the list of returned objects by their fields
+          labelSelectors, // selector to restrict the list of returned objects by their labels.
+          null, // maximum number of responses to return for a list call.
+          null, // shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          null, // Timeout for the list/watch call.
+          Boolean.FALSE // Watch for changes to the described resources.
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
   }
 
   private static boolean isNullOrEmpty(String str) {
