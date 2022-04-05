@@ -56,7 +56,8 @@ public class PortInuseEventWatcher extends Thread {
           if (n.startsWith("ns-") || n.equals("default")) {
             List<CoreV1Event> listNamespacedEvents = Kubernetes.listNamespacedEvents(n);
             for (CoreV1Event event : listNamespacedEvents) {
-              if ((event.getLastTimestamp().isEqual(timestamp)
+              if (event != null && event.getLastTimestamp() != null
+                  && (event.getLastTimestamp().isEqual(timestamp)
                   || event.getLastTimestamp().isAfter(timestamp))
                   && event.getMessage() != null
                   && event.getMessage().matches(regex)) {
