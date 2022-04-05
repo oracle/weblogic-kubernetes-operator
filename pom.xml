@@ -563,6 +563,8 @@
   </dependencies>
 
   <properties>
+    <sonar.organization>oracle</sonar.organization>
+
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <src-integration-test>${project.basedir}/src/test/java</src-integration-test>
     <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
