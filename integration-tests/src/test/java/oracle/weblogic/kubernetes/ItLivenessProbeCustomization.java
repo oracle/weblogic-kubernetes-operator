@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH;
@@ -144,6 +145,7 @@ class ItLivenessProbeCustomization {
    */
   @Test
   @DisplayName("Test custom liveness probe is triggered")
+  @Tag("gate")
   void testCustomLivenessProbeTriggered() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",

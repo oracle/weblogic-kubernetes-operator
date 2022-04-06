@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -109,6 +110,7 @@ class ItMiiDynamicUpdatePart2 {
   @Test
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
+  @Tag("gate")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
