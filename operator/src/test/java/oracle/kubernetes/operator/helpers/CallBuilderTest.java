@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
@@ -42,8 +43,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
@@ -51,9 +52,9 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.has
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -62,8 +63,8 @@ class CallBuilderTest {
   private static final String NAMESPACE = "testspace";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE = String.format(
-          "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
-          NAMESPACE);
+      "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
+      NAMESPACE);
   private static final String SERVICE_RESOURCE = String.format("/api/v1/namespaces/%s/services", NAMESPACE);
   private static final String CM_RESOURCE = String.format("/api/v1/namespaces/%s/configmaps", NAMESPACE);
   private static final String SAR_RESOURCE = "/apis/authorization.k8s.io/v1/subjectaccessreviews";
@@ -75,7 +76,6 @@ class CallBuilderTest {
   private static final ApiClient apiClient = new ApiClient();
   private final List<Memento> mementos = new ArrayList<>();
   private final CallBuilder callBuilder = new CallBuilder();
-  private Object requestBody;
   private final PseudoServer server = new PseudoServer();
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -101,6 +101,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void getVersionCode_returnsAVersionInfo() throws ApiException {
     VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
     defineHttpGetResponse("/version/", versionInfo);
@@ -109,6 +110,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void getVersionCode_firstAttemptFailsAndThenReturnsAVersionInfo() throws Exception {
     VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
     defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
@@ -137,6 +139,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void listDomains_returnsListAsJson() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
@@ -145,17 +148,20 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void replaceDomain_sendsNewDomain() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody = fromJson(json, Domain.class));
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
 
-    assertThat(requestBody, equalTo(domain));
+    assertThat(requestBody.get(), equalTo(domain));
   }
 
   @Test
+  @ResourceLock(value = "server")
   void replaceDomain_errorResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
@@ -164,6 +170,7 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void replaceDomain_conflictResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
@@ -171,9 +178,9 @@ class CallBuilderTest {
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Disabled("Disabled until synchronization issue is resolved - RJE")
   @Test
-  void listDomainsAsync_returnsUpgrade() throws InterruptedException {
+  @ResourceLock(value = "server")
+  void listDomainsAsync_returnsDomains() throws InterruptedException {
     Domain domain1 = new Domain();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
@@ -197,12 +204,12 @@ class CallBuilderTest {
 
     DomainList received = responseStep.waitForAndGetCallResponse().getResult();
     assertThat(received.getItems(), hasSize(2));
-    assertThat(received.getItems().get(0), not(hasCondition(PROGRESSING)));
-    assertThat(received.getItems().get(1), not(hasCondition(PROGRESSING)));
+    assertThat(received.getItems().get(0), allOf(hasCondition(PROGRESSING), hasCondition(AVAILABLE)));
+    assertThat(received.getItems().get(1), allOf(hasCondition(PROGRESSING), hasCondition(FAILED)));
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void listServices_returnsListAsJson() throws InterruptedException {
     V1ServiceList list = new V1ServiceList().items(Arrays.asList(new V1Service(), new V1Service()));
     defineHttpGetResponse(SERVICE_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
@@ -217,11 +224,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void createService_returnsNewService() throws InterruptedException {
     V1Service service = new V1Service().metadata(createMetadata());
     defineHttpPostResponse(
-        SERVICE_RESOURCE, service, (json) -> requestBody = fromJson(json, V1Service.class));
+        SERVICE_RESOURCE, service, (json) -> fromJson(json, V1Service.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1Service> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -233,11 +240,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void deleteService_returnsDeletedService() throws InterruptedException {
     V1Service service = new V1Service().metadata(createMetadata());
     defineHttpDeleteResponse(
-        SERVICE_RESOURCE, UID, service, (json) -> requestBody = fromJson(json, V1Service.class));
+        SERVICE_RESOURCE, UID, service, (json) -> fromJson(json, V1Service.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1Service> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -250,10 +257,11 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void createSubjectAccessReview_returnsNewResource() throws ApiException {
     V1SubjectAccessReview resource = new V1SubjectAccessReview().metadata(createMetadata());
     defineHttpPostResponse(
-        SAR_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1Service.class));
+        SAR_RESOURCE, resource, (json) -> fromJson(json, V1Service.class));
 
     V1SubjectAccessReview received = callBuilder.createSubjectAccessReview(resource);
 
@@ -261,10 +269,11 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void createSelfSubjectAccessReview_returnsNewResource() throws ApiException {
     V1SelfSubjectAccessReview resource = new V1SelfSubjectAccessReview().metadata(createMetadata());
     defineHttpPostResponse(
-        SSAR_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1Service.class));
+        SSAR_RESOURCE, resource, (json) -> fromJson(json, V1Service.class));
 
     V1SelfSubjectAccessReview received = callBuilder.createSelfSubjectAccessReview(resource);
 
@@ -272,10 +281,11 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void createSelfSubjectRulesReview_returnsNewResource() throws ApiException {
     V1SelfSubjectRulesReview resource = new V1SelfSubjectRulesReview().metadata(createMetadata());
     defineHttpPostResponse(
-        SSRR_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1Service.class));
+        SSRR_RESOURCE, resource, (json) -> fromJson(json, V1Service.class));
 
     V1SelfSubjectRulesReview received = callBuilder.createSelfSubjectRulesReview(resource);
 
@@ -283,10 +293,11 @@ class CallBuilderTest {
   }
 
   @Test
+  @ResourceLock(value = "server")
   void createTokensReview_returnsNewResource() throws ApiException {
     V1TokenReview resource = new V1TokenReview().metadata(createMetadata());
     defineHttpPostResponse(
-        TR_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1Service.class));
+        TR_RESOURCE, resource, (json) -> fromJson(json, V1Service.class));
 
     V1TokenReview received = callBuilder.createTokenReview(resource);
 
@@ -294,11 +305,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void createCRD_returnsNewResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPostResponse(
-        CRD_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1CustomResourceDefinition.class));
+        CRD_RESOURCE, resource, (json) -> fromJson(json, V1CustomResourceDefinition.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1CustomResourceDefinition> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -310,11 +321,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void replaceCRD_returnsUpdatedResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPutResponse(
-        CRD_RESOURCE, UID, resource, (json) -> requestBody = fromJson(json, V1CustomResourceDefinition.class));
+        CRD_RESOURCE, UID, resource, (json) -> fromJson(json, V1CustomResourceDefinition.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1CustomResourceDefinition> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -327,11 +338,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void createConfigMap_returnsNewResource() throws InterruptedException {
     V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
     defineHttpPostResponse(
-        CM_RESOURCE, resource, (json) -> requestBody = fromJson(json, V1ConfigMap.class));
+        CM_RESOURCE, resource, (json) -> fromJson(json, V1ConfigMap.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
@@ -343,11 +354,11 @@ class CallBuilderTest {
   }
 
   @Test
-  @Disabled
+  @ResourceLock(value = "server")
   void replaceConfigMap_returnsUpdatedResource() throws InterruptedException {
     V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
     defineHttpPutResponse(
-        CM_RESOURCE, UID, resource, (json) -> requestBody = fromJson(json, V1ConfigMap.class));
+        CM_RESOURCE, UID, resource, (json) -> fromJson(json, V1ConfigMap.class));
 
     KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
