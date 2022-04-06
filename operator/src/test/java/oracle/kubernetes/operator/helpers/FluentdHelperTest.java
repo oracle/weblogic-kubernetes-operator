@@ -3,14 +3,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.UnrecoverableCallException;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -19,27 +19,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-
-import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.logging.MessageKeys.CM_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.CM_EXISTS;
 import static oracle.kubernetes.common.logging.MessageKeys.CM_REPLACED;
-import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
