@@ -14,7 +14,7 @@
 
     <description>Oracle WebLogic Server Kubernetes Operator</description>
     <name>integration-tests</name>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <skipITs>false</skipITs>
@@ -160,15 +160,10 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>test-compile</id>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <skipIfEmpty>true</skipIfEmpty>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
