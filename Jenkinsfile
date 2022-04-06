@@ -584,7 +584,7 @@ EOF
                                 export NO_PROXY
                             fi
 
-                            if ! time mvn -X -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
+                            if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
                         '''
