@@ -14,7 +14,7 @@
 
     <description>Oracle WebLogic Server Kubernetes Operator</description>
     <name>integration-tests</name>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <properties>
         <skipITs>false</skipITs>
