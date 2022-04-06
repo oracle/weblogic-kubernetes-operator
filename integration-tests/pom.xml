@@ -127,7 +127,7 @@
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
-                            <skip>${wko.it.skip.enforcer.rules}</skip>
+                            <skip>${skipITs}</skip>
                             <rules>
                                 <requireEnvironmentVariable>
                                     <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
@@ -163,7 +163,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
+                    <skipTests>${skipITs}</skipTests>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
@@ -184,7 +184,6 @@
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
                                 <java.util.logging.SimpleFormatter.format>&lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
                                 </java.util.logging.SimpleFormatter.format>
@@ -341,14 +340,12 @@
                 <surefireArgLine></surefireArgLine>
                 <failsafeArgLine></failsafeArgLine>
                 <skipITs>true</skipITs>
-                <wko.it.skip.enforcer.rules>true</wko.it.skip.enforcer.rules>
             </properties>
         </profile>
         <profile>
             <id>integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>**/It*</includes-failsafe>
             </properties>
         </profile>
@@ -356,7 +353,6 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                    **/ItExternalLbTunneling,
                    **/ItMiiAuxiliaryImage,
@@ -394,7 +390,6 @@
             <id>fmw-pipeline</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                     **/ItMiiAuxiliaryImage,
                     **/ItMiiAuxiliaryImageCluster,
@@ -415,7 +410,6 @@
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                   **/ItMiiSample,
                   **/ItFmwDomainInPV,
@@ -429,7 +423,6 @@
             <id>fmw-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDomainInPVUsingWDT,
@@ -441,7 +434,6 @@
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                   **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
@@ -467,7 +459,6 @@
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                   **/ItT3Channel,
                   **/ItDedicatedMode,
@@ -482,7 +473,6 @@
             <id>wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                     **/ItKubernetesEvents,
                     **/ItMiiAuxiliaryImage,
@@ -497,7 +487,6 @@
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <wko.it.skip.enforcer.rules>false</wko.it.skip.enforcer.rules>
                 <includes-failsafe>
                     **/ItMultiDomainModels,
                     **/ItMiiUpdateDomainConfig,
