@@ -339,6 +339,7 @@ class JobHelperTest extends DomainValidationTestBase {
             "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
   }
 
+
   @Test
   void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     configureDomain().withEnvironmentVariable("USER_MEM_ARGS", "");
@@ -363,6 +364,21 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("item1"));
+
+  }
+
+  @Test
+  void whenDomainHasFluentd_jobPodShouldHaveFluentdSidecar() {
+    configureDomain().withFluentdConfiguration(true, "dummy-cred",
+        null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(Optional.ofNullable(jobSpec.getTemplate())
+        .map(V1PodTemplateSpec::getSpec)
+        .map(V1PodSpec::getContainers)
+        .get()
+        .stream().filter(f -> f.getName().equals("fluentd")), notNullValue());
 
   }
 

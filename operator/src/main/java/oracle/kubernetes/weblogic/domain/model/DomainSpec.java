@@ -389,13 +389,12 @@ public class DomainSpec extends BaseConfiguration {
     return fluentdSpecification;
   }
 
-  void withFluentdConfiguration(boolean watchServerLogs, boolean watchIntrospectorLog, String credentialName,
+  void withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
                                 String fluentdConfig) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
     }
     fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
-    fluentdSpecification.setWatchServerLogs(watchServerLogs);
     fluentdSpecification.setElasticSearchCredentials(credentialName);
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
   }

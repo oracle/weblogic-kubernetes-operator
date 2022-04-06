@@ -62,9 +62,6 @@ public class FluentdSpecification {
   @Description("Fluentd elastic search credentials")
   private String elasticSearchCredentials;
 
-  @Description("Fluentd will watch server logs")
-  private Boolean watchServerLogs = true;
-
   @Description("Fluentd will watch introspector logs")
   private Boolean watchIntrospectorLogs = true;
 
@@ -112,14 +109,6 @@ public class FluentdSpecification {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  public Boolean getWatchServerLogs() {
-    return watchServerLogs;
-  }
-
-  public void setWatchServerLogs(Boolean watchServerLogs) {
-    this.watchServerLogs = watchServerLogs;
-  }
-
   public Boolean getWatchIntrospectorLogs() {
     return watchIntrospectorLogs;
   }
@@ -145,7 +134,6 @@ public class FluentdSpecification {
           .append("env", env)
           .append("resources", resources)
           .append("volumeMounts", volumeMounts)
-          .append("watchServerLogs", watchServerLogs)
           .append("watchIntrospectorLogs", watchIntrospectorLogs)
           .toString();
   }
@@ -164,7 +152,6 @@ public class FluentdSpecification {
           .append(env, that.env)
           .append(resources, that.resources)
           .append(volumeMounts, this.volumeMounts)
-          .append(watchServerLogs, this.watchServerLogs)
           .append(watchIntrospectorLogs, this.watchIntrospectorLogs)
           .isEquals();
   }
@@ -178,7 +165,6 @@ public class FluentdSpecification {
           .append(env)
           .append(resources)
           .append(volumeMounts)
-          .append(watchServerLogs)
           .append(watchIntrospectorLogs)
           .toHashCode();
   }

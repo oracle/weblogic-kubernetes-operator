@@ -451,9 +451,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
-  protected DomainConfigurator defineFluentdConfiguration(boolean watchServerLogs, boolean watchIntrospectorLog) {
+  protected DomainConfigurator defineFluentdConfiguration(boolean watchIntrospectorLog) {
     return configureDomain()
-            .withFluentdConfiguration(watchServerLogs, watchIntrospectorLog, "fluentd-cred",
+            .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
                     null);
   }
 
@@ -557,14 +557,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenDomainHasFluentdInServerPod_createPodShouldHaveFluentdContainer() {
-    defineFluentdConfiguration(true, true);
+    defineFluentdConfiguration(true);
     
     assertThat(getFluentdContainer(), notNullValue());
   }
 
   @Test
   void whenDomainHasFluentdInServerPod_podRequiredEnvSet() {
-    defineFluentdConfiguration(true, true);
+    defineFluentdConfiguration(true);
 
     V1Container fluentContainer = getFluentdContainer();
     assertThat(fluentContainer, notNullValue());
@@ -612,10 +612,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             .map(V1EnvVarSource::getSecretKeyRef)
             .orElse(null);
 
-    if (ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey)) {
-      return true;
-    }
-    return false;
+    return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
   abstract void setServerPort(int port);

@@ -27,19 +27,16 @@ import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
-import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
-import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -71,7 +68,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -95,6 +91,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -738,7 +735,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers));
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
     return containers;
   }
 
@@ -764,13 +761,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new V1Volume()
       .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
       .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
-  }
-
-  private V1VolumeMount createFluentdConfigmapVolumeMount() {
-    return new V1VolumeMount()
-      .name(FLUENTD_CONFIGMAP_VOLUME)
-      .mountPath("/fluentd/etc/fluentd.conf")
-      .subPath(FLUENTD_CONFIG_DATA_NAME);
   }
 
 
@@ -819,99 +809,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     });
   }
 
-  protected void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers) {
-
-    V1Container fluentdContainer = new V1Container();
-    fluentdContainer
-        .name("fluentd")
-        .addArgsItem("-c")
-        .addArgsItem("/etc/fluent.conf");
-
-    fluentdContainer.setImage(fluentdSpecification.getImage());
-    fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
-    fluentdContainer.setResources(fluentdSpecification.getResources());
-
-    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer);
-
-    fluentdSpecification.getVolumeMounts()
-            .forEach(fluentdContainer::addVolumeMountsItem);
-
-    fluentdContainer.addVolumeMountsItem(createFluentdConfigmapVolumeMount());
-    containers.add(fluentdContainer);
-  }
-
-  private void addFluentdContainerEnvList(FluentdSpecification fluentdSpecification, V1Container fluentdContainer) {
-
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
-            "elasticsearchhost");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_PORT",
-            "elasticsearchport");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_USER",
-            "elasticsearchuser");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer,
-            "ELASTICSEARCH_PASSWORD", "elasticsearchpassword");
-
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "FLUENT_ELASTICSEARCH_SED_DISABLE",
-            "true",
-            false);
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "FLUENTD_CONF", FLUENTD_CONFIG_DATA_NAME,
-            false);
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "DOMAIN_UID",
-            "metadata.labels['weblogic.domainUID']",
-            true);
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "SERVER_NAME",
-            "metadata.labels['weblogic.serverName']",
-            true);
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
-            this.getDomain().getEffectiveLogHome() + "/$(SERVER_NAME).log",
-            false);
-
-    fluentdSpecification.getEnv()
-            .forEach(fluentdContainer::addEnvItem);
-
-  }
-
-  private void addFluentdContainerEnvItem(FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
-                                          String name, String value, boolean useValueFromFieldRef) {
-    if (!hasFluentdContainerEnv(fluentdSpecification, name)) {
-      V1EnvVar item;
-      if (!useValueFromFieldRef) {
-        item = new V1EnvVar().name(name).value(value);
-      } else {
-        item = new V1EnvVar().name(name)
-                .valueFrom(new V1EnvVarSource().fieldRef(new V1ObjectFieldSelector().fieldPath(value)));
-      }
-      fluentdContainer.addEnvItem(item);
-    }
-
-  }
-
-  private void addFluentdContainerELSCredEnv(FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
-      String envName, String keyName) {
-    if (!hasFluentdContainerEnv(fluentdSpecification, envName)) {
-      V1SecretKeySelector keySelector = new V1SecretKeySelector()
-            .key(keyName)
-            .name(fluentdSpecification.getElasticSearchCredentials());
-      V1EnvVarSource source = new V1EnvVarSource()
-            .secretKeyRef(keySelector);
-      V1EnvVar envItem = new V1EnvVar()
-            .name(envName)
-            .valueFrom(source);
-      fluentdContainer.addEnvItem(envItem);
-    }
-  }
-
-  private boolean hasFluentdContainerEnv(FluentdSpecification fluentdSpecification, String name) {
-    V1EnvVar var = fluentdSpecification.getEnv().stream()
-            .filter(c -> c.getName().equals("SOMETHING"))
-            .findFirst()
-            .orElse(null);
-    if (var != null) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
