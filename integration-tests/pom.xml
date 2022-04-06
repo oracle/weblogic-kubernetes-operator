@@ -160,19 +160,10 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <skipIfEmpty>true</skipIfEmpty>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <skipTests>${skipITs}</skipTests>
-                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
-<!--                    <argLine>${failsafeArgLine}</argLine>-->
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
                         <include>
