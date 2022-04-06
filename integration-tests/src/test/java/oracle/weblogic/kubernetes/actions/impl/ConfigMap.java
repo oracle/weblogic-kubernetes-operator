@@ -51,12 +51,9 @@ public class ConfigMap {
     }
 
     for (V1ConfigMap configMap : configMaps) {
-      if (configMap.getMetadata() != null) {
-        if (configMap.getMetadata().getName() != null) {
-          if (configMap.getMetadata().getName().equals(name)) {
-            return true;
-          }
-        }
+      if (configMap.getMetadata() != null && configMap.getMetadata().getName() != null
+          && configMap.getMetadata().getName().equals(name)) {
+        return true;
       }
     }
 
