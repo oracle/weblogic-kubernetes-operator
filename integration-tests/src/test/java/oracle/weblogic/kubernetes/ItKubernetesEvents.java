@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -226,6 +227,7 @@ class ItKubernetesEvents {
   @Order(1)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
+  @Tag("gate")
   void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");

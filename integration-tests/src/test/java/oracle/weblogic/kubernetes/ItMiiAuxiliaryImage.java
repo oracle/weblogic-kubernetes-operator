@@ -25,6 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -279,6 +280,7 @@ class ItMiiAuxiliaryImage {
    */
   @Test
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
+  @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     // create stage dir for auxiliary image
