@@ -209,7 +209,7 @@ class ItAuxV8DomainImplicitUpgrade {
     templateMap.put("BASE_IMAGE", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     templateMap.put("API_VERSION", "v8");
     Path srcDomainFile = Paths.get(RESOURCE_DIR,
-        "upgrade", "aux.muti.images.template.yaml");
+        "upgrade", "auxilary.multi.images.template.yaml");
     Path targetDomainFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDomainFile.toString(),
         "domain.yaml", templateMap));

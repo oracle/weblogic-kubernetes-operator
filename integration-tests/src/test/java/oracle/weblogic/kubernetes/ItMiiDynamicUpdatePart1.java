@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -136,6 +137,7 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
+  @Tag("gate")
   void testMiiAddWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
