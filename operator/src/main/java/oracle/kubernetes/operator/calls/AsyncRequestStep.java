@@ -216,6 +216,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     // add the failure into the packet and prepare to try again.
     void onFailure(AsyncFiber fiber, ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       if (firstTimeResumed()) {
+
+        // TEST
+        if (statusCode == 409) {
+          System.out.println("***TEST: AsyncRequestStepProcessing.onFailure() received 409 (Conflict)");
+        }
+
         if (statusCode != HTTP_NOT_FOUND) {
           addDomainFailureStatus(ae);
           logFailure(ae, statusCode, responseHeaders);
@@ -503,6 +509,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     // simply retry the request.  Instead, application code needs to rebuild
     // the request based on latest contents.  If provided, a conflict step will do that.
     private boolean isRestartableConflict(Step conflictStep, int statusCode) {
+
+      // TEST
+      if (statusCode == HTTP_CONFLICT) {
+        System.out.println("***TEST: AsyncRequestStep.isRestartableConflict() with conflictStep: " + conflictStep);
+      }
+
       return statusCode == HTTP_CONFLICT && conflictStep != null;
     }
 

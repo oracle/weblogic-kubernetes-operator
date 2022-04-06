@@ -128,6 +128,9 @@ public class PodDisruptionBudgetHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PodDisruptionBudget> callResponse) {
         V1PodDisruptionBudget podDisruptionBudget = callResponse.getResult();
+
+        System.out.println("***TEST: ReadResponseStep.onSuccess() found: " + podDisruptionBudget);
+
         if (podDisruptionBudget == null) {
           removePodDisruptionBudgetFromRecord();
         } else {
@@ -159,6 +162,10 @@ public class PodDisruptionBudgetHelper {
     private class ConflictStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
+
+        // TEST
+        System.out.println("***TEST: ConflictStep.apply()");
+
         return doNext(
                 new CallBuilder().readPodDisruptionBudgetAsync(getPDBName(), info.getNamespace(),
                         new PodDisruptionBudgetContext.ReadResponseStep(conflictStep)), packet);
