@@ -589,14 +589,7 @@
             <id>wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItKubernetesEvents,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMultiDomainModels,
-                    **/ItPodsRestart,
-                    **/ItTwoDomainsManagedByTwoOperators,
-                    **/ItWlsSamples
-                </includes-failsafe>
+                <groups>gate,samples-gate</groups>
             </properties>
         </profile>
         <profile>
