@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
@@ -239,6 +240,11 @@ class ItPodsRestart {
 
     //verify the resource change causes the domain restart and domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
+    verifyDomainRollAndPodCycleEvents(timestamp);
+
+  }
+
+  private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp) {
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
@@ -246,7 +252,8 @@ class ItPodsRestart {
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
-
+    // verify that the rolling condition has been removed
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, "Rolling");
   }
 
   /**
@@ -307,14 +314,7 @@ class ItPodsRestart {
 
     //verify the includeServerOutInPodLog change causes the domain restart and domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
   }
 
   /**
@@ -385,14 +385,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -464,14 +457,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -533,14 +519,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -586,14 +565,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -641,14 +613,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
