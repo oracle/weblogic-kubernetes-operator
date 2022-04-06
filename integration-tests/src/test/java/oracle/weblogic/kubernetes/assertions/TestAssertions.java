@@ -291,10 +291,10 @@ public class TestAssertions {
    * @param podName   name of the pod to check for
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is initializing
-   * @return true if the pod is initializing otherwise false
+   * @return true if the pod is initialized otherwise false
    */
-  public static Callable<Boolean> podInitializing(String podName, String domainUid, String namespace) {
-    return Pod.podInitializing(namespace, domainUid, podName);
+  public static Callable<Boolean> podInitialized(String podName, String domainUid, String namespace) {
+    return Pod.podInitialized(namespace, domainUid, podName);
   }
 
   /**
@@ -718,6 +718,17 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
+
+  /**
+   * Check whether persistent volume claims with pvcName does NOT exist in the specified namespace.
+   *
+   * @param pvcName persistent volume claim to check
+   * @param namespace the namespace in which the persistent volume claim to be checked
+   * @return true if the persistent volume claim exists in the namespace, false otherwise
+   */
+  public static Callable<Boolean> pvcNotExist(String pvcName, String namespace) {
+    return PersistentVolumeClaim.pvcNotExist(pvcName, namespace);
   }
 
   /**

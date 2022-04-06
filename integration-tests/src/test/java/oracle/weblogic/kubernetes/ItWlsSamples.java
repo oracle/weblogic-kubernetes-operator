@@ -42,14 +42,21 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.doesPVExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.doesPVCExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -447,8 +454,23 @@ class ItWlsSamples {
     String pvName = domainName + "-weblogic-sample-pv";
     String pvcName = domainName + "-weblogic-sample-pvc";
 
-    Path pvpvcBase = Paths.get(tempSamplePath.toString(),
-        "scripts/create-weblogic-domain-pv-pvc");
+    // delete pvc first if exists
+    if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvcNotExist(pvName, domainNamespace),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
+    // delete pv first if exists
+    if (assertDoesNotThrow(() -> doesPVExist(pvName, null))) {
+      deletePersistentVolume(pvName);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvNotExists(pvName, null),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
+    Path pvpvcBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
     // create pv and pvc
     assertDoesNotThrow(() -> {
@@ -510,7 +532,7 @@ class ItWlsSamples {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
+            condition -> logger.info("Waiting for pvc {0} to be ready in namespace {1} "
                 + "(elapsed time {2}ms, remaining time {3}ms)",
                 pvcName,
                 domainNamespace,

@@ -171,12 +171,12 @@ public class Domain {
    * @return true if login to WebLogic administration console is successful
    * @throws IOException when connection to console fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String... routeHost)
       throws IOException {
 
     LoggingFacade logger = getLogger();
 
-    String hostAndPort = getHostAndPort(routeHost, nodePort);
+    String hostAndPort = getHostAndPort(routeHost[0], nodePort);
     String consoleUrl = new StringBuffer()
         .append("http://")
         .append(hostAndPort)

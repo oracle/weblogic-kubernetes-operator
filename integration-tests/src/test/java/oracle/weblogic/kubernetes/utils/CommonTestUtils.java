@@ -72,14 +72,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
+
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
@@ -162,6 +167,25 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(ConditionFactory conditionFactory,
+                                                   String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(conditionFactory, podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(conditionFactory, podName, domainUid, namespace);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -180,6 +204,25 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
             String.format("serviceExists failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param serviceName service name to check
+   * @param namespace the namespace in which to check for the service
+   */
+  public static void checkServiceExists(ConditionFactory conditionFactory,String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+            assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+                    String.format("serviceExists failed with ApiException for service %s in namespace %s",
+                            serviceName, namespace)),
+            logger,
+            "service {0} to exist in namespace {1}",
+            serviceName,
+            namespace);
   }
 
   /**
@@ -1074,4 +1117,5 @@ public class CommonTestUtils {
           return !managedServers.containsValue(false);
         });
   }
+
 }

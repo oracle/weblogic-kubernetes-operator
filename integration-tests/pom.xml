@@ -297,6 +297,8 @@
                 <includes-failsafe>
                   **/ItMultiDomainModels,
                   **/ItServerStartPolicy,
+                  **/ItServerStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
                   **/ItFmwDomainInPV,
@@ -442,7 +444,7 @@
                 <includes-failsafe>
                   **/ItT3Channel,
                   **/ItDedicatedMode,
-                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwDomainInPVUsingWDT
