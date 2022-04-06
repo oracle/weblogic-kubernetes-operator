@@ -11,10 +11,10 @@ import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -127,7 +127,7 @@ class DomainPresenceInfoTest {
 
   @Test
   void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
-    V1beta1PodDisruptionBudget pdb = new V1beta1PodDisruptionBudget();
+    V1PodDisruptionBudget pdb = new V1PodDisruptionBudget();
     info.setPodDisruptionBudget("cluster", pdb);
 
     assertThat(info.getPodDisruptionBudget("cluster"), sameInstance(pdb));

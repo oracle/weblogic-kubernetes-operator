@@ -37,6 +37,6 @@ setting.
 ### Additional reading
 
 * See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/preparation#prepare-an-operator-namespace-and-service-account">}}).
-* See the Operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
+* See the operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
   setting.
 * For more information about access controls, see [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}).
