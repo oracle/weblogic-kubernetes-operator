@@ -218,6 +218,8 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
   public static final String SKIP_BUILD_IMAGES_IF_EXISTS =
         Optional.ofNullable(System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS")).orElse("false");
+  public static final String BUSYBOX_IMAGE = "phx.ocir.io/weblogick8s/test-images/docker/busybox";
+  public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
   public static final String MII_BASIC_IMAGE_TAG =
@@ -275,9 +277,9 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // Default ISTIO version is 1.7.3
+  // Default ISTIO version is 1.10.4
   public static final String ISTIO_VERSION =
-        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.7.3");
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.10.4");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";

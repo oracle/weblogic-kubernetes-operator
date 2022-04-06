@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -57,8 +57,9 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   private final FiberTestSupport testSupport = new FiberTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Domain domain =
-      new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
+      new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec().withDomainUid(UID));
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
 
   @BeforeEach
   public void setUp() throws NoSuchFieldException {
@@ -69,6 +70,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
     mementos.add(ClientFactoryStub.install());
 
     testSupport.addDomainPresenceInfo(info);
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
   }
 
   private V1Pod createPod(String serverName) {
@@ -125,6 +127,23 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   void createDomainStatusReaderStep_initializesRemainingServersHealthRead_withNumServers() {
     info.setServerPod("server1", createPod("server1"));
     info.setServerPod("server2", createPod("server2"));
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
+        is(2));
+  }
+
+  @Test
+  void createDomainStatusReaderStep_usesInfoFromDomainProcessorIfAvailable() {
+    info.setServerPod("server1", createPod("server1"));
+
+    DomainPresenceInfo latestInfo = new DomainPresenceInfo(domain);
+    latestInfo.setServerPod("server1", createPod("server1"));
+    latestInfo.setServerPod("server2", createPod("server2"));
+    presenceInfoMap.put(NS, Map.of(UID, latestInfo));
 
     Packet packet =
         testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));

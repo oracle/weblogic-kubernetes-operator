@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -51,12 +52,14 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -72,8 +75,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -178,6 +179,23 @@ class ItCrossDomainTransaction {
     buildApplicationsAndDomains();
   }
 
+  /**
+   * Verify all server pods are running.
+   * Verify k8s services for all servers are created.
+  */
+  @BeforeEach
+  public void beforeEach() {
+    int replicaCount = 2;
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i, 
+            domainUid2, domain2Namespace);
+    }
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i, 
+            domainUid1, domain1Namespace);
+    }
+  }
+
   private static void updatePropertyFile() {
     //create a temporary directory to copy and update the properties file
     Path target = Paths.get(PROPS_TEMP_DIR);
@@ -222,8 +240,10 @@ class ItCrossDomainTransaction {
   private static void buildApplicationsAndDomains() {
 
     //build application archive
+    Path targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getSimpleName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "txforward.ear").toFile().exists(),
@@ -232,8 +252,10 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
+    targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getSimpleName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "cdttxservlet.war").toFile().exists(),
@@ -242,8 +264,10 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
+    targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getSimpleName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "jmsservlet.war").toFile().exists(),
@@ -268,8 +292,10 @@ class ItCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
+    targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getSimpleName() + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
-        "build", domain1Namespace);
+        "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
         "mdbtopic.jar").toFile().exists(),
@@ -510,25 +536,13 @@ class ItCrossDomainTransaction {
     // check admin server pod exists
     logger.info("Check for admin server pod {0} existence in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     logger.info("Check admin service {0} is created in namespace {1}",

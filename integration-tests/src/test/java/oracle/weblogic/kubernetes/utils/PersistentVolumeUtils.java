@@ -386,12 +386,15 @@ public class PersistentVolumeUtils {
    * @param prefix prefix for pv or pvc name
    * @return full pv or pvc name
    */
-  public static String getUniquePvOrPvcName(String prefix) {
+  public static String getUniquePvOrPvcName(String prefix, String... suffix) {
     char[] name = new char[6];
     for (int i = 0; i < name.length; i++) {
       name[i] = (char) (random.nextInt(25) + (int) 'a');
     }
     String pvOrPvcName = prefix + new String(name);
+    for (String s : suffix) {
+      pvOrPvcName += s;
+    }
     getLogger().info("Creating unique pv|pvc name {0}", pvOrPvcName);
     return pvOrPvcName;
   }
