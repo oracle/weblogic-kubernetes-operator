@@ -170,6 +170,7 @@ public class MessageKeys {
   public static final String OUTPUT_FILE_NAME = "WLSKO-0218";
   public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0219";
   public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0220";
+  public static final String DOMAIN_CONVERSION_FAILED = "WLSKO-0221";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
