@@ -5,12 +5,13 @@ package oracle.kubernetes.operator;
 
 import java.io.File;
 import java.net.HttpURLConnection;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -19,28 +20,38 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
-import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.rest.RestConfig;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
+import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
@@ -49,6 +60,7 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -57,7 +69,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
   private static final String WEBHOOK_POD_NAME = "my-webhook-1234";
-  private static final String OP_NS = "webhook-namespace";
+  private static final String WEBHOOK_NAMESPACE = "webhook-namespace";
 
   private static final String GIT_BUILD_VERSION = "3.1.0";
   private static final String GIT_BRANCH = "master";
@@ -73,9 +85,10 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   private final ConversionWebhookMainDelegateStub delegate =
           createStrictStub(ConversionWebhookMainDelegateStub.class, testSupport);
   private final ConversionWebhookMain main = new ConversionWebhookMain(delegate);
+  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
 
-  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
-  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
   static {
     buildProperties = new PropertiesBuilder()
@@ -109,10 +122,10 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     mementos.add(StubWatchFactory.install());
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
-    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(StaticStubSupport.install(InitializeWebhookIdentityStep.class, "getPath", getInMemoryPath));
+    mementos.add(InMemoryCertificates.install());
 
-    HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, OP_NS);
+    HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, WEBHOOK_NAMESPACE);
     HelmAccessStub.defineVariable(WEBHOOK_POD_NAME_ENV, WEBHOOK_POD_NAME);
   }
 
@@ -140,6 +153,19 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     ConversionWebhookMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE).withParams(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenConversionWebhookCompleteBeginFailsWithException_failedEventIsGenerated() {
+    InMemoryCertificates.defineWebhookCertificateFile("asdf");
+    inMemoryFileSystem.defineFile("/deployment/webhook-identity/webhookKey", "asdf");
+    loggerControl.ignoringLoggedExceptions(RuntimeException.class, NoSuchFileException.class);
+
+    ConversionWebhookMain.createMain(buildProperties).completeBegin();
+
+    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   private void simulateMissingCRD() {
@@ -186,7 +212,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
-  abstract static class ConversionWebhookMainDelegateStub implements ConversionWebhookMainDelegate {
+  public abstract static class ConversionWebhookMainDelegateStub implements ConversionWebhookMainDelegate {
     private final FiberTestSupport testSupport;
 
     public ConversionWebhookMainDelegateStub(FiberTestSupport testSupport) {
@@ -215,6 +241,15 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
       return new File("/deployment");
     }
 
+    @Override
+    public String getWebhookCertUri() {
+      return SECRETS_WEBHOOK_CERT;
+    }
+
+    @Override
+    public String getWebhookKeyUri() {
+      return SECRETS_WEBHOOK_KEY;
+    }
   }
 
   static class TestStepFactory implements ConversionWebhookMain.NextStepFactory {
@@ -227,12 +262,106 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     }
 
     @Override
-    public Step createInitializationStep(CoreDelegate delegate, Step next) {
+    public Step createInitializationStep(ConversionWebhookMainDelegate delegate, Step next) {
       return next;
     }
   }
 
   public static Certificates getCertificates() {
     return new Certificates(new CoreDelegateImpl(buildProperties, null));
+  }
+
+  static class RestConfigStub implements RestConfig {
+    private final Certificates certificates;
+
+    RestConfigStub(Certificates certificates) {
+      this.certificates = certificates;
+    }
+
+    @Override
+    public String getHost() {
+      return null;
+    }
+
+    @Override
+    public int getExternalHttpsPort() {
+      return 0;
+    }
+
+    @Override
+    public int getInternalHttpsPort() {
+      return 0;
+    }
+
+    @Override
+    public int getWebhookHttpsPort() {
+      return 0;
+    }
+
+    @Override
+    public String getOperatorExternalCertificateData() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorInternalCertificateData() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorExternalCertificateFile() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorInternalCertificateFile() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorExternalKeyData() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorInternalKeyData() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorExternalKeyFile() {
+      return null;
+    }
+
+    @Override
+    public String getOperatorInternalKeyFile() {
+      return null;
+    }
+
+    @Override
+    public RestBackend getBackend(String accessToken) {
+      return null;
+    }
+
+    @Override
+    public String getWebhookCertificateData() {
+      return certificates.getWebhookCertificateData();
+    }
+
+    @Override
+    public String getWebhookCertificateFile() {
+      return null;
+    }
+
+    @Override
+    public String getWebhookKeyData() {
+      return null;
+    }
+
+    @Override
+    public String getWebhookKeyFile() {
+      return certificates.getWebhookKeyFilePath();
+    }
+
   }
 }
