@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.rest;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -30,13 +29,16 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.common.utils.BaseTestUtils;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
+import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;
 import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.hamcrest.Description;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,12 +48,16 @@ import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
+import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_REQUEST;
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_RESPONSE;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
@@ -72,6 +78,7 @@ class RestTest extends JerseyTest {
   private static final String ACCESS_TOKEN = "dummy token";
 
   private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
   private boolean includeRequestedByHeader = true;
   private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
@@ -79,7 +86,9 @@ class RestTest extends JerseyTest {
   @BeforeEach
   public void setupRestTest() throws Exception {
     setUp();
+    mementos.add(testSupport.install());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
+    mementos.add(TestUtils.silenceOperatorLogger());
   }
 
   @AfterEach
@@ -304,19 +313,14 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenConversionWebhookRequestSent_hasExpectedResponse() {
-    try {
-      String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
-      Response response = sendConversionWebhookRequest(conversionReview);
-      String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
+    Response response = sendConversionWebhookRequest(conversionReview);
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
 
-      assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
-
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
   }
 
-  private Response sendConversionWebhookRequest(String conversionReview) throws IOException {
+  private Response sendConversionWebhookRequest(String conversionReview) {
     return createRequest(WEBHOOK_HREF)
             .post(createConversionRequest(conversionReview));
   }
@@ -337,17 +341,17 @@ class RestTest extends JerseyTest {
   }
 
   @Test
-  void whenConversionWebhookHasAnException_responseHasFailedStatus() {
-    try {
-      String conversionReview = "some_unexpected_string";
-      Response response = sendConversionWebhookRequest(conversionReview);
-      String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+  void whenConversionWebhookHasAnException_responseHasFailedStatusAndFailedEventGenerated() {
 
-      assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
+    String conversionReview = "some_unexpected_string";
+    Response response = sendConversionWebhookRequest(conversionReview);
+    String responseString = getAsString((ByteArrayInputStream) response.getEntity());
 
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
+
+    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
   }
 
   private void excludeRequestedByHeader() {

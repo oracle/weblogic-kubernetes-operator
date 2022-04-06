@@ -7,17 +7,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import oracle.kubernetes.operator.CoreDelegate;
+import oracle.kubernetes.operator.ConversionWebhookMainDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -25,6 +29,7 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.Certificates;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -40,11 +45,16 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCerti
 public class InitializeWebhookIdentityStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  private static final String WEBHOOK_SECRETS = "weblogic-webhook-secrets";
+  static final String WEBHOOK_SECRETS = "weblogic-webhook-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-webhook";
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
   public static final String WEBHOOK_KEY = "webhookKey";
+  public static final String EXCEPTION = "Exception";
+  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
+  private static Function<String, Path> getPath = Paths::get;
+  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
+  private static Function<URI, Path> uriToPath = Paths::get;
 
   private final File webhookCertFile;
   private final File webhookKeyFile;
@@ -55,20 +65,19 @@ public class InitializeWebhookIdentityStep extends Step {
    * Constructor for the InitializeWebhookIdentityStep.
    * @param next Next step to be executed.
    */
-  public InitializeWebhookIdentityStep(CoreDelegate delegate, Step next) {
+  public InitializeWebhookIdentityStep(ConversionWebhookMainDelegate delegate, Step next) {
     super(next);
     Certificates certificates = new Certificates(delegate);
     this.webhookCertFile = certificates.getWebhookCertificateFile();
     this.webhookKeyFile = certificates.getWebhookKeyFile();
-    this.certFile = new File(delegate.getDeploymentHome(), "/secrets/webhookCert");
-    this.keyFile = new File(delegate.getDeploymentHome(), "/secrets/webhookKey");
-
+    this.certFile = new File(delegate.getDeploymentHome(), delegate.getWebhookCertUri());
+    this.keyFile = new File(delegate.getDeploymentHome(), delegate.getWebhookKeyUri());
   }
 
   @Override
   public NextAction apply(Packet packet) {
     try {
-      if (certFile.exists() && keyFile.exists()) {
+      if (isFileExists(certFile) && isFileExists(keyFile)) {
         // The webhook's ssl identity has already been created.
         reuseIdentity();
         return doNext(getNext(), packet);
@@ -76,10 +85,15 @@ public class InitializeWebhookIdentityStep extends Step {
         // The webhook's ssl identity hasn't been created yet.
         return createIdentity(packet);
       }
-    } catch (Exception e) {
+    } catch (IdentityInitializationException | IOException e) {
       LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
-      throw new RuntimeException(e);
+      packet.getComponents().put(EXCEPTION, Component.createFor(Exception.class, e));
+      return doNext(getNext(), packet);
     }
+  }
+
+  private static boolean isFileExists(File file) {
+    return Files.isRegularFile(getPath.apply(file.getPath()));
   }
 
   private void reuseIdentity() throws IOException {
@@ -89,17 +103,21 @@ public class InitializeWebhookIdentityStep extends Step {
     FileUtils.copyFile(keyFile, webhookKeyFile);
   }
 
-  private NextAction createIdentity(Packet packet) throws Exception {
-    KeyPair keyPair = createKeyPair();
-    String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, webhookKeyFile);
-    X509Certificate cert = generateCertificate(webhookCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
-            CERTIFICATE_VALIDITY_DAYS);
-    String certString = getBase64Encoded(cert);
-    writeToFile(certString, webhookCertFile);
-    // put the new certificate and key in the webhook's secret so that it will be available
-    // the next time the webhook is started
-    return doNext(recordWebhookIdentity(new WebhookIdentity(key, certString.getBytes()), getNext()), packet);
+  private NextAction createIdentity(Packet packet) throws IdentityInitializationException {
+    try {
+      KeyPair keyPair = createKeyPair();
+      String key = convertToPEM(keyPair.getPrivate());
+      writeToFile(key, webhookKeyFile);
+      X509Certificate cert = generateCertificate(webhookCertFile.getName(), keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+          CERTIFICATE_VALIDITY_DAYS);
+      String certString = getBase64Encoded(cert);
+      writeToFile(certString, webhookCertFile);
+      // put the new certificate and key in the webhook's secret so that it will be available
+      // the next time the webhook is started
+      return doNext(recordWebhookIdentity(new WebhookIdentity(key, certString.getBytes()), getNext()), packet);
+    } catch (Exception e) {
+      throw new IdentityInitializationException(e);
+    }
   }
 
   private static String convertToPEM(Object object) throws IOException {
@@ -113,7 +131,7 @@ public class InitializeWebhookIdentityStep extends Step {
 
   private static void writeToFile(String content, File path) throws IOException {
     path.getParentFile().mkdirs();
-    try (Writer wr = Files.newBufferedWriter(path.toPath())) {
+    try (Writer wr = Files.newBufferedWriter(getPath.apply(path.toString()))) {
       wr.write(content);
       wr.flush();
     }
@@ -160,7 +178,12 @@ public class InitializeWebhookIdentityStep extends Step {
       if (existingSecret == null) {
         return doNext(createSecret(getNext(), webhookIdentity), packet);
       } else if (identityExists(data)) {
-        reuseExistingIdentity(data);
+        try {
+          reuseExistingIdentity(data);
+        } catch (Exception e) {
+          LOGGER.severe(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
+          packet.getComponents().put(EXCEPTION, Component.createFor(Exception.class, e));
+        }
         return doNext(getNext(), packet);
       }
       return doNext(replaceSecret(getNext(), existingSecret, webhookIdentity), packet);
@@ -170,14 +193,9 @@ public class InitializeWebhookIdentityStep extends Step {
       return data.get(WEBHOOK_KEY) != null && data.get(WEBHOOK_CERTIFICATE) != null;
     }
 
-    private void reuseExistingIdentity(Map<String, byte[]> data) {
-      try {
-        Files.write(webhookKeyFile.toPath(), data.get(WEBHOOK_KEY));
-        Files.write(webhookCertFile.toPath(), data.get(WEBHOOK_CERTIFICATE));
-      } catch (Exception e) {
-        LOGGER.warning(WEBHOOK_IDENTITY_INITIALIZATION_FAILED, e.toString());
-        throw new RuntimeException(e);
-      }
+    private void reuseExistingIdentity(Map<String, byte[]> data) throws IOException {
+      Files.write(webhookKeyFile.toPath(), data.get(WEBHOOK_KEY));
+      Files.write(webhookCertFile.toPath(), data.get(WEBHOOK_CERTIFICATE));
     }
   }
 
@@ -237,13 +255,11 @@ public class InitializeWebhookIdentityStep extends Step {
     public byte[] getWebhookCert() {
       return webhookCert;
     }
+  }
 
-    @Override
-    public String toString() {
-      return "WebhookIdentity{"
-              + "webhookKey='" + webhookKey + '\''
-              + ", webhookCert='" + webhookCert + '\''
-              + '}';
+  public static class IdentityInitializationException extends Exception {
+    public IdentityInitializationException(Exception e) {
+      super(e);
     }
   }
 }

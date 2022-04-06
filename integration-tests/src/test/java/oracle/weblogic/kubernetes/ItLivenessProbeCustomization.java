@@ -32,11 +32,8 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -76,10 +73,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test liveness probe customization in a multicluster mii domain.
- * Build model in image with liveness probe custom script named customLivenessProbe.sh
- * Enable
+ * Build model in image with liveness probe custom script named 
+ * customLivenessProbe.sh that retuns success(0) when a file /u01/tempFile.txt
+ * avilable on the pod else it returns failure(1). 
+ * Note: Livenessprobe is triggered only when the script returns success 
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify liveness probe customization")
 @IntegrationTest
 class ItLivenessProbeCustomization {
@@ -124,31 +122,31 @@ class ItLivenessProbeCustomization {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create mii with additional livenessprobecustom script
+    // Build model in image with liveness probe custom script named 
+    // customLivenessProbe.sh for a 2 clusters domain.
+    // Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
+    
     String imageName = createAndVerifyDomainImage();
-
-    // create a basic model in image domain
     createAndVerifyMiiDomain(imageName);
 
-    // create temp file to be copied to managed server pod which will be used in customLivenessProbe.sh
+    // create temp file to be copied to managed server pods which will be used 
+    // in customLivenessProbe.sh
     String fileName = "tempFile";
     tempFile = assertDoesNotThrow(() -> createTempfile(fileName), "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
   }
 
   /**
-   * Verify the customization of liveness probe.
-   * Build model in image with liveness probe custom script named customLivenessProbe.sh
-   * for a 2 clusters domain.
-   * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * After the domain is created copy the file named tempfile.txt into tested managed server pods for
-   * both clusters, which is used by custom script to trigger liveness probe.
-   * Verify the container managed server pods in both clusters are restarted
+   * After the domain is started, copy the file named tempFile.txt into all 
+   * managed server pods for both clusters. On copying the files, the custom 
+   * script customLivenessProbe.sh return success(0) which will roll the pod 
+   * to trigger liveness probe. Verify the managed server pods in both clusters
+   * are restarted
    */
   @Test
-  @Order(1)
-  @DisplayName("Test customization of the liveness probe")
+  @DisplayName("Test custom liveness probe is triggered")
   @Tag("gate")
-  void testCustomLivenessProbe() {
+  void testCustomLivenessProbeTriggered() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -206,43 +204,48 @@ class ItLivenessProbeCustomization {
     }
   }
 
-  /**
-   * Verify the negative test case of customization of liveness probe.
-   * Build model in image with liveness probe custom script named customLivenessProbe.sh
-   * for a 2 clusters domain.
-   * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * Since there is no temp file named "tempFile.txt" in the tested managed server pods, based on
-   * custom script logic, liveness probe will not be triggered.
-   * Verify the container managed server pods in both clusters are NOT restarted
+  /* Since there is no temp file named "/u01/tempFile.txt" in the managed 
+   * server pods, liveness probe will not be activated. 
+   * Verify the container in managed server pods are not restarted 
    */
   @Test
-  @Order(2)
-  @DisplayName("Test custom liveness probe is not trigged")
-  void testCustomLivenessProbeNotTrigged() {
+  @DisplayName("Test custom liveness probe is not triggered")
+  void testCustomLivenessProbeNotTriggered() {
+
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
-
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        // get the initial restart count of the container in pod
+        final int beforeRestartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
+            managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                managedServerPodName, domainNamespace));
+        logger.info("For server {0} restart count before liveness probe is: {1}",
+            managedServerPodName, beforeRestartCount);
 
+        logger.info("[1] restart count is: {0}", beforeRestartCount);
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
         checkAppIsRunning(
             domainNamespace,
             managedServerPodName,
             expectedStr);
 
-        // get the restart count of the container, which should be 1 after positive test case
-        int restartCount = assertDoesNotThrow(() ->
+        // get the restart count of the container
+        // It should not increase since the Pod should not be started  
+        int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
             managedServerPodName, domainNamespace));
-        logger.info("restart count is: {0}", restartCount);
-        assertEquals(1, restartCount,
+        logger.info("[2] restart count is: {0}", afterRestartCount);
+        assertEquals(0, afterRestartCount - beforeRestartCount,
             String.format("Liveness probe starts the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
       }
@@ -250,9 +253,11 @@ class ItLivenessProbeCustomization {
   }
 
   /**
-   * Patch the domain with custom livenessProbe failureThreshold and successThreshold value in serverPod.
-   * Verify the domain is restarted and the failureThreshold and successThreshold is updated.
-   * Also verify the failureThreshold runtime behavior is corrected.
+   * Patch the domain with custom livenessProbe failureThreshold and 
+   * successThreshold value in serverPod.
+   * Verify the domain is restarted.
+   * Verify failureThreshold and successThreshold value is updated.
+   * Verify the failureThreshold runtime behavior.
    */
   @Test
   @DisplayName("Test custom livenessProbe failureThreshold and successThreshold in serverPod")
