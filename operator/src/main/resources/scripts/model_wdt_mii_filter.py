@@ -318,10 +318,11 @@ def customizeServers(model):
 
 def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
-  try:
+
+  adminServer = None
+  if 'AdminServerName' in model['topology'] and len(model['topology']['AdminServerName']) > 0:
     adminServer = model['topology']['AdminServerName']
-  except KeyError:
-    adminServer = None
+
   customizeLog(name, server)
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
