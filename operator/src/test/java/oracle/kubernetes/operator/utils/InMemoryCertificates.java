@@ -49,7 +49,7 @@ public class InMemoryCertificates {
     fileSystem.defineFile("/deployment/internal-identity/internalOperatorCert", contents);
   }
 
-  static void defineWebhookCertificateFile(String contents) {
+  public static void defineWebhookCertificateFile(String contents) {
     fileSystem.defineFile("/deployment/webhook-identity/webhookCert", contents);
   }
 }

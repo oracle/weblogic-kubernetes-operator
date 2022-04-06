@@ -16,6 +16,9 @@ public class CommonConstants {
   public static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
   public static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
 
+  public static final String SECRETS_WEBHOOK_CERT = "/secrets/webhookCert";
+  public static final String SECRETS_WEBHOOK_KEY = "/secrets/webhookKey";
+
   public static final String LATEST_IMAGE_SUFFIX = ":latest";
 
 }
