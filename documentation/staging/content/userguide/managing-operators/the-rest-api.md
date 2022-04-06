@@ -104,7 +104,7 @@ Before using the [Sample operator REST client script](#sample-operator-rest-clie
 
 * Update it to ensure that it has the correct service account, namespaces, and such, and it points to the `values.yaml` file
   that you used to install the operator (so that it can get the certificates).
-* Add your operator's certificate to your operating system's trust store (for an example, see the [script](#sample-operator-rest-client-script)).
+* Add your operator's certificate to your operating system's trust store (see [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)).
 * If you are using a self-signed certificate and your client is macOS, you may need to update the version of `curl`
   you have installed (though newer versions of macOS come with newer versions of `curl`). Oracle
   recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11` or later. If you are unsure, then check with `curl --version`.
@@ -112,9 +112,9 @@ Before using the [Sample operator REST client script](#sample-operator-rest-clie
 ##### How to add your certificate to your operating system trust store
 
 For macOS, find the certificate in Finder, and double-click on it.  This will add it to your keystore and open Keychain
-Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the "Trust" pull-down menu and set the value of "When using this certificate" to "Always Trust", then close the detail window. Enter your password when prompted.
+Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the **Trust** drop-down menu and set the value of **When using this certificate** to **Always Trust**, then close the detail window. Enter your password when prompted.
 
-For Oracle Linux, run the following script, once to copy the certificate into `/tmp/operator.cert.pem`, then run these
+For Oracle Linux, run the following script once to copy the certificate into `/tmp/operator.cert.pem`, and then run these
 commands to add the certificate to the trust store:
 
 ```shell
@@ -191,7 +191,7 @@ cat curl.out | jq .
 You can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`), but this is insecure.
 {{% /notice %}}
 
-To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information, in addition to the response.  Here is an example of the output of this script:
+To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired. In addition to the response, the script also prints out quite a bit of useful debugging information.  Here is an example of the output of this script:
 
 ```shell
 $ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
