@@ -78,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -125,8 +124,8 @@ public class CommonLBTestUtils {
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     Path pvHostPath = get(PV_ROOT, testClassName, "sharing-persistentVolume");
 
-    String sharingPvName = getUniquePvOrPvcName(domainNamespace + "-sharing-pv");
-    String sharingPvcName = getUniquePvOrPvcName(domainNamespace + "-sharing-pvc");
+    String sharingPvName = getUniqueName(domainNamespace + "-sharing-pv");
+    String sharingPvcName = getUniqueName(domainNamespace + "-sharing-pvc");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()

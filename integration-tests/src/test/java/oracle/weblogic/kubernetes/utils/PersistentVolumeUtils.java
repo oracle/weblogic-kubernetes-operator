@@ -34,7 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -281,24 +280,6 @@ public class PersistentVolumeUtils {
             .runAsGroup(0L)
             .runAsUser(0L));
     return container;
-  }
-
-  /**
-   * Get a unique name for pv or pvc with a supplied prefix.
-   * @param prefix prefix for pv or pvc name
-   * @return full pv or pvc name
-   */
-  public static String getUniquePvOrPvcName(String prefix, String... suffix) {
-    char[] name = new char[6];
-    for (int i = 0; i < name.length; i++) {
-      name[i] = (char) (random.nextInt(25) + (int) 'a');
-    }
-    String pvOrPvcName = prefix + new String(name);
-    for (String s : suffix) {
-      pvOrPvcName += s;
-    }
-    getLogger().info("Creating unique pv|pvc name {0}", pvOrPvcName);
-    return pvOrPvcName;
   }
 
 }
