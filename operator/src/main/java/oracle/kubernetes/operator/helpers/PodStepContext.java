@@ -858,10 +858,10 @@ public abstract class PodStepContext extends BasePodStepContext {
             false);
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "DOMAIN_UID",
             "metadata.labels['weblogic.domainUID']",
-            false);
+            true);
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "SERVER_NAME",
             "metadata.labels['weblogic.serverName']",
-            false);
+            true);
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
             this.getDomain().getEffectiveLogHome() + "/$(SERVER_NAME).log",
             false);
