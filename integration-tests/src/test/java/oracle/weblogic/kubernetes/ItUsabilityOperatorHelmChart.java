@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +40,9 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.write;
+import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -54,12 +58,14 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
@@ -89,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -110,6 +117,7 @@ class ItUsabilityOperatorHelmChart {
 
   private static String opNamespace = null;
   private static String op2Namespace = null;
+  private static String op3Namespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
@@ -147,7 +155,7 @@ class ItUsabilityOperatorHelmChart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -178,6 +186,11 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Getting a unique namespace for operator 2");
     assertNotNull(namespaces.get(5), "Namespace list is null");
     op2Namespace = namespaces.get(5);
+
+    // get a unique operator 3 namespace
+    logger.info("Getting a unique namespace for operator 3");
+    assertNotNull(namespaces.get(6), "Namespace list is null");
+    op3Namespace = namespaces.get(6);
   }
 
   @AfterAll
@@ -797,15 +810,15 @@ class ItUsabilityOperatorHelmChart {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace(op2Namespace)
+        .namespace(op3Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
       // install operator
-      String opServiceAccount = op2Namespace + "-sa";
-      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
-          0, op1HelmParams, domain4Namespace).getHelmParams();
+      String opServiceAccount = op3Namespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
+          0, "FINE", op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
-      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
+      int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
@@ -818,7 +831,7 @@ class ItUsabilityOperatorHelmChart {
           "can't start or verify domain5 in namespace " + domain4Namespace);
 
       assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
           "Domain4 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -829,21 +842,21 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain4 scaled to 3 servers");
 
       assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 " + domain4Namespace + " scaling operation failed");
+          externalRestHttpsPort,op3Namespace, opServiceAccount),
+          "Domain5 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
           managedServerPodName2, domain4Namespace);
       assertDoesNotThrow(() ->
               checkPodExists(managedServerPodName2, domain5Uid, domain4Namespace),
-          "operator failed to manage domain2, scaling was not succeeded");
+          "operator failed to manage domain5, scaling was not succeeded");
 
-      logger.info("Domain4 scaled to 3 servers");
+      logger.info("Domain5 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain4Namespace,
                   "/u01/domains/" + domain4Uid, "scaleDown", 1,
-                  op2Namespace,opServiceAccount),
+                  op3Namespace, opServiceAccount),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain4Namespace),
@@ -852,7 +865,7 @@ class ItUsabilityOperatorHelmChart {
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain5Uid, domain4Namespace,
                   "/u01/domains/" + domain5Uid, "scaleDown", 1,
-                  op2Namespace,opServiceAccount),
+                  op3Namespace, opServiceAccount),
           " scaling via scalingAction.sh script was not succeeded for domain5");
 
       assertDoesNotThrow(() ->
@@ -860,9 +873,28 @@ class ItUsabilityOperatorHelmChart {
           " scaling via scalingAction.sh script was not succeeded for domain5");
       logger.info("Domain5 scaled to 2 servers");
     } finally {
+      try {
+        String operatorPodName =
+                assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op3Namespace),
+                        "Can't get operator's pod name");
+        Path logDirPath = get(RESULTS_ROOT, this.getClass().getSimpleName());
+        assertDoesNotThrow(() -> deleteDirectory(logDirPath.toFile()),
+                "Delete directory failed");
+        assertDoesNotThrow(() -> createDirectories(logDirPath),
+                "Create directory failed");
+        String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(operatorPodName, op3Namespace));
+        Path pathToLog =
+                get(RESULTS_ROOT, this.getClass().getSimpleName(),
+                        "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op3Namespace + ".log");
+
+        assertDoesNotThrow(() -> write(pathToLog, podLog.getBytes()),
+                "Can't write to file " + pathToLog);
+      } catch (Exception ex) {
+        logger.info("Failed to collect operator log");
+      }
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
-      cleanUpSA(op2Namespace);
+      deleteSecret(OCIR_SECRET_NAME, op3Namespace);
+      cleanUpSA(op3Namespace);
     }
   }
 
