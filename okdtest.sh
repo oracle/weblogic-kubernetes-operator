@@ -115,6 +115,7 @@ echo "cleaning up k8s artifacts"
 kubectl get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/weblogic/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/test-/{print $1}' | xargs kubectl delete ns || true
+kubectl delete ns ns-newnamespace1 ns-newnamespace2 || true
 kubectl delete pv domain1-weblogic-sample-pv --wait=false || true
 kubectl delete pv domain2-weblogic-sample-pv --wait=false || true
 kubectl delete pv pv-testalertmanager --wait=false || true
