@@ -14,7 +14,7 @@
 
     <description>Oracle WebLogic Server Kubernetes Operator</description>
     <name>integration-tests</name>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <skipITs>false</skipITs>
@@ -167,7 +167,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
+                    <skipTests>${skipITs}</skipTests>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
@@ -187,7 +187,6 @@
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
                                 <java.util.logging.SimpleFormatter.format>
                                     &lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
