@@ -24,6 +24,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -224,6 +226,12 @@ public class PersistentVolumeUtils {
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
+      if (OKD) {
+        new Command()
+            .withParams(new CommandParams()
+                .command("sudo chmod -R 777 " + pvHostPath.toString()))
+            .execute();
+      }
     } catch (IOException ioex) {
       logger.severe(ioex.getMessage());
       fail("Create persistent volume host path failed");
