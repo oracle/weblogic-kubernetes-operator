@@ -160,11 +160,23 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <skipTests>${skipITs}</skipTests>
-<!--                    <argLine>@{argLine} &#45;&#45;add-opens java.base/java.time=ALL-UNNAMED</argLine>-->
+                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
 <!--                    <argLine>${failsafeArgLine}</argLine>-->
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
