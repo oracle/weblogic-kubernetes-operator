@@ -188,6 +188,8 @@ public class CommonTestUtils {
    * @param namespace - namespace to which the service account belongs
    */
   public static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("adding security context constraints to the db namespace: " + namespace);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command("oc adm policy add-scc-to-user privileged -z " + serviceAccount + " -n " + namespace))
