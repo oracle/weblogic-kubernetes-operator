@@ -164,6 +164,7 @@
                 <configuration>
                     <encoding>UTF-8</encoding>
                     <skipTests>${skipITs}</skipTests>
+                    <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
                         <include>
