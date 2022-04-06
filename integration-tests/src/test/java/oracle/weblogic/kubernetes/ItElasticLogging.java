@@ -290,7 +290,10 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    // verify log level query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
+            String.format("Query logs of level=INFO failed")));
 
     logger.info("Query logs of level=INFO succeeded");
   }
@@ -499,12 +502,14 @@ class ItElasticLogging {
     logger.info("query result is {0}", queryResult);
   }
 
-  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
-                                   String index, boolean checkCount, String... args) {
+  private boolean verifyCountsHitsInSearchResults(String queryCriteria, String regex,
+                                                  String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
+    boolean testResult = false;
     int count = -1;
     int failedCount = -1;
     String hits = "";
+
     String results = execSearchQuery(queryCriteria, index);
     Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(results);
@@ -522,14 +527,18 @@ class ItElasticLogging {
       assertNotNull(kibanaParams, "Failed to install Kibana");
       assertTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        assertEquals(0, failedCount, "Total failed count should be 0!");
         logger.info("Total failed count: " + failedCount);
+        assertEquals(0, failedCount, "Total failed count should be 0!");
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
+      testResult = true;
     } else {
       assertEquals(0, count, "Total count of logs should be zero!");
+      testResult = true;
     }
+
+    return testResult;
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
