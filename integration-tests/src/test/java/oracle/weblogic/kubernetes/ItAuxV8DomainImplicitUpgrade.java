@@ -22,7 +22,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -152,7 +151,6 @@ class ItAuxV8DomainImplicitUpgrade {
    */
   @Test
   @DisplayName("Test implicit upgrade of v8 version of Auxiliary Domain")
-  @Tag("gate")
   void testMultipleAuxImagesV8Domain() {
 
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
