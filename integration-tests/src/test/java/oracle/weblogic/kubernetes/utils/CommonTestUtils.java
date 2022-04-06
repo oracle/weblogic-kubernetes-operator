@@ -938,7 +938,7 @@ public class CommonTestUtils {
    */
   private static void isLocalPortFree(int port) throws IOException {
     try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("{0} is already in use", port);
+      getLogger().info("Port {0} is already in use", port);
     }
   }
 
