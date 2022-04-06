@@ -20,6 +20,7 @@ import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -204,6 +205,7 @@ class ItMiiCreateAuxImageWithImageTool {
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with customized options")
+  @Tag("gate")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
