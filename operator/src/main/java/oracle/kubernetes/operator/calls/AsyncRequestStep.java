@@ -30,11 +30,8 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
 import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_SUCCESS;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -45,7 +42,6 @@ import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
@@ -72,7 +68,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private final String labelSelector;
   private final String resourceVersion;
   private int timeoutSeconds;
-  private DomainCondition recordedFailure;
 
   /**
    * Construct async step.
@@ -192,7 +187,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // The Kubernetes request succeeded. Recycle the client, add the response to the packet, and proceed.
     void onSuccess(AsyncFiber fiber, T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      removeExistingFailureCondition();
       if (firstTimeResumed()) {
         if (LOGGER.isFinerEnabled()) {
           logSuccess(result, statusCode, responseHeaders);
@@ -205,19 +199,11 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       }
     }
 
-    private void removeExistingFailureCondition() {
-      DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getStatus)
-            .ifPresent(status -> status.removeCondition(recordedFailure));
-    }
-
     // We received a failure from Kubernetes. Recycle the client,
     // add the failure into the packet and prepare to try again.
     void onFailure(AsyncFiber fiber, ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       if (firstTimeResumed()) {
         if (statusCode != HTTP_NOT_FOUND) {
-          addDomainFailureStatus(ae);
           logFailure(ae, statusCode, responseHeaders);
         }
 
@@ -232,31 +218,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
               createFailure(requestParams, ae, statusCode).withResponseHeaders(responseHeaders)));
         fiber.resume(packet);
       }
-    }
-
-    private void addDomainFailureStatus(ApiException apiException) {
-      DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getDomain)
-            .ifPresent(domain -> updateFailureStatus(domain, apiException));
-    }
-
-    private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
-      final var condition = new DomainCondition(FAILED).withReason(KUBERNETES).withMessage(createMessage(apiException));
-      if (recordedFailure == null) {
-        addFailureStatus(domain, condition);
-      } else if (!recordedFailure.equals(condition)) {
-        domain.getStatus().removeCondition(recordedFailure);
-        addFailureStatus(domain, condition);
-      }
-    }
-
-    private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
-      recordedFailure = condition;
-      domain.getOrCreateStatus().addCondition(recordedFailure);
-    }
-
-    private String createMessage(ApiException apiException) {
-      return AsyncRequestStep.this.requestParams.createFailureMessage(apiException);
     }
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
@@ -335,20 +296,22 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                setThreadContext()
                    .namespace(requestParams.namespace)
                    .domainUid(requestParams.domainUid)) {
-        LOGGER.warning(
-            MessageKeys.ASYNC_FAILURE,
-            identityHash(),
-            requestParams.call,
-            ae.getMessage(),
-            statusCode,
-            responseHeaders,
-            requestParams.namespace,
-            requestParams.name,
-            Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
-            fieldSelector,
-            labelSelector,
-            resourceVersion,
-            ae.getResponseBody());
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine(
+              MessageKeys.ASYNC_FAILURE,
+              identityHash(),
+              requestParams.call,
+              ae.getMessage(),
+              statusCode,
+              responseHeaders,
+              requestParams.namespace,
+              requestParams.name,
+              Optional.ofNullable(requestParams.body).map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
+              fieldSelector,
+              labelSelector,
+              resourceVersion,
+              ae.getResponseBody());
+        }
       }
     }
   }

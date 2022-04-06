@@ -42,16 +42,12 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -128,15 +124,6 @@ class AsyncRequestStepTest {
   }
 
   @Test
-  void afterTimeout_newRequestSent() {
-    callFactory.clearRequest();
-
-    testSupport.setTime(TIMEOUT_SECONDS + 1, TimeUnit.SECONDS);
-
-    assertThat(callFactory.invokedWith(requestParams), is(true));
-  }
-
-  @Test
   void afterSuccessfulCallback_nextStepAppliedWithValue() {
     callFactory.sendSuccessfulCallback(smallList);
 
@@ -177,19 +164,6 @@ class AsyncRequestStepTest {
   }
 
   @Test
-  void afterFailedCallbackWithDomainInPacket_reportFailedStatus() {
-    testSupport.addDomainPresenceInfo(info);
-    sendFailedCallback(HttpURLConnection.HTTP_INTERNAL_ERROR);
-
-    assertThat(domain.getStatus().hasConditionWithType(FAILED), is(true));
-    assertThat(domain.getStatus().getReason(), equalTo(KUBERNETES.toString()));
-    assertThat(domain.getStatus().getMessage(), allOf(
-          containsString(OP_NAME), containsString(RESOURCE_TYPE),
-          containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
-    ));
-  }
-
-  @Test
   void afterFailedCallback_retrySentAfterDelay() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
     callFactory.clearRequest();
@@ -212,45 +186,6 @@ class AsyncRequestStepTest {
     testSupport.addDomainPresenceInfo(info);
 
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
-  }
-
-  @Test
-  void whenDomainStatusIsNull_recordFailure() {
-    info.getDomain().setStatus(null);
-    testSupport.addDomainPresenceInfo(info);
-
-    sendFailedCallback(0, "explanation1");
-
-    assertThat(domain.getStatus().getConditions(), hasSize(1));
-    assertThat(domain.getStatus().getConditions().get(0).getType(), equalTo(FAILED));
-  }
-
-  @Test
-  void afterMultipleRetriesWithSameFailure_statusContainsOriginalFailure() {
-    testSupport.addDomainPresenceInfo(info);
-    sendFailedCallback(0, "explanation1");
-    final DomainCondition originalFailure = domain.getStatus().getConditions().get(0);
-
-    SystemClockTestSupport.increment();
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    sendFailedCallback(0, "explanation1");
-
-    assertThat(domain.getStatus().getConditions(), hasSize(1));
-    assertThat(domain.getStatus().getConditions().get(0), sameInstance(originalFailure));
-  }
-
-  @Test
-  void afterMultipleRetriesWithDifferentFailures_newFailureReplacesOriginalOne() {
-    testSupport.addDomainPresenceInfo(info);
-    sendFailedCallback(0, "explanation1");
-    final DomainCondition originalFailure = domain.getStatus().getConditions().get(0);
-
-    SystemClockTestSupport.increment();
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    sendFailedCallback(0, "explanation2");
-
-    assertThat(domain.getStatus().getConditions(), hasSize(1));
-    assertThat(domain.getStatus().getConditions().get(0), not(sameInstance(originalFailure)));
   }
 
   @Test
