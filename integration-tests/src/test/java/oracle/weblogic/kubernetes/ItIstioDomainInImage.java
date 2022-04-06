@@ -26,10 +26,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -72,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
 class ItIstioDomainInImage {
@@ -127,8 +123,9 @@ class ItIstioDomainInImage {
    * Verify WebLogic console is accessible thru kubectl forwarded port(s)
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
+   * Verify Security Warning Tool does not detect any security warning message
+   *
    */
-  @Order(1)
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   void testIstioDomainHomeInImage() {
@@ -248,19 +245,10 @@ class ItIstioDomainInImage {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
 
-  }
+    // Verify that Security Warning Tool does not detect any security warning
+    // messages on console.
 
-  /**
-   * Verify that Security Warning Tool does not detect any security warning
-   * messages on console.
-  */
-  
-  @Test
-  @Order(2)
-  @DisplayName("Verify the Security Warning in domain in image")
-  void testVerifySecurityWarnings() {
-
-    int istioIngressPort = getIstioHttpIngressPort();
+    istioIngressPort = getIstioHttpIngressPort();
 
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     if (isWebLogicPsuPatchApplied()) {
@@ -271,7 +259,7 @@ class ItIstioDomainInImage {
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
           + "link=none";
 
-      ExecResult result = null;
+      result = null;
       logger.info("curl command {0}", curlCmd2);
       result = assertDoesNotThrow(
         () -> exec(curlCmd2, true));
