@@ -159,15 +159,16 @@ public class FluentdHelper {
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "SERVER_NAME",
         "metadata.labels['weblogic.serverName']",
         true);
+
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
+            domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
+            false);
+
     if (isIntrospectorPod) {
       addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "INTROSPECTOR_OUT_PATH",
           domain.getEffectiveLogHome() + "/introspector_script.out",
           false);
 
-    } else {
-      addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
-          domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
-          false);
     }
 
     fluentdSpecification.getEnv()

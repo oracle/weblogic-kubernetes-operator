@@ -55,7 +55,6 @@ import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
-import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -361,9 +360,6 @@ public class JobStepContext extends BasePodStepContext {
     addInitContainers(podTemplateSpec.getSpec(), tuningParameters);
     Optional.ofNullable(getAuxiliaryImages())
             .ifPresent(p -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume()));
-    Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd,
-            podTemplateSpec.getSpec().getContainers(), getDomain(), true));
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
@@ -556,7 +552,18 @@ public class JobStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     // Returning an empty array since introspector pod does not start with any additional containers
     // configured in the ServerPod configuration
-    return new ArrayList<>();
+    List<V1Container> containers = new ArrayList<>();
+
+    Optional.ofNullable(getDomain().getFluentdSpecification())
+        .ifPresent(fluentd -> {
+          if (fluentd.getWatchIntrospectorLogs()) {
+            FluentdHelper.addFluentdContainer(fluentd,
+                    containers, getDomain(), true);
+          }
+        });
+
+    return containers;
+
   }
 
   protected List<V1Volume> getFluentdVolumes() {
