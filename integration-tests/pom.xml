@@ -149,14 +149,6 @@
                                     <message>Set the OCIR_EMAIL environment variable to specify the OCIR user's email address to use for creating the image pull secret.</message>
                                     <variableName>OCIR_EMAIL</variableName>
                                 </requireEnvironmentVariable>
-                                <requireEnvironmentVariable>
-                                    <message>Set the OCR_USERNAME environment variable to specify the OCR username to use for pulling images.</message>
-                                    <variableName>OCR_USERNAME</variableName>
-                                </requireEnvironmentVariable>
-                                <requireEnvironmentVariable>
-                                    <message>Set the OCR_PASSWORD environment variable to specify the OCR password to use for pulling images.</message>
-                                    <variableName>OCR_PASSWORD</variableName>
-                                </requireEnvironmentVariable>
                             </rules>
                         </configuration>
                     </execution>
