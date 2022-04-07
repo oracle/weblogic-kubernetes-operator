@@ -31,7 +31,7 @@ public class PersistentVolume {
    * @param labelSelector String containing the labels the PV is decorated with
    * @return true if the persistent volume exists, false otherwise
    */
-  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
+  public static Callable<Boolean> pvNotExist(String pvName, String labelSelector) {
     return () -> !doesPVExist(pvName, labelSelector);
   }
 

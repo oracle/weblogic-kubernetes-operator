@@ -134,8 +134,8 @@ class ItTwoDomainsManagedByTwoOperators {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = getUniqueName("default-sharing-pvc");
-  private static final String defaultSharingPvName = getUniqueName("default-sharing-pv");
+  private static final String defaultSharingPvcName = getUniqueName("default-sharing-pvc-");
+  private static final String defaultSharingPvName = getUniqueName("default-sharing-pv-");
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
   private static String domain2Uid = null;
@@ -345,8 +345,8 @@ class ItTwoDomainsManagedByTwoOperators {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = getUniqueName(domainUid + "-pv-" + domainNamespace);
-      String pvcName = getUniqueName(domainUid + "-pvc");
+      String pvName = getUniqueName(domainUid + "-pv-");
+      String pvcName = getUniqueName(domainUid + "-pvc-");
 
       // create WebLogic credentials secret
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);

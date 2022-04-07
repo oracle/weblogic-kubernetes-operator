@@ -124,8 +124,8 @@ public class CommonLBTestUtils {
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     Path pvHostPath = get(PV_ROOT, testClassName, "sharing-persistentVolume");
 
-    String sharingPvName = getUniqueName(domainNamespace + "-sharing-pv");
-    String sharingPvcName = getUniqueName(domainNamespace + "-sharing-pvc");
+    String sharingPvName = getUniqueName(domainNamespace + "-sharing-pv-");
+    String sharingPvcName = getUniqueName(domainNamespace + "-sharing-pvc-");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -157,8 +157,8 @@ public class CommonLBTestUtils {
 
     for (int i = 0; i < numberOfDomains; i++) {
       String domainUid = domainUids.get(i);
-      String domainScriptConfigMapName = getUniqueName("create-domain" + i + "-scripts-cm");
-      String createDomainInPVJobName = getUniqueName("create-domain" + i + "-onpv-job");
+      String domainScriptConfigMapName = getUniqueName("create-domain" + i + "-scripts-cm-");
+      String createDomainInPVJobName = getUniqueName("create-domain" + i + "-onpv-job-");
 
       int t3ChannelPort = getNextFreePort();
       getLogger().info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
