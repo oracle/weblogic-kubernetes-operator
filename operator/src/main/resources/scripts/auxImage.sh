@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -26,7 +26,7 @@ scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 if [ "${debug}" == "true" ]; then set -x; fi;
 
-source ${scriptDir}/utils_base.sh
+. ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
 UNKNOWN_SHELL=true
 
