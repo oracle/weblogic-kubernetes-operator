@@ -82,6 +82,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
@@ -368,17 +369,34 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainHasFluentd_jobPodShouldHaveFluentdSidecar() {
+  void whenFluentdWatchIntrospectLogsEnable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(true, "dummy-cred",
         null);
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(Optional.ofNullable(jobSpec.getTemplate())
-        .map(V1PodTemplateSpec::getSpec)
-        .map(V1PodSpec::getContainers)
-        .get()
-        .stream().filter(f -> f.getName().equals("fluentd")), notNullValue());
+    assertThat(Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getContainers)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), notNullValue());
+
+  }
+
+  @Test
+  void whenFluentdWatchIntrospectLogsDisable_jobPodShouldHaveFluentdSidecar() {
+    configureDomain().withFluentdConfiguration(false, "dummy-cred",
+            null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getContainers)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), equalTo(Optional.empty()));
 
   }
 
@@ -1151,6 +1169,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(job, nullValue());
   }
+
+
 
   @Test
   void whenIntrospectRequestSet_runIntrospector() {

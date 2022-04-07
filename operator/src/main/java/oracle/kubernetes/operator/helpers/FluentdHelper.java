@@ -21,6 +21,7 @@ import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 
 public class FluentdHelper {
 
@@ -35,7 +36,7 @@ public class FluentdHelper {
 
     V1Container fluentdContainer = new V1Container();
     fluentdContainer
-        .name("fluentd")
+        .name(FLUENTD_CONTAINER_NAME)
         .addArgsItem("-c")
         .addArgsItem("/etc/fluent.conf");
 
