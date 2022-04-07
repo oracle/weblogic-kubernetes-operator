@@ -13,19 +13,29 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import java.util.List;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,11 +49,15 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -173,8 +187,14 @@ public class PersistentVolumeUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    if (!OKE_CLUSTER) {
+
+    if (!OKE_CLUSTER && !OKD) {
       pvHostPath = createPVHostPathDir(pvName, className);
+    }
+    if(OKD){
+      Path pvLeafPath;
+      pvLeafPath = Paths.get(className, pvName);
+      assertDoesNotThrow(() -> createNFSPvHostPath(pvLeafPath));
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -192,6 +212,7 @@ public class PersistentVolumeUtils {
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
+
   }
 
   private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
@@ -226,12 +247,6 @@ public class PersistentVolumeUtils {
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
-      if (OKD) {
-        new Command()
-            .withParams(new CommandParams()
-                .command("sudo chmod -R 777 " + pvHostPath.toString()))
-            .execute();
-      }
     } catch (IOException ioex) {
       logger.severe(ioex.getMessage());
       fail("Create persistent volume host path failed");
@@ -286,7 +301,7 @@ public class PersistentVolumeUtils {
    * @param mountPath mounting path for pv
    * @return container object with required ownership based on OKE_CLUSTER variable value.
    */
-  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
+   public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
     String argCommand = "chown -R 1000:0 " + mountPath;
     if (OKE_CLUSTER) {
       argCommand = "chown 1000:0 " + mountPath
@@ -397,6 +412,108 @@ public class PersistentVolumeUtils {
     }
     getLogger().info("Creating unique pv|pvc name {0}", pvOrPvcName);
     return pvOrPvcName;
+  }
+
+  private static synchronized void createNFSPvHostPath(Path leafPath) throws ApiException {
+    LoggingFacade logger = getLogger();
+    String namespace = "default";
+    String mountPath = "/pvpath";
+    String utilPvName = "hostpath-pv";
+    String utilPvcName = "hostpath-pvc";
+
+    if (!PersistentVolume.doesPVExist(utilPvName, null)) {
+      logger.info("creating {0} persistent volume to create directory in NFS location", utilPvName);
+      V1PersistentVolume v1pv = new V1PersistentVolume()
+          .spec(new V1PersistentVolumeSpec()
+              .storageClassName("okd-nfsmnt")
+              .nfs(new V1NFSVolumeSource()
+                  .path(PV_ROOT)
+                  .server(NFS_SERVER)
+                  .readOnly(false))
+              .addAccessModesItem("ReadWriteMany")
+              .volumeMode("Filesystem")
+              .putCapacityItem("storage", Quantity.fromString("5Gi"))
+              .persistentVolumeReclaimPolicy("Recycle")
+              .accessModes(Arrays.asList("ReadWriteMany")))
+          .metadata(new V1ObjectMeta()
+              .name(utilPvName));
+
+      boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
+          "Failed to create persistent volume");
+      assertTrue(success, "PersistentVolume creation failed");
+    }
+
+    if (!PersistentVolumeClaim.doesPVCExist(utilPvcName, namespace)) {
+      logger.info("creating {0} persistent volume claim to create directory in NFS location", utilPvcName);
+      V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+          .spec(new V1PersistentVolumeClaimSpec()
+              .storageClassName("okd-nfsmnt")
+              .addAccessModesItem("ReadWriteMany")
+              .volumeName(utilPvName)
+              .resources(new V1ResourceRequirements()
+                  .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+          .metadata(new V1ObjectMeta()
+              .name(utilPvcName)
+              .namespace(namespace));
+
+      boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
+          "Failed to create persistent volume claim");
+      assertTrue(success, "PersistentVolumeClaim creation failed");
+    }
+
+    String argCommand = "mkdir -p  " + Paths.get(mountPath, leafPath.toString());
+    V1Container container = new V1Container()
+        .name("create-pv-path")
+        .image("busybox")
+        .addCommandItem("/bin/sh")
+        .addArgsItem("-c")
+        .addArgsItem(argCommand)
+        .volumeMounts(Arrays.asList(
+            new V1VolumeMount()
+                .name(utilPvName)
+                .mountPath(mountPath)));
+
+    V1Job jobBody = new V1Job()
+        .metadata(new V1ObjectMeta()
+            .name("create-pv-path-job-" + utilPvName) // name of the job
+            .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .addContainersItem(container)
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(utilPvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(utilPvcName)))))));
+
+    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+    // check job status and fail test if the job failed
+    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+        "Getting the job failed");
+    if (job != null) {
+      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          .findAny()
+          .orElse(null);
+      if (jobCondition != null) {
+        logger.severe("Job {0} failed to create pv hostpath", jobName);
+        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+            namespace, "job-name=" + jobName).getItems(),
+            "Listing pods failed");
+        if (!pods.isEmpty()) {
+          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+              "Failed to get pod log");
+          logger.severe(podLog);
+          fail("create pv hostpath directory job failed");
+        }
+
+      }
+    }
   }
 
 }
