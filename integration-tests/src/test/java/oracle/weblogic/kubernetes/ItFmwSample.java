@@ -243,8 +243,8 @@ public class ItFmwSample {
 
   private void createPvPvc(String domainUid) {
 
-    final String pvName = domainUid + "-weblogic-sample-pv-";
-    final String pvcName = domainUid + "-weblogic-sample-pvc-";
+    final String pvName = domainUid + "-weblogic-sample-pv";
+    final String pvcName = domainUid + "-weblogic-sample-pvc";
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {

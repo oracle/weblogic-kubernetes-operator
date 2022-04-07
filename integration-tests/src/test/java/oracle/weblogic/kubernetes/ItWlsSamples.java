@@ -447,8 +447,8 @@ class ItWlsSamples {
   // create persistent volume and persistent volume claims used by the samples
   private void createPvPvc(String domainName) {
 
-    final String pvName = domainName + "-weblogic-sample-pv-";
-    final String pvcName = domainName + "-weblogic-sample-pvc-";
+    final String pvName = domainName + "-weblogic-sample-pv";
+    final String pvcName = domainName + "-weblogic-sample-pvc";
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
