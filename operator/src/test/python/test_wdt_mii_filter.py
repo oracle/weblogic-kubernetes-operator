@@ -80,6 +80,20 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     return model
 
+  def getModelWithoutAdminServerName(self):
+    # Load model as dictionary
+    file = open(r'../resources/model.dict_without_admin_server_name.txt')
+    contents = file.read()
+    model = ast.literal_eval(contents)
+    file.close()
+
+    # Setup mock environment
+    mock_env= MockOfflineWlstEnv()
+    mock_env.open(model)
+    model_wdt_mii_filter.env = mock_env
+
+    return model
+
   def writeModelAsDict(self, model, file_path):
     f = open(file_path,"w")
     f.write( str(model) )
@@ -217,6 +231,19 @@ class WdtUpdateFilterCase(unittest.TestCase):
     self.assertEqual('localhost', internal_custom2_nap_listen_address, "Expected nap listen address to be \'localhost\'")
     internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin2']['ListenPort']
     self.assertEqual(7897, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7897\'")
+
+  def test_port_forward_network_access_point_when_admin_server_name_not_defined(self):
+    model = self.getModelWithoutAdminServerName()
+    servers = model['topology']['Server']
+    names = servers.keys()
+    for name in names:
+      server = servers[name]
+      model_wdt_mii_filter.customizeServer(model, server, name)
+
+      internal_admin_nap_listen_address = server['NetworkAccessPoint']['internal-admin']['ListenAddress']
+      self.assertEqual('localhost', internal_admin_nap_listen_address, "Expected nap listen address to be \'localhost\'")
+      internal_admin_nap_listen_port = server['NetworkAccessPoint']['internal-admin']['ListenPort']
+      self.assertEqual(9002, internal_admin_nap_listen_port, "Expected nap listen port to be \'9002\'")
 
   def test_customizeServerTemplates(self):
     model = self.getModel()
