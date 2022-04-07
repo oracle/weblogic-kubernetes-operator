@@ -342,8 +342,6 @@ pipeline {
                             cat "${WORKSPACE}/.mvn/maven.config"
                         '''
                         withSonarQubeEnv('SonarCloud') {
-                            // For whatever reason, defining this property in the maven.config file is not working...
-                            //
                             sh "mvn sonar:sonar"
                         }
                     }
