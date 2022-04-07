@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
@@ -33,7 +34,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import java.util.List;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -191,7 +191,7 @@ public class PersistentVolumeUtils {
     if (!OKE_CLUSTER && !OKD) {
       pvHostPath = createPVHostPathDir(pvName, className);
     }
-    if(OKD){
+    if (OKD) {
       Path pvLeafPath;
       pvLeafPath = Paths.get(className, pvName);
       assertDoesNotThrow(() -> createNFSPvHostPath(pvLeafPath));
@@ -301,7 +301,7 @@ public class PersistentVolumeUtils {
    * @param mountPath mounting path for pv
    * @return container object with required ownership based on OKE_CLUSTER variable value.
    */
-   public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
+  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath) {
     String argCommand = "chown -R 1000:0 " + mountPath;
     if (OKE_CLUSTER) {
       argCommand = "chown 1000:0 " + mountPath
