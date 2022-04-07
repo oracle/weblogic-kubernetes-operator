@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 
@@ -179,7 +179,7 @@ public class PersistentVolumeUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
+            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RECYCLE)
             .accessModes(Arrays.asList("ReadWriteMany")))
         .metadata(new V1ObjectMeta()
             .name(pvName)
@@ -327,7 +327,7 @@ public class PersistentVolumeUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("10Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
+            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN)
             .accessModes(Arrays.asList("ReadWriteMany")))
         .metadata(new V1ObjectMeta()
             .name("pv-test" + nameSuffix)

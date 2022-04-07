@@ -12,6 +12,7 @@ public interface LabelConstants {
   String SERVERNAME_LABEL = "weblogic.serverName";
   String CLUSTERNAME_LABEL = "weblogic.clusterName";
   String CREATEDBYOPERATOR_LABEL = "weblogic.createdByOperator";
+  String CREATEDBY_CONVERSION_WEBHOOK_LABEL = "weblogic.createdByConversionWebhook";
   String OPERATORNAME_LABEL = "weblogic.operatorName";
   String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";

@@ -49,16 +49,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE;
-import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -198,7 +198,7 @@ class ShutdownManagedServerStepTest {
   @NotNull
   private List<V1EnvVar> addShutdownEnvVars() {
     List<V1EnvVar> env = new ArrayList<>();
-    addEnvVar(env, "SHUTDOWN_TYPE", KubernetesConstants.GRACEFUL_SHUTDOWNTYPE);
+    addEnvVar(env, "SHUTDOWN_TYPE", ShutdownType.GRACEFUL.toString());
     addEnvVar(env, "SHUTDOWN_TIMEOUT", String.valueOf(Shutdown.DEFAULT_TIMEOUT));
     addEnvVar(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(Shutdown.DEFAULT_IGNORESESSIONS));
     addEnvVar(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS));
@@ -354,7 +354,7 @@ class ShutdownManagedServerStepTest {
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
     for (V1EnvVar var : vars) {
       if (var.getName().equals("SHUTDOWN_TYPE")) {
-        var.setValue(ShutdownType.Forced.name());
+        var.setValue(ShutdownType.FORCED.toString());
       }
     }
   }

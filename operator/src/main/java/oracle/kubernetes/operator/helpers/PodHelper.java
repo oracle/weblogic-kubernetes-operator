@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.CoreDelegate;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -33,7 +34,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
@@ -174,15 +174,15 @@ public class PodHelper {
   }
 
   private static boolean isRunning(@Nonnull V1PodStatus status) {
-    return "Running".equals(status.getPhase());
+    return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
   }
 
   private static boolean isReadyCondition(V1PodCondition condition) {
-    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
-    return "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus());
+    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && !"True".equals(condition.getStatus());
   }
 
   /**
@@ -216,11 +216,9 @@ public class PodHelper {
    */
   public static boolean isFailed(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      if ("Failed".equals(status.getPhase())) {
-        LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
-        return true;
-      }
+    if (status != null && V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())) {
+      LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
+      return true;
     }
     return false;
   }

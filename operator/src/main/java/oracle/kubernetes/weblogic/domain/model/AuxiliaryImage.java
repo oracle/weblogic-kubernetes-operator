@@ -5,26 +5,19 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ImagePullPolicy;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class AuxiliaryImage {
 
-  public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";
   public static final String AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME = "aux-image-internal-volume";
-  public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "aux-image-volume-";
-  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/auxImage.sh";
-  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX = "operator-aux-container";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
-  public static final String AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND
-          = "cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH";
 
   /**
    * The auxiliary image.
@@ -37,8 +30,7 @@ public class AuxiliaryImage {
   @Description("The image pull policy for the container image. "
       + "Legal values are Always, Never, and IfNotPresent. "
       + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  @EnumClass(ImagePullPolicy.class)
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
 
   @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will "
           + "be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. "
@@ -68,15 +60,15 @@ public class AuxiliaryImage {
     return this;
   }
 
-  public String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+    return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  public void setImagePullPolicy(String imagePullPolicy) {
+  public void setImagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  public AuxiliaryImage imagePullPolicy(String imagePullPolicy) {
+  public AuxiliaryImage imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
@@ -88,10 +80,6 @@ public class AuxiliaryImage {
   public String getSourceWDTInstallHomeOrDefault() {
     return Optional.ofNullable(sourceWDTInstallHome)
             .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
-  }
-
-  public void setSourceWDTInstallHome() {
-    this.sourceWDTInstallHome = sourceWDTInstallHome;
   }
 
   public AuxiliaryImage sourceWDTInstallHome(String sourceWDTInstallHome) {

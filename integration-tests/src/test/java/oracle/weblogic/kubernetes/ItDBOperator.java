@@ -93,8 +93,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests to create FMW model in image domain and WebLogic domain using Oracle
+ * database created using Oracle Database Operator.
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create FMW model in image domain and WebLogic domain using Oracle "
+@DisplayName("Test to create FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
 class ItDBOperator {

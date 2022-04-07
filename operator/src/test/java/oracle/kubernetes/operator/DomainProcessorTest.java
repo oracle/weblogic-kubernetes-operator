@@ -40,6 +40,8 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetSpec;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Probe;
@@ -47,8 +49,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -65,7 +66,6 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
@@ -91,15 +91,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainSourceType.Image;
-import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
+import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
+import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
 import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
@@ -124,13 +125,10 @@ import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
-import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -197,7 +195,7 @@ class DomainProcessorTest {
 
   V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
-          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
+          .addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("True"));
   }
 
   V1JobStatus createNotCompletedStatus() {
@@ -323,8 +321,8 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain, hasCondition(Available).withStatus("False"));
-    assertThat(updatedDomain, hasCondition(Completed).withStatus("False"));
+    assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
+    assertThat(updatedDomain, hasCondition(COMPLETED).withStatus("False"));
   }
 
   @Test
@@ -332,7 +330,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
-    domainConfigurator.withDefaultServerStartPolicy("NEVER");
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
@@ -356,7 +354,7 @@ class DomainProcessorTest {
 
     triggerStatusUpdate();
 
-    assertThat(testSupport.getResourceWithName(DOMAIN, UID), hasCondition(Completed).withStatus("True"));
+    assertThat(testSupport.getResourceWithName(DOMAIN, UID), hasCondition(COMPLETED).withStatus("True"));
   }
 
   @Test
@@ -364,7 +362,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     final DomainPresenceInfo info1 = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info1).execute();
-    domainConfigurator.withDefaultServerStartPolicy("NEVER");
+    domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     info1.setWebLogicCredentialsSecret(createCredentialsSecret());
@@ -397,8 +395,8 @@ class DomainProcessorTest {
   }
 
   private V1PodStatus createReadyStatus() {
-    return new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
+    return new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True"));
   }
 
   private V1Secret createCredentialsSecret() {
@@ -522,10 +520,10 @@ class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
   }
 
-  private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
+  private Boolean minAvailableMatches(List<V1PodDisruptionBudget> runningPDBs, int count) {
     return runningPDBs.stream().findFirst()
-          .map(V1beta1PodDisruptionBudget::getSpec)
-          .map(V1beta1PodDisruptionBudgetSpec::getMinAvailable)
+          .map(V1PodDisruptionBudget::getSpec)
+          .map(V1PodDisruptionBudgetSpec::getMinAvailable)
           .map(IntOrString::getIntValue).orElse(0) == count;
   }
 
@@ -559,7 +557,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -584,7 +582,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -607,7 +605,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1,3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
-    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -633,7 +631,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -658,7 +656,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 3, 4));
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
@@ -684,7 +682,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -711,7 +709,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -732,7 +730,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(START_NEVER);
+    domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(ServerStartPolicy.NEVER);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
@@ -754,7 +752,7 @@ class DomainProcessorTest {
     int[] servers = IntStream.rangeClosed(1, MAX_SERVERS).toArray();
     for (int i : servers) {
       if (i != 5) {
-        domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_NEVER);
+        domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(ServerStartPolicy.NEVER);
       }
     }
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -787,18 +785,18 @@ class DomainProcessorTest {
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
-        .spec(new V1ServiceSpec().type(ServiceHelper.CLUSTER_IP_TYPE));
+        .spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.CLUSTERIP));
   }
 
-  private V1beta1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
-    return new V1beta1PodDisruptionBudget()
+  private V1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
+    return new V1PodDisruptionBudget()
             .metadata(
                     new V1ObjectMeta()
                             .name("do-not-delete-pdb")
                             .namespace(NS)
                             .putLabelsItem("serviceType", "SERVER")
                             .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false"))
-            .spec(new V1beta1PodDisruptionBudgetSpec()
+            .spec(new V1PodDisruptionBudgetSpec()
                     .selector(new V1LabelSelector()
                             .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
                             .putMatchLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
@@ -856,7 +854,7 @@ class DomainProcessorTest {
     testSupport.addDomainPresenceInfo(info);
     makeRightOperation.execute();
 
-    assertThat(info.getDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(info.getDomain(), hasCondition(COMPLETED).withStatus("False"));
   }
 
   @Test
@@ -944,7 +942,7 @@ class DomainProcessorTest {
 
     executeScheduledRetry();
 
-    assertThat(getRecordedDomain(), hasCondition(Failed).withReason(Aborted));
+    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(ABORTED));
   }
 
   @Test
@@ -967,7 +965,7 @@ class DomainProcessorTest {
   }
 
   V1JobStatus createTimedOutStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
             .reason("DeadlineExceeded"));
   }
 
@@ -987,11 +985,11 @@ class DomainProcessorTest {
   }
 
   private boolean isDomainConditionFailed() {
-    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == Failed);
+    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == FAILED);
   }
 
   V1JobStatus createBackoffStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
             .reason("BackoffLimitExceeded"));
   }
 
@@ -1023,7 +1021,8 @@ class DomainProcessorTest {
   }
 
   private V1Job asFailedJob(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
             .reason("BackoffLimitExceeded")));
     return job;
   }
@@ -1248,7 +1247,7 @@ class DomainProcessorTest {
   }
 
   void configureForDomainInPV(Domain d) {
-    configureDomain(d).withDomainHomeSourceType(PersistentVolume);
+    configureDomain(d).withDomainHomeSourceType(PERSISTENT_VOLUME);
   }
 
   private V1Job job;
@@ -1259,7 +1258,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
-    establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(Image));
+    establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(IMAGE));
 
     makeRightOperation.execute();
 
@@ -1277,11 +1276,11 @@ class DomainProcessorTest {
   }
 
   void configureForModelInImage(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL).withRuntimeEncryptionSecret("wdt-cm-secret");
   }
 
   void configureForModelInImageOnlineUpdate(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL).withRuntimeEncryptionSecret("wdt-cm-secret")
       .withMIIOnlineUpdate();
   }
 
@@ -1328,7 +1327,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
-    getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
+    getMIIOnlineUpdateIntrospectResult(DomainConditionType.CONFIG_CHANGES_PENDING_RESTART,
         ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
   }
 
@@ -1477,7 +1476,7 @@ class DomainProcessorTest {
   void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
-            Arrays.asList(INDEPENDENT_SERVER));
+          List.of(INDEPENDENT_SERVER));
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
     domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -1496,7 +1495,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() throws Exception {
+  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1576,11 +1575,16 @@ class DomainProcessorTest {
     assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(7099));
     assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7099));
 
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"), equalTo("HTTPS"));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"), equalTo("HTTPS"));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"), equalTo("HTTPS"));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"), equalTo("HTTPS"));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"), equalTo("HTTPS"));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
 
   }
 
@@ -1696,7 +1700,7 @@ class DomainProcessorTest {
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(
             new V1ServiceSpec()
-                .type(ServiceHelper.NODE_PORT_TYPE)
+                .type(V1ServiceSpec.TypeEnum.NODEPORT)
                 .addPortsItem(new V1ServicePort().nodePort(30701)));
   }
 
@@ -1712,7 +1716,7 @@ class DomainProcessorTest {
     return testSupport.getResources(KubernetesTestSupport.POD);
   }
 
-  private List<V1beta1PodDisruptionBudget> getRunningPDBs() {
+  private List<V1PodDisruptionBudget> getRunningPDBs() {
     return testSupport.getResources(KubernetesTestSupport.PODDISRUPTIONBUDGET);
   }
 
@@ -1860,7 +1864,7 @@ class DomainProcessorTest {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).stream().anyMatch(name::equals);
   }
 
-  private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
+  private V1HTTPGetAction.SchemeEnum getContainerReadinessScheme(List<V1Pod> pods, String podName) {
     return pods.stream()
           .filter(pod -> isNamedPod(pod, podName))
           .findFirst()
@@ -1889,7 +1893,7 @@ class DomainProcessorTest {
 
     assertThat(
         getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal));
+        hasCondition(FAILED).withStatus("True").withReason(INTERNAL));
   }
 
   private Domain getRecordedDomain() {

@@ -241,6 +241,8 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
   public static final boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
+  public static final String BUSYBOX_IMAGE = "phx.ocir.io/weblogick8s/test-images/docker/busybox";
+  public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
   public static final String MII_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
@@ -348,6 +350,7 @@ public interface TestConstants {
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
+  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/weblogick8s/test-images/database/operator:0.1.0";
   public static final String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"

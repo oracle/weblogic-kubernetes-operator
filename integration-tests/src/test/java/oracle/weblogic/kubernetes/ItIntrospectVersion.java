@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -204,6 +205,7 @@ class ItIntrospectVersion {
   @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
+  @Tag("gate")
   void testDomainIntrospectVersionNotRolling() {
 
     final String clusterName = "mycluster";
@@ -274,7 +276,7 @@ class ItIntrospectVersion {
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only in non-kind cluster

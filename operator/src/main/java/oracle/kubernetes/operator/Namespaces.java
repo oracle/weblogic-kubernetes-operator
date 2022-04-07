@@ -17,15 +17,16 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -77,7 +78,8 @@ public class Namespaces {
   }
 
   public enum SelectionStrategy {
-    List {
+    @SerializedName("List")
+    LIST("List") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         return getConfiguredDomainNamespaces().contains(getNSName(namespace));
@@ -106,7 +108,8 @@ public class Namespaces {
               .orElse(TuningParameters.getInstance().get("targetNamespaces"));
       }
     },
-    LabelSelector {
+    @SerializedName("LabelSelector")
+    LABEL_SELECTOR("LabelSelector") {
       @Override
       public <V> V getSelection(NamespaceStrategyVisitor<V> visitor) {
         return visitor.getLabelSelectorStrategySelection();
@@ -143,7 +146,8 @@ public class Namespaces {
         return value == null || value.equals(labels.get(key));
       }
     },
-    RegExp {
+    @SerializedName("RegExp")
+    REG_EXP("RegExp") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         try {
@@ -167,7 +171,8 @@ public class Namespaces {
         return compiledPatterns.computeIfAbsent(regExp, Pattern::compile);
       }
     },
-    Dedicated {
+    @SerializedName("Dedicated")
+    DEDICATED("Dedicated") {
       @Override
       public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         return getNSName(namespace).equals(getOperatorNamespace());
@@ -216,8 +221,33 @@ public class Namespaces {
       }
       return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
     }
-  }
 
+    private final String value;
+
+    SelectionStrategy(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(this.value);
+    }
+
+    /**
+     * Locate enum type from value.
+     * @param value Value
+     * @return Selection strategy type
+     */
+    public static SelectionStrategy fromValue(String value) {
+      for (SelectionStrategy testValue : values()) {
+        if (testValue.value.equals(value)) {
+          return testValue;
+        }
+      }
+
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
 
   /**
    * Gets the configured domain namespace selection strategy.
@@ -227,11 +257,11 @@ public class Namespaces {
   static SelectionStrategy getSelectionStrategy() {
     SelectionStrategy strategy =
           Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
-                .map(SelectionStrategy::valueOf)
-                .orElse(SelectionStrategy.List);
+                .map(SelectionStrategy::fromValue)
+                .orElse(SelectionStrategy.LIST);
 
-    if (SelectionStrategy.List.equals(strategy) && isDeprecatedDedicated()) {
-      return SelectionStrategy.Dedicated;
+    if (SelectionStrategy.LIST.equals(strategy) && isDeprecatedDedicated()) {
+      return SelectionStrategy.DEDICATED;
     }
     return strategy;
   }

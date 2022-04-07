@@ -11,8 +11,8 @@ import java.util.ResourceBundle;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
@@ -128,23 +128,6 @@ class DomainValidationMessages {
 
   public static String moreThanOneAuxiliaryImageConfiguredWDTInstallHome() {
     return getMessage(MessageKeys.MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
-  }
-
-  public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH, domainUid, clusterName, result, limit);
-  }
-
-  public static String exceedMaxServerServiceName(String domainUid, String serverName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_SERVER_SERVICE_NAME_LENGTH, domainUid, serverName, result, limit);
-  }
-
-  public static String exceedMaxExternalServiceName(
-      String domainUid, String adminServerName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, domainUid, adminServerName, result, limit);
-  }
-
-  public static String noAvailablePortToUse(String domainUid, String serverName) {
-    return getMessage(MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, serverName);
   }
 
   public static String invalidLivenessProbeSuccessThresholdValue(int value, String prefix) {

@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -44,28 +43,26 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 
 public class ServiceHelper {
-  public static final String CLUSTER_IP_TYPE = "ClusterIP";
-  public static final String NODE_PORT_TYPE = "NodePort";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ServiceHelper() {
@@ -133,11 +130,11 @@ public class ServiceHelper {
   }
 
   static boolean isNodePortType(V1Service service) {
-    return NODE_PORT_TYPE.equals(getSpecType(service));
+    return V1ServiceSpec.TypeEnum.NODEPORT.equals(getSpecType(service));
   }
 
-  private static String getSpecType(V1Service service) {
-    return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse("");
+  private static V1ServiceSpec.TypeEnum getSpecType(V1Service service) {
+    return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse(null);
   }
 
   /**
@@ -163,10 +160,6 @@ public class ServiceHelper {
 
   static V1Service createClusterServiceModel(Packet packet) {
     return new ClusterStepContext(null, packet).createModel();
-  }
-
-  private static boolean canUseCurrentService(V1Service model, V1Service current) {
-    return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
   }
 
   /**
@@ -342,8 +335,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return CLUSTER_IP_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.CLUSTERIP;
     }
 
     @Override
@@ -460,10 +453,10 @@ public class ServiceHelper {
 
     private boolean isProtocolMatch(V1ServicePort one, V1ServicePort two) {
       if (one.getProtocol() == null) {
-        return two.getProtocol() == null || "TCP".equals(two.getProtocol());
+        return two.getProtocol() == null || V1ServicePort.ProtocolEnum.TCP.equals(two.getProtocol());
       }
       if (two.getProtocol() == null) {
-        return "TCP".equals(one.getProtocol());
+        return V1ServicePort.ProtocolEnum.TCP.equals(one.getProtocol());
       }
       return one.getProtocol().equals(two.getProtocol());
     }
@@ -472,7 +465,7 @@ public class ServiceHelper {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
-          .protocol("TCP");
+          .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
 
     V1ServicePort createSipUdpServicePort(String portName, Integer port) {
@@ -484,7 +477,7 @@ public class ServiceHelper {
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
           .port(port)
-          .protocol("UDP");
+          .protocol(V1ServicePort.ProtocolEnum.UDP);
     }
 
     protected boolean isSipProtocol(String protocol) {
@@ -534,13 +527,13 @@ public class ServiceHelper {
 
     abstract Map<String, String> getServiceAnnotations();
 
-    String getSessionAffinity() {
+    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
       return null;
     }
 
     protected abstract void logServiceCreated(String messageKey);
 
-    protected abstract String getSpecType();
+    protected abstract V1ServiceSpec.TypeEnum getSpecType();
 
     protected abstract List<V1ServicePort> createServicePorts();
 
@@ -549,6 +542,10 @@ public class ServiceHelper {
     protected abstract void addServiceToRecord(V1Service service);
 
     protected abstract void removeServiceFromRecord();
+
+    private static boolean canUseCurrentService(V1Service model, V1Service current) {
+      return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
+    }
 
     Step verifyService(Step next) {
       V1Service service = getServiceFromRecord();
@@ -659,20 +656,20 @@ public class ServiceHelper {
       }
     }
 
-    private class DeleteServiceResponse extends ResponseStep<V1Status> {
+    private class DeleteServiceResponse extends ResponseStep<V1Service> {
       DeleteServiceResponse(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
         return callResponse.getStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
         return doNext(createReplacementService(getNext()), packet);
       }
     }
@@ -758,6 +755,7 @@ public class ServiceHelper {
       config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
+    @Override
     protected V1ServiceSpec createServiceSpec() {
       return super.createServiceSpec()
           .putSelectorItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
@@ -790,10 +788,11 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return CLUSTER_IP_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.CLUSTERIP;
     }
 
+    @Override
     protected V1ObjectMeta createMetadata() {
       return super.createMetadata().putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
     }
@@ -852,7 +851,7 @@ public class ServiceHelper {
     }
 
     @Override
-    String getSessionAffinity() {
+    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
       return getClusterSpec().getClusterSessionAffinity();
     }
   }
@@ -894,8 +893,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected String getSpecType() {
-      return NODE_PORT_TYPE;
+    protected V1ServiceSpec.TypeEnum getSpecType() {
+      return V1ServiceSpec.TypeEnum.NODEPORT;
     }
 
     @Override
@@ -958,16 +957,12 @@ public class ServiceHelper {
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
-      if (channel == null && isIstioEnabled()) {
-        if (channelName != null) {
-          String[] tokens = channelName.split("-");
-          if (tokens.length > 0) {
-            if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-                  || "tls".equals(tokens[0])) {
-              int index = channelName.indexOf('-');
-              channel = getChannel(channelName.substring(index + 1));
-            }
-          }
+      if (channel == null && isIstioEnabled() && channelName != null) {
+        String[] tokens = channelName.split("-");
+        if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+              || "tls".equals(tokens[0])) {
+          int index = channelName.indexOf('-');
+          channel = getChannel(channelName.substring(index + 1));
         }
       }
       if (channel == null || internalPort == null) {

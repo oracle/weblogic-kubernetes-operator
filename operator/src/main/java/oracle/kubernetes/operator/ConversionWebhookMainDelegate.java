@@ -3,18 +3,12 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-
 /**
  * Definition of an interface that returns values that the Webhook Main class requires.
  */
-interface ConversionWebhookMainDelegate extends CoreDelegate {
+public interface ConversionWebhookMainDelegate extends CoreDelegate {
 
-  default void runSteps(Step firstStep) {
-    runSteps(new Packet(), firstStep, null);
-  }
+  String getWebhookCertUri();
 
-  void runSteps(Packet packet, Step firstStep, Runnable completionAction);
-
+  String getWebhookKeyUri();
 }

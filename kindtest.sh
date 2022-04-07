@@ -6,7 +6,7 @@
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -126,25 +126,13 @@ versionprop() {
 }
 
 kind_version=$(kind version)
-kind_series="0.10"
+kind_series="0.11"
 case "${kind_version}" in
-  "kind v0.7."*)
-    kind_series="0.7"
-    ;;
-  "kind v0.8."*)
-    kind_series="0.8"
-    ;;
-  "kind v0.9."*)
-    kind_series="0.9"
-    ;;
-  "kind v0.10."*)
-    kind_series="0.10"
-    ;;
   "kind v0.11.1"*)
     kind_series="0.11.1"
     ;;
-  "kind v0.11."*)
-    kind_series="0.11"
+  "kind v0.12."*)
+    kind_series="0.12"
     ;;
 esac
 
@@ -158,10 +146,6 @@ echo "Using Kubernetes version: ${k8s_version}"
 
 disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
-  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.12" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
-    echo "Calico CNI is not supported with Kubernetes versions below 1.16."
-    exit 1
-  fi
   disableDefaultCNI="true"
 elif [ "${cni_implementation}" != "kindnet" ]; then
   echo "Unsupported CNI implementation: ${cni_implementation}"
@@ -193,11 +177,6 @@ kind delete cluster --name ${kind_name} --kubeconfig "${RESULT_ROOT}/kubeconfig"
 kind_network='kind'
 reg_name='kind-registry'
 reg_port='5000'
-case "${kind_version}" in
-  "kind v0.7."* | "kind v0.6."* | "kind v0.5."*)
-    kind_network='bridge'
-    ;;
-esac
 
 echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
@@ -210,12 +189,9 @@ if [ "${running}" = 'true' ]; then
 fi
 docker run \
   -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
-  registry:2
+  phx.ocir.io/weblogick8s/test-images/docker/registry:2
 
 reg_host="${reg_name}"
-if [ "${kind_network}" = "bridge" ]; then
-    reg_host="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
-fi
 echo "Registry Host: ${reg_host}"
 
 echo 'Create a cluster with the local registry enabled in containerd'
@@ -257,17 +233,15 @@ for node in $(kind get nodes --name "${kind_name}"); do
   kubectl annotate node "${node}" tilt.dev/registry=localhost:${reg_port};
 done
 
-if [ "${kind_network}" != "bridge" ]; then
-  containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
-  needs_connect="true"
-  for c in ${containers}; do
-    if [ "$c" = "${reg_name}" ]; then
-      needs_connect="false"
-    fi
-  done
-  if [ "${needs_connect}" = "true" ]; then
-    docker network connect "${kind_network}" "${reg_name}" || true
+containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
+needs_connect="true"
+for c in ${containers}; do
+  if [ "$c" = "${reg_name}" ]; then
+    needs_connect="false"
   fi
+done
+if [ "${needs_connect}" = "true" ]; then
+  docker network connect "${kind_network}" "${reg_name}" || true
 fi
 
 # Document the local registry
@@ -313,12 +287,12 @@ if [ "${test_filter}" != "**/It*" ]; then
   echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
 else
-  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ]; then
+  if [ "${maven_profile_name}" = "toolkits-srg" ] || [ "${maven_profile_name}" = "wls-srg" ] || [ "${maven_profile_name}" = "kind-sequential" ]; then
     echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads} -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
-    echo "Running mvn -Dit.test=!ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItMultiDomainModels -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="!ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*, !ItResilience, !ItMultiDomainModels" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+    echo "Running mvn -Dit.test=!ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="!ItAuxV8DomainImplicitUpgrade, !ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOperatorFmwUpgrade, !ItOCILoadBalancer, !ItMiiSampleFmwMain, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi
 

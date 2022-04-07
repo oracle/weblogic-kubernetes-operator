@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -32,7 +33,6 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
@@ -61,16 +61,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     this.namespace = namespace;
   }
 
-  private void addOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
-    completeCallbackRegistrations.put(jobName, callback);
-  }
-
   private void dispatchCallback(String jobName, V1Job job) {
     Optional.ofNullable(completeCallbackRegistrations.get(jobName)).ifPresent(callback -> callback.accept(job));
-  }
-
-  private void removeOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
-    completeCallbackRegistrations.remove(jobName, callback);
   }
 
   @Override
@@ -124,12 +116,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
         for (V1JobCondition cond : conds) {
-          if ("Complete".equals(cond.getType())) {
-            if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
-              // Job is complete!
-              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
-              return true;
-            }
+          if (V1JobCondition.TypeEnum.COMPLETE.equals(cond.getType()) && "True".equals(cond.getStatus())) {
+            // Job is complete!
+            LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
+            return true;
           }
         }
       }
@@ -166,11 +156,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   private static boolean isJobConditionFailed(V1JobCondition jobCondition) {
-    return getType(jobCondition).equals("Failed") && getStatus(jobCondition).equals("True");
+    return V1JobCondition.TypeEnum.FAILED.equals(getType(jobCondition)) && getStatus(jobCondition).equals("True");
   }
 
-  private static String getType(V1JobCondition jobCondition) {
-    return Optional.ofNullable(jobCondition).map(V1JobCondition::getType).orElse("");
+  private static V1JobCondition.TypeEnum getType(V1JobCondition jobCondition) {
+    return Optional.ofNullable(jobCondition).map(V1JobCondition::getType).orElse(null);
   }
 
   private static String getStatus(V1JobCondition jobCondition) {
@@ -186,7 +176,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
-        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+        if (V1JobCondition.TypeEnum.FAILED.equals(cond.getType()) && "True".equals(cond.getStatus())) {
           return cond.getReason();
         }
       }
@@ -280,9 +270,17 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return job.getMetadata();
     }
 
+    private void addOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+      completeCallbackRegistrations.put(jobName, callback);
+    }
+
     @Override
     void addCallback(String name, Consumer<V1Job> callback) {
       addOnModifiedCallback(name, callback);
+    }
+
+    private void removeOnModifiedCallback(String jobName, Consumer<V1Job> callback) {
+      completeCallbackRegistrations.remove(jobName, callback);
     }
 
     @Override
@@ -353,6 +351,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return job;
     }
 
+    @Override
     public String toString() {
       return LOGGER.formatMessage(
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,

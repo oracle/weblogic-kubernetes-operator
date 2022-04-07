@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -32,7 +32,9 @@ public abstract class StepContextBase implements StepContextConstants {
 
   @SuppressWarnings("unchecked")
   private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
-    if (obj instanceof String) {
+    if (obj instanceof Enum) {
+      return obj;
+    } else if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
     } else if (obj instanceof List) {
       List<Object> result = new ArrayList<>();
@@ -86,13 +88,12 @@ public abstract class StepContextBase implements StepContextConstants {
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
   private static final String DOMAIN_MODEL_PACKAGE = Domain.class.getPackageName();
 
-  private boolean isModelClass(Class cls) {
+  private boolean isModelClass(Class<?> cls) {
     return cls.getPackageName().startsWith(MODELS_PACKAGE)
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
-  @SuppressWarnings("unchecked")
-  private List<Pair<Method, Method>> typeBeans(Class cls) {
+  private List<Pair<Method, Method>> typeBeans(Class<?> cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();
     for (Method m : methods) {
@@ -106,9 +107,7 @@ public abstract class StepContextBase implements StepContextConstants {
         if (beanName != null) {
           try {
             Method set = cls.getMethod("set" + beanName, m.getReturnType());
-            if (set != null) {
-              results.add(new Pair<>(m, set));
-            }
+            results.add(new Pair<>(m, set));
           } catch (NoSuchMethodException nsme) {
             // no-op
           }

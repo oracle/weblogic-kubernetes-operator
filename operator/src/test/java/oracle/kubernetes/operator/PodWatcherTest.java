@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -27,12 +27,12 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -151,11 +151,12 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
   }
 
   private V1Pod markPodReady(V1Pod pod) {
-    return pod.status(new V1PodStatus().phase("Running").addConditionsItem(createCondition("Ready")));
+    return pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+        .addConditionsItem(createCondition(V1PodCondition.TypeEnum.READY)));
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1PodCondition createCondition(String type) {
+  private V1PodCondition createCondition(V1PodCondition.TypeEnum type) {
     return new V1PodCondition().type(type).status("True");
   }
 

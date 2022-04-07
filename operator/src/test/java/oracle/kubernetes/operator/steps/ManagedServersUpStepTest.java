@@ -16,16 +16,14 @@ import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -34,8 +32,6 @@ import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
@@ -49,39 +45,27 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
-import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
+import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
-import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -207,7 +191,7 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenStartPolicyIfNeeded_startServers() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     invokeStepWithConfiguredServer();
 
@@ -224,11 +208,11 @@ class ManagedServersUpStepTest {
   }
 
   private void startAllServers() {
-    configurator.withDefaultServerStartPolicy(START_ALWAYS);
+    configurator.withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
   }
 
   private void startConfiguredServers() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private void assertManagedServersUpStepCreated() {
@@ -246,9 +230,9 @@ class ManagedServersUpStepTest {
 
   private void startAdminServerOnly() {
     configurator
-        .withDefaultServerStartPolicy(START_NEVER)
+        .withDefaultServerStartPolicy(ServerStartPolicy.NEVER)
         .configureAdminServer()
-        .withServerStartPolicy(START_ALWAYS);
+        .withServerStartPolicy(ServerStartPolicy.ALWAYS);
   }
 
   @Test
@@ -261,7 +245,7 @@ class ManagedServersUpStepTest {
   }
 
   private void startNoServers() {
-    configurator.withDefaultServerStartPolicy(START_NEVER);
+    configurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
   }
 
   @Test
@@ -389,7 +373,7 @@ class ManagedServersUpStepTest {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
 
-    configureCluster("cluster1").withServerStartPolicy(START_IF_NEEDED);
+    configureCluster("cluster1").withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     invokeStep();
 
@@ -432,7 +416,7 @@ class ManagedServersUpStepTest {
 
   @Test
   void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
-    setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    setDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -494,7 +478,7 @@ class ManagedServersUpStepTest {
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
-    assertThat(skipProgressingStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
@@ -504,7 +488,7 @@ class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -517,7 +501,7 @@ class ManagedServersUpStepTest {
     addServer(domainPresenceInfo, "server3");
     addServer(domainPresenceInfo, ADMIN);
 
-    assertStoppingServers(skipProgressingStep(createNextStepWithout("server2")), "server1",
+    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
         "server3", ADMIN);
   }
 
@@ -543,7 +527,7 @@ class ManagedServersUpStepTest {
   void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true);
     addWlsCluster("cluster1", "ms1", "ms2");
-    configureAdminServer().withServerStartPolicy(START_NEVER);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     invokeStep();
 
@@ -552,7 +536,8 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
-    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    configureCluster("cluster1").withPrecreateServerService(true)
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
 
     invokeStep();
@@ -562,9 +547,10 @@ class ManagedServersUpStepTest {
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
-    configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
+    configureCluster("cluster1").withPrecreateServerService(true)
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
-    configureAdminServer().withServerStartPolicy(START_NEVER);
+    configureAdminServer().withServerStartPolicy(ServerStartPolicy.NEVER);
 
     invokeStep();
 
@@ -653,26 +639,15 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  void withValidReplicas_noValidationWarnings() {
-    setCluster1Replicas(2);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(), emptyOrNullString());
-  }
-
-  @Test
   void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
     assertManagedServersUpStepNotCreated();
   }
 
-  private static Step skipProgressingStep(Step step) {
+  private static Step firstNonEventStep(Step step) {
     Step stepLocal = step;
-    while (stepLocal instanceof EventHelper.CreateEventStep
-        || stepLocal instanceof DomainStatusUpdater.RemoveFailuresStep) {
+    while (stepLocal instanceof EventHelper.CreateEventStep) {
       stepLocal = stepLocal.getNext();
     }
 
@@ -707,7 +682,6 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
     ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo, false);
-    List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
   }
 
@@ -768,7 +742,7 @@ class ManagedServersUpStepTest {
 
   private ServerConfigurator configureServerToStart(String serverName) {
     ServerConfigurator serverConfigurator = configurator.configureServer(serverName);
-    serverConfigurator.withServerStartPolicy(START_ALWAYS);
+    serverConfigurator.withServerStartPolicy(ServerStartPolicy.ALWAYS);
     return serverConfigurator;
   }
 
@@ -784,7 +758,7 @@ class ManagedServersUpStepTest {
     assertThat(TestStepFactory.next, sameInstance(nextStep));
   }
 
-  private void setDefaultServerStartPolicy(String startPolicy) {
+  private void setDefaultServerStartPolicy(ServerStartPolicy startPolicy) {
     configurator.withDefaultServerStartPolicy(startPolicy);
   }
 
@@ -852,38 +826,4 @@ class ManagedServersUpStepTest {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  private void setExplicitRecheck() {
-    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
-        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
-  }
-
-  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return true;
-    }
-  }
-
-  private void assertContainsEventWithReplicasTooHighMessage(String msgId, Object... messageParams) {
-    String formattedMessage = formatMessage(msgId, messageParams);
-    assertThat(
-        "Expected Event with message '"
-            + getExpectedReplicasTooHighEventMessage(formattedMessage) + "' was not created",
-        containsEventWithMessage(
-            getEvents(),
-            DOMAIN_FAILED_EVENT,
-            getExpectedReplicasTooHighEventMessage(formattedMessage)),
-        is(true));
-  }
-
-  private String formatMessage(String msgId, Object... params) {
-    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
-    return logger.formatMessage(msgId, params);
-  }
-
-  private String getExpectedReplicasTooHighEventMessage(String message) {
-    return String.format(DOMAIN_FAILED_PATTERN, UID,
-        REPLICAS_TOO_HIGH_ERROR, message, REPLICAS_TOO_HIGH_ERROR_SUGGESTION);
-  }
 }

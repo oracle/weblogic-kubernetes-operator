@@ -140,7 +140,7 @@ Common issues that have corresponding documentation include:
   plus the operator log contains no mention of the domain,
   then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
   See the operator [Namespace management]({{<relref "userguide/managing-operators/namespace-management.md">}})
-  and operator [Common mistakes]({{<relref "userguide/managing-operators/common-mistakes.md">}}) documentation.
+  and operator [Common mistakes and solutions]({{<relref "userguide/managing-operators/common-mistakes.md">}}) documentation.
 - If a `describe` of an introspector job or WebLogic Server pod reveals image access errors,
   see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
 

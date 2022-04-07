@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 // All parameters needed to install Operator from test
@@ -35,6 +37,7 @@ public class OperatorParams {
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
   private static final String FEATURE_GATES = "featureGates";
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
+  private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -43,7 +46,7 @@ public class OperatorParams {
   private boolean externalRestEnabled;
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
-  private String imagePullPolicy;
+  private V1Container.ImagePullPolicyEnum imagePullPolicy;
   private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
   private boolean elkIntegrationEnabled;
@@ -59,6 +62,7 @@ public class OperatorParams {
   private int domainPresenceFailureRetrySeconds = 10;
   private String featureGates;
   private String kubernetesPlatform;
+  private boolean createLogStashConfigMap = true;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -85,7 +89,7 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams imagePullPolicy(String imagePullPolicy) {
+  public OperatorParams imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
@@ -170,6 +174,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams createLogStashConfigMap(boolean createLogStashConfigMap) {
+    this.createLogStashConfigMap = createLogStashConfigMap;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -203,7 +212,7 @@ public class OperatorParams {
       values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
     }
 
-    values.put(IMAGE_PULL_POLICY, imagePullPolicy);
+    values.put(IMAGE_PULL_POLICY, Optional.ofNullable(imagePullPolicy).map(Object::toString).orElse(null));
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
@@ -240,6 +249,9 @@ public class OperatorParams {
     if (kubernetesPlatform != null) {
       values.put(KUBERNETES_PLATFORM, kubernetesPlatform);
     }
+
+    values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
+
     values.values().removeIf(Objects::isNull);
     return values;
   }

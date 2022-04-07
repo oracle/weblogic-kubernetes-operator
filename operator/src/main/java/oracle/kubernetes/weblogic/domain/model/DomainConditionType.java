@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Obsoleteable;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
@@ -15,7 +16,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 
 public enum DomainConditionType implements Obsoleteable {
-  Failed(null, DOMAIN_FAILURE_RESOLVED) {
+  @SerializedName("Failed")
+  FAILED("Failed",null, DOMAIN_FAILURE_RESOLVED) {
     @Override
     boolean allowMultipleConditionsWithThisType() {
       return true;
@@ -26,32 +28,39 @@ public enum DomainConditionType implements Obsoleteable {
       return false;
     }
   },
-  Available(DOMAIN_AVAILABLE, DOMAIN_UNAVAILABLE),
-  Completed(DOMAIN_COMPLETE, DOMAIN_INCOMPLETE),
-  ConfigChangesPendingRestart,
-  Rolling(DOMAIN_ROLL_STARTING,DOMAIN_ROLL_COMPLETED) {
+  @SerializedName("Available")
+  AVAILABLE("Available", DOMAIN_AVAILABLE, DOMAIN_UNAVAILABLE),
+  @SerializedName("Completed")
+  COMPLETED("Completed", DOMAIN_COMPLETE, DOMAIN_INCOMPLETE),
+  @SerializedName("ConfigChangesPendingRestart")
+  CONFIG_CHANGES_PENDING_RESTART("ConfigChangesPendingRestart"),
+  @SerializedName("Rolling")
+  ROLLING("Rolling", DOMAIN_ROLL_STARTING, DOMAIN_ROLL_COMPLETED) {
     @Override
     boolean statusMayBeFalse() {
       return false;
     }
   },
-  Progressing {
+  @SerializedName("Progressing")
+  PROGRESSING("Progressing") {
     @Override
     public boolean isObsolete() {
       return true;
     }
   };
 
+  private final String value;
   private final EventHelper.EventItem addedEvent;
   private final EventHelper.EventItem removedEvent;
 
-  DomainConditionType(EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
+  DomainConditionType(String value, EventHelper.EventItem addedEvent, EventHelper.EventItem removedEvent) {
+    this.value = value;
     this.addedEvent = addedEvent;
     this.removedEvent = removedEvent;
   }
 
-  DomainConditionType() {
-    this(null, null);
+  DomainConditionType(String label) {
+    this(label, null, null);
   }
 
   boolean allowMultipleConditionsWithThisType() {
@@ -70,4 +79,8 @@ public enum DomainConditionType implements Obsoleteable {
     return removedEvent;
   }
 
+  @Override
+  public String toString() {
+    return String.valueOf(this.value);
+  }
 }

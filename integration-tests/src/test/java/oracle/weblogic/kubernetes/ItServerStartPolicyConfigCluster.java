@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -141,6 +142,7 @@ class ItServerStartPolicyConfigCluster {
   @Order(1)
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
+  @Tag("gate")
   void testConfigClusterRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";

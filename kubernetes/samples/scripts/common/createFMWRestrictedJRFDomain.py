@@ -1,10 +1,10 @@
 # Copyright (c) 2014, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+import com.oracle.cie.domain.script.jython.WLSTException as WLSTException
 import os
 import sys
 
-import com.oracle.cie.domain.script.jython.WLSTException as WLSTException
 
 class Infra12213Provisioner:
 

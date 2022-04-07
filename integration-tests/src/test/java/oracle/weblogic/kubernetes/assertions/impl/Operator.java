@@ -1,9 +1,10 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -29,7 +30,7 @@ public class Operator {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean doesExternalRestServiceExists(String namespace) throws ApiException {
-    HashMap label = new HashMap();
+    Map<String, String> label = new HashMap<>();
     label.put("weblogic.operatorName", namespace);
     String serviceName = "external-weblogic-operator-svc";
     return Kubernetes.doesServiceExist(serviceName, label, namespace);

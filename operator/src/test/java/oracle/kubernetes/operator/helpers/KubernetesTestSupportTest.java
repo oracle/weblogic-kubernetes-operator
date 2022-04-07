@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -193,7 +193,7 @@ class KubernetesTestSupportTest {
     Step steps = new CallBuilder()
         .replaceDomainStatusAsync("domain1", NS,
             createDomain(NS, "domain1")
-                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.Completed))),
+                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.COMPLETED))),
             null);
     testSupport.runSteps(steps);
 
@@ -589,7 +589,7 @@ class KubernetesTestSupportTest {
   static class TestResponseStep<T> extends DefaultResponseStep<T> {
 
     private CallResponse<T> callResponse;
-    private static final Semaphore responseAvailableSignal = new Semaphore(0);
+    private final Semaphore responseAvailableSignal = new Semaphore(0);
 
     TestResponseStep() {
       super(null);

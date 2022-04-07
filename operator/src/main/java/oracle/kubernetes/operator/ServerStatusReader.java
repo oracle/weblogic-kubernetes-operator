@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -27,7 +28,6 @@ import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.ReadHealthStep;
 import oracle.kubernetes.operator.utils.KubernetesExec;
@@ -61,21 +61,6 @@ public class ServerStatusReader {
   static Step createDomainStatusReaderStep(
       DomainPresenceInfo info, long timeoutSeconds, Step next) {
     return new DomainStatusReaderStep(info, timeoutSeconds, next);
-  }
-
-  /**
-   * Creates asynchronous step to read WebLogic server state from a particular pod.
-   *
-   * @param info the domain presence
-   * @param pod The pod
-   * @param serverName Server name
-   * @param timeoutSeconds Timeout in seconds
-   * @return Created step
-   */
-  private static Step createServerStatusReaderStep(
-      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
-    return new ServerStatusReaderStep(
-        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   /**
@@ -119,6 +104,21 @@ public class ServerStatusReader {
       }
     }
 
+    /**
+     * Creates asynchronous step to read WebLogic server state from a particular pod.
+     *
+     * @param info the domain presence
+     * @param pod The pod
+     * @param serverName Server name
+     * @param timeoutSeconds Timeout in seconds
+     * @return Created step
+     */
+    private static Step createServerStatusReaderStep(
+        DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
+      return new ServerStatusReaderStep(
+          info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
+    }
+
     private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
       return new StepAndPacket(
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
@@ -151,13 +151,11 @@ public class ServerStatusReader {
       LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
-          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
-        if (SystemClock.now()
-            .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
-          String state = lastKnownStatus.getStatus();
-          serverStateMap.put(serverName, state);
-          return doNext(packet);
-        }
+          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck
+          && SystemClock.now().isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
+        String state = lastKnownStatus.getStatus();
+        serverStateMap.put(serverName, state);
+        return doNext(packet);
       }
 
       if (PodHelper.hasReadyStatus(pod)) {

@@ -5,11 +5,14 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -22,17 +25,19 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -308,5 +313,19 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected String getMainContainerName() {
     return KubernetesConstants.WLS_CONTAINER_NAME;
+  }
+
+  protected boolean isAuxiliaryContainer(V1Container c) {
+    return Optional.ofNullable(c.getName()).map(this::isAuxiliaryContainerName).orElse(false);
+  }
+
+  private boolean isAuxiliaryContainerName(@Nonnull String name) {
+    return name.startsWith(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX);
+  }
+
+  protected Stream<V1Container> getAuxiliaryContainers(V1PodSpec v1PodSpec) {
+    return Stream.ofNullable(v1PodSpec.getInitContainers())
+        .flatMap(Collection::stream)
+        .filter(this::isAuxiliaryContainer);
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,13 +14,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -34,13 +34,19 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 
 public class DomainValidationSteps {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
+
+  private DomainValidationSteps() {
+  }
 
   /**
    * Returns a chain of steps to validate the domain in the current packet.
@@ -114,12 +120,13 @@ public class DomainValidationSteps {
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
-        return doNext(packet).withDebugComment(packet, this::domainValidated);
+        return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet)
+              .withDebugComment(packet, this::domainValidated);
+      } else {
+        LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+        return doNext(DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures)), packet);
       }
 
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
-      return doNext(step, packet);
     }
 
     private String perLine(List<String> validationFailures) {
@@ -165,7 +172,6 @@ public class DomainValidationSteps {
     ValidateDomainTopologyStep(Step next) {
       super(next);
     }
-
 
     private void logAndAddValidationWarning(DomainPresenceInfo info, String msgId, Object... messageParams) {
       LOGGER.warning(msgId, messageParams);
@@ -241,11 +247,10 @@ public class DomainValidationSteps {
         Integer conflictPort, DomainPresenceInfo info) {
       if (cluster != null) {
         logAndAddValidationWarning(info, MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
-            // Note: Using Integer.toString because default logger behavior formats with commas, e.g. "7,001"
-            Integer.toString(port), cluster.getClusterName(), Integer.toString(conflictPort));
+            port, cluster.getClusterName(), conflictPort);
       } else {
         logAndAddValidationWarning(info, MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER,
-            Integer.toString(port), serverConfig.getName(), Integer.toString(conflictPort));
+            port, serverConfig.getName(), conflictPort);
       }
     }
 
@@ -264,7 +269,7 @@ public class DomainValidationSteps {
           ? next
           : Optional.ofNullable((message))
               .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureSteps(m), next))
-              .orElse(next);
+              .orElse(createRemoveSelectedFailuresStep(next, TOPOLOGY_MISMATCH));
     }
   }
 
@@ -316,14 +321,13 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
-      List<String> validationFailures = domain.getAfterIntrospectValidationFailures(packet);
+      List<String> validationFailures = new WlsConfigValidator(packet).getFailures();
 
       if (validationFailures.isEmpty()) {
         return doNext(packet);
       }
 
-      LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
+      LOGGER.severe(DOMAIN_VALIDATION_FAILED, info.getDomainUid(), perLine(validationFailures));
       Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
       return doNext(step, packet);
     }

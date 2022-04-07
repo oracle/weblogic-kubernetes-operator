@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,9 +15,9 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReviewStatus;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 /** Delegate authorization decisions to Kubernetes ABAC and/or RBAC. */
 public class AuthorizationProxy {
@@ -188,7 +188,7 @@ public class AuthorizationProxy {
       resourceAttributes.setName(resourceName);
     }
 
-    if (Scope.namespace == scope) {
+    if (Scope.NAMESPACE == scope) {
       resourceAttributes.setNamespace(namespaceName);
     }
     LOGGER.exiting(resourceAttributes);
@@ -209,14 +209,25 @@ public class AuthorizationProxy {
   }
 
   public enum Operation {
-    get,
-    list,
-    create,
-    update,
-    patch,
-    watch,
-    delete,
-    deletecollection
+    GET("get"),
+    LIST("list"),
+    CREATE("create"),
+    UPDATE("update"),
+    PATCH("patch"),
+    WATCH("watch"),
+    DELETE("delete"),
+    DELETECOLLECTION("deletecollection");
+
+    private final String value;
+
+    Operation(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(this.value);
+    }
   }
 
   public enum Resource {
@@ -260,10 +271,26 @@ public class AuthorizationProxy {
     public String getApiGroup() {
       return apiGroup;
     }
+
+    @Override
+    public String toString() {
+      return String.valueOf(this.resource);
+    }
   }
 
   public enum Scope {
-    namespace,
-    cluster
+    NAMESPACE("namespace"),
+    CLUSTER("cluster");
+
+    private final String value;
+
+    Scope(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(this.value);
+    }
   }
 }

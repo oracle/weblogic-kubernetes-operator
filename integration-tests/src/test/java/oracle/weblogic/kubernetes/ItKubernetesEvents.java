@@ -42,6 +42,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -148,13 +149,13 @@ class ItKubernetesEvents {
   final String cluster1Name = "mycluster";
   final String cluster2Name = "cl2";
   final String adminServerName = "admin-server";
+  final String domainUid = "k8seventsdomain";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
-  private static final String domainUid = "k8seventsdomain";
   final String pvName = getUniqueName(domainUid + "-pv-");
   final String pvcName = getUniqueName(domainUid + "-pvc-");
   private final String wlSecretName = "weblogic-credentials";
@@ -219,6 +220,7 @@ class ItKubernetesEvents {
   @Order(1)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
+  @Tag("gate")
   void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");
@@ -768,7 +770,7 @@ class ItKubernetesEvents {
 
     logger.info("Labeling namespace {0} to enable it in the operator watch list", domainNamespace3);
     // label domainNamespace3
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
@@ -794,7 +796,7 @@ class ItKubernetesEvents {
         + "watch list", domainNamespace3);
 
     // label domainNamespace3 to weblogic-operator=disabled
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
         .execute();
@@ -810,7 +812,7 @@ class ItKubernetesEvents {
       assertDoesNotThrow(() -> createNamespaces(newNSWithoutLabels, newNSWithLabels),
           "Failed to create new namespaces");
 
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
           .execute();
@@ -1030,7 +1032,7 @@ class ItKubernetesEvents {
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster

@@ -11,9 +11,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -23,18 +26,21 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.IntrospectionStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.work.NextAction;
@@ -42,23 +48,22 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
-import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
+import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
 public class JobHelper {
 
@@ -147,8 +152,8 @@ public class JobHelper {
     }
 
     // Returns true if the specified server start policy will allow starting a server.
-    private boolean shouldStart(String serverStartPolicy) {
-      return !ConfigurationConstants.START_NEVER.equals(serverStartPolicy);
+    private boolean shouldStart(ServerStartPolicy serverStartPolicy) {
+      return !ServerStartPolicy.NEVER.equals(serverStartPolicy);
     }
 
     @Nonnull
@@ -220,7 +225,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
@@ -235,6 +240,73 @@ public class JobHelper {
       private String jobDescription(@Nonnull V1Job job) {
         return "found introspection job " + job.getMetadata().getName()
                          + ", started at " + job.getMetadata().getCreationTimestamp();
+      }
+
+      private boolean isInProgressJobOutdated(V1Job job) {
+        return hasNotCompleted(job)
+            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
+      }
+
+      private boolean hasNotCompleted(V1Job job) {
+        return job != null && !JobWatcher.isComplete(job);
+      }
+
+      private boolean hasAnyImageChanged(V1Job job) {
+        return hasImageChanged(job) || hasAuxiliaryImageChanged(job);
+      }
+
+      private boolean hasImageChanged(@Nonnull V1Job job) {
+        return !Objects.equals(getImageFromJob(job), getJobModelPodSpecImage());
+      }
+
+      private boolean hasAuxiliaryImageChanged(@Nonnull V1Job job) {
+        return ! getSortedJobModelPodSpecAuxiliaryImages().equals(getSortedAuxiliaryImagesFromJob(job));
+      }
+
+      String getImageFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getImageFromPodSpec).orElse(null);
+      }
+
+      List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
+        return getAuxiliaryImagesFromJob(job).sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
+        return getPodSpecFromJob(job).map(this::getAuxiliaryImagesFromPodSpec).orElse(Stream.empty());
+      }
+
+      Optional<V1PodSpec> getPodSpecFromJob(V1Job job) {
+        return Optional.ofNullable(job)
+            .map(V1Job::getSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec);
+      }
+
+      @Nullable
+      String getImageFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getContainer(pod)
+            .map(V1Container::getImage)
+            .orElse(null);
+      }
+
+      Stream<String> getAuxiliaryImagesFromPodSpec(@Nonnull V1PodSpec pod) {
+        return getAuxiliaryContainers(pod)
+            .map(V1Container::getImage);
+      }
+
+      @Nullable
+      String getJobModelPodSpecImage() {
+        return Optional.ofNullable(getJobModelPodSpec()).map(this::getImageFromPodSpec).orElse(null);
+      }
+
+      List<String> getSortedJobModelPodSpecAuxiliaryImages() {
+        return getJobModelPodSpecAuxiliaryImages().sorted().collect(Collectors.toList());
+      }
+
+      Stream<String> getJobModelPodSpecAuxiliaryImages() {
+        return Optional.ofNullable(getJobModelPodSpec())
+            .map(this::getAuxiliaryImagesFromPodSpec)
+            .orElse(Stream.empty());
       }
 
       private boolean isKnownFailedJob(V1Job job) {
@@ -320,7 +392,7 @@ public class JobHelper {
       }
 
       private boolean isModelInImage() {
-        return getDomain().getDomainHomeSourceType() == FromModel;
+        return getDomain().getDomainHomeSourceType() == FROM_MODEL;
       }
 
       private String getCurrentImageSpecHash() {
@@ -407,10 +479,6 @@ public class JobHelper {
                         new V1DeleteOptions().propagationPolicy("Foreground"),
                         new DefaultResponseStep<>(getNext())), packet);
       }
-    }
-
-    private Step createIntrospectorConfigMap() {
-      return ConfigMapHelper.createIntrospectorConfigMapStep(null);
     }
 
     private class ReadPodLogResponseStep extends ResponseStep<String> {
@@ -557,7 +625,7 @@ public class JobHelper {
       }
 
       private void updateStatusSynchronously() {
-        DomainStatusPatch.updateSynchronously(getDomain(), Introspection, onSeparateLines(severeStatuses));
+        DomainStatusPatch.updateSynchronously(getDomain(), INTROSPECTION, onSeparateLines(severeStatuses));
       }
 
       private String onSeparateLines(List<String> lines) {
@@ -632,6 +700,10 @@ public class JobHelper {
 
       private String getJobPodStatusReason(V1Pod jobPod) {
         return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
+      }
+
+      private Step createIntrospectorConfigMap() {
+        return ConfigMapHelper.createIntrospectorConfigMapStep(null);
       }
 
       // Returns a chain of steps which read the pod log and create a config map.

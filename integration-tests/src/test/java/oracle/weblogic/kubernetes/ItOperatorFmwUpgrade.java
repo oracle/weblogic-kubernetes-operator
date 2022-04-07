@@ -88,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to upgrade Operator with FMW domain in persistent volume using WLST.
  * Install a released version of Operator from GitHub chart repository.
  * Create a domain using Domain-In-PV model with a dynamic cluster.
- * Upgrade operator with latest Operator image build from main branch.
+ * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
@@ -127,7 +127,7 @@ class ItOperatorFmwUpgrade {
   private static String latestOperatorImageName;
 
   /**
-   * Initialization of logger, conditionfactory and latest Operator image to all test methods.
+   * Initialization of logger, conditionfactory and current Operator image to all test methods.
    */
   @BeforeAll
   public static void initAll() {
@@ -187,7 +187,7 @@ class ItOperatorFmwUpgrade {
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
       CleanupUtil.cleanup(namespaces);
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
           .execute();
@@ -195,39 +195,38 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.0.4 to latest with a FMW Domain.
+   * Operator upgrade from 3.0.4 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to latest")
-  void testOperatorFmwUpgradeFrom304ToLatest() {
-    this.namespaces = namespaces;
+  @DisplayName("Upgrade Operator from 3.0.4 to current")
+  void testOperatorFmwUpgradeFrom304ToCurrent() {
     installAndUpgradeOperator("3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.1.4 to latest with a FMW Domain.
+   * Operator upgrade from 3.1.4 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to latest")
-  void testOperatorFmwUpgradeFrom314ToLatest() {
+  @DisplayName("Upgrade Operator from 3.1.4 to current")
+  void testOperatorFmwUpgradeFrom314ToCurrent() {
     installAndUpgradeOperator("3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.2.5 to latest with a FMW Domain.
+   * Operator upgrade from 3.2.5 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to latest")
-  void testOperatorFmwUpgradeFrom325ToLatest() {
+  @DisplayName("Upgrade Operator from 3.2.5 to current")
+  void testOperatorFmwUpgradeFrom325ToCurrent() {
     installAndUpgradeOperator("3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.3.8 to latest with a FMW Domain.
+   * Operator upgrade from 3.3.8 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.3.8 to latest")
-  void testOperatorFmwUpgradeFrom338ToLatest() {
+  @DisplayName("Upgrade Operator from 3.3.8 to current")
+  void testOperatorFmwUpgradeFrom338ToCurrent() {
     installAndUpgradeOperator("3.3.8", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -241,13 +240,13 @@ class ItOperatorFmwUpgrade {
     // create FMW domain and verify
     createFmwDomainAndVerify(domainVersion);
 
-    // upgrade to latest operator
+    // upgrade to current operator
     upgradeOperatorAndVerify(externalServiceNameSuffix);
   }
 
   private HelmParams installOperator(String operatorVersion) {
     // delete existing CRD if any
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
         .execute();
@@ -306,7 +305,7 @@ class ItOperatorFmwUpgrade {
     accountingThread.start();
 
     try {
-      // upgrade to latest operator
+      // upgrade to current operator
       HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
@@ -416,7 +415,7 @@ class ItOperatorFmwUpgrade {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET)))

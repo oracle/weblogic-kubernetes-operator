@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
 import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
@@ -62,14 +63,11 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_YAML_URL;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -83,7 +81,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -91,6 +89,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 
 /**
  * Utility class to start DB service and RCU schema.
@@ -157,16 +157,16 @@ public class DbUtils {
       addSccToDBSvcAccount("default", dbNamespace);
     }
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", "database");
 
-    Map limits = new HashMap<String, String>();
-    limits.put("cpu", "2");
-    limits.put("memory", "10Gi");
-    limits.put("ephemeral-storage", "8Gi");
-    Map requests = new HashMap<String, String>();
-    requests.put("cpu", "500m");
-    requests.put("ephemeral-storage", "8Gi");
+    Map<String, Quantity> limits = new HashMap<>();
+    limits.put("cpu", Quantity.fromString("2"));
+    limits.put("memory", Quantity.fromString("10Gi"));
+    limits.put("ephemeral-storage", Quantity.fromString("8Gi"));
+    Map<String, Quantity> requests = new HashMap<>();
+    requests.put("cpu", Quantity.fromString("500m"));
+    requests.put("ephemeral-storage", Quantity.fromString("8Gi"));
 
     //create V1Service for Oracle DB
     oracleDBService = new V1Service()
@@ -181,12 +181,12 @@ public class DbUtils {
                 new V1ServicePort()
                     .name("tns")
                     .port(dbListenerPort)
-                    .protocol("TCP")
+                    .protocol(V1ServicePort.ProtocolEnum.TCP)
                     .targetPort(new IntOrString(1521))
                     .nodePort(dbPort)))
             .selector(labels)
-            .sessionAffinity("None")
-            .type("LoadBalancer"));
+            .sessionAffinity(V1ServiceSpec.SessionAffinityEnum.NONE)
+            .type(V1ServiceSpec.TypeEnum.LOADBALANCER));
 
     logger.info("Create service for Oracle DB service in namespace {0}, dbListenerPort: {1}", dbNamespace,
         dbListenerPort);
@@ -214,7 +214,7 @@ public class DbUtils {
                  .rollingUpdate(new V1RollingUpdateDeployment()
                      .maxSurge(new IntOrString(1))
                      .maxUnavailable(new IntOrString(1)))
-                 .type("RollingUpdate"))
+                 .type(V1DeploymentStrategy.TypeEnum.ROLLINGUPDATE))
             .template(new V1PodTemplateSpec()
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
@@ -226,21 +226,21 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
-                            .imagePullPolicy("IfNotPresent")
+                            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                             .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
                                 .containerPort(dbListenerPort)
                                 .name("tns")
-                                .protocol("TCP")
+                                .protocol(V1ContainerPort.ProtocolEnum.TCP)
                                 .hostPort(dbListenerPort)))
                             .resources(new V1ResourceRequirements()
                                 .limits(limits)
                                 .requests(requests))
                             .terminationMessagePath("/dev/termination-log")
-                            .terminationMessagePolicy("File")))
-                    .dnsPolicy("ClusterFirst")
-                    .restartPolicy("Always")
+                            .terminationMessagePolicy(V1Container.TerminationMessagePolicyEnum.FILE)))
+                    .dnsPolicy(V1PodSpec.DnsPolicyEnum.CLUSTERFIRST)
+                    .restartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS)
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
@@ -322,7 +322,7 @@ public class DbUtils {
       throws ApiException {
     LoggingFacade logger = getLogger();
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("ruc", "rcu");
 
     V1Pod podBody = new V1Pod()
@@ -337,7 +337,7 @@ public class DbUtils {
                 new V1Container()
                     .name("rcu")
                     .image(fmwBaseImageName)
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
@@ -373,7 +373,7 @@ public class DbUtils {
 
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 
@@ -522,7 +522,7 @@ public class DbUtils {
 
     try {
       // delete db resources in dbNamespace
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl delete all --all -n " + dbNamespace + " --ignore-not-found"))
           .execute();
@@ -603,7 +603,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
         true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
         String.format("Failed to change permissions for file %s in pod %s", sqlplusLocation, dbPodName));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", sqlplusLocation,
             execResult.stderr(), execResult.stdout()));
     getLogger().info("File permissions changed inside pod");
@@ -613,7 +613,7 @@ public class DbUtils {
     execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, dbPodName,
             null, true, "bin/bash", "-c", cmd));
-    assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
+    assertEquals(0, execResult.exitValue(), "Could not update the RCU schema password");
 
   }
 
@@ -697,21 +697,22 @@ public class DbUtils {
    * @throws IOException when fails to modify operator yaml file
    */
   public static void installDBOperator(String namespace) throws IOException {
-    Path operatorYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
-    String operatorYamlUrl = DB_OPERATOR_YAML_URL;
+    Path operatorYamlSrcFile = Paths.get(RESOURCE_DIR, "dboperator", "oracle-database-operator.yaml");
+    Path operatorYamlDestFile = Paths.get(DOWNLOAD_DIR, namespace, "oracle-database-operator.yaml");
 
-    Files.createDirectories(operatorYamlFile.getParent());
-    Files.deleteIfExists(operatorYamlFile);
+    Files.createDirectories(operatorYamlDestFile.getParent());
+    Files.deleteIfExists(operatorYamlDestFile);
+    FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
+    replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
+    replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(),
+        "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
+    createOcirRepoSecret(namespace);
+
     CommandParams params = new CommandParams().defaults();
-    params.command("curl -fL " + operatorYamlUrl + " -o " + operatorYamlFile);
+    params.command("kubectl apply -f " + operatorYamlDestFile);
     boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to download Oracle operator yaml file");
-    replaceStringInFile(operatorYamlFile.toString(), "replicas: 3", "replicas: 1");
-    replaceStringInFile(operatorYamlFile.toString(), "oracle-database-operator-system", namespace);
-
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + operatorYamlFile);
-    response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
     String dbOpPodName = "oracle-database-operator-controller-manager";
@@ -760,7 +761,7 @@ public class DbUtils {
       String namespace) throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    final String DB_IMAGE_19C = OCR_REGISTRY + "/" + OCR_DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
     String hostPath = Paths.get(WORK_DIR, namespace, "oracledatabase").toString();
     String secretName = "db-password";
     String secretKey = "password";
@@ -773,32 +774,27 @@ public class DbUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
-    createOcrRepoSecret(namespace);
+    createOcirRepoSecret(namespace);
 
     createHostPathProvisioner(namespace, hostPath);
-
-    String dbYamlUrl = SIDB_YAML_URL;
 
     Path dbYaml = Paths.get(DOWNLOAD_DIR, namespace, "oracledb.yaml");
     Files.createDirectories(dbYaml.getParent());
     Files.deleteIfExists(dbYaml);
-    CommandParams params = new CommandParams().defaults();
-    params.command("curl -fL " + dbYamlUrl + " -o " + dbYaml.toString());
-    boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to download Oracle database yaml file");
+    FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
 
     replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCIR_SECRET_NAME);
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
-    params = new CommandParams().defaults();
+    CommandParams params = new CommandParams().defaults();
     params.command("kubectl create -f " + dbYaml.toString());
-    response = Command.withParams(params).execute();
+    boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
     checkServiceExists(dbName, namespace);
@@ -972,7 +968,7 @@ public class DbUtils {
             .apiGroup("rbac.authorization.k8s.io"));
     assertTrue(TestActions.createRoleBinding(namespace, roleBinding), "Failed to create cluster role binding");
 
-    Map labels = new HashMap<String, String>();
+    Map<String, String> labels = new HashMap<>();
     labels.put("app", name);
 
     //create V1Deployment for Oracle DB
@@ -995,7 +991,7 @@ public class DbUtils {
                     .containers(Arrays.asList(new V1Container()
                         .name(name)
                         .image("mauilion/hostpath-provisioner:dev")
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .addEnvItem(new V1EnvVar()
                             .name("NODE_NAME")
                             .valueFrom(new V1EnvVarSource()

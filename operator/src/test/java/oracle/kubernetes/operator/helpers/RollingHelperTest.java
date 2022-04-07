@@ -46,6 +46,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
+import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInOrder;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
@@ -55,10 +59,6 @@ import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_ROLL_START;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static oracle.kubernetes.utils.LogMatcher.containsInOrder;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -178,8 +178,8 @@ class RollingHelperTest {
   }
 
   private void setPodStatusReady(V1Pod pod) {
-    pod.setStatus(new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+    pod.setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
   }
 
   @Test
@@ -192,7 +192,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED, NONCLUSTERED_SERVER));
+    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(NONCLUSTERED_SERVER));
     logRecords.clear();
   }
 
@@ -212,9 +212,9 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInOrder(
-        containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER2_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER10_NAME)
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
   }
 
@@ -227,7 +227,7 @@ class RollingHelperTest {
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
-    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME));
+    assertThat(logRecords, containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME));
   }
 
   @Test
@@ -242,9 +242,9 @@ class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, containsInOrder(
-        containsInfo(MANAGED_POD_REPLACED, SERVER1_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER2_NAME),
-        containsInfo(MANAGED_POD_REPLACED, SERVER10_NAME)
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER1_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER2_NAME),
+        containsInfo(MANAGED_POD_REPLACED).withParams(SERVER10_NAME)
     ));
   }
 
@@ -257,8 +257,8 @@ class RollingHelperTest {
   }
 
   private void setPodNotReady(V1Pod pod) {
-    pod.setStatus(new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("False")));
+    pod.setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
+          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False")));
   }
 
   @Test

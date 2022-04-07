@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,13 +13,13 @@ import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
+import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -37,45 +37,45 @@ public final class HealthCheckHelper {
   // generated for use by the Kubernetes administrator
   //
   private static final Operation[] crudOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.create,
-      Operation.update,
-      Operation.patch,
-      Operation.delete,
-      Operation.deletecollection
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.CREATE,
+      Operation.UPDATE,
+      Operation.PATCH,
+      Operation.DELETE,
+      Operation.DELETECOLLECTION
   };
 
   private static final Operation[] crdOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.create,
-      Operation.update,
-      Operation.patch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.CREATE,
+      Operation.UPDATE,
+      Operation.PATCH
   };
 
   private static final Operation[] cOperations = {
-      Operation.create
+      Operation.CREATE
   };
 
   private static final Operation[] glOperations = {
-      Operation.get, Operation.list
+      Operation.GET, Operation.LIST
   };
 
   private static final Operation[] glwOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH
   };
 
   private static final Operation[] glwupOperations = {
-      Operation.get,
-      Operation.list,
-      Operation.watch,
-      Operation.update,
-      Operation.patch
+      Operation.GET,
+      Operation.LIST,
+      Operation.WATCH,
+      Operation.UPDATE,
+      Operation.PATCH
   };
 
   // default namespace or svc account name
@@ -169,7 +169,7 @@ public final class HealthCheckHelper {
    */
   public static boolean check(
       List<V1ResourceRule> rules, Resource res, Operation op) {
-    String verb = op.name();
+    String verb = op.toString();
     String apiGroup = res.getApiGroup();
     String resource = res.getResource();
     String sub = res.getSubResource();

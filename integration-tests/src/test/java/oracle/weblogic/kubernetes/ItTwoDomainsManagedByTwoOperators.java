@@ -57,6 +57,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -246,6 +247,7 @@ class ItTwoDomainsManagedByTwoOperators {
    * shutdown both domains
    */
   @Test
+  @Tag("gate")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createMultipleDomainsSharingPVUsingWlstAndVerify(
@@ -357,7 +359,7 @@ class ItTwoDomainsManagedByTwoOperators {
               .addAccessModesItem("ReadWriteMany")
               .volumeMode("Filesystem")
               .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy("Retain"))
+              .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
               .build()
@@ -467,7 +469,7 @@ class ItTwoDomainsManagedByTwoOperators {
             .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
-                    .restartPolicy("Never")
+                    .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
                     .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")

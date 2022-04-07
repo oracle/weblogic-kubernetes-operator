@@ -12,7 +12,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -114,7 +116,7 @@ class ItIstioCrossClustersSetup {
     }
     updatePropertyFile();
     // Label the domain/operator namespace with istio-injection=enabled
-    java.util.Map<String, String> labelMap = new java.util.HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace, labelMap));
@@ -186,7 +188,7 @@ class ItIstioCrossClustersSetup {
 
     String clusterService = domainUid1 + "-cluster-" + clusterName + "." + domain1Namespace + ".svc.cluster.local";
 
-    java.util.Map<String, String> templateMap = new java.util.HashMap();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", domain1Namespace);
     templateMap.put("ADMIN_SERVICE", domain1AdminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);

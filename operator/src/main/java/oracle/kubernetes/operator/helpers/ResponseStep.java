@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,21 +10,28 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -98,7 +105,7 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction getPotentialRetryAction(Packet packet) {
-    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, CallResponse.createNull())).orElse(doEnd(packet));
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, getCallResponse(packet))).orElse(doEnd(packet));
   }
 
   /**
@@ -163,16 +170,53 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
-        .orElseGet(() -> logNoRetry(callResponse));
+        .orElseGet(() -> logNoRetry(packet, callResponse));
   }
 
-  private NextAction logNoRetry(CallResponse<T> callResponse) {
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-            Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
-            callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+  private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
+    addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
+
+    if (LOGGER.isWarningEnabled()) {
+      LOGGER.warning(
+          MessageKeys.ASYNC_NO_RETRY,
+          Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.call).orElse("--no call--"),
+          callResponse.getExceptionString(),
+          callResponse.getStatusCode(),
+          callResponse.getHeadersString(),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.namespace).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.name).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.body)
+              .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getFieldSelector).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getLabelSelector).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+              .map(CallParams::getResourceVersion).orElse(""),
+          Optional.of(callResponse).map(CallResponse::getE).map(ApiException::getResponseBody).orElse(""));
     }
     return null;
+  }
+
+  private void addDomainFailureStatus(Packet packet, RequestParams requestParams, ApiException apiException) {
+    DomainPresenceInfo.fromPacket(packet)
+        .map(DomainPresenceInfo::getDomain)
+        .ifPresent(domain -> updateFailureStatus(domain, requestParams, apiException));
+  }
+
+  private void updateFailureStatus(@Nonnull Domain domain, RequestParams requestParams, ApiException apiException) {
+    DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
+        .withMessage(createMessage(requestParams, apiException));
+    addFailureStatus(domain, condition);
+  }
+
+  private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
+    domain.getOrCreateStatus().addCondition(condition);
+  }
+
+  private String createMessage(RequestParams requestParams, ApiException apiException) {
+    return requestParams.createFailureMessage(apiException);
   }
 
   /**

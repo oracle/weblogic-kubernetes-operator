@@ -154,7 +154,7 @@ class ItIstioCrossClusters {
     logger.info("DB Node Port = {0}", dbNodePort);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
 
     //assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));

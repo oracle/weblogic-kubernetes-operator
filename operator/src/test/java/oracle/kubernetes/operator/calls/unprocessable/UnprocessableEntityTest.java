@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls.unprocessable;
@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNPROCESSABLE_ENTITY;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -54,7 +54,7 @@ class UnprocessableEntityTest {
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(builder.getReason(), equalTo(Kubernetes.name()));
+    assertThat(builder.getReason(), equalTo(KUBERNETES.toString()));
   }
 
   @Test
@@ -79,7 +79,7 @@ class UnprocessableEntityTest {
     FailureStatusSource source = UnrecoverableErrorBuilderImpl.fromFailedCall(
         CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(source.getReason(), equalTo(Kubernetes.name()));
+    assertThat(source.getReason(), equalTo(KUBERNETES.toString()));
     assertThat(source.getMessage(), allOf(
           containsString("replace"), containsString("pod"), containsString("pod1"),
                     containsString("junit"), containsString("This explanation")));
