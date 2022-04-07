@@ -31,11 +31,17 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.doesPVExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.pvNotExists;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.doesPVCExist;
+import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.pvcNotExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -44,7 +50,6 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUserna
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -238,11 +243,26 @@ public class ItFmwSample {
 
   private void createPvPvc(String domainUid) {
 
-    final String pvName = getUniquePvOrPvcName(domainUid + "-weblogic-sample-pv-");
-    final String pvcName = getUniquePvOrPvcName(domainUid + "-weblogic-sample-pvc-");
+    final String pvName = domainUid + "-weblogic-sample-pv-";
+    final String pvcName = domainUid + "-weblogic-sample-pvc-";
 
-    Path pvpvcBase = Paths.get(tempSamplePath.toString(),
-        "scripts/create-weblogic-domain-pv-pvc");
+    // delete pvc first if exists
+    if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvcNotExist(pvName, domainNamespace),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
+    // delete pv first if exists
+    if (assertDoesNotThrow(() -> doesPVExist(pvName, null))) {
+      deletePersistentVolume(pvName);
+    }
+    testUntil(
+        assertDoesNotThrow(() -> pvNotExists(pvName, null),
+            String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
+    Path pvpvcBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
     // create pv and pvc
     assertDoesNotThrow(() -> {

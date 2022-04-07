@@ -64,6 +64,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
@@ -77,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -345,8 +345,8 @@ class ItDiagnosticsFailedCondition {
   void testNonexistentPVC() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    final String pvName = getUniquePvOrPvcName(domainName + "-pv-");
-    final String pvcName = getUniquePvOrPvcName(domainName + "-pvc-");
+    final String pvName = getUniqueName(domainName + "-pv-");
+    final String pvcName = getUniqueName(domainName + "-pvc-");
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");
