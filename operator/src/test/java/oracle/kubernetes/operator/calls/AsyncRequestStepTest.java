@@ -42,12 +42,15 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -178,6 +181,28 @@ class AsyncRequestStepTest {
     sendMultipleFailedCallbackWithSetTime(0, 2);
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
     assertThat(nextStep.result, equalTo(smallList));
+  }
+
+  @Test
+  void afterFailedCallback_failedStatusConditionSet() {
+    testSupport.addDomainPresenceInfo(info);
+    sendFailedCallback(HttpURLConnection.HTTP_BAD_REQUEST);
+
+    assertThat(domain.getStatus().hasConditionWithType(FAILED), is(true));
+    assertThat(domain.getStatus().getReason(), equalTo(KUBERNETES.toString()));
+    assertThat(domain.getStatus().getMessage(), allOf(
+        containsString(OP_NAME), containsString(RESOURCE_TYPE),
+        containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
+    ));
+  }
+
+  @Test
+  void afterSuccessfulRetry_statusConditionCleared() {
+    testSupport.addDomainPresenceInfo(info);
+    sendMultipleFailedCallbackWithSetTime(0, 2);
+
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+    assertThat(nextStep.getRecordedFailure(), nullValue());
   }
 
   @Test

@@ -110,12 +110,18 @@ public abstract class ResponseStep<T> extends Step {
     return onSuccess(packet, callResponse);
   }
 
+  // for test
+  public DomainCondition getRecordedFailure() {
+    return recordedFailure;
+  }
+
   private void removeExistingFailureCondition(Packet packet) {
     if (recordedFailure != null) {
       DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .ifPresent(status -> status.removeCondition(recordedFailure));
+      recordedFailure = null;
     }
   }
 
