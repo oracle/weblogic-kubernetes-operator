@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Init container script for the auxiliary image feature.
 # See 'domain.spec.serverPod.auxiliaryImages' for details.
