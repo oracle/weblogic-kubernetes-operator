@@ -74,7 +74,7 @@ You will need an Oracle account. The following steps will direct you to accept t
 
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
   - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image.
-  - Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
+  - Ensure that Docker is running.  Find and then pull the WebLogic 12.2.1.4 install image:
      ```shell
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```

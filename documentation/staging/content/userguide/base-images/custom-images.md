@@ -21,7 +21,8 @@ apply one-off patches to existing OCR images, or overlay your own files and appl
 
 Download and install the WebLogic Image Tool (WIT) following the
 WIT [Setup](https://oracle.github.io/weblogic-image-tool/userguide/setup/) instructions.
-Also, refer to the WIT [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) Guide.
+Also, refer to the WIT [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) Guide. The
+samples in this document assume that you have installed WIT in `/tmp/imagetool`; you can choose to install it in any location.
 
 The WebLogic Image Tool `create`, `update`, or `rebase` commands supply
 three different ways to generate a custom WebLogic Server installation image
@@ -66,6 +67,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
         WebLogic image in the repository
         that doesn't already have a domain home, such as an updated CPU image from OCR.
       - Or, as a new WebLogic image from a base OS image.
+      - For more information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/patch-images#domain-in-image" >}}). 
 
   - WIT [`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command:
 

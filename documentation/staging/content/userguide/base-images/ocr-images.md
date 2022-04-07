@@ -255,10 +255,10 @@ then you can use the following commands to determine their contents:
   --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
   --patches
   ```
-  ### Ensure you are using recently patched images
+### Ensure you are using recently patched images
 
-  You should _not_ use images without the latest set of recommended patches applied.
-  Please review the following guidance to ensure that you are using recently patched images:
+You should _not_ use images without the latest set of recommended patches applied.
+Please review the following guidance to ensure that you are using recently patched images:
 
   - For production deployments,
     Oracle requires using

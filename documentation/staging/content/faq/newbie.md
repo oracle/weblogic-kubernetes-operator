@@ -122,7 +122,7 @@ For additional information on WebLogic container images on Oracle Container regi
 see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 For additional information on creating new container images with the WebLogic Image Tool,
-see [Patch WebLogic images]({{< relref "/userguide/base-images/ocr-images#create-a-custom-image-with-patches-applied" >}}).
+see [Create custom images]({{< relref "/userguide/base-images/custom-images.md" >}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 
