@@ -416,7 +416,6 @@ class ItElasticLogging {
     boolean createLogStashConfigMap = false;
     String defaultNamespace = "default";
     String configMapName = "weblogic-operator-logstash-cm";
-    String webhookConfigMapName = "weblogic-webhook-logstash-cm";
 
     assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(destConfigFile)),
         "copy logstash.conf failed");
@@ -426,7 +425,6 @@ class ItElasticLogging {
 
     //create config map for logstash config
     createConfigMapFromFiles(configMapName, logstashConfigFiles, opNamespace2);
-    createConfigMapFromFiles(webhookConfigMapName, logstashConfigFiles, opNamespace2);
 
     // install and verify Operator2 up and running with createLogStashConfigMap = false
     installAndVerifyOperator(opNamespace2, opNamespace2 + "-sa",
