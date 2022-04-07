@@ -139,7 +139,8 @@ See
 Here's an example of using the WIT `create` command to create a base WebLogic Server image
 from a base Oracle Linux image, a WebLogic installer download, and a JRE installer download:
 
-1. First, [install](https://oracle.github.io/weblogic-image-tool/userguide/setup/) the WebLogic Image Tool.
+1. First, [install](https://oracle.github.io/weblogic-image-tool/userguide/setup/) the WebLogic Image Tool. This
+samples assumes that you have installed WIT in `/tmp/imagetool`; you can choose to install it in any location.
 
 1. Download your desired JRE installer from the Oracle Technology Network [Java downloads](https://www.oracle.com/java/technologies/downloads/) page or from the [Oracle Software Delivery Cloud](https://edelivery.oracle.com/osdc/faces/Home.jspx) (OSDC).
 
