@@ -280,6 +280,11 @@ spec:
             - name: "weblogic-webhook-secrets-volume"
               mountPath: "/deployment/secrets"
               readOnly: true
+            {{- if .elkIntegrationEnabled }}
+            - mountPath: "/logs"
+              name: "log-dir"
+              readOnly: false
+            {{- end }}
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
@@ -327,7 +332,7 @@ spec:
               medium: "Memory"
           - name: "logstash-config-cm-volume"
             configMap:
-              name: "weblogic-webhook-logstash-cm"
+              name: "weblogic-operator-logstash-cm"
               items:
               - key: logstash.conf
                 path: logstash.conf
