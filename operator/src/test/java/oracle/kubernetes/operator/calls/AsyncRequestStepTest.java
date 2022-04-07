@@ -50,7 +50,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -194,15 +193,6 @@ class AsyncRequestStepTest {
         containsString(OP_NAME), containsString(RESOURCE_TYPE),
         containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
     ));
-  }
-
-  @Test
-  void afterSuccessfulRetry_statusConditionCleared() {
-    testSupport.addDomainPresenceInfo(info);
-    sendMultipleFailedCallbackWithSetTime(0, 2);
-
-    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
-    assertThat(nextStep.getRecordedFailure(), nullValue());
   }
 
   @Test

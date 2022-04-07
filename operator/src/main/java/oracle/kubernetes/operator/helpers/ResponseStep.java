@@ -45,7 +45,6 @@ public abstract class ResponseStep<T> extends Step {
 
   private final Step conflictStep;
   private Step previousStep = null;
-  private DomainCondition recordedFailure;
 
   /** Constructor specifying no next step. */
   public ResponseStep() {
@@ -102,27 +101,7 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction fromCallResponse(Packet packet, CallResponse<T> callResponse) {
-    return callResponse.isFailure() ? onFailure(packet, callResponse) : onSuccessResponse(packet, callResponse);
-  }
-
-  private NextAction onSuccessResponse(Packet packet, CallResponse<T> callResponse) {
-    removeExistingFailureCondition(packet);
-    return onSuccess(packet, callResponse);
-  }
-
-  // for test
-  public DomainCondition getRecordedFailure() {
-    return recordedFailure;
-  }
-
-  private void removeExistingFailureCondition(Packet packet) {
-    if (recordedFailure != null) {
-      DomainPresenceInfo.fromPacket(packet)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(status -> status.removeCondition(recordedFailure));
-      recordedFailure = null;
-    }
+    return callResponse.isFailure() ? onFailure(packet, callResponse) : onSuccess(packet, callResponse);
   }
 
   private NextAction getPotentialRetryAction(Packet packet) {
@@ -229,17 +208,11 @@ public abstract class ResponseStep<T> extends Step {
   private void updateFailureStatus(@Nonnull Domain domain, RequestParams requestParams, ApiException apiException) {
     DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
         .withMessage(createMessage(requestParams, apiException));
-    if (recordedFailure == null) {
-      addFailureStatus(domain, condition);
-    } else if (!recordedFailure.equals(condition)) {
-      domain.getStatus().removeCondition(recordedFailure);
-      addFailureStatus(domain, condition);
-    }
+    addFailureStatus(domain, condition);
   }
 
   private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
-    recordedFailure = condition;
-    domain.getOrCreateStatus().addCondition(recordedFailure);
+    domain.getOrCreateStatus().addCondition(condition);
   }
 
   private String createMessage(RequestParams requestParams, ApiException apiException) {
