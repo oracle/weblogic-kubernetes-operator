@@ -938,7 +938,7 @@ public class CommonTestUtils {
   public static String getHostAndPort(String hostName, int servicePort) {
     LoggingFacade logger = getLogger();
     String hostAndPort = ((OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort);
-    logger.info("hostAndPort = {0} ", hostAndPort);
+    logger.info("The hostAndPort is: {0} ", hostAndPort);
     return hostAndPort;
   }
 
