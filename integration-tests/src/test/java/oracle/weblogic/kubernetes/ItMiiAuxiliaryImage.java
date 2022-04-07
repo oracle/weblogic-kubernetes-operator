@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -311,6 +312,7 @@ class ItMiiAuxiliaryImage {
   @Test
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
+  @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     String domainUid = "domain1";
