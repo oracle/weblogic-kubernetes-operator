@@ -1,5 +1,7 @@
 #!/bin/sh
-
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
 # Init container script for the auxiliary image feature.
 # See 'domain.spec.serverPod.auxiliaryImages' for details.
 
