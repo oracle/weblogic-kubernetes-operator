@@ -23,11 +23,15 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
+import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
 /**
  * Step to receive response of Kubernetes API server call.
@@ -101,7 +105,7 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction getPotentialRetryAction(Packet packet) {
-    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, CallResponse.createNull())).orElse(doEnd(packet));
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, getCallResponse(packet))).orElse(doEnd(packet));
   }
 
   /**
@@ -166,10 +170,12 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
-        .orElseGet(() -> logNoRetry(callResponse));
+        .orElseGet(() -> logNoRetry(packet, callResponse));
   }
 
-  private NextAction logNoRetry(CallResponse<T> callResponse) {
+  private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
+    addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
+
     if (LOGGER.isWarningEnabled()) {
       LOGGER.warning(
           MessageKeys.ASYNC_NO_RETRY,
@@ -191,6 +197,26 @@ public abstract class ResponseStep<T> extends Step {
           Optional.of(callResponse).map(CallResponse::getE).map(ApiException::getResponseBody).orElse(""));
     }
     return null;
+  }
+
+  private void addDomainFailureStatus(Packet packet, RequestParams requestParams, ApiException apiException) {
+    DomainPresenceInfo.fromPacket(packet)
+        .map(DomainPresenceInfo::getDomain)
+        .ifPresent(domain -> updateFailureStatus(domain, requestParams, apiException));
+  }
+
+  private void updateFailureStatus(@Nonnull Domain domain, RequestParams requestParams, ApiException apiException) {
+    DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
+        .withMessage(createMessage(requestParams, apiException));
+    addFailureStatus(domain, condition);
+  }
+
+  private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
+    domain.getOrCreateStatus().addCondition(condition);
+  }
+
+  private String createMessage(RequestParams requestParams, ApiException apiException) {
+    return requestParams.createFailureMessage(apiException);
   }
 
   /**
