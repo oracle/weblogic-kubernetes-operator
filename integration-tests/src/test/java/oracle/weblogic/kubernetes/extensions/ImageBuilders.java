@@ -52,9 +52,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -160,16 +157,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-          if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            testUntil(
-                withVeryLongRetryPolicy,
-                () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
-                logger,
-                "docker login to OCR to be successful");
-          }
-        } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
+        // docker login to OCIR if OCIR_USERNAME and OCIR_PASSWORD is 
+        // provided in env var
+        if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
           if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
             testUntil(
                 withVeryLongRetryPolicy,
@@ -177,10 +167,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 logger,
                 "docker login to OCIR to be successful");
           }
-        }
+        } 
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
-          // The kind clusters can't pull images from OCR using the image pull secret.
+          // The kind clusters can't pull images from OCIR using the image pull secret.
           // It may be a containerd bug. We are going to workaround this issue.
           // The workaround will be to:
           //   1. docker login
@@ -316,7 +306,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // check initialization is already done and is not successful
     assertTrue(started.get() && isInitializationSuccessful,
-        "Initialization(pull images from OCR or login/push to OCIR) failed, "
+        "Initialization(login/push to OCIR) failed, "
             + "check the actual error or stack trace in the first test that failed in the test suite");
 
   }

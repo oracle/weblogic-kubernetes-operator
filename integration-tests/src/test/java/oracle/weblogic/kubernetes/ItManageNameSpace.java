@@ -44,7 +44,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
@@ -565,7 +564,7 @@ class ItManageNameSpace {
   private static void deleteSecrets(String domainNamespace) {
     logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
     if (!domainNamespace.equals("default")) {
-      deleteSecret(OCR_SECRET_NAME, domainNamespace);
+      deleteSecret(OCIR_SECRET_NAME, domainNamespace);
     }
 
     // delete secret for admin credentials

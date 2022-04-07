@@ -30,11 +30,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -445,18 +440,6 @@ public class ImageUtils {
   }
 
   /**
-   * Create secret for OCR registry credentials in the specified namespace.
-   *
-   * @param namespace namespace in which the secret will be created
-   */
-  public static void createOcrRepoSecret(String namespace) {
-    LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret {0} in namespace {1}", OCR_SECRET_NAME, namespace);
-    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-  }
-
-
-  /**
    * Create a Docker registry secret in the specified namespace.
    *
    * @param namespace the namespace in which the secret will be created
@@ -516,9 +499,7 @@ public class ImageUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-      createOcrRepoSecret(namespace);
-    } else {
+    if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
       createOcirRepoSecret(namespace);
     }
   }
