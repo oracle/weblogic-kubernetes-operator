@@ -74,6 +74,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -106,7 +108,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -157,16 +158,12 @@ class ItKubernetesEvents {
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
-  final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
   private static final String domainUid = "k8seventsdomain";
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   private final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
-
-  public static ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(10, MINUTES).await();
 
   public enum ScaleAction {
     scaleUp,
@@ -510,8 +507,8 @@ class ItKubernetesEvents {
   void testDomainK8sEventsFailed() {
     OffsetDateTime timestamp = now();
     try {
-      String pvName = getUniquePvOrPvcName("sample-pv-");
-      String pvcName = getUniquePvOrPvcName("sample-pvc-");
+      String pvName = getUniqueName("sample-pv-");
+      String pvcName = getUniqueName("sample-pvc-");
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace1);
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
