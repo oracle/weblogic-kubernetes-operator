@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvaila
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
@@ -77,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -387,8 +387,8 @@ class ItOperatorFmwUpgrade {
   }
 
   private void createFmwDomainAndVerify(String domainVersion) {
-    final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
     final int t3ChannelPort = getNextFreePort();
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster

@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -97,7 +98,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -242,8 +242,8 @@ public class DomainUtils {
 
     int t3ChannelPort = getNextFreePort();
 
-    final String pvName = getUniquePvOrPvcName(domainUid + "-pv"); // name of the persistent volume
-    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc"); // name of the persistent volume claim
+    final String pvName = getUniqueName(domainUid + "-pv"); // name of the persistent volume
+    final String pvcName = getUniqueName(domainUid + "-pvc"); // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

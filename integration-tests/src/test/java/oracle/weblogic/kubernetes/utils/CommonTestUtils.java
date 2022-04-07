@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
+import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -1083,7 +1084,6 @@ public class CommonTestUtils {
         });
   }
 
-
   /**
    * Returns the java system property value, converting an empty string to null.
    *
@@ -1126,5 +1126,24 @@ public class CommonTestUtils {
       propertyValue += "/";
     }
     return propertyValue;
+  }
+
+  /**
+   * Get a unique name.
+   * @param prefix prefix of the name
+   * @param suffix suffix of the name
+   * @return the full name
+   */
+  public static String getUniqueName(String prefix, String... suffix) {
+    char[] name = new char[6];
+    for (int i = 0; i < name.length; i++) {
+      name[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+    String cmName = prefix + new String(name);
+    for (String s : suffix) {
+      cmName += s;
+    }
+    getLogger().info("Creating unique name {0}", cmName);
+    return cmName;
   }
 }
