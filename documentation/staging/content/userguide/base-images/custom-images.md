@@ -67,7 +67,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
         WebLogic image in the repository
         that doesn't already have a domain home, such as an updated CPU image from OCR.
       - Or, as a new WebLogic image from a base OS image.
-      - For more information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/patch-images#domain-in-image" >}}). 
+      - For more information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/patch-images#domain-in-image" >}}).
 
   - WIT [`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command:
 
@@ -311,7 +311,7 @@ to create the domain home in Domain in Image.
   These steps stage files to `/tmp/dii-wdt-stage`,
   assume the operator source is in `/tmp/weblogic-kubernetes-operator`,
   assume you have installed WIT in `/tmp/imagetool`,
-  and generate a Domain in Image image named `my-dii-wdt:v1`,
+  and generate a Domain in Image image named `my-dii-wdt:v1`.
 
   {{%expand "Click here to view the script." %}}
 
