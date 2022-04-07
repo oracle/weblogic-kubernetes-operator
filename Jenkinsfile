@@ -292,14 +292,14 @@ pipeline {
                     }
                 }
 
-                // stage('Verify Sonar Quality Gate') {
-                //    steps {
-                //        timeout(time: 10, unit: 'MINUTES') {
-                //            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                //            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                //        }
-                //    }
-                // }
+                 stage('Verify Sonar Quality Gate') {
+                    steps {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
+                        }
+                    }
+                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
