@@ -81,62 +81,37 @@ public interface TestConstants {
       .orElse(getNonEmptySystemProperty("wko.it.repo.registry") != null
           ? getNonEmptySystemProperty("wko.it.repo.registry") + "/weblogick8s/" : "");
 
-  // OCR constants
-  public static final String OCR_SECRET_NAME = "ocr-secret";
-  public static final String OCR_REGISTRY = "container-registry.oracle.com";
-  public static final String OCR_USERNAME = Optional.ofNullable(System.getenv("OCR_USERNAME"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String OCR_PASSWORD = Optional.ofNullable(System.getenv("OCR_PASSWORD"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
-      .orElse(OCR_USERNAME);
-
-  // OCR default image values, these values will be used while running locally
-  public static final String OCR_WEBLOGIC_IMAGE_NAME = "middleware/weblogic";
-  public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
-  public static final String OCR_FMWINFRA_IMAGE_NAME = "middleware/fmw-infrastructure";
-  public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
-  public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
-  public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
-  public static final String OCR_DB_19C_IMAGE_TAG = "19.3.0.0";
-
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
   public static final String BASE_IMAGES_REPO = getNonEmptySystemProperty("wko.it.base.images.repo", OCIR_DEFAULT);
-  // Use OCR secret name if OCR is used for base images, if not use OCIR secret name
-  public static final String BASE_IMAGES_REPO_SECRET =
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_SECRET_NAME : OCIR_SECRET_NAME;
+  public static final String BASE_IMAGES_REPO_SECRET = OCIR_SECRET_NAME;
 
-  // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, if its not provided and
-  // if base images repo is OCR use OCR default image values
-  // or if base images repo is OCIR use OCIR default image values
+  // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
+  // if its not provided use OCIR default image values
   public static final String WEBLOGIC_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name",
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_NAME : OCIR_WEBLOGIC_IMAGE_NAME);
-  public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag",
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_TAG : OCIR_WEBLOGIC_IMAGE_TAG);
+      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name", OCIR_WEBLOGIC_IMAGE_NAME);
+  public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
+        OCIR_WEBLOGIC_IMAGE_TAG);
 
-  // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not provided and
-  // if base images repo is OCR use OCR default image values
-  // or if base images repo is OCIR use OCIR default image values
+  // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
+  // provided and if base images repo is OCIR use OCIR default image values
   public static final String FMWINFRA_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.fmwinfra.image.name",
-          BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_NAME : OCIR_FMWINFRA_IMAGE_NAME);
-  public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag",
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_FMWINFRA_IMAGE_TAG : OCIR_FMWINFRA_IMAGE_TAG);
+      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.fmwinfra.image.name", 
+        OCIR_FMWINFRA_IMAGE_NAME);
+  public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag", 
+        OCIR_FMWINFRA_IMAGE_TAG);
 
   // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
-  // if base images repo is OCR use OCR default image values
-  // or if base images repo is OCIR use OCIR default image values
+  // if base images repo is OCIR use OCIR default image values
   public static final String DB_IMAGE_NAME =
       BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.db.image.name",
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_NAME : OCIR_DB_IMAGE_NAME);
-  public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag",
-      BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_DB_IMAGE_TAG : OCIR_DB_IMAGE_TAG);
+      OCIR_DB_IMAGE_NAME);
+  public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", OCIR_DB_IMAGE_TAG);
 
   // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
   // For example, image container-registry.oracle.com/middleware/weblogic:12.2.1.4 will be pushed/used as
   // localhost:5000/middleware/weblogic:12.2.1.4 in kind and in non-kind cluster it will be used as is.
+  public static final String DB_19C_IMAGE_TAG = "19.3.0.0";
   public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
       + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
       : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
