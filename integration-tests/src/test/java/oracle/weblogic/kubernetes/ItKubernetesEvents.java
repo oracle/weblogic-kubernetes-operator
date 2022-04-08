@@ -10,10 +10,8 @@ import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -31,9 +29,7 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -41,8 +37,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.awaitility.core.ConditionFactory;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -571,7 +567,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain(domainNamespace1);
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
@@ -624,24 +620,6 @@ class ItKubernetesEvents {
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, "Rolling");
   }
 
-  @NotNull
-  private Domain getAndValidateInitialDomain(String domainNamespace) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    assertNotNull(domain, "Got null domain resource");
-    assertNotNull(domain.getSpec(), domain + "/spec is null");
-    assertFalse(domainHasRollingCondition(domain), "Found rolling condition at start of test");
-    return domain;
-  }
-
-  private boolean domainHasRollingCondition(Domain domain1) {
-    return Optional.ofNullable(domain1.getStatus())
-          .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
-          .map(DomainCondition::getType).anyMatch("Rolling"::equals);
-  }
-
 
   /**
    * The test modifies the includeServerOutInPodLog property and verifies the domain roll starting events are logged.
@@ -654,7 +632,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain(domainNamespace1);
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
