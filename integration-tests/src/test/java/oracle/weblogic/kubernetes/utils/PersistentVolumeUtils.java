@@ -192,6 +192,7 @@ public class PersistentVolumeUtils {
       pvHostPath = createPVHostPathDir(pvName, className);
     }
     if (OKD) {
+      pvHostPath = Paths.get(PV_ROOT, className, pvName);
       Path pvLeafPath;
       pvLeafPath = Paths.get(className, pvName);
       assertDoesNotThrow(() -> createNFSPvHostPath(pvLeafPath));
