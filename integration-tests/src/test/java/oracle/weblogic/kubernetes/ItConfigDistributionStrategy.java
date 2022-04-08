@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -133,8 +134,8 @@ class ItConfigDistributionStrategy {
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
   int t3ChannelPort;
-  final String pvName = domainUid + "-pv"; // name of the persistent volume
-  final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;
