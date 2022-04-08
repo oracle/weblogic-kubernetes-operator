@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployC
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyApache;
@@ -68,9 +69,8 @@ class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String apachePvcName = "apache-custom-file-pvc";
-  private static final String apachePvName = "apache-custom-file-pv";
-
+  private static final String apachePvcName = getUniqueName("apache-custom-file-pvc");
+  private static final String apachePvName = getUniqueName("apache-custom-file-pv");
   private static List<String> domainUids = new ArrayList<>();
   private static String miiDomainUid = null;
   private static String domainNamespace = null;
