@@ -28,11 +28,15 @@ public class DeploymentLiveness implements Runnable {
   public void run() {
     if (!livenessFile.exists()) {
       try {
-        livenessFile.createNewFile();
+        if (!livenessFile.createNewFile()) {
+          LOGGER.fine("Liveness file already exists.");
+        }
       } catch (IOException ioe) {
         LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
       }
     }
-    livenessFile.setLastModified(new Date().getTime());
+    if (!livenessFile.setLastModified(new Date().getTime())) {
+      LOGGER.fine("Failed to update timestamp on liness file.");
+    }
   }
 }
