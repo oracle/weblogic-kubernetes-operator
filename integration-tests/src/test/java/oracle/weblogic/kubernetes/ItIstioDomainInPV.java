@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHos
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
@@ -148,8 +149,8 @@ class ItIstioDomainInPV  {
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -292,13 +293,13 @@ class ItIstioDomainInPV  {
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
-      String forwardPort = 
-           startPortForwardProcess(localhost, domainNamespace, 
+      String forwardPort =
+           startPortForwardProcess(localhost, domainNamespace,
            domainUid, 7001);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded local port is {0}", forwardPort);
       consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole = 
+      checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
       logger.info("WebLogic console is accessible thru port forwarding");
@@ -306,13 +307,13 @@ class ItIstioDomainInPV  {
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-    
+
     if (isWebLogicPsuPatchApplied()) {
       String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
           + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
-          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
       ExecResult result = null;
@@ -322,7 +323,7 @@ class ItIstioDomainInPV  {
 
       if (result.exitValue() == 0) {
         logger.info("curl command returned {0}", result.toString());
-        assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"),
                 "Could not access the Security Warning Tool page");
         assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
         logger.info("No minimum umask warning reported");
@@ -332,7 +333,7 @@ class ItIstioDomainInPV  {
     } else {
       logger.info("Skipping Security warning check, since Security Warning tool "
             + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
-    } 
+    }
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;

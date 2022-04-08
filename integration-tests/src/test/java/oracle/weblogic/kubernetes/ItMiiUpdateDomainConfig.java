@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
@@ -87,7 +88,6 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -118,8 +118,8 @@ class ItMiiUpdateDomainConfig {
   private static String domainNamespace = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-add-config";
-  private static final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  private static final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
+  private static final String pvName = getUniqueName(domainUid + "-pv-");
+  private static final String pvcName = getUniqueName(domainUid + "-pvc-");
   private StringBuffer curlString = null;
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;

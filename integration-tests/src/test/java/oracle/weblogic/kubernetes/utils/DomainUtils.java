@@ -101,6 +101,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
@@ -480,8 +481,8 @@ public class DomainUtils {
 
     int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniqueName(domainUid + "-pv-"); // name of the persistent volume
+    final String pvcName = getUniqueName(domainUid + "-pvc-"); // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

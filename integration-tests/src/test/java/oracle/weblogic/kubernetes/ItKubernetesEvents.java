@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -49,8 +48,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -74,7 +71,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -107,7 +106,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -118,7 +116,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -159,15 +156,11 @@ class ItKubernetesEvents {
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
-  final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   private final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
-
-  public static ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(10, MINUTES).await();
 
   public enum ScaleAction {
     scaleUp,
@@ -512,8 +505,8 @@ class ItKubernetesEvents {
   void testDomainK8sEventsFailed() {
     OffsetDateTime timestamp = now();
     try {
-      String pvName = getUniquePvOrPvcName("sample-pv-");
-      String pvcName = getUniquePvOrPvcName("sample-pvc-");
+      String pvName = getUniqueName("sample-pv-");
+      String pvcName = getUniqueName("sample-pvc-");
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace1);
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
