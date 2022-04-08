@@ -86,7 +86,8 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
     - _Important_:
       - **Note:** Patching an Oracle Home using the WIT `update`
         command results in a larger WebLogic Server image
-        due to the immutable layering in container images.
+        due to the immutable layering in container images. For small updates, such as a one-off patch,
+        the increase in the image size may be negligible. However, for larger updates, the increase in size will be _significant_.
         Consider using `rebase` or `create` to reduce the size impact of applying patches.
       - The WIT `update` command is not suitable for updating an existing domain home in
         an existing Domain in Image image

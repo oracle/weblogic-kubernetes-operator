@@ -66,7 +66,7 @@ See the following sections for information about OCR images:
   - Suitable for production use.
 
   {{% notice warning %}}
-  WebLogic Server General Availability images and Fusion Middleware Infrastructure General Availability images on OCR are updated quarterly to include the latest security patches for Oracle Linux and Oracle Java, but **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with _all_ the latest security patches, such as Critical Patch Updates images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the `--recommendedPatches` option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
+  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with _all_ the latest security patches, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
   {{% /notice %}}
 
 #### WebLogic distribution installer type
@@ -257,7 +257,7 @@ then you can use the following commands to determine their contents:
   ```
 ### Ensure you are using recently patched images
 
-You should _not_ use images without the latest set of recommended patches applied.
+You **should not use** images without the latest set of recommended patches applied.
 Please review the following guidance to ensure that you are using recently patched images:
 
   - For production deployments,
@@ -268,9 +268,8 @@ Please review the following guidance to ensure that you are using recently patch
     CPU images contain `_cpu` in their image name,
     for example `container-registry.oracle.com/middleware/weblogic_cpu:TAG`.
 
-  - General Availability (GA) images are not licensable or suitable for production use.
-    The latest GA images include the latest security patches for Oracle Linux and Java,
-    but **do not include** the latest security patches for WebLogic Server.
+  - General Availability (GA) images **do not include** the latest security patches for WebLogic Server
+    or Fusion Middleware Infrastructure. They are not licensable and are **not suitable for production use**.
 
   - Locally cached OCR images that do not have a date stamp
     embedded in their tag:
