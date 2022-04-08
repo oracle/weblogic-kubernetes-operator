@@ -77,6 +77,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -107,6 +108,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilCom
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -131,8 +133,8 @@ class ItTwoDomainsManagedByTwoOperators {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = "default-sharing-pvc";
-  private static final String defaultSharingPvName = "default-sharing-pv";
+  private static final String defaultSharingPvcName = getUniquePvOrPvcName("default-sharing-pvc");
+  private static final String defaultSharingPvName = getUniquePvOrPvcName("default-sharing-pv");
 
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
@@ -269,9 +271,7 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   @AfterAll
   public void tearDownAll() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
 
       // uninstall operator which manages default namespace
       logger.info("uninstalling operator which manages default namespace");
@@ -344,8 +344,8 @@ class ItTwoDomainsManagedByTwoOperators {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = domainUid + "-pv-" + domainNamespace;
-      String pvcName = domainUid + "-pvc";
+      String pvName = getUniquePvOrPvcName(domainUid + "-pv-" + domainNamespace);
+      String pvcName = getUniquePvOrPvcName(domainUid + "-pvc");
 
       // create WebLogic credentials secret
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);

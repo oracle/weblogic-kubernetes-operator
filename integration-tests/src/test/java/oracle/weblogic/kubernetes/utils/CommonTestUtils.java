@@ -39,7 +39,10 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -69,14 +72,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
-  public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(3, SECONDS)
-      .atMost(120, SECONDS).await();
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(10);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+  public static ConditionFactory withQuickRetryPolicy = createStandardRetryPolicyWithAtMost(2);
+
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(minutes, MINUTES).await();
+  }
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
@@ -159,6 +164,25 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(ConditionFactory conditionFactory,
+                                                   String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(conditionFactory, podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(conditionFactory, podName, domainUid, namespace);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -177,6 +201,25 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
             String.format("serviceExists failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param serviceName service name to check
+   * @param namespace the namespace in which to check for the service
+   */
+  public static void checkServiceExists(ConditionFactory conditionFactory,String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+            assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+                    String.format("serviceExists failed with ApiException for service %s in namespace %s",
+                            serviceName, namespace)),
+            logger,
+            "service {0} to exist in namespace {1}",
+            serviceName,
+            namespace);
   }
 
   /**
@@ -675,9 +718,9 @@ public class CommonTestUtils {
   public static String getDockerExtraArgs() {
     StringBuffer extraArgs = new StringBuffer("");
 
-    String httpsproxy = Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
-    String httpproxy = Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
-    String noproxy = Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
+    String httpsproxy = HTTPS_PROXY;
+    String httpproxy = HTTP_PROXY;
+    String noproxy = NO_PROXY;
     LoggingFacade logger = getLogger();
     logger.info(" httpsproxy : " + httpsproxy);
     String proxyHost = "";
@@ -975,5 +1018,49 @@ public class CommonTestUtils {
           });
           return !managedServers.containsValue(false);
         });
+  }
+
+  /**
+   * Returns the java system property value, converting an empty string to null.
+   *
+   * @param propertyName the Java system property name
+   * @return the actual property value, or null
+   */
+  public static String getNonEmptySystemProperty(String propertyName) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue != null && propertyValue.isEmpty()) {
+      propertyValue = null;
+    }
+    return propertyValue;
+  }
+
+  /**
+   * Returns the java system property value or the default.
+   * Any an empty string in the actual value is treated as null so that the default is returned.
+   *
+   * @param propertyName the Java system property name
+   * @param defaultValue the value to return is the property
+   * @return the actual property value or the default value
+   */
+  public static String getNonEmptySystemProperty(String propertyName, String defaultValue) {
+    String propertyValue = System.getProperty(propertyName);
+    if (propertyValue == null || propertyValue.isEmpty()) {
+      propertyValue = defaultValue;
+    }
+    return propertyValue;
+  }
+
+  /**
+   * Returns the Kind Repo value with a trailing slash.
+   *
+   * @param propertyName the name used to retrieve the Kind Repo value
+   * @return the Kind Repo value with a trailing slash
+   */
+  public static String getKindRepoValue(String propertyName) {
+    String propertyValue = getNonEmptySystemProperty(propertyName);
+    if (propertyValue != null && !propertyValue.endsWith("/")) {
+      propertyValue += "/";
+    }
+    return propertyValue;
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERV
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -91,12 +92,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to upgrade Operator with FMW domain in persistent volume using WLST.
  * Install a released version of Operator from GitHub chart repository.
  * Create a domain using Domain-In-PV model with a dynamic cluster.
- * Upgrade operator with latest Operator image build from main branch.
+ * Upgrade operator with current Operator image build from main branch.
  * Verify Domain resource version and image are updated.
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-class ItOpUpgradeFmwDomainInPV {
+class ItOperatorFmwUpgrade {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
@@ -134,7 +135,7 @@ class ItOpUpgradeFmwDomainInPV {
   private static String latestOperatorImageName;
 
   /**
-   * Initialization of logger, conditionfactory and latest Operator image to all test methods.
+   * Initialization of logger, conditionfactory and current Operator image to all test methods.
    */
   @BeforeAll
   public static void initAll() {
@@ -202,9 +203,7 @@ class ItOpUpgradeFmwDomainInPV {
   public void tearDown() {
     //assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
 
       assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
 
@@ -217,79 +216,40 @@ class ItOpUpgradeFmwDomainInPV {
   }
 
   /**
-   * Operator upgrade from 2.6.0 to latest with a FMW Domain.
-   * Delete Operator and install latest Operator.
-   * Verify Domain resource version is updated while domain is in running state.
+   * Operator upgrade from 3.0.4 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to main")
-  void testOperatorFmwUpgradeFrom260ToMain() {
-    installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.3 to latest with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.3 to main")
-  void testOperatorFmwUpgradeFrom303ToMain() {
-    this.namespaces = namespaces;
-    installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.0.4 to latest with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to main")
-  void testOperatorFmwUpgradeFrom304ToMain() {
+  @DisplayName("Upgrade Operator from 3.0.4 to current")
+  void testOperatorFmwUpgradeFrom304ToCurrent() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.1.3 to latest with a FMW Domain.
+   * Operator upgrade from 3.1.4 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.3 to main")
-  void testOperatorFmwUpgradeFrom313ToMain() {
-    installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.1.4 to latest with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to main")
-  void testOperatorFmwUpgradeFrom314ToMain() {
+  @DisplayName("Upgrade Operator from 3.1.4 to current")
+  void testOperatorFmwUpgradeFrom314ToCurrent() {
     installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.2.0 to latest with a FMW Domain.
+   * Operator upgrade from 3.2.5 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.0 to main")
-  void testOperatorFmwUpgradeFrom320ToMain() {
-    installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.4 to latest with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.2.4 to main")
-  void testOperatorFmwUpgradeFrom324ToMain() {
-    installAndUpgradeOperator("3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.5 to latest with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to main")
-  void testOperatorFmwUpgradeFrom325ToMain() {
+  @DisplayName("Upgrade Operator from 3.2.5 to current")
+  void testOperatorFmwUpgradeFrom325ToCurrent() {
     installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.3.7 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.3.7 to current")
+  void testOperatorFmwUpgradeFrom337ToCurrent() {
+    installAndUpgradeOperator("3.3.7", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   private void installAndUpgradeOperator(String operatorVersion,
@@ -304,7 +264,7 @@ class ItOpUpgradeFmwDomainInPV {
     // create FMW domain and verify
     createFmwDomainAndVerify(domainVersion);
 
-    // upgrade to latest operator
+    // upgrade to current operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, opHelmParams, useHelmUpgrade);
   }
 
@@ -371,7 +331,7 @@ class ItOpUpgradeFmwDomainInPV {
       accountingThread.start();
 
       try {
-        // upgrade to latest operator
+        // upgrade to current operator
         HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace1)
@@ -421,7 +381,7 @@ class ItOpUpgradeFmwDomainInPV {
       assertTrue(uninstallOperator(opHelmParams),
           String.format("Uninstall operator failed in namespace %s", opNamespace1));
 
-      // install latest operator
+      // install current operator
       installAndVerifyOperator(opNamespace2, opServiceAccount, true, 0);
     }
   }

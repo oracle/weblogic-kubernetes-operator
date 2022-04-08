@@ -63,8 +63,10 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
+import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
@@ -96,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -240,8 +243,8 @@ public class DomainUtils {
 
     int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniquePvOrPvcName(domainUid + "-pv"); // name of the persistent volume
+    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc"); // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -448,17 +451,18 @@ public class DomainUtils {
             .name("WDT_DIR")
             .value("/u01/shared/wdt"))
         .addEnvItem(new V1EnvVar()
-            .name("http_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(System.getenv("http_proxy")))
-        .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid))
-        .addEnvItem(new V1EnvVar()
-            .name("https_proxy")
-            .value(HTTPS_PROXY));
+            .value("/u01/shared/domains/" + domainUid));
+
+    if (HTTP_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("http_proxy").value(HTTP_PROXY));
+    }
+    if (HTTPS_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("https_proxy").value(HTTPS_PROXY));
+    }
+    if (NO_PROXY != null) {
+      jobCreationContainer.addEnvItem(new V1EnvVar().name("no_proxy").value(HTTPS_PROXY));
+    }
 
     getLogger().info("Running a Kubernetes job to create the domain");
     createDomainJob(pvName, pvcName,

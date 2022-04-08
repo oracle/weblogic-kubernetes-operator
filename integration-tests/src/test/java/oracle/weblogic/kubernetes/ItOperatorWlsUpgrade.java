@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -26,7 +26,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -44,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Create a domain using Domain-In-Image or Model-In-Image model with a dynamic cluster.
  * Deploy an application to the cluster in domain and verify the application 
  * can be accessed while the operator is upgraded and after the upgrade.
- * Upgrade operator with latest Operator image build from main branch.
+ * Upgrade operator with current Operator image build from current branch.
  * Verify Domain resource version and image are updated.
  * Scale the cluster in upgraded environment.
  * Restart the entire domain in upgraded environment.
@@ -132,91 +132,47 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.6.0 to latest.
-   * Delete Operator and install latest Operator 
-   * Verify Domain resource version is updated while domain is in running state.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to main")
-  void testOperatorWlsUpgradeFrom260ToMain() {
-    upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.3 to latest.
+   * Operator upgrade from 3.0.4 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.0.3 to main")
+  @DisplayName("Upgrade Operator from 3.0.4 to current")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.0.4 to latest.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.0.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom304ToMain with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom304ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom304ToCurrent with domain type {0}", domainType);
     upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.1.3 to latest.
+   * Operator upgrade from 3.1.4 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.3 to main")
+  @DisplayName("Upgrade Operator from 3.1.4 to current")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom313ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.1.4 to latest.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom314ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom314ToCurrent with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.2.0 to latest.
+   * Operator upgrade from 3.2.5 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.0 to main")
+  @DisplayName("Upgrade Operator from 3.2.5 to current")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom320ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.4 to latest.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom321ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.5 to latest.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.5 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
+  void testOperatorWlsUpgradeFrom325ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom325ToCurrent with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.3.7 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.3.7 to current")
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  void testOperatorWlsUpgradeFrom337ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom337ToCurrent with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.3.7", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -225,9 +181,7 @@ class ItOperatorWlsUpgrade {
    */
   @AfterEach
   public void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+    if (!SKIP_CLEANUP) {
       CleanupUtil.cleanup(namespaces);
       new Command()
           .withParams(new CommandParams()
@@ -244,7 +198,7 @@ class ItOperatorWlsUpgrade {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);
-    logger.info("Assign a unique namespace for latest operator");
+    logger.info("Assign a unique namespace for current operator");
     assertNotNull(namespaces.get(1), "Namespace is null");
     final String opNamespace2 = namespaces.get(1);
     logger.info("Assign a unique namespace for domain");
@@ -369,7 +323,7 @@ class ItOperatorWlsUpgrade {
       // uninstall operator 2.5.0/2.6.0
       assertTrue(uninstallOperator(opHelmParams),
           String.format("Uninstall operator failed in namespace %s", opNamespace1));
-      // install latest operator
+      // install current operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
 
