@@ -323,6 +323,18 @@ pipeline {
                     }
                 }
 
+                stage('Run Helm installation tests') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            mvn -pl kubernetes -P helm-installation-test verify
+                        '''
+                    }
+                }
+
                 stage ('Install kubectl') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
