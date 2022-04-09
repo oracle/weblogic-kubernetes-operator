@@ -18,10 +18,16 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -39,6 +45,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED_MARKER;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
@@ -230,6 +239,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
     private final OffsetDateTime jobCreationTime;
+    private boolean introspectContainerTerminated = false;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);
@@ -242,7 +252,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // A job is considered ready once it has either successfully completed, or been marked as failed.
     @Override
     boolean isReady(V1Job job) {
-      return isComplete(job) || isFailed(job);
+      return isComplete(job) || isFailed(job) || introspectContainerTerminated;
     }
 
     @Override
@@ -290,7 +300,84 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     @Override
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
-      return new CallBuilder().readJobAsync(name, namespace, domainUid, responseStep);
+      return listPodsInNamespace(namespace, name,
+              new CallBuilder().readJobAsync(name, namespace, domainUid, responseStep));
+    }
+
+    private Step listPodsInNamespace(String namespace, String jobName, Step next) {
+      return new CallBuilder()
+              .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+              .listPodAsync(namespace, new PodListResponseStep(jobName, next));
+    }
+
+    private class PodListResponseStep extends ResponseStep<V1PodList> {
+
+      private String jobName;
+
+      PodListResponseStep(String jobName, Step next) {
+        super(next);
+        this.jobName = jobName;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+        final V1Pod jobPod
+                = Optional.ofNullable(callResponse.getResult())
+                .map(V1PodList::getItems)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .filter(this::isJobPod)
+                .findFirst()
+                .orElse(null);
+
+        // TODO: check duplicate code
+        if (jobPod == null) {
+          packet.remove(JOB_POD_CONTAINER_TERMINATED);
+          return doContinueListOrNext(callResponse, packet, getNext());
+        } else {
+          addContainerTerminatedMarkerToPacket(jobPod, jobName, packet);
+        }
+
+        return doNext(getNext(), packet);
+      }
+
+      private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+        if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
+          List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
+
+          for (V1ContainerStatus containerStatus : containerStatuses) {
+            if (containerStatus.getName().equals(jobName)
+                    && containerStatus.getState().getTerminated() != null) {
+              packet.put(JOB_POD_CONTAINER_TERMINATED, JOB_POD_CONTAINER_TERMINATED_MARKER);
+            }
+          }
+        }
+      }
+
+      private String getName(V1Pod pod) {
+        return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+      }
+
+      private boolean isJobPod(V1Pod pod) {
+        return getName(pod).startsWith(jobName);
+      }
+
+
+      private String getJobPodContainerWaitingReason(V1Pod pod) {
+        return Optional.ofNullable(pod).map(V1Pod::getStatus)
+                .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+                .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
+                .map(V1ContainerStateWaiting::getReason).orElse(null);
+      }
+
+      private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
+        return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
+      }
+
+      private void recordJobPodName(Packet packet, String podName) {
+        packet.put(ProcessingConstants.JOB_POD_NAME, podName);
+      }
     }
 
     // When we detect a job as ready, we add it to the packet for downstream processing.
@@ -323,6 +410,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+          if (JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
+            introspectContainerTerminated = true;
+          }
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);

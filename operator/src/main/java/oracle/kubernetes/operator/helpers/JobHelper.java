@@ -58,6 +58,8 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPE
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
 
 public class JobHelper {
@@ -379,12 +381,12 @@ public class JobHelper {
       @Override
       public NextAction apply(Packet packet) {
         String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-
         return doNext(readDomainIntrospectorPodLog(jobPodName, getNext()), packet);
       }
 
       private Step readDomainIntrospectorPodLog(String jobPodName, Step next) {
         return new CallBuilder()
+                .withContainerName(getDomain().getDomainUid() + "-introspector")
                 .readPodLogAsync(
                         jobPodName, getNamespace(), getDomainUid(), new ReadPodLogResponseStep(next));
       }
@@ -423,7 +425,8 @@ public class JobHelper {
         Optional.ofNullable(callResponse.getResult()).ifPresent(result -> processIntrospectionResult(packet, result));
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
-        if (JobWatcher.isComplete(domainIntrospectorJob)) {
+        if (JobWatcher.isComplete(domainIntrospectorJob)
+                || JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
           return doNext(packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
@@ -595,6 +598,21 @@ public class JobHelper {
       }
     }
 
+    private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+      if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
+        List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
+
+        for (V1ContainerStatus containerStatus : containerStatuses) {
+          if (containerStatus.getName().equals(jobName)
+                  && containerStatus.getState().getTerminated() != null) {
+            packet.put(JOB_POD_CONTAINER_TERMINATED, JOB_POD_CONTAINER_TERMINATED_MARKER);
+          }
+        }
+      }
+    }
+
+
     private class PodListResponseStep extends ResponseStep<V1PodList> {
 
       PodListResponseStep(Step next) {
@@ -617,6 +635,8 @@ public class JobHelper {
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
+          addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
+
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }
