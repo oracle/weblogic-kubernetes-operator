@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.io.FileMatchers.anExistingDirectory;
 import static org.hamcrest.io.FileMatchers.anExistingFile;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,11 +50,25 @@ class DeploymentReadyTest {
     DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
     deploymentReady.create();
 
-    File aliveFile = new File(coreDelegate.probesHome, ".ready");
+    File readyFile = new File(coreDelegate.probesHome, ".ready");
     assertThat(coreDelegate.probesHome, anExistingDirectory());
-    assertThat(aliveFile, anExistingFile());
+    assertThat(readyFile, anExistingFile());
 
     assertThat(logRecords, containsFine("Readiness file created"));
+  }
+
+  @Test
+  void whenExistingReadyFile_noLog() throws IOException {
+    File readyFile = new File(coreDelegate.probesHome, ".ready");
+    assertTrue(readyFile.createNewFile());
+
+    DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
+    deploymentReady.create();
+
+    assertThat(coreDelegate.probesHome, anExistingDirectory());
+    assertThat(readyFile, anExistingFile());
+
+    assertThat(logRecords, not(containsFine("Readiness file created")));
   }
 
   @Test
