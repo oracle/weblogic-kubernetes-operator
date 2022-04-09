@@ -61,7 +61,7 @@ class DeploymentReadyTest {
     assertTrue(coreDelegate.probesHome.setWritable(false, false));
 
     DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
-    assertThrows(IOException.class, () -> deploymentReady.create());
+    assertThrows(IOException.class, deploymentReady::create);
 
     assertThat(coreDelegate.probesHome, anExistingDirectory());
   }
