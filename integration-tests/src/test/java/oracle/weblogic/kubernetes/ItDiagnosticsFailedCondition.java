@@ -65,6 +65,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
@@ -347,8 +348,8 @@ class ItDiagnosticsFailedCondition {
   void testNonexistentPVC() {
     boolean testPassed = false;
     String domainName = getDomainName();
-    String pvName = domainName + "-pv"; // name of the persistent volume
-    String pvcName = domainName + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniqueName(domainName + "-pv-");
+    final String pvcName = getUniqueName(domainName + "-pvc-");
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");
