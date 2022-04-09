@@ -22,6 +22,8 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.io.FileMatchers.anExistingDirectory;
 import static org.hamcrest.io.FileMatchers.anExistingFile;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DeploymentReadyTest {
 
@@ -52,6 +54,16 @@ class DeploymentReadyTest {
     assertThat(aliveFile, anExistingFile());
 
     assertThat(logRecords, containsFine("Readiness file created"));
+  }
+
+  @Test
+  void whenCantCreateReadyFile_throw() {
+    assertTrue(coreDelegate.probesHome.setWritable(false, false));
+
+    DeploymentReady deploymentReady = new DeploymentReady(coreDelegate);
+    assertThrows(IOException.class, () -> deploymentReady.create());
+
+    assertThat(coreDelegate.probesHome, anExistingDirectory());
   }
 
   abstract static class CoreDelegateStub implements CoreDelegate {
