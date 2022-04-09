@@ -85,7 +85,7 @@ class DeploymentReadyTest {
     final File probesHome;
 
     protected CoreDelegateStub() throws IOException {
-      probesHome = Files.createTempDirectory("deploymentLivenessTest").toFile();
+      probesHome = Files.createTempDirectory("deploymentReadyTest").toFile();
     }
 
     public File getProbesHome() {
