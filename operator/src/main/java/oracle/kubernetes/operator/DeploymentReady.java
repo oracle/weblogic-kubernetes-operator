@@ -24,8 +24,8 @@ public class DeploymentReady {
    * @throws IOException if the readiness file does not exist
    */
   public void create() throws IOException {
-    if (!readinessFile.exists() && !readinessFile.createNewFile()) {
-      LOGGER.fine("Readiness file already exists.");
+    if (readinessFile.createNewFile()) {
+      LOGGER.fine("Readiness file created");
     }
   }
 }
