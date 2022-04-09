@@ -50,20 +50,15 @@ public interface TestConstants {
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
       "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
-
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
-  public static final String REPO_DUMMY_VALUE = "dummy";
 
   // ocir constants
   public static final String OCIR_DEFAULT = "phx.ocir.io";
   public static final String OCIR_REGISTRY = getNonEmptySystemProperty("wko.it.ocir.registry", OCIR_DEFAULT);
-  public static final String OCIR_USERNAME = Optional.ofNullable(System.getenv("OCIR_USERNAME"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String OCIR_PASSWORD = Optional.ofNullable(System.getenv("OCIR_PASSWORD"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String OCIR_EMAIL = Optional.ofNullable(System.getenv("OCIR_EMAIL"))
-      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCIR_USERNAME = System.getenv("OCIR_USERNAME");
+  public static final String OCIR_PASSWORD = System.getenv("OCIR_PASSWORD");
+  public static final String OCIR_EMAIL = System.getenv("OCIR_EMAIL");
   public static final String OCIR_SECRET_NAME = "ocir-secret";
 
   // ocir default image values, these values will be used while running locally

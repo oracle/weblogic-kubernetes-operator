@@ -53,7 +53,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -160,13 +159,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         // docker login to OCIR if OCIR_USERNAME and OCIR_PASSWORD is 
         // provided in env var
         if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
-          if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            testUntil(
+          testUntil(
                 withVeryLongRetryPolicy,
                 () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
                 logger,
                 "docker login to OCIR to be successful");
-          }
         } 
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
@@ -237,14 +234,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
 
-        if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          logger.info("docker login");
-          testUntil(
+        logger.info("docker login");
+        testUntil(
               withVeryLongRetryPolicy,
               () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
               logger,
               "docker login to OCIR to be successful");
-        }
 
         // push the images to repo
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
