@@ -161,7 +161,7 @@ class HelmOperatorValuesTest {
   }
 
   @Test
-  void weblogicOperatorImagePullPolicyIsGettableStringValue() {
+  void weblogicOperatorImagePullPolicyIsExpectedEnumValue() {
     operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
     assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
