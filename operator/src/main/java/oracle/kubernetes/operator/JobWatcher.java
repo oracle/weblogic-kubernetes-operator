@@ -300,21 +300,21 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     @Override
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Job> responseStep) {
-      return listPodsInNamespace(namespace, name,
+      return checkPodContainerInNamespace(namespace, name,
               new CallBuilder().readJobAsync(name, namespace, domainUid, responseStep));
     }
 
-    private Step listPodsInNamespace(String namespace, String jobName, Step next) {
+    private Step checkPodContainerInNamespace(String namespace, String jobName, Step next) {
       return new CallBuilder()
               .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-              .listPodAsync(namespace, new PodListResponseStep(jobName, next));
+              .listPodAsync(namespace, new PodContainerCheckResponseStep(jobName, next));
     }
 
-    private class PodListResponseStep extends ResponseStep<V1PodList> {
+    private class PodContainerCheckResponseStep extends ResponseStep<V1PodList> {
 
       private String jobName;
 
-      PodListResponseStep(String jobName, Step next) {
+      PodContainerCheckResponseStep(String jobName, Step next) {
         super(next);
         this.jobName = jobName;
       }
@@ -330,7 +330,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
                 .findFirst()
                 .orElse(null);
 
-        // TODO: check duplicate code
+        // TODO: check if verifyJobPod can be refactored and use here
         if (jobPod == null) {
           packet.remove(JOB_POD_CONTAINER_TERMINATED);
           return doContinueListOrNext(callResponse, packet, getNext());

@@ -604,9 +604,12 @@ public class JobHelper {
         List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
 
         for (V1ContainerStatus containerStatus : containerStatuses) {
+          // Only set done if the exit code is 0 and terminated, otherwise it is error
           if (containerStatus.getName().equals(jobName)
-                  && containerStatus.getState().getTerminated() != null) {
-            packet.put(JOB_POD_CONTAINER_TERMINATED, JOB_POD_CONTAINER_TERMINATED_MARKER);
+                  && containerStatus.getState().getTerminated() != null
+                  && containerStatus.getState().getTerminated().getExitCode() == 0) {
+              packet.put(JOB_POD_CONTAINER_TERMINATED, JOB_POD_CONTAINER_TERMINATED_MARKER);
+            }
           }
         }
       }
