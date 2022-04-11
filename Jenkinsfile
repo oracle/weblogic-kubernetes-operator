@@ -342,21 +342,19 @@ pipeline {
                             cat "${WORKSPACE}/.mvn/maven.config"
                         '''
                         withSonarQubeEnv('SonarCloud') {
-                            // For whatever reason, defining this property in the maven.config file is not working...
-                            //
                             sh "mvn sonar:sonar"
                         }
                     }
                 }
 
-                // stage('Verify Sonar Quality Gate') {
-                //    steps {
-                //        timeout(time: 10, unit: 'MINUTES') {
-                //            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                //            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                //        }
-                //    }
-                // }
+                 stage('Verify Sonar Quality Gate') {
+                    steps {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
+                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
+                        }
+                    }
+                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
