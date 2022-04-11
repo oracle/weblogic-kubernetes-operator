@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -97,7 +98,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -242,8 +242,8 @@ public class DomainUtils {
 
     int t3ChannelPort = getNextFreePort();
 
-    final String pvName = getUniquePvOrPvcName(domainUid + "-pv"); // name of the persistent volume
-    final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc"); // name of the persistent volume claim
+    final String pvName = getUniqueName(domainUid + "-pv"); // name of the persistent volume
+    final String pvcName = getUniqueName(domainUid + "-pvc"); // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -524,33 +524,33 @@ public class DomainUtils {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
         .restartPolicy("Never")
-        .addContainersItem(jobContainer  // container containing WLST or WDT details
-               .name("create-weblogic-domain-onpv-container")
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy("IfNotPresent")
-                        .addPortsItem(new V1ContainerPort()
-                            .containerPort(7001))
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                  .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
-                            new V1VolumeMount()
-                                .name(pvName) // location to write domain
-                                .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)),
-                        new V1Volume()
-                            .name("create-weblogic-domain-job-cm-volume")
-                            .configMap(
-                                new V1ConfigMapVolumeSource()
-                                    .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+        .addContainersItem(jobContainer // container containing WLST or WDT details
+            .name("create-weblogic-domain-onpv-container")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy("IfNotPresent")
+            .addPortsItem(new V1ContainerPort()
+                .containerPort(7001))
+            .volumeMounts(Arrays.asList(
+                new V1VolumeMount()
+                    .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                    .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                new V1VolumeMount()
+                    .name(pvName) // location to write domain
+                    .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
+        .volumes(Arrays.asList(
+            new V1Volume()
+                .name(pvName)
+                .persistentVolumeClaim(
+                    new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)),
+            new V1Volume()
+                .name("create-weblogic-domain-job-cm-volume")
+                .configMap(
+                    new V1ConfigMapVolumeSource()
+                        .name(domainScriptCM)))) //config map containing domain scripts
+        .imagePullSecrets(Arrays.asList(
+            new V1LocalObjectReference()
+                .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
     }

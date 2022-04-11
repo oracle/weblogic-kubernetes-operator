@@ -30,7 +30,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -56,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -187,11 +187,11 @@ class ItCrossDomainTransaction {
   public void beforeEach() {
     int replicaCount = 2;
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i, 
+      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i,
             domainUid2, domain2Namespace);
     }
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i, 
+      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i,
             domainUid1, domain1Namespace);
     }
   }
@@ -229,8 +229,6 @@ class ItCrossDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    //props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    //props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.setProperty("K8S_NODEPORT_HOST", dbPodIP);
     props.setProperty("DBPORT", Integer.toString(dbPort));
     props.store(out, null);
@@ -240,7 +238,7 @@ class ItCrossDomainTransaction {
   private static void buildApplicationsAndDomains() {
 
     //build application archive
-    Path targetDir = Paths.get(WORK_DIR, 
+    Path targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getSimpleName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace, targetDir);
@@ -252,7 +250,7 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getSimpleName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace, targetDir);
@@ -264,7 +262,7 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getSimpleName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
         "build", domain1Namespace, targetDir);
@@ -292,7 +290,7 @@ class ItCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getSimpleName() + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
         "build", domain1Namespace, targetDir);
@@ -575,7 +573,7 @@ class ItCrossDomainTransaction {
       logger.info("Validating WebLogic admin console");
       testUntil(
           assertDoesNotThrow(() -> {
-            return TestAssertions.adminNodePortAccessible(serviceNodePort,
+            return adminNodePortAccessible(serviceNodePort,
                  ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminExtSvcRouteHost);
           }, "Access to admin server node port failed"),
           logger,

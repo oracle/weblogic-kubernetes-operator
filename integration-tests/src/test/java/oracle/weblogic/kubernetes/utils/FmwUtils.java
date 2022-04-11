@@ -208,8 +208,8 @@ public class FmwUtils {
 
   /**
    * Verify EM console is accessible.
-   * @param domainUid unique Uid of the domain
    * @param domainNamespace  namespace where the domain exists
+   * @param domainUid unique Uid of the domain*
    * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    */
   public static void verifyEMconsoleAccess(String domainNamespace, String domainUid, String adminSvcExtHost) {

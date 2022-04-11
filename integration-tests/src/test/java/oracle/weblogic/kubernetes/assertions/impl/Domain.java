@@ -184,7 +184,6 @@ public class Domain {
 
     logger.info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
-    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
         "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
