@@ -189,12 +189,15 @@ public class FluentdHelper {
             domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
             false);
 
-    if (isIntrospectorPod) {
-      addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "INTROSPECTOR_OUT_PATH",
-          domain.getEffectiveLogHome() + "/introspector_script.out",
-          false);
+    // Always add this because we only have one fluentd configmap, and it may contain the
+    // introspector log parser config, if this environment variable is not set then the managed server
+    // fluentd will not run. If the file is not there then there won't be any problem.
+    // TODO: may need to create two different configmaps..
+    //
+    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "INTROSPECTOR_OUT_PATH",
+        domain.getEffectiveLogHome() + "/introspector_script.out",
+        false);
 
-    }
 
     fluentdSpecification.getEnv()
         .forEach(fluentdContainer::addEnvItem);
