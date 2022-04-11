@@ -68,7 +68,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -450,25 +449,8 @@ public class MonitoringUtils {
     if (OKD) {
       addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
     }
-    try {
-      assertTrue(installGrafana(grafanaParams),
-          String.format("Failed to install grafana in namespace %s",grafanaNamespace));
-    } catch (AssertionError err) {
-      //retry with different nodeport
-      uninstallGrafana(grafanaHelmParams);
-      grafanaNodePort = getNextFreePort();
-      grafanaParams = new GrafanaParams()
-          .helmParams(grafanaHelmParams)
-          .nodePort(grafanaNodePort);
-      isGrafanaInstalled = installGrafana(grafanaParams);
-      if (!isGrafanaInstalled) {
-        //clean up
-        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
-            grafanaNamespace, grafanaNodePort));
-        uninstallGrafana(grafanaHelmParams);
-        return null;
-      }
-    }
+    assertTrue(installGrafana(grafanaParams),
+        String.format("Failed to install grafana in namespace %s",grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
