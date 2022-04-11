@@ -214,6 +214,7 @@ class ItIntrospectVersion {
   @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
+  @Tag("gate")
   void testDomainIntrospectVersionNotRolling() {
 
     final String clusterName = "mycluster";
