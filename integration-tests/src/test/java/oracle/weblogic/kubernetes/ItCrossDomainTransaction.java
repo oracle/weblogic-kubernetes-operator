@@ -84,6 +84,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Cross domain transaction tests.
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest

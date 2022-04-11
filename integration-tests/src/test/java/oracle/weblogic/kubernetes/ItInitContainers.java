@@ -268,6 +268,7 @@ class ItInitContainers {
    */
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
+  @Tag("gate")
   void testClusterInitContainer() {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
