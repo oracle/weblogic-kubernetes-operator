@@ -119,10 +119,10 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **A:** Download pre-patched images from the Oracle Container Registry or use WebLogic Image Tool to create your own.
 For additional information on WebLogic container images on Oracle Container registry,
-see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/_index.md#obtain-images-from-the-oracle-container-registry" >}}).
+see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 For additional information on creating new container images with the WebLogic Image Tool,
-see [Patch WebLogic images]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}).
+see [Create custom images]({{< relref "/userguide/base-images/custom-images.md" >}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 
