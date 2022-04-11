@@ -26,13 +26,15 @@ public class DeploymentLiveness implements Runnable {
 
   @Override
   public void run() {
-    if (!livenessFile.exists()) {
-      try {
-        livenessFile.createNewFile();
-      } catch (IOException ioe) {
-        LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
+    try {
+      if (livenessFile.createNewFile()) {
+        LOGGER.fine("Liveness file created");
       }
+    } catch (IOException ioe) {
+      LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
     }
-    livenessFile.setLastModified(new Date().getTime());
+    if (livenessFile.setLastModified(new Date().getTime())) {
+      LOGGER.fine("Liveness file last modified time set");
+    }
   }
 }

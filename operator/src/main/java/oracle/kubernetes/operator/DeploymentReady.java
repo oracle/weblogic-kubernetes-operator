@@ -6,9 +6,13 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.io.IOException;
 
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+
 /** This task creates the "readiness" indicator so that Kubernetes knows the Operator is ready. */
 public class DeploymentReady {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final File readinessFile;
 
   public DeploymentReady(CoreDelegate delegate) {
@@ -20,8 +24,8 @@ public class DeploymentReady {
    * @throws IOException if the readiness file does not exist
    */
   public void create() throws IOException {
-    if (!readinessFile.exists()) {
-      readinessFile.createNewFile();
+    if (readinessFile.createNewFile()) {
+      LOGGER.fine("Readiness file created");
     }
   }
 }
