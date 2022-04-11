@@ -5,12 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -25,15 +23,13 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.jetbrains.annotations.NotNull;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -146,7 +142,7 @@ class ItPodsRestart {
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain();
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
@@ -245,24 +241,6 @@ class ItPodsRestart {
 
   }
 
-  @NotNull
-  private Domain getAndValidateInitialDomain() {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    assertNotNull(domain, "Got null domain resource");
-    assertNotNull(domain.getSpec(), domain + "/spec is null");
-    assertFalse(domainHasRollingCondition(domain), "Found rolling condition at start of test");
-    return domain;
-  }
-
-  private boolean domainHasRollingCondition(Domain domain1) {
-    return Optional.ofNullable(domain1.getStatus())
-          .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
-          .map(DomainCondition::getType).anyMatch("Rolling"::equals);
-  }
-
   private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp) {
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
@@ -285,7 +263,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
   void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain();
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -342,7 +320,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
   void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain();
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
 
@@ -411,7 +389,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain();
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
         + "/spec/serverPod/podSecurityContext is null");
@@ -478,7 +456,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
     // get the original domain resource before update
-    Domain domain1 = getAndValidateInitialDomain();
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -536,7 +514,7 @@ class ItPodsRestart {
   @Tag("gate")
   void testRestartVersion() {
     // get the original domain resource before update
-    getAndValidateInitialDomain();
+    DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -585,7 +563,7 @@ class ItPodsRestart {
     dockerLoginAndPushImageToRegistry(newImage);
 
     // get the original domain resource before update
-    getAndValidateInitialDomain();
+    DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();

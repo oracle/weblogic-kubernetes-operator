@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.codec.binary.Base64;
 
@@ -43,7 +44,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_ROLE
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SECRET;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_SERVICE_ACCOUNT;
-import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 /**
  * Holds the results of a kubernetes yaml file that has been converted to k8s typed java objects.
@@ -288,8 +288,8 @@ public class ParsedKubernetesYaml {
     public void add(Map objectAsMap) {
       // convert the map to a yaml string then convert the yaml string to the
       // corresponding k8s class
-      String yaml = newYaml().dump(objectAsMap);
-      T instance = (T) newYaml().loadAs(yaml, k8sClass);
+      String yaml = Yaml.dump(objectAsMap);
+      T instance = (T) Yaml.loadAs(yaml, k8sClass);
       instances.add(instance);
     }
 

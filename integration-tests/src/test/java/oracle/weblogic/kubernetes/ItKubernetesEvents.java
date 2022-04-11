@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -76,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -558,9 +560,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace1));
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
@@ -602,10 +602,15 @@ class ItKubernetesEvents {
     }
 
     //verify the logHome change causes the domain roll events to be logged
+    verifyDomainRollAndPodCycleEvents(timestamp);
+  }
+
+  private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp) {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, "Rolling");
   }
 
 
@@ -620,9 +625,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace1));
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
@@ -667,10 +670,7 @@ class ItKubernetesEvents {
     }
 
     //verify the includeServerOutInPodLog change causes the domain roll events to be logged
-    logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    verifyDomainRollAndPodCycleEvents(timestamp);
   }
 
   /**

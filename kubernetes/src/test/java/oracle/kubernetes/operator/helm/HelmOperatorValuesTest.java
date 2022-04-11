@@ -161,7 +161,7 @@ class HelmOperatorValuesTest {
   }
 
   @Test
-  void weblogicOperatorImagePullPolicyIsGettableStringValue() {
+  void weblogicOperatorImagePullPolicyIsExpectedEnumValue() {
     operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
 
     assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
@@ -171,7 +171,7 @@ class HelmOperatorValuesTest {
   void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(""));
+    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.NEVER));
   }
 
   @Test

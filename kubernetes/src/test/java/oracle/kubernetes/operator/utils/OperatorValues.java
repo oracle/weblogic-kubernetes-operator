@@ -204,7 +204,7 @@ public class OperatorValues {
   }
 
   public void setWeblogicOperatorImagePullPolicy(String val) {
-    weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.valueOf(val);
+    weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.fromValue(val);
   }
 
   public OperatorValues weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum val) {
