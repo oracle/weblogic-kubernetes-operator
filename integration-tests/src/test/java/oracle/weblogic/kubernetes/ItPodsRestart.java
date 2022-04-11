@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -622,6 +623,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Restart pods using restartVersion flag")
+  @Tag("gate")
   void testRestartVersion() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -687,6 +689,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Check restart of pods after image change")
+  @Tag("gate")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();
