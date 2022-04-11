@@ -524,33 +524,33 @@ public class DomainUtils {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
         .restartPolicy("Never")
-        .addContainersItem(jobContainer  // container containing WLST or WDT details
-               .name("create-weblogic-domain-onpv-container")
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy("IfNotPresent")
-                        .addPortsItem(new V1ContainerPort()
-                            .containerPort(7001))
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                  .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
-                            new V1VolumeMount()
-                                .name(pvName) // location to write domain
-                                .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)),
-                        new V1Volume()
-                            .name("create-weblogic-domain-job-cm-volume")
-                            .configMap(
-                                new V1ConfigMapVolumeSource()
-                                    .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+        .addContainersItem(jobContainer // container containing WLST or WDT details
+            .name("create-weblogic-domain-onpv-container")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy("IfNotPresent")
+            .addPortsItem(new V1ContainerPort()
+                .containerPort(7001))
+            .volumeMounts(Arrays.asList(
+                new V1VolumeMount()
+                    .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                    .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                new V1VolumeMount()
+                    .name(pvName) // location to write domain
+                    .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
+        .volumes(Arrays.asList(
+            new V1Volume()
+                .name(pvName)
+                .persistentVolumeClaim(
+                    new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)),
+            new V1Volume()
+                .name("create-weblogic-domain-job-cm-volume")
+                .configMap(
+                    new V1ConfigMapVolumeSource()
+                        .name(domainScriptCM)))) //config map containing domain scripts
+        .imagePullSecrets(Arrays.asList(
+            new V1LocalObjectReference()
+                .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
     }

@@ -312,7 +312,7 @@ public class PersistentVolumeUtils {
    * @throws IOException when creating pv path fails
    */
   public static void createPvAndPvc(String nameSuffix, String namespace,
-                                    HashMap<String,String> labels, String className)
+      HashMap<String, String> labels, String className)
       throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("creating persistent volume and persistent volume claim");
@@ -322,7 +322,6 @@ public class PersistentVolumeUtils {
     if (!OKE_CLUSTER && !OKD) {
       pvHostPath = createPVHostPathDir("pv-test" + nameSuffix, className);
     }
-
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
@@ -343,11 +342,9 @@ public class PersistentVolumeUtils {
       labelSelector = labels.entrySet()
           .stream()
           .map(e -> e.getKey() + "="
-              + e.getValue())
+          + e.getValue())
           .collect(Collectors.joining(","));
     }
-
-
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
@@ -370,8 +367,7 @@ public class PersistentVolumeUtils {
       v1pvc.getSpec()
           .storageClassName(nameSuffix);
     }
-
-    createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
   }
 
   /**

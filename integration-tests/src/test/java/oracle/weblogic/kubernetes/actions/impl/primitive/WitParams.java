@@ -58,7 +58,7 @@ public class WitParams {
   // Custom WDT model home
   private String wdtModelHome;
 
-  // Custom WDT model home
+  // target
   private String target;
 
   // The env variables that are needed for running WIT
