@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -12,9 +12,9 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
-import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -53,8 +53,9 @@ public class Domain {
       .and().with().pollInterval(3, SECONDS)
       .atMost(12, SECONDS).await();
 
+
   private static final CustomObjectsApi customObjectsApi = new CustomObjectsApi();
-  private static final ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
+  private static final ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
 
   /**
    * Check if the Domain CRD exists.
@@ -64,10 +65,10 @@ public class Domain {
    */
   public static boolean doesCrdExist() throws ApiException {
     try {
-      V1beta1CustomResourceDefinition domainBetaCrd
-          = apiextensionsV1beta1Api.readCustomResourceDefinition(
-          "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainBetaCrd, "Domain CRD is null");
+      V1CustomResourceDefinition domainCrd
+          = apiextensionsV1Api.readCustomResourceDefinition(
+             "domains.weblogic.oracle", null);
+      assertNotNull(domainCrd, "Domain CRD is null");
       return true;
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
