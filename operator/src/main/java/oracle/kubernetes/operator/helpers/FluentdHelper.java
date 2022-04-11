@@ -99,6 +99,30 @@ public class FluentdHelper {
       fluentdConfBuilder.append("        keep_time_key true\n");
       fluentdConfBuilder.append("      </parse>\n");
       fluentdConfBuilder.append("    </source>\n");
+
+      if (fluentdSpecification.getWatchIntrospectorLogs()) {
+
+        fluentdConfBuilder.append("    <source>\n");
+        fluentdConfBuilder.append("      @type tail\n");
+        fluentdConfBuilder.append("      path \"#{ENV['INTROSPECTOR_OUT_PATH']}\"\n");
+        fluentdConfBuilder.append("      pos_file /tmp/introspector.log.pos\n");
+        fluentdConfBuilder.append("      read_from_head true\n");
+        fluentdConfBuilder.append("      tag \"#{ENV['DOMAIN_UID']}-introspector\"\n");
+        fluentdConfBuilder.append("      # multiline_flush_interval 20s\n");
+        fluentdConfBuilder.append("      <parse>\n");
+        fluentdConfBuilder.append("        @type multiline\n");
+        fluentdConfBuilder.append("        format_firstline /@\\[/\n");
+        fluentdConfBuilder.append("        format1 /^@\\[(?<timestamp>.*)\\]\\["
+                + "(?<filesource>.*?)\\]\\[(?<level>.*?)\\](?<message>.*)/\n");
+        fluentdConfBuilder.append("        # use the timestamp field in the message as the timestamp\n");
+        fluentdConfBuilder.append("        # instead of the time the message was actually read\n");
+        fluentdConfBuilder.append("        time_key timestamp\n");
+        fluentdConfBuilder.append("        keep_time_key true\n");
+        fluentdConfBuilder.append("      </parse>\n");
+        fluentdConfBuilder.append("     </source>\n");
+
+      }
+
       fluentdConfBuilder.append("    <match **>\n");
       fluentdConfBuilder.append("      @type elasticsearch\n");
       fluentdConfBuilder.append("      host \"#{ENV['ELASTICSEARCH_HOST']}\"\n");
@@ -109,7 +133,7 @@ public class FluentdHelper {
       fluentdConfBuilder.append("      scheme https\n");
       fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
       fluentdConfBuilder.append("      ssl_verify false\n");
-      fluentdConfBuilder.append("      suppress_type_name true");
+      fluentdConfBuilder.append("      suppress_type_name true\n");
       fluentdConfBuilder.append("      key_name timestamp\n");
       fluentdConfBuilder.append("      types timestamp:time\n");
       fluentdConfBuilder.append("      # inject the @timestamp special field (as type time) into the record\n");
