@@ -330,7 +330,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
                 .findFirst()
                 .orElse(null);
 
-        // TODO: check if verifyJobPod can be refactored and use here
         if (jobPod == null) {
           packet.remove(JOB_POD_CONTAINER_TERMINATED);
           return doContinueListOrNext(callResponse, packet, getNext());
@@ -342,7 +341,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       }
 
       private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
-
+        // if the job container (<domin uid>-introspecto) exited, then the check for pod container finished is done
         if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
           List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
 
@@ -363,21 +362,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         return getName(pod).startsWith(jobName);
       }
 
-
-      private String getJobPodContainerWaitingReason(V1Pod pod) {
-        return Optional.ofNullable(pod).map(V1Pod::getStatus)
-                .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
-                .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
-                .map(V1ContainerStateWaiting::getReason).orElse(null);
-      }
-
-      private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
-        return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
-      }
-
-      private void recordJobPodName(Packet packet, String podName) {
-        packet.put(ProcessingConstants.JOB_POD_NAME, podName);
-      }
     }
 
     // When we detect a job as ready, we add it to the packet for downstream processing.
@@ -411,6 +395,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
           if (JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
+            // The introspect container has exited, setting this so that the job will be considered finished
+            // in the WaitDomainIntrospectorJobReadyStep and proceed reading the job pod log and process the result.
             introspectContainerTerminated = true;
           }
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
