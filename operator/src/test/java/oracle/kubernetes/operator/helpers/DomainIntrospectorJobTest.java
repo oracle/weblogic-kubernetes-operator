@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -93,6 +94,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
+import static oracle.kubernetes.operator.KubernetesConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -537,6 +539,44 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                     .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
+
+  @Test
+  void whenJobCreatedWithFluentd_mustHaveFluentdContainerAndMountPathIsCorrect() {
+    DomainConfiguratorFactory.forDomain(domain)
+            .withFluentdConfiguration(true, "elastic-cred", null);
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+
+    V1Container fluentdContainer = Optional.ofNullable(getCreatedPodSpecContainers(jobs))
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .filter(c -> c.getName().equals(FLUENTD_CONTAINER_NAME))
+            .findFirst()
+            .orElse(null);
+
+    assertThat(fluentdContainer, notNullValue());
+
+    assertThat(Optional.ofNullable(fluentdContainer)
+            .map(V1Container::getVolumeMounts)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .filter(c -> "/fluentd/etc/fluentd.conf".equals(c.getMountPath())), notNullValue());
+  }
+
+  @Test
+  void whenJobCreatedWithFluentd_completionTerminalStepRun() {
+    String jobName = UID + "-introspector";
+    DomainConfiguratorFactory.forDomain(domain)
+            .withFluentdConfiguration(true, "elastic-cred", null);
+    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
+    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
+            true, false);
+    testSupport.defineResources(jobPod);
+
+    assertThat(terminalStep.wasRun(), is(false));
+
+  }
+
 
   @Test
   void whenNewSuccessfulJobExists_readOldPodLogWithoutCreatingNewJob() {
