@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -367,12 +368,14 @@ public class ImageUtils {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
     env.put("WLSIMG_CACHEDIR", cacheDir);
 
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a 
-    // different JDK for these tests and for image tool. This is expected 
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a
+    // different JDK for these tests and for image tool. This is expected
     // to no longer be necessary for JDK 11.0.8 or the next JDK 14 versions.
     if (WIT_JAVA_HOME != null) {
       env.put("JAVA_HOME", WIT_JAVA_HOME);
     }
+
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
@@ -392,6 +395,7 @@ public class ImageUtils {
               .wdtModelOnly(modelType)
               .wdtOperation("CREATE")
               .wdtVersion(WDT_VERSION)
+              .target(witTarget)
               .env(env)
               .redirect(true));
     } else {
@@ -406,6 +410,7 @@ public class ImageUtils {
           .modelArchiveFiles(archiveList)
           .wdtModelOnly(modelType)
           .wdtVersion(WDT_VERSION)
+          .target(witTarget)
           .env(env)
           .redirect(true);
 
@@ -418,6 +423,9 @@ public class ImageUtils {
         }
 
         witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
+      }
+      if (OKD) {
+        witParams.target("OpenShift");
       }
       result = createImage(witParams);
     }

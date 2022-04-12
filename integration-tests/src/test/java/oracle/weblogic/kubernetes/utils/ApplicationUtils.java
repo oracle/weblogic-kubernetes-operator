@@ -17,8 +17,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -120,6 +120,27 @@ public class ApplicationUtils {
       String username,
       String password
   ) {
+    return checkAppIsActive(host + ":" + port, headers, application, target, username, password);
+  }
+
+  /**
+   * Check if the the application is active for a given weblogic target.
+   * @param hostAndPort String containing host:port or routename for OKD cluster
+   * @param headers extra header info to pass to the REST url
+   * @param application name of the application
+   * @param target the weblogic target for the application
+   * @param username username to log into the system
+   * @param password password for the username
+   * @return true if app is active
+   */
+  public static boolean checkAppIsActive(
+      String hostAndPort,
+      String headers,
+      String application,
+      String target,
+      String username,
+      String password
+  ) {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -v --show-error --noproxy '*' "
@@ -128,22 +149,15 @@ public class ApplicationUtils {
         + "-H Content-Type:application/json "
         + " -d \"{ target: '" + target + "' }\" "
         + " -X POST "
-        + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
-        + application + "/getState", host, port);
+        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
+        + application + "/getState", hostAndPort);
 
     logger.info("curl command {0}", curlString);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Application {0} to be active "
-                    + "(elapsed time {1} ms, remaining time {2} ms)",
-                application,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("STATE_ACTIVE");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() -> () -> exec(curlString, true).stdout().contains("STATE_ACTIVE")),
+        logger,
+        "Application {0} to be active",
+        application);
     return true;
   }
 
