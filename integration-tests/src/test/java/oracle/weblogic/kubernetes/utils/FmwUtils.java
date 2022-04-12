@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -210,8 +211,7 @@ public class FmwUtils {
     //check access to the em console: http://hostname:port/em
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
-        "Could not get the default external service node port");
+    assertNotEquals(-1, nodePort, "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
         + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
@@ -233,8 +233,7 @@ public class FmwUtils {
     String adminServerPodName = domainUid + "-admin-server";
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
-        "Could not get the default external service node port");
+    assertNotEquals(-1, nodePort, "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
 
     if (adminSvcExtHost == null) {

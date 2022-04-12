@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -575,7 +576,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(namespace, podName,
             null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+    assertEquals(0, execResult.exitValue(), "Could not create the Leasing Table");
   }
 
   /**
@@ -630,7 +631,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
         true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
         String.format("Failed to change permissions for file %s in pod %s", sqlplusLocation, dbPodName));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", sqlplusLocation,
             execResult.stderr(), execResult.stdout()));
     getLogger().info("File permissions changed inside pod");
@@ -640,7 +641,7 @@ public class DbUtils {
     execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, dbPodName,
             null, true, "bin/bash", "-c", cmd));
-    assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
+    assertEquals(0, execResult.exitValue(), "Could not update the RCU schema password");
 
   }
 
