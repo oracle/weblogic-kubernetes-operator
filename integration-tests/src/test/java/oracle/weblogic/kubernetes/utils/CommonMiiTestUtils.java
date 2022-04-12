@@ -1072,6 +1072,7 @@ public class CommonMiiTestUtils {
    * Update domainRestartVersion to trigger a rolling restart of server pods.
    * Make sure all the server pods are re-started in a rolling fashion.
    * Check the validity of new credentials by accessing WebLogic RESTful Service.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param domainNamespace namespace where the domain is
    * @param domainUid domain uid for which WebLogic Admin credential is being changed
    * @param adminServerPodName pod name of admin server
@@ -1080,9 +1081,8 @@ public class CommonMiiTestUtils {
    * @param args arguments to determine appending suffix to managed server pod name or not.
    *             Append suffix if it's set. Otherwise do not append.
    */
-  public static void verifyUpdateWebLogicCredential(String domainNamespace, String domainUid,
+  public static void verifyUpdateWebLogicCredential(String adminSvcExtHost, String domainNamespace, String domainUid,
        String adminServerPodName, String managedServerPrefix, int replicaCount, String... args) {
-
     final boolean VALID = true;
     final boolean INVALID = false;
 
@@ -1103,9 +1103,9 @@ public class CommonMiiTestUtils {
     }
 
     getLogger().info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        VALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
+                      ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID, args);
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         INVALID, args);
 
     // create a new secret for admin credentials
@@ -1134,9 +1134,9 @@ public class CommonMiiTestUtils {
 
     // check if the new credentials are valid and the old credentials are not valid any more
     getLogger().info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        INVALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
+                      ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID, args);
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         VALID, args);
 
     getLogger().info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",

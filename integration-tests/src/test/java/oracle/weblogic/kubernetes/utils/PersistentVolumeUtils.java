@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -23,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.jetbrains.annotations.NotNull;
 
 import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
@@ -43,7 +46,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolume.doesPVExist;
 import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.doesPVCExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -83,27 +85,21 @@ public class PersistentVolumeUtils {
         "PersistentVolumeClaim creation failed");
 
     // check the persistent volume and persistent volume claim exist
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume {0} exists "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                pvName,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
-            String.format("pvExists failed with ApiException when checking pv %s", pvName)));
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+          String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume claim {0} exists in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                pvcName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
-            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
-                pvcName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
+          String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+            pvcName, namespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        namespace);
   }
 
   /**
@@ -122,7 +118,7 @@ public class PersistentVolumeUtils {
                                           String labelSelector,
                                           String namespace, String storageClassName, Path pvHostPath) {
     LoggingFacade logger = getLogger();
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       logger.info("Creating PV directory {0}", pvHostPath);
       assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
       assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
@@ -134,6 +130,13 @@ public class PersistentVolumeUtils {
               .path(FSS_DIR)
               .server(NFS_SERVER)
               .readOnly(false));
+    } else if (OKD) {
+      v1pv.getSpec()
+          .storageClassName("okd-nfsmnt")
+          .nfs(new V1NFSVolumeSource()
+              .path(PV_ROOT)
+              .server(NFS_SERVER)
+              .readOnly(false));
     } else {
       v1pv.getSpec()
           .storageClassName(storageClassName)
@@ -143,6 +146,9 @@ public class PersistentVolumeUtils {
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
+    } else if (OKD) {
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
     } else {
       v1pvc.getSpec()
           .storageClassName(storageClassName);
@@ -158,26 +164,19 @@ public class PersistentVolumeUtils {
   public static void createPV(String pvName, String domainUid, String className) {
 
     LoggingFacade logger = getLogger();
+
     logger.info("deleting persistent volume pvName {0} if it exists", pvName);
     deletePersistentVolume(pvName);
     testUntil(
         assertDoesNotThrow(() -> pvNotExists(pvName, null),
             String.format("pvNotExists failedfor pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
+
     logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
     if (!OKE_CLUSTER && !OKD) {
-      try {
-        pvHostPath = Files.createDirectories(Paths.get(
-            PV_ROOT, className, pvName));
-        logger.info("Creating PV directory host path {0}", pvHostPath);
-        deleteDirectory(pvHostPath.toFile());
-        createDirectories(pvHostPath);
-      } catch (IOException ioex) {
-        logger.severe(ioex.getMessage());
-        fail("Create persistent volume host path failed");
-      }
+      pvHostPath = createPVHostPathDir(pvName, className);
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -191,6 +190,13 @@ public class PersistentVolumeUtils {
             .name(pvName)
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
+    setVolumeSource(pvHostPath, v1pv);
+    boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
+        "Failed to create persistent volume");
+    assertTrue(success, "PersistentVolume creation failed");
+  }
+
+  private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
     if (OKE_CLUSTER) {
       v1pv.getSpec()
           .storageClassName("oci-fss")
@@ -211,9 +217,23 @@ public class PersistentVolumeUtils {
           .hostPath(new V1HostPathVolumeSource()
               .path(pvHostPath.toString()));
     }
-    boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
-        "Failed to create persistent volume");
-    assertTrue(success, "PersistentVolume creation failed");
+  }
+
+  @NotNull
+  private static Path createPVHostPathDir(String pvName, String className) {
+    Path pvHostPath = null;
+    LoggingFacade logger = getLogger();
+    try {
+      pvHostPath = Files.createDirectories(Paths.get(
+          PV_ROOT, className, pvName));
+      logger.info("Creating PV directory host path {0}", pvHostPath);
+      deleteDirectory(pvHostPath.toFile());
+      createDirectories(pvHostPath);
+    } catch (IOException ioex) {
+      logger.severe(ioex.getMessage());
+      fail("Create persistent volume host path failed");
+    }
+    return pvHostPath;
   }
 
   /**
@@ -287,6 +307,76 @@ public class PersistentVolumeUtils {
     return container;
   }
 
+  /**
+   * Create a persistent volume and persistent volume claim.
+   * @param nameSuffix unique nameSuffix for pv and pvc to create
+   * @param labels pv and pvc labels
+   * @param namespace pv and pvc namespace
+   * @param className - class name
+   * @throws IOException when creating pv path fails
+   */
+  public static void createPvAndPvc(String nameSuffix, String namespace,
+                                    HashMap<String,String> labels, String className)
+      throws IOException {
+    LoggingFacade logger = getLogger();
+    logger.info("creating persistent volume and persistent volume claim");
+    // create persistent volume and persistent volume claims
+    // when tests are running in local box the PV directories need to exist
+    Path pvHostPath = null;
+    if (!OKE_CLUSTER && !OKD) {
+      pvHostPath = createPVHostPathDir("pv-test" + nameSuffix, className);
+    }
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("10Gi"))
+            .persistentVolumeReclaimPolicy("Retain")
+            .accessModes(Arrays.asList("ReadWriteMany")))
+        .metadata(new V1ObjectMeta()
+            .name("pv-test" + nameSuffix)
+            .namespace(namespace));
+    setVolumeSource(pvHostPath, v1pv);
+    v1pv.getSpec().storageClassName(nameSuffix);
+    boolean hasLabels = false;
+    String labelSelector = null;
+    if (labels != null || !labels.isEmpty()) {
+      hasLabels = true;
+      v1pv.getMetadata().setLabels(labels);
+      labelSelector = labels.entrySet()
+          .stream()
+          .map(e -> e.getKey() + "="
+              + e.getValue())
+          .collect(Collectors.joining(","));
+    }
+
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .volumeName("pv-test" + nameSuffix)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("10Gi"))))
+        .metadata(new V1ObjectMeta()
+            .name("pvc-" + nameSuffix)
+            .namespace(namespace));
+    if (hasLabels) {
+      v1pvc.getMetadata().setLabels(labels);
+    }
+    if (OKE_CLUSTER) {
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
+    } else if (OKD) {
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
+    } else {
+      v1pvc.getSpec()
+          .storageClassName(nameSuffix);
+    }
+
+    createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
+  }
 
   /**
    * Delete PV and PVC and verify that they are deleted.
@@ -318,19 +408,14 @@ public class PersistentVolumeUtils {
   /**
    * Get a unique name for pv or pvc with a supplied prefix.
    * @param prefix prefix for pv or pvc name
-   * @param suffix suffix for pv or pvc name
    * @return full pv or pvc name
    */
-  public static String getUniquePvOrPvcName(String prefix, String... suffix) {
+  public static String getUniquePvOrPvcName(String prefix) {
     char[] name = new char[6];
     for (int i = 0; i < name.length; i++) {
       name[i] = (char) (random.nextInt(25) + (int) 'a');
     }
     String pvOrPvcName = prefix + new String(name);
-    for (String s : suffix) {
-      pvOrPvcName += s;
-    }
-
     getLogger().info("Creating unique pv|pvc name {0}", pvOrPvcName);
     return pvOrPvcName;
   }
