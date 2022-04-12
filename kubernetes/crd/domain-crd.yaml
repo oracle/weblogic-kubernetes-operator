@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6e017b7ec16c3fd35780067a6e4766337ae5abc8eca1f98e1443b53434c393ec
+    weblogic.sha256: 5c0c0a28e6ca15d364e1c2649b337864af72e0935859b2119b5304dce37a53f7
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -374,7 +374,12 @@ spec:
                       custom fluentd configuration.
                     type: string
                   elasticSearchCredentials:
-                    description: Fluentd elastic search credentials
+                    description: 'Fluentd elastic search credentials. A Kubernetes
+                      secret in the same namespace of the domain. It must contains
+                      4 keys: elasticsearchhost - ElasticSearch Host Service Address,
+                      elasticsearchport - Elastic Search Service Port, elasticsearchuser
+                      - Elastic Search Service User Name, elasticsearchpassword -
+                      Elastic Search User Password'
                     type: string
                   resources:
                     description: Memory and CPU minimum requirements and limits for

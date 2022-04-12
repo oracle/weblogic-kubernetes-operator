@@ -49,6 +49,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
@@ -569,7 +570,6 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
-        LOGGER.info("DEBUG: applying ReadDomainIntrospectorPodStep ");
         if (getCurrentIntrospectFailureRetryCount() > 0) {
           reportIntrospectJobFailure();
         }
@@ -599,11 +599,18 @@ public class JobHelper {
       }
     }
 
-    private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
-
+    private boolean addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+      ;
       if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
         List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
-
+        for (V1ContainerStatus containerStatus : containerStatuses) {
+          if (containerStatus.getName().equals(FLUENTD_CONTAINER_NAME)
+                  && containerStatus.getState().getTerminated() != null) {
+            LOGGER.severe(FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                    jobPod.getMetadata().getNamespace());
+            return false;
+          }
+        }
         for (V1ContainerStatus containerStatus : containerStatuses) {
           // Only set done if the exit code is 0 and terminated, otherwise it is error
           if (containerStatus.getName().equals(jobName) && containerStatus.getState().getTerminated() != null
@@ -612,9 +619,8 @@ public class JobHelper {
           }
         }
       }
+      return true;
     }
-
-
 
     private class PodListResponseStep extends ResponseStep<V1PodList> {
 
@@ -638,8 +644,9 @@ public class JobHelper {
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
-          addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
-
+          if (!addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet)) {
+            return doNext(cleanUpAndReintrospect(getNext()), packet);
+          }
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }

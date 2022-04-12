@@ -59,7 +59,11 @@ public class FluentdSpecification {
   @Description("Volume mounts for fluentd container")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  @Description("Fluentd elastic search credentials")
+  @Description("Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain."
+      + " It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address,"
+      + " elasticsearchport - Elastic Search Service Port,"
+      + " elasticsearchuser - Elastic Search Service User Name,"
+      + " elasticsearchpassword - Elastic Search User Password")
   private String elasticSearchCredentials;
 
   @Description("Fluentd will watch introspector logs")

@@ -1351,6 +1351,12 @@ public class Domain implements KubernetesObject {
               "spec.configuration.opss.walletPasswordSecret"));
         }
       }
+
+      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
+        failures.add(DomainValidationMessages.missingRequiredSecret(
+            "spec.fluentdSpecification.elasticSearchCredentials"));
+      }
+
     }
 
     private List<V1LocalObjectReference> getImagePullSecrets() {

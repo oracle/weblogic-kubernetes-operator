@@ -236,7 +236,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
     private final OffsetDateTime jobCreationTime;
-    private boolean introspectContainerTerminated = false;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);
@@ -249,7 +248,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // A job is considered ready once it has either successfully completed, or been marked as failed.
     @Override
     boolean isReady(V1Job job) {
-      return isComplete(job) || isFailed(job) || introspectContainerTerminated;
+      return isComplete(job) || isFailed(job);
     }
 
     @Override
@@ -391,12 +390,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-          if (JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
-            // The introspect container has exited, setting this so that the job will be considered finished
-            // in the WaitDomainIntrospectorJobReadyStep and proceed reading the job pod log and process the result.
-            introspectContainerTerminated = true;
-          }
-          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+
+          // The introspect container has exited, setting this so that the job will be considered finished
+          // in the WaitDomainIntrospectorJobReadyStep and proceed reading the job pod log and process the result.
+
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()
+                || JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }
