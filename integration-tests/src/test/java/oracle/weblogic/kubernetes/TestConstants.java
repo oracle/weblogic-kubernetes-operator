@@ -62,12 +62,12 @@ public interface TestConstants {
   public static final String OCIR_SECRET_NAME = "ocir-secret";
 
   // ocir default image values, these values will be used while running locally
-  public static final String OCIR_WEBLOGIC_IMAGE_NAME = "weblogick8s/test-images/weblogic";
-  public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
-  public static final String OCIR_FMWINFRA_IMAGE_NAME = "weblogick8s/test-images/fmw-infrastructure";
-  public static final String OCIR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
-  public static final String OCIR_DB_IMAGE_NAME = "weblogick8s/test-images/database/enterprise";
-  public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
+  public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
+  public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "12.2.1.4";
+  public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/fmw-infrastructure";
+  public static final String FMWINFRA_IMAGE_TAG_DEFAULT = "12.2.1.4";
+  public static final String DB_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/database/enterprise";
+  public static final String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
 
   // repository to push the domain images, for kind push to kind repo
   // for others push to REPO_REGISTRY if REPO_REGISTRY env var is provided,
@@ -84,24 +84,24 @@ public interface TestConstants {
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
   public static final String WEBLOGIC_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name", OCIR_WEBLOGIC_IMAGE_NAME);
+      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
   public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
-        OCIR_WEBLOGIC_IMAGE_TAG);
+       WEBLOGIC_IMAGE_TAG_DEFAULT);
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
   public static final String FMWINFRA_IMAGE_NAME =
       BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.fmwinfra.image.name", 
-        OCIR_FMWINFRA_IMAGE_NAME);
+        FMWINFRA_IMAGE_NAME_DEFAULT);
   public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag", 
-        OCIR_FMWINFRA_IMAGE_TAG);
+        FMWINFRA_IMAGE_TAG_DEFAULT);
 
   // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
   // if base images repo is OCIR use OCIR default image values
   public static final String DB_IMAGE_NAME =
       BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.db.image.name",
-      OCIR_DB_IMAGE_NAME);
-  public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", OCIR_DB_IMAGE_TAG);
+      DB_IMAGE_NAME_DEFAULT);
+  public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
   // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
   // For example, image container-registry.oracle.com/middleware/weblogic:12.2.1.4 will be pushed/used as
