@@ -21,8 +21,11 @@ The following prerequisites must be met prior to running the create domain scrip
 
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
-  For details on how to obtain or create the image, refer to
-  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
+
+  {{% notice warning %}}
+  These GA images are suitable for demonstration purposes _only_; they are **not acceptable for production use**. In production, you must use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option.   For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
+  {{% /notice %}}
+
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain
   home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples
@@ -129,7 +132,7 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.    **NOTE**: General Availability (GA) images are suitable for demonstration purposes _only_; they are **not acceptable for production use**. In production, you must use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |

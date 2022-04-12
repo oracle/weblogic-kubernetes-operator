@@ -128,7 +128,7 @@ The diagram below shows the components inside the containers running WebLogic Se
 
 {{< img "Inside a container" "images/inside-a-container.png" >}}
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}).
 {{% notice note %}}
 During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}

@@ -62,11 +62,16 @@ following limitations currently exist for FMW Infrastructure domains:
 #### Obtaining the FMW Infrastructure image
 
 The WebLogic Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
-The FMW Infrastructure 12.2.1.4.0 images do not require patches.
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already
+has this patch applied. The FMW Infrastructure 12.2.1.4.0 images do not require this patch. For detailed instructions
+on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+
+{{% notice warning %}}
+These GA images are suitable for demonstration purposes _only_; they are **not acceptable for production use**. GA images **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using _only_ images with the latest set of recommended patches applied, such as Critical Patch Updates images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the `--recommendedPatches` option. You can obtain a production-ready images with the latest patches from the [Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images.md" >}}) or [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}).
+{{% /notice %}}
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
-using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
+using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.
 
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.

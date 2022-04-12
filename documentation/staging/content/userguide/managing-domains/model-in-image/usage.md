@@ -29,7 +29,15 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains.
+
+  {{% notice warning %}}
+  The example base images are GA images that are suitable for demonstration purposes _only_; they are **not acceptable for production use**. GA images **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using _only_ images with the latest set of recommended patches applied, such as Critical Patch Updates images provided quarterly on OCR or custom generated images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option. You can obtain a production-ready images with the latest patches from the [Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images.md" >}}) or [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}).
+  {{% /notice %}}
+
+
+
+  For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 - Or, you can manually build your own base image, as described in [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
