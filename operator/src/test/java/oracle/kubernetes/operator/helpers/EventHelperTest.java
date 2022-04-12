@@ -161,7 +161,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreated() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
 
     assertThat("Found DOMAIN_FAILED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILED_EVENT), is(true));
@@ -169,7 +169,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test this failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test this failure", null));
 
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -181,9 +181,9 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDTopologyMismatchTwice_domainFailedEventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
     dispatchAddedEventWatches();
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).inNamespace(NS).withCount(2));
   }

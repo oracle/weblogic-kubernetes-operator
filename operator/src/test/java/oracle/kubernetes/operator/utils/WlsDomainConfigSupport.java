@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
-  private static final Integer DEFAULT_LISTEN_PORT = 7001;
+  public static final Integer DEFAULT_LISTEN_PORT = 7001;
   private final String domain;
   private String adminServerName;
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();

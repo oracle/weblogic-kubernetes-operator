@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,14 +10,26 @@ import oracle.kubernetes.operator.work.Step;
 
 abstract class RetryStrategyStub implements RetryStrategy {
   private Step conflictStep;
+  private int numRetriesLeft = 0;
 
   Step getConflictStep() {
     return conflictStep;
   }
 
+  @SuppressWarnings("SameParameterValue")
+  void setNumRetriesLeft(int retriesLeft) {
+    this.numRetriesLeft = retriesLeft;
+  }
+
   @Override
   public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
     this.conflictStep = conflictStep;
-    return null;
+    if (conflictStep == null || numRetriesLeft-- <= 0) {
+      return null;
+    } else {
+      NextAction next = new NextAction();
+      next.invoke(conflictStep, packet);
+      return next;
+    }
   }
 }
