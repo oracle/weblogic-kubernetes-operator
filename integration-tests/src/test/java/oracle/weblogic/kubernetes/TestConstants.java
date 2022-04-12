@@ -54,8 +54,9 @@ public interface TestConstants {
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
   // ocir constants
-  public static final String OCIR_DEFAULT = "phx.ocir.io";
-  public static final String OCIR_REGISTRY = getNonEmptySystemProperty("wko.it.ocir.registry", OCIR_DEFAULT);
+  public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
+  public static final String OCIR_REGISTRY = 
+      getNonEmptySystemProperty("wko.it.ocir.registry", BASE_IMAGES_REPO_DEFAULT);
   public static final String OCIR_USERNAME = System.getenv("OCIR_USERNAME");
   public static final String OCIR_PASSWORD = System.getenv("OCIR_PASSWORD");
   public static final String OCIR_EMAIL = System.getenv("OCIR_EMAIL");
@@ -78,7 +79,8 @@ public interface TestConstants {
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
-  public static final String BASE_IMAGES_REPO = getNonEmptySystemProperty("wko.it.base.images.repo", OCIR_DEFAULT);
+  public static final String BASE_IMAGES_REPO = 
+      getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
   public static final String BASE_IMAGES_REPO_SECRET = OCIR_SECRET_NAME;
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
@@ -148,7 +150,7 @@ public interface TestConstants {
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "4.0.17";
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.1.1";
-  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
+  public static final String NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
@@ -165,14 +167,14 @@ public interface TestConstants {
   public static final String VOYAGER_CHART_VERSION = "12.0.0";
 
   // Apache constants
-  public static final String OCIR_APACHE_IMAGE_NAME = "weblogick8s/oracle/apache";
-  public static final String OCIR_APACHE_IMAGE_TAG = "12.2.1.4";
+  public static final String APACHE_IMAGE_NAME_DEFAULT = "weblogick8s/oracle/apache";
+  public static final String APACHE_IMAGE_TAG_DEFAULT = "12.2.1.4";
 
   // Get APACHE_IMAGE_NAME/APACHE_IMAGE_TAG from env var, if it is not provided use OCIR default image values
   public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/"
-      + getNonEmptySystemProperty("wko.it.apache.image.name", OCIR_APACHE_IMAGE_NAME);
+      + getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
   public static final String APACHE_IMAGE_TAG =
-      getNonEmptySystemProperty("wko.it.apache.image.tag", OCIR_APACHE_IMAGE_TAG);
+      getNonEmptySystemProperty("wko.it.apache.image.tag", APACHE_IMAGE_TAG_DEFAULT);
   public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_TAG;
   public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
   public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
