@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -34,6 +34,7 @@ public class OperatorParams {
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
   private static final String FEATURE_GATES = "featureGates";
+  private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -57,6 +58,7 @@ public class OperatorParams {
   private int domainPresenceFailureRetryMaxCount = 5;
   private int domainPresenceFailureRetrySeconds = 10;
   private String featureGates;
+  private String kubernetesPlatform;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -175,6 +177,15 @@ public class OperatorParams {
     return featureGates;
   }
 
+  public OperatorParams kubernetesPlatform(String kubernetesPlatform) {
+    this.kubernetesPlatform = kubernetesPlatform;
+    return this;
+  }
+
+  public String getKubernetesPlatform() {
+    return kubernetesPlatform;
+  }
+
   /**
    * Loads Helm values into a value map.
    * @return Map of values
@@ -225,6 +236,9 @@ public class OperatorParams {
     }
     if (domainPresenceFailureRetrySeconds > 0) {
       values.put(DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS, domainPresenceFailureRetrySeconds);
+    }
+    if (kubernetesPlatform != null) {
+      values.put(KUBERNETES_PLATFORM, kubernetesPlatform);
     }
 
     values.values().removeIf(Objects::isNull);

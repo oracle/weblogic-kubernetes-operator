@@ -24,7 +24,6 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -32,6 +31,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDo
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -52,6 +52,7 @@ public class Domain {
   private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(12, SECONDS).await();
+
 
   private static final CustomObjectsApi customObjectsApi = new CustomObjectsApi();
   private static final ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
@@ -167,33 +168,34 @@ public class Domain {
    * @param nodePort the node port that needs to be tested for access
    * @param userName WebLogic administration server user name
    * @param password WebLogic administration server password
+   * @param routeHost For OKD - name of the route for external admin service. Can be empty for non OKD env
    * @return true if login to WebLogic administration console is successful
    * @throws IOException when connection to console fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String routeHost)
       throws IOException {
 
     LoggingFacade logger = getLogger();
 
+    String hostAndPort = getHostAndPort(routeHost, nodePort);
     String consoleUrl = new StringBuffer()
         .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(nodePort)
+        .append(hostAndPort)
         .append("/console/login/LoginForm.jsp").toString();
 
-    getLogger().info("Accessing WebLogic console with url {0}", consoleUrl);
+    logger.info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
+    //final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
     final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
         "connection to the WebLogic admin console failed");
     HtmlForm form = loginPage.getFormByName("loginData");
     form.getInputByName("j_username").type(userName);
     form.getInputByName("j_password").type(password);
     HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-    getLogger().info("Clicking login button");
+    logger.info("Clicking login button");
     HtmlPage home = submit.click();
     assertTrue(home.asNormalizedText().contains("Persistent Stores"), "Home does not contain Persistent Stores text");
-    getLogger().info("Console login passed");
+    logger.info("Console login passed");
     return true;
   }
 

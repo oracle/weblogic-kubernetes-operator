@@ -47,6 +47,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -54,11 +55,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -121,6 +125,11 @@ public class DbUtils {
   public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
       int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
+
+    if (OKD) {
+      addSccToDBSvcAccount("default", dbNamespace);
+    }
+
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
 
@@ -232,15 +241,12 @@ public class DbUtils {
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Oracle DB to be ready in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                dbNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
-            "oracleDBService podReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
+          "oracleDBService podReady failed with ApiException"),
+        logger,
+        "Oracle DB to be ready in namespace {0}",
+        dbNamespace);
 
     // check if DB is ready to be used by searching pod log
     logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
@@ -570,7 +576,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(namespace, podName,
             null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+    assertEquals(0, execResult.exitValue(), "Could not create the Leasing Table");
   }
 
   /**
@@ -625,7 +631,7 @@ public class DbUtils {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
         true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
         String.format("Failed to change permissions for file %s in pod %s", sqlplusLocation, dbPodName));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", sqlplusLocation,
             execResult.stderr(), execResult.stdout()));
     getLogger().info("File permissions changed inside pod");
@@ -635,7 +641,7 @@ public class DbUtils {
     execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, dbPodName,
             null, true, "bin/bash", "-c", cmd));
-    assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
+    assertEquals(0, execResult.exitValue(), "Could not update the RCU schema password");
 
   }
 

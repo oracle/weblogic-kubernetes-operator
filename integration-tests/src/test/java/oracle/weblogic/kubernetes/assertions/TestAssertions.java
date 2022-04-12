@@ -438,7 +438,26 @@ public class TestAssertions {
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+    return Domain.adminNodePortAccessible(nodePort, userName, password, null);
+  }
+
+  /**
+   * Check if a admin server pod admin node port is accessible.
+   *
+   * @param nodePort the node port of the WebLogic administration server service
+   * @param userName user name to access WebLogic administration server
+   * @param password password to access WebLogic administration server
+   * @return true if the WebLogic administration service node port is accessible otherwise false
+   * @throws java.io.IOException when connection to WebLogic administration server fails
+   */
+  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName,
+                                                          String password, String... routeHost)
+      throws IOException {
+    if (routeHost.length == 0) {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
+    } else {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, routeHost[0]);
+    }
   }
 
   /**
