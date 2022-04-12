@@ -73,8 +73,8 @@ Successful output will look like the following:
 You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
 
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
-  - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.
-  - Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
+  - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image.
+  - Ensure that Docker is running.  Find and then pull the WebLogic 12.2.1.4 install image:
      ```shell
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```

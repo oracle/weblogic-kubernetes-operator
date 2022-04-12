@@ -322,7 +322,7 @@ the latest security patches for Oracle Linux and Java,
 and do _not_ include the latest security patches for WebLogic Server.
 Oracle strongly recommends using images with the latest security patches,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
-See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
 
 #### Additional references
