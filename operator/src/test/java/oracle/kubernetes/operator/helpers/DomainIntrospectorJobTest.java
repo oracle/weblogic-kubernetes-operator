@@ -572,11 +572,26 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
             true, false);
     testSupport.defineResources(jobPod);
+    List<V1Job> jobs = runStepsAndGetJobs();
 
     assertThat(terminalStep.wasRun(), is(false));
 
   }
 
+  @Test
+  void whenJobCreatedWithFluentdCrashed_completionTerminalStepNotRun() {
+    String jobName = UID + "-introspector";
+    DomainConfiguratorFactory.forDomain(domain)
+            .withFluentdConfiguration(true, "elastic-cred", null);
+    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
+    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
+            true, true);
+    testSupport.defineResources(jobPod);
+    List<V1Job> jobs = runStepsAndGetJobs();
+
+    assertThat(terminalStep.wasRun(), is(false));
+
+  }
 
   @Test
   void whenNewSuccessfulJobExists_readOldPodLogWithoutCreatingNewJob() {

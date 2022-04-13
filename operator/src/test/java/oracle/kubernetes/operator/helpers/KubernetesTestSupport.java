@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateRunning;
 import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
@@ -49,6 +50,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
@@ -328,6 +330,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     Map<String, String> labels = new HashMap<>();
     labels.put(JOBNAME_LABEL, jobName);
     jobPod.getMetadata().setLabels(labels);
+    jobPod.spec(new V1PodSpec());
+    jobPod.getSpec().addContainersItem(new V1Container().name(FLUENTD_CONTAINER_NAME));
+    jobPod.getSpec().addContainersItem(new V1Container().name(jobName));
     V1PodStatus podStatus = new V1PodStatus();
     V1ContainerState jobContainerState = new V1ContainerState();
     if (terminateJobContainer) {

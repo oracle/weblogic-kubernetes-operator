@@ -43,8 +43,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_TERMINATED_MARKER;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
@@ -327,7 +327,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
                 .orElse(null);
 
         if (jobPod == null) {
-          packet.remove(JOB_POD_CONTAINER_TERMINATED);
+          packet.remove(JOB_POD_INTROSPECT_CONTAINER_TERMINATED);
           return doContinueListOrNext(callResponse, packet, getNext());
         } else {
           addContainerTerminatedMarkerToPacket(jobPod, jobName, packet);
@@ -344,7 +344,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           for (V1ContainerStatus containerStatus : containerStatuses) {
             if (containerStatus.getName().equals(jobName)
                     && containerStatus.getState().getTerminated() != null) {
-              packet.put(JOB_POD_CONTAINER_TERMINATED, JOB_POD_CONTAINER_TERMINATED_MARKER);
+              packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
             }
           }
         }
@@ -395,7 +395,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           // in the WaitDomainIntrospectorJobReadyStep and proceed reading the job pod log and process the result.
 
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()
-                || JOB_POD_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_CONTAINER_TERMINATED))) {
+                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }
