@@ -682,26 +682,31 @@ Create ingress for accessing the application deployed in the cluster and to acce
 $ cat ingress.yaml
 ```
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: sample-nginx-ingress-pathrouting
   namespace: sample-domain1-ns
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
   - host:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: sample-domain1-cluster-cluster-1
-          servicePort: 8001
+          service:
+            name: sample-domain1-cluster-cluster-1
+            port: 
+              number: 8001
       - path: /console
+        pathType: Prefix
         backend:
-          serviceName: sample-domain1-admin-server
-          servicePort: 7001
+          service:
+            name: sample-domain1-admin-server
+            port:
+              number: 7001
 ```
 ```shell
 $ kubectl apply -f ingress.yaml
