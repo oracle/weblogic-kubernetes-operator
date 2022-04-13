@@ -27,6 +27,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.FluentdSpecification;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
@@ -383,6 +384,15 @@ class ItElasticLoggingFluentd {
     final String volumeName = "weblogic-domain-storage-volume";
     final String logHomeRootPath = "/scratch";
     // create the domain CR
+
+    FluentdSpecification fluentdSpecification = new FluentdSpecification();
+    fluentdSpecification.setImage(FLUENTD_IMAGE);
+    fluentdSpecification.setImagePullPolicy("IfNotPresent");
+    fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
+    fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
+            .name(volumeName)
+            .mountPath(logHomeRootPath)));
+
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -400,8 +410,7 @@ class ItElasticLoggingFluentd {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
-            .withFluentdConfiguration(true, "weblogic-credentials",
-                    FLUENTD_IMAGE, "IfNotPresent", null)
+            .withFluentdConfiguration(fluentdSpecification)
             .serverPod(new ServerPod()
                 .volumes(Arrays.asList(
                     new V1Volume()

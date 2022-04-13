@@ -148,6 +148,17 @@ public class DomainSpec {
 
   /**
    * Add fluentd specification to the domain spec.
+   * @param fluentdSpecification fluentd specification.
+   * @return domain spec.
+   */
+
+  public DomainSpec withFluentdConfiguration(FluentdSpecification fluentdSpecification) {
+    this.fluentdSpecification = fluentdSpecification;
+    return this;
+  }
+
+  /**
+   * Add fluentd specification to the domain spec.
    * @param watchIntrospectorLog watch the introspector job pod log also.
    * @param credentialName k8s secrets containing elastic search credentials.
    * @param fluentdConfig optional fluentd configuration.
