@@ -316,14 +316,14 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
 Annotations:  <none>
-API Version:  weblogic.oracle/v2
+API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
   Cluster Name:        
   Creation Timestamp:  2019-01-10T14:29:37Z
   Generation:          1
   Resource Version:    3698533
-  Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
+  Self Link:           /apis/weblogic.oracle/v8/namespaces/default/domains/domain1
   UID:                 28655979-14e4-11e9-b751-fa163e855ac8
 Spec:
   Admin Server:
