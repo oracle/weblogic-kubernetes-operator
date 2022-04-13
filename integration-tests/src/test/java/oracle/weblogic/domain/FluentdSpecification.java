@@ -122,6 +122,7 @@ public class FluentdSpecification {
               .append("resources", resources)
               .append("volumeMounts", volumeMounts)
               .append("watchIntrospectorLogs", watchIntrospectorLogs)
+              .append("elasticSearchCredentials", elasticSearchCredentials)
               .toString();
   }
 
@@ -140,6 +141,7 @@ public class FluentdSpecification {
               .append(resources, that.resources)
               .append(volumeMounts, this.volumeMounts)
               .append(watchIntrospectorLogs, this.watchIntrospectorLogs)
+              .append(elasticSearchCredentials, this.elasticSearchCredentials)
               .isEquals();
   }
 
@@ -153,6 +155,7 @@ public class FluentdSpecification {
               .append(resources)
               .append(volumeMounts)
               .append(watchIntrospectorLogs)
+              .append(elasticSearchCredentials)
               .toHashCode();
   }
 }

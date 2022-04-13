@@ -227,6 +227,7 @@ public class FluentdHelper {
     if (!hasFluentdContainerEnv(fluentdSpecification, envName)) {
       V1SecretKeySelector keySelector = new V1SecretKeySelector()
           .key(keyName)
+          .optional(false)
           .name(fluentdSpecification.getElasticSearchCredentials());
       V1EnvVarSource source = new V1EnvVarSource()
           .secretKeyRef(keySelector);
