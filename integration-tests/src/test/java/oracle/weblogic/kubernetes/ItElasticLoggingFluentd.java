@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -399,7 +400,8 @@ class ItElasticLoggingFluentd {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
-            .withFluentdConfiguration(true, "weblogic-credentials", null)
+            .withFluentdConfiguration(true, "weblogic-credentials",
+                    FLUENTD_IMAGE, "IfNotPresent", null)
             .serverPod(new ServerPod()
                 .volumes(Arrays.asList(
                     new V1Volume()

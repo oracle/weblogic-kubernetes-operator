@@ -155,6 +155,7 @@ public class DomainSpec {
    */
 
   public DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
+                                String image, String imagePullPolicy,
                                 String fluentdConfig) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
@@ -162,6 +163,8 @@ public class DomainSpec {
     fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
     fluentdSpecification.setElasticSearchCredentials(credentialName);
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
+    fluentdSpecification.setImage(image);
+    fluentdSpecification.setImagePullPolicy(imagePullPolicy);
     return this;
   }
 
