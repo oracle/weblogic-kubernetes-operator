@@ -461,10 +461,10 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        OCIR_REGISTRY = credentials("${ocir_registry_creds}")
-                        OCIR_USERNAME = credentials("${ocir_username_creds}")
-                        OCIR_PASSWORD = credentials("${ocir_password_creds}")
-                        OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
+                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_email_creds}")
                         TWO_CLUSTERS = "false"
                     }
                     steps {

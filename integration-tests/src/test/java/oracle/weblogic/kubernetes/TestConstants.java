@@ -53,14 +53,18 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
-  // ocir constants
+  // BASE_IMAGES_REPO constants
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
-  public static final String OCIR_REGISTRY = 
-      getNonEmptySystemProperty("wko.it.ocir.registry", BASE_IMAGES_REPO_DEFAULT);
-  public static final String OCIR_USERNAME = System.getenv("OCIR_USERNAME");
-  public static final String OCIR_PASSWORD = System.getenv("OCIR_PASSWORD");
-  public static final String OCIR_EMAIL = System.getenv("OCIR_EMAIL");
+
+  public static final String OCIR_REGISTRY = System.getenv("BASE_IMAGES_REPO");
+  public static final String OCIR_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
+  public static final String OCIR_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
+  public static final String OCIR_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
   public static final String OCIR_SECRET_NAME = "ocir-secret";
+
+  public static final String REPO_REGISTRY_USERNAME = System.getenv("REPO_REGISTRY_USERNAME");
+  public static final String REPO_REGISTRY_PASSWORD = System.getenv("REPO_REGISTRY_PASSWORD");
+  public static final String REPO_REGISTRY_EMAIL = System.getenv("REPO_REGISTRY_EMAIL");
 
   // ocir default image values, these values will be used while running locally
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
