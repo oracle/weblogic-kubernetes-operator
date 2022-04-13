@@ -23,7 +23,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
 
   {{% notice warning %}}
-  These GA images are suitable for demonstration purposes _only_; they are **not acceptable for production use**. In production, you must use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option.   For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
+  These General Availability (GA) images are suitable for demonstration purposes _only_; they are **not acceptable for production use**. In production, you must use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option.   For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
   {{% /notice %}}
 
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.

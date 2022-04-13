@@ -267,10 +267,10 @@ see [Container image protection]({{<relref "/security/domain-security/image-prot
 {{% notice warning %}}
 The sample scripts in this section reference base image
 `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
-This is an Oracle Container Registry (OCR) GA image
+This is an OCR General Availability (GA) image
 which **does not include** the latest security patches for WebLogic Server.
 GA images are intended for single desktop demonstration and development purposes _only_.
-For all other uses, Oracle strongly recommends using only images with the latest set of recommended patches applied,
+For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
 See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
