@@ -1,0 +1,24 @@
+---
+title: "Important terms"
+date: 2019-02-23T16:43:10-05:00
+weight: 1
+description: "Define important terms used throughout this documentation."
+---
+
+
+
+This documentation uses several important terms which are intended to have a specific meaning.
+
+|Term	| Definition |
+| --- | --- |
+| Cluster	| Because this term is ambiguous, it will be prefixed to indicate which type of cluster is meant.  A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters.  A Kubernetes cluster is a group of machines (“Nodes”) that all host Kubernetes resources, like Pods and Services, and which appear to the external user as a single entity.  If the term “cluster” is not prefixed, then it should be assumed to mean a Kubernetes cluster. |
+| Domain	| Because this term is ambiguous, it will be prefixed or suffixed to indicate which type of cluster is meant. A WebLogic domain is a group of related applications and configuration information necessary to run them with or without Kubernetes. A domain resource is a Kubernetes resource that is of custom resource type `Domain`. Domain resources are monitored by the WebLogic Kubernetes operator, and a domain resource references a WebLogic domain's WebLogic install, WebLogic domain configuration, and potentially additional Kubernetes resources that are necessary for running the WebLogic domain.  If the term “domain” is not prefixed or suffixed, then it should be assumed to mean a Kubernetes domain resource.|
+| Domain UID	| A Domain UID identifies a particular Domain resource and is a unique string that is minimally unique within the scope of a Kubernetes namespace. If the Domain UID is not explicitly set in a Domain resource's `spec.domainUID` field, then the Domain UID defaults to being the `metadata.Name` of the resource. As a convention, any resource that is associated with a particular Domain UID is typically assigned a Kubernetes label `weblogic.domainUID` that is assigned to that name. |
+| Ingress	| A Kubernetes Ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
+| Labels        | A Kubernetes Label is a name and value pair that is associated with any Kubernetes resource. A resource can have multiple arbitrary labels and labels are often used to allow resources to reference each other. For example, a Service may define a selector that matches the service to Pods with a given label. |
+| Namespace	| A Kubernetes Namespace is a named scope within a Kubernetes cluster that can be used to group together related Kubernetes resources, for example, Pods and Services. Same named resources of different types can reside in the same Kubernetes namespace, but same named resources of the same type must be targeted to different namespaces. Note that some Kubernetes resources are global in scope and cannot targeted to a specific namespace (a Kubernetes ClusterRole for example). |
+| Operator	| A Kubernetes operator is software that performs management of complex applications. The WebLogic Kubernetes operator is an operator that manages Domain resources. If the term “operator” is not prefixed or suffixed, then it should be assumed to mean a WebLogic Kubernetes operator.|
+| Pod	    | A Kubernetes Pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
+| Job	    | A Kubernetes Job is a type of controller that creates one or more Pods that run to completion to complete a specific task. |
+| Secret	| A Kubernetes Secret is a named object that can store secret information like user names, passwords, X.509 certificates, or any other arbitrary data. |
+| Service	| A Kubernetes Service exposes application network endpoints inside a Pod to other Pods, or outside the Kubernetes cluster.  A Service may also provide additional features like load balancing. The name of service is used to generate a DNS name that applications can use to access the service. Kubernetes requires that the names of some resource types, including services, follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})); for example, when the operator generates a service for you, it generates service names that are lowercase and that have their underscores `_` converted to hyphens `-`. |
