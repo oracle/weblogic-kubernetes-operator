@@ -122,7 +122,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -152,6 +151,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;

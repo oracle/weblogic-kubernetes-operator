@@ -25,6 +25,9 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 
 public class FluentdHelper {
 
+  private FluentdHelper() {
+  }
+
   /**
    * Add init container for fluentd.
    * @param fluentdSpecification  FluentdSpecification.
@@ -32,7 +35,7 @@ public class FluentdHelper {
    * @param domain  Domain.
    */
   public static void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers,
-                                         Domain domain, boolean isIntrospectorPod) {
+                                         Domain domain) {
 
     V1Container fluentdContainer = new V1Container();
     fluentdContainer
@@ -44,7 +47,7 @@ public class FluentdHelper {
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
 
-    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain, isIntrospectorPod);
+    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain);
 
     fluentdSpecification.getVolumeMounts()
         .forEach(fluentdContainer::addVolumeMountsItem);
@@ -100,7 +103,7 @@ public class FluentdHelper {
       fluentdConfBuilder.append("      </parse>\n");
       fluentdConfBuilder.append("    </source>\n");
 
-      if (fluentdSpecification.getWatchIntrospectorLogs()) {
+      if (Boolean.TRUE.equals(fluentdSpecification.getWatchIntrospectorLogs())) {
 
         fluentdConfBuilder.append("    <source>\n");
         fluentdConfBuilder.append("      @type tail\n");
@@ -161,8 +164,7 @@ public class FluentdHelper {
   }
 
   private static void addFluentdContainerEnvList(FluentdSpecification fluentdSpecification,
-                                                 V1Container fluentdContainer, Domain domain,
-                                                 boolean isIntrospectorPod) {
+                                                 V1Container fluentdContainer, Domain domain) {
 
     addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
         "elasticsearchhost");
@@ -236,15 +238,11 @@ public class FluentdHelper {
   }
 
   private static boolean hasFluentdContainerEnv(FluentdSpecification fluentdSpecification, String name) {
-    V1EnvVar var = fluentdSpecification.getEnv().stream()
-        .filter(c -> c.getName().equals("SOMETHING"))
+    V1EnvVar containeerEnv = fluentdSpecification.getEnv().stream()
+        .filter(c -> c.getName().equals(name))
         .findFirst()
         .orElse(null);
-    if (var != null) {
-      return true;
-    } else {
-      return false;
-    }
+    return containeerEnv != null;
   }
 
   private static V1VolumeMount createFluentdConfigmapVolumeMount() {

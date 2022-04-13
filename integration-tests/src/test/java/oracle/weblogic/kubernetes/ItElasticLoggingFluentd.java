@@ -13,16 +13,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -57,7 +51,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
@@ -387,7 +380,7 @@ class ItElasticLoggingFluentd {
                                               String encryptionSecretName,
                                               String miiImage) {
     final String volumeName = "weblogic-domain-storage-volume";
-    final String fluentdRootPath = "/scratch";
+    final String logHomeRootPath = "/scratch";
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -406,74 +399,23 @@ class ItElasticLoggingFluentd {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
+            .withFluentdConfiguration(true, "weblogic-credentials", null)
             .serverPod(new ServerPod()
                 .volumes(Arrays.asList(
                     new V1Volume()
                         .name(volumeName)
-                        .emptyDir(new V1EmptyDirVolumeSource()),
-                    new V1Volume()
-                        .name("fluentd-config-volume")
-                        .configMap(
-                            new V1ConfigMapVolumeSource()
-                                .defaultMode(420)
-                                .name("fluentd-config"))))
+                        .emptyDir(new V1EmptyDirVolumeSource())))
                 .volumeMounts(Arrays.asList(
-                    new V1VolumeMount()
-                        .name(volumeName)
-                        .mountPath(fluentdRootPath)))
+                        new V1VolumeMount()
+                                .name(volumeName)
+                                .mountPath(logHomeRootPath)))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
-                .containers(Arrays.asList(
-                    new V1Container()
-                        .addArgsItem("- -c")
-                        .addArgsItem("- /etc/fluent.conf")
-                        .addEnvItem(new V1EnvVar()
-                            .name("DOMAIN_UID")
-                            .valueFrom(new V1EnvVarSource()
-                                .fieldRef(new V1ObjectFieldSelector()
-                                    .fieldPath("metadata.labels['weblogic.domainUID']"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("SERVER_NAME")
-                            .valueFrom(new V1EnvVarSource()
-                                .fieldRef(new V1ObjectFieldSelector()
-                                    .fieldPath("metadata.labels['weblogic.serverName']"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("LOG_PATH")
-                            .value("/scratch/logs/" + domainUid + "/$(SERVER_NAME).log"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("FLUENTD_CONF")
-                            .value("fluentd.conf"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("FLUENT_ELASTICSEARCH_SED_DISABLE")
-                            .value("true"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("ELASTICSEARCH_HOST")
-                            .valueFrom(new V1EnvVarSource()
-                                .secretKeyRef(new V1SecretKeySelector()
-                                  .key("elasticsearchhost")
-                                  .name("weblogic-credentials"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("ELASTICSEARCH_PORT")
-                            .valueFrom(new V1EnvVarSource()
-                                .secretKeyRef(new V1SecretKeySelector()
-                                    .key("elasticsearchport")
-                                    .name("weblogic-credentials"))))
-                        .name(FLUENTD_NAME)
-                        .image(FLUENTD_IMAGE)
-                        .imagePullPolicy("IfNotPresent")
-                        .resources(new V1ResourceRequirements())
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("fluentd-config-volume")
-                                .mountPath("/fluentd/etc/fluentd.conf")
-                                .subPath("fluentd.conf"),
-                            new V1VolumeMount()
-                                .name("weblogic-domain-storage-volume")
-                                .mountPath("/scratch"))))))
+            )
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                     .adminService(new AdminService()

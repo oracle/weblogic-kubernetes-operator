@@ -605,44 +605,45 @@ public class JobHelper {
       }
     }
 
-    private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
-      ;
-      if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
-        List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
-        for (V1ContainerStatus containerStatus : containerStatuses) {
-          if (containerStatus.getName().equals(FLUENTD_CONTAINER_NAME)
-                  && containerStatus.getState().getTerminated() != null) {
-
-            LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                    jobPod.getMetadata().getNamespace(),
-                    containerStatus.getState().getTerminated().getExitCode(),
-                    containerStatus.getState().getTerminated().getReason(),
-                    containerStatus.getState().getTerminated().getMessage());
-
-            packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
-                LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                      jobPod.getMetadata().getNamespace(),
-                      containerStatus.getState().getTerminated().getExitCode(),
-                      containerStatus.getState().getTerminated().getReason(),
-                      containerStatus.getState().getTerminated().getMessage()));
-
-            return;
-          }
-        }
-        for (V1ContainerStatus containerStatus : containerStatuses) {
-          // Only set done if the exit code is 0 and terminated, otherwise it is error
-          if (containerStatus.getName().equals(jobName) && containerStatus.getState().getTerminated() != null
-                  && containerStatus.getState().getTerminated().getExitCode() == 0) {
-            packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
-          }
-        }
-      }
-    }
 
     private class PodListResponseStep extends ResponseStep<V1PodList> {
 
       PodListResponseStep(Step next) {
         super(next);
+      }
+
+      private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+        if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
+          List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
+          for (V1ContainerStatus containerStatus : containerStatuses) {
+            if (containerStatus.getName().equals(FLUENTD_CONTAINER_NAME)
+                    && containerStatus.getState().getTerminated() != null) {
+
+              LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                      jobPod.getMetadata().getNamespace(),
+                      containerStatus.getState().getTerminated().getExitCode(),
+                      containerStatus.getState().getTerminated().getReason(),
+                      containerStatus.getState().getTerminated().getMessage());
+
+              packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+                      LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                              jobPod.getMetadata().getNamespace(),
+                              containerStatus.getState().getTerminated().getExitCode(),
+                              containerStatus.getState().getTerminated().getReason(),
+                              containerStatus.getState().getTerminated().getMessage()));
+
+              return;
+            }
+          }
+          for (V1ContainerStatus containerStatus : containerStatuses) {
+            // Only set done if the exit code is 0 and terminated, otherwise it is error
+            if (containerStatus.getName().equals(jobName) && containerStatus.getState().getTerminated() != null
+                    && containerStatus.getState().getTerminated().getExitCode() == 0) {
+              packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+            }
+          }
+        }
       }
 
       @Override

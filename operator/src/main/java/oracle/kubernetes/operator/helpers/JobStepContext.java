@@ -556,9 +556,9 @@ public class JobStepContext extends BasePodStepContext {
 
     Optional.ofNullable(getDomain().getFluentdSpecification())
         .ifPresent(fluentd -> {
-          if (fluentd.getWatchIntrospectorLogs()) {
+          if (Boolean.TRUE.equals(fluentd.getWatchIntrospectorLogs())) {
             FluentdHelper.addFluentdContainer(fluentd,
-                    containers, getDomain(), true);
+                    containers, getDomain());
           }
         });
 

@@ -33,10 +33,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
-import static oracle.kubernetes.operator.KubernetesConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;

@@ -94,10 +94,10 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static oracle.kubernetes.operator.KubernetesConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {

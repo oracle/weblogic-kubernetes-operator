@@ -95,7 +95,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
-import static oracle.kubernetes.operator.KubernetesConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -115,6 +114,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxilia
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImageVolume;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyDomainMap;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;

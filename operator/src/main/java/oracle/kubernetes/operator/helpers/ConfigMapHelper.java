@@ -933,28 +933,6 @@ public class ConfigMapHelper {
     return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
   
-  private static Step createFluentdConfigMap(DomainPresenceInfo info, Step next) {
-    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-    if (fluentdSpecification != null) {
-      return new CallBuilder()
-              .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(fluentdSpecification,
-                      info.getDomainUid(), info.getNamespace()), new FluentdConfigMapResponseStep(next));
-    } else {
-      return next;
-    }
-  }
-
-  private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
-    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
-    if (fluentdSpecification != null) {
-      return new CallBuilder()
-              .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-                      FluentdHelper.getFluentdConfigMap(fluentdSpecification, info.getDomainUid(), info.getNamespace()),
-                      new FluentdConfigMapResponseStep(next));
-    } else {
-      return next;
-    }
-  }
 
   /**
    * Create or replace fluentd configuration map.
@@ -999,11 +977,6 @@ public class ConfigMapHelper {
       return doNext(packet);
     }
 
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      return super.onFailure(packet, callResponse);
-    }
-
   }
 
   private static class ReadFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -1012,6 +985,30 @@ public class ConfigMapHelper {
     ReadFluentdConfigMapResponseStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
+    }
+
+    private static Step createFluentdConfigMap(DomainPresenceInfo info, Step next) {
+      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+      if (fluentdSpecification != null) {
+        return new CallBuilder()
+                .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(fluentdSpecification,
+                        info.getDomainUid(), info.getNamespace()), new FluentdConfigMapResponseStep(next));
+      } else {
+        return next;
+      }
+    }
+
+    private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
+      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+      if (fluentdSpecification != null) {
+        return new CallBuilder()
+                .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
+                        FluentdHelper.getFluentdConfigMap(fluentdSpecification,
+                                info.getDomainUid(), info.getNamespace()),
+                        new FluentdConfigMapResponseStep(next));
+      } else {
+        return next;
+      }
     }
 
     @Override
