@@ -345,6 +345,7 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
+  public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
