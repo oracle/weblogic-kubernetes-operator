@@ -464,7 +464,7 @@ EOF
                         BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
                         BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_email_creds}")
+                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                         TWO_CLUSTERS = "false"
                     }
                     steps {
