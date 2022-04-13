@@ -49,7 +49,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
@@ -59,9 +59,9 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPE
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
 
 public class JobHelper {
@@ -428,7 +428,8 @@ public class JobHelper {
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
         if (JobWatcher.isComplete(domainIntrospectorJob)
-                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
+                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
+                .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
           return doNext(packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
@@ -611,16 +612,20 @@ public class JobHelper {
         for (V1ContainerStatus containerStatus : containerStatuses) {
           if (containerStatus.getName().equals(FLUENTD_CONTAINER_NAME)
                   && containerStatus.getState().getTerminated() != null) {
-            LOGGER.severe(FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                    jobPod.getMetadata().getNamespace());
-            String errorMessage = String.format("The fluentd container of the introspector pod %s"
-                + " has been terminated unexpectedly. Exit Code: [%s] Reason: [%s] Message [%s]."
-                + " Check the pod's fluentd container log for details",
-                    jobPod.getMetadata().getName(),
+
+            LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                    jobPod.getMetadata().getNamespace(),
                     containerStatus.getState().getTerminated().getExitCode(),
                     containerStatus.getState().getTerminated().getReason(),
                     containerStatus.getState().getTerminated().getMessage());
-            packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED, errorMessage);
+
+            packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+                LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                      jobPod.getMetadata().getNamespace(),
+                      containerStatus.getState().getTerminated().getExitCode(),
+                      containerStatus.getState().getTerminated().getReason(),
+                      containerStatus.getState().getTerminated().getMessage()));
+
             return;
           }
         }

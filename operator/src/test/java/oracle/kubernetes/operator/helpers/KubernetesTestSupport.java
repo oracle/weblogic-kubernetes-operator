@@ -345,7 +345,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     V1ContainerState fluentdContainerState = new V1ContainerState();
     if (terminateFluentd) {
-      fluentdContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(0));
+      fluentdContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(1));
     } else {
       fluentdContainerState.setRunning(new V1ContainerStateRunning());
     }

@@ -395,7 +395,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           // in the WaitDomainIntrospectorJobReadyStep and proceed reading the job pod log and process the result.
 
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()
-                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER.equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
+                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
+                  .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }

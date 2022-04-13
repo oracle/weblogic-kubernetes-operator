@@ -77,6 +77,7 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
@@ -564,22 +565,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithFluentd_completionTerminalStepRun() {
-    String jobName = UID + "-introspector";
-    DomainConfiguratorFactory.forDomain(domain)
-            .withFluentdConfiguration(true, "elastic-cred", null);
-    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-            true, false);
-    testSupport.defineResources(jobPod);
-    List<V1Job> jobs = runStepsAndGetJobs();
-
-    assertThat(terminalStep.wasRun(), is(false));
-
-  }
-
-  @Test
-  void whenJobCreatedWithFluentdCrashed_completionTerminalStepNotRun() {
+  void whenJobCreatedWithFluentdTerminatedDuringIntropsection_checkExpectedMessage() {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain)
             .withFluentdConfiguration(true, "elastic-cred", null);
@@ -587,9 +573,16 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
             true, true);
     testSupport.defineResources(jobPod);
-    List<V1Job> jobs = runStepsAndGetJobs();
+    defineFailedFluentdContainerInIntrospection();
 
-    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+    logRecords.clear();
+    String expectedDetail = LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED,
+            jobPod.getMetadata().getName(),
+            jobPod.getMetadata().getNamespace(), 1, null, null);
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
+            LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, expectedDetail, 1, 2)));
 
   }
 
@@ -641,6 +634,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private void defineFailedIntrospection() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
+  }
+
+  private void defineFailedFluentdContainerInIntrospection() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
   }
 
   @Test
