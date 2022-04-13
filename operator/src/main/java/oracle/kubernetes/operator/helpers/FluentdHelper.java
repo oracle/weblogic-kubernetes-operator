@@ -133,9 +133,9 @@ public class FluentdHelper {
       fluentdConfBuilder.append("      user \"#{ENV['ELASTICSEARCH_USER']}\"\n");
       fluentdConfBuilder.append("      password \"#{ENV['ELASTICSEARCH_PASSWORD']}\"\n");
       fluentdConfBuilder.append("      index_name \"#{ENV['DOMAIN_UID']}\"\n");
-      fluentdConfBuilder.append("      scheme https\n");
-      fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
-      fluentdConfBuilder.append("      ssl_verify false\n");
+      //      fluentdConfBuilder.append("      scheme https\n");
+      //      fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
+      //      fluentdConfBuilder.append("      ssl_verify false\n");
       fluentdConfBuilder.append("      suppress_type_name true\n");
       fluentdConfBuilder.append("      key_name timestamp\n");
       fluentdConfBuilder.append("      types timestamp:time\n");
@@ -225,9 +225,13 @@ public class FluentdHelper {
   private static void addFluentdContainerELSCredEnv(FluentdSpecification fluentdSpecification,
                                                     V1Container fluentdContainer, String envName, String keyName) {
     if (!hasFluentdContainerEnv(fluentdSpecification, envName)) {
+      boolean isOptional = false;
+      if (envName.equals("ELASTICSEARCH_USER") || envName.equals("ELASTICSEARCH_PASSWORD")) {
+        isOptional = true;
+      }
       V1SecretKeySelector keySelector = new V1SecretKeySelector()
           .key(keyName)
-          .optional(true)
+          .optional(isOptional)
           .name(fluentdSpecification.getElasticSearchCredentials());
       V1EnvVarSource source = new V1EnvVarSource()
           .secretKeyRef(keySelector);
