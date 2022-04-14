@@ -136,7 +136,7 @@ public class FluentdHelper {
       //      fluentdConfBuilder.append("      scheme https\n");
       //      fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
       //      fluentdConfBuilder.append("      ssl_verify false\n");
-      //fluentdConfBuilder.append("      suppress_type_name true\n");
+      fluentdConfBuilder.append("      suppress_type_name true\n");
       fluentdConfBuilder.append("      type_name fluentd\n");
       fluentdConfBuilder.append("      logstash_format true\n");
       fluentdConfBuilder.append("      logstash_prefix fluentd\n");

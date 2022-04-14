@@ -1,20 +1,10 @@
 # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    weblogic.domainUID: fluentd-domain
-    weblogic.resourceVersion: domain-v1
-  name: fluentd-config
-  namespace: fluentd-namespace
-data:
-  fluentd.conf: |
-    <match fluent.**>
-      @type null
-    </match>
-    <source>
+<match fluent.**>
+     @type null
+</match>
+<source>
       @type tail
       @log_level debug
       path "#{ENV['LOG_PATH']}"
@@ -39,8 +29,8 @@ data:
         format12 / <(?<messageID>(.*?))>/
         format13 / <(?<message>(.*?))>/
       </parse>
-    </source>
-    <match **>
+</source>
+<match **>
       @type elasticsearch
       @log_level debug
       host "#{ENV['ELASTICSEARCH_HOST']}"
@@ -51,4 +41,4 @@ data:
       logstash_prefix fluentd
       #include_tag_key true
       #tag_key @log_name
-    </match>
+</match>

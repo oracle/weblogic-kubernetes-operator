@@ -32,6 +32,8 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -192,7 +194,7 @@ class ItElasticLoggingFluentd {
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
-    configFluentd();
+    //configFluentd();
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -305,10 +307,10 @@ class ItElasticLoggingFluentd {
             "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
-    //    assertTrue(new Command()
-    //            .withParams(new CommandParams()
-    //                    .command("kubectl create -f " + destFluentdYamlFile))
-    //            .execute(), "kubectl create failed");
+    assertTrue(new Command()
+              .withParams(new CommandParams()
+                      .command("kubectl create -f " + destFluentdYamlFile))
+              .execute(), "kubectl create failed");
   }
 
   private static String createAndVerifyDomainImage() {
@@ -384,13 +386,19 @@ class ItElasticLoggingFluentd {
     // create the domain CR
 
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
-
     fluentdSpecification.setImage(FLUENTD_IMAGE);
     fluentdSpecification.setImagePullPolicy("IfNotPresent");
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
             .name(volumeName)
             .mountPath(logHomeRootPath)));
+
+    try {
+      Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
+      fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
+    } catch (Exception ex) {
+      logger.severe("Failed to read fluentd configuration file " + MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
+    }
 
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
