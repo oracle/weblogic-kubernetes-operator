@@ -159,9 +159,9 @@ Updated several dependencies, including the Oracle Linux base for the container 
 ##### Features
 
 * The operator's container image is based on Oracle Linux 8.
-* WebLogic Server container images based on Oracle Linux 8 are supported.  
+* WebLogic Server container images based on Oracle Linux 8 are supported.
 * [Online updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#online-updates">}}) of dynamic configuration changes for Model in Image.
-* Automatic injection of the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) as a sidecar container.  
+* Automatic injection of the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) as a sidecar container.
 * [Events]({{< relref "/userguide/managing-domains/domain-events.md" >}}) are generated at important moments in the life cycle of the operator or a domain.
 * [PodDisruptionBudgets]({{<relref "/userguide/managing-domains/domain-lifecycle/startup.md#draining-a-node-and-poddisruptionbudget">}}) are generated for clusters improving the ability to maintain cluster availability during planned node shutdowns and Kubernetes upgrade.
 * Additional scripts to assist with common tasks, such as the `scaleCluster.sh` script.
@@ -231,7 +231,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 
 #### Operator 3.0.4
 
-* The operator now correctly completes restarting Managed Server pods in order to complete a rolling activity. This fix is already present in 3.1.0.
+* The operator now correctly completes restarting Managed Server pods to complete a rolling activity. This fix is already present in 3.1.0.
 
 #### Operator 3.0.3
 

@@ -1,9 +1,9 @@
-+++
-title = "Prepare to run a domain"
-date = 2019-02-23T16:43:45-05:00
-weight = 1
-pre = "<b> </b>"
-+++
+---
+title: "Prepare to run a domain"
+date: 2019-02-23T16:43:45-05:00
+weight: 1
+description: "Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain."
+---
 
 
 Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:

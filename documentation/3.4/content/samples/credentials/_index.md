@@ -24,7 +24,7 @@ The parameters are as follows:
 
 ```  
   -u user name, must be specified.
-  -p password, must be specified.
+  -p password, must be provided using the -p argument or user will be prompted to enter a value.
   -d domainUID, optional. The default value is domain1. If specified, the secret will be labeled with the domainUID unless the given value is an empty string.
   -n namespace, optional. Use the default namespace if not specified.
   -s secretName, optional. If not specified, the secret name will be determined based on the domainUID value.
@@ -41,8 +41,8 @@ $ kubectl -n domain-namespace-1 get secret domain1-weblogic-credentials -o yaml
 ```
 apiVersion: v1
 data:
-  password: d2VsY29tZTE=
-  username: d2VibG9naWM=
+  username: <user name>
+  password: <password>
 kind: Secret
 metadata:
   creationTimestamp: 2018-12-12T20:25:20Z
@@ -56,3 +56,4 @@ metadata:
   uid: 0c2b3510-fe4c-11e8-994d-00001700101d
 type: Opaque
 ```
+where `<user name>` and `<password>` are to be replaced with their actual values.

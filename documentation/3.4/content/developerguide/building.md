@@ -2,6 +2,7 @@
 title: "Building"
 date: 2019-02-23T17:19:24-05:00
 draft: false
+description: "Learn about the operator build process."
 weight: 3
 ---
 
@@ -32,7 +33,7 @@ We recommend that you use a tag other than `latest`, to make it easy to distingu
 
 #### Running the operator from an IDE
 
-The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
+The operator can be run from an IDE, which is useful for debugging.  To do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
 
 Configure the IDE to run the class `oracle.kubernetes.operator.Main`.
 

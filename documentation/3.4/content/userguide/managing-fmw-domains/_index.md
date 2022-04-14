@@ -62,7 +62,7 @@ following limitations currently exist for FMW Infrastructure domains:
 #### Obtaining the FMW Infrastructure image
 
 The WebLogic Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 The FMW Infrastructure 12.2.1.4.0 images do not require patches.
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
@@ -225,8 +225,8 @@ spec:
 ```
 
 Notice that you can pass in environment variables to set the SID, the name of the PDB, and
-so on.  The documentation describes the other variables that are available.  The `sys` password
-defaults to `Oradoc_db1`.  Follow the instructions in the documentation to reset this password.
+so on.  The documentation describes the other variables that are available.  
+Follow the instructions in the documentation to set the `sys` password.
 
 You should also create a service to make the database available within the Kubernetes cluster with
 a well known name.  Here is an example:
