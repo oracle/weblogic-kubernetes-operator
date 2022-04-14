@@ -770,7 +770,7 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
-      final List<String> configMapNames = getIntrospectorConfigMapNames(callResponse.getResult());
+      final List<String> configMapNames = getIntrospectorOrFluentdConfigMapNames(callResponse.getResult());
       if (configMapNames.isEmpty()) {
         return doNext(packet);
       } else {
@@ -784,15 +784,20 @@ public class ConfigMapHelper {
     }
 
     @Nonnull
-    protected List<String> getIntrospectorConfigMapNames(V1ConfigMapList list) {
+    protected List<String> getIntrospectorOrFluentdConfigMapNames(V1ConfigMapList list) {
       return list.getItems().stream()
             .map(this::getName)
-            .filter(this::isIntrospectorConfigMapName)
+            .filter(this::isIntrospectorOrFluentdConfigMapName)
             .collect(Collectors.toList());
     }
+    
+    private boolean isIntrospectorOrFluentdConfigMapName(String name) {
+      return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
+              || isFluentdConfigMapName(name);
+   }
 
-    private boolean isIntrospectorConfigMapName(String name) {
-      return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid));
+    private boolean isFluentdConfigMapName(String name) {
+      return name.equals(FLUENTD_CONFIGMAP_NAME);
     }
 
     @Nonnull

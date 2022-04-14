@@ -133,9 +133,6 @@ public class FluentdHelper {
       fluentdConfBuilder.append("      user \"#{ENV['ELASTICSEARCH_USER']}\"\n");
       fluentdConfBuilder.append("      password \"#{ENV['ELASTICSEARCH_PASSWORD']}\"\n");
       fluentdConfBuilder.append("      index_name \"#{ENV['DOMAIN_UID']}\"\n");
-      //      fluentdConfBuilder.append("      scheme https\n");
-      //      fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
-      //      fluentdConfBuilder.append("      ssl_verify false\n");
       fluentdConfBuilder.append("      suppress_type_name true\n");
       fluentdConfBuilder.append("      type_name fluentd\n");
       fluentdConfBuilder.append("      logstash_format true\n");
