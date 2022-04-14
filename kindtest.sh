@@ -132,7 +132,7 @@ case "${kind_version}" in
     kind_series="0.11.1"
     ;;
   "kind v0.12."*)
-    kind_series="0.12"
+    kind_series="0.12.0"
     ;;
 esac
 
