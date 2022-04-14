@@ -217,6 +217,10 @@ class ItElasticLoggingFluentd {
 
     // Verify that ELK Stack is ready to use
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, FLUENTD_INDEX_KEY);
+    logger.info("Checking the correct index");
+    Map<String, String> x = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, domainUid);
+    logger.info("Checking the correct index returns " + x);
+    
     Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
