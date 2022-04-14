@@ -143,7 +143,7 @@ Using `rebase`, the new image can be created in one of two ways:
       --targetImage container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
     ```
    - Second, edit the domain resource `domain.spec.image`
-    attribute with the new image's name `mydomain:2`.
+    attribute with the new image's name `mydomain:v2`.
     - Then, the operator automatically performs a
     [rolling upgrade]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
     on the domain.
