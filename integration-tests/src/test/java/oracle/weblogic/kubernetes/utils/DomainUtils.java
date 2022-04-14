@@ -143,7 +143,6 @@ public class DomainUtils {
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
-    logger.info("Checking fluent spec " + domain.getSpec().getFluentdSpecification().toString());
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, domainVersion),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace)),
