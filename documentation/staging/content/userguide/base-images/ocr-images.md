@@ -66,7 +66,7 @@ See the following sections for information about OCR images:
   - Suitable for production use.
 
   {{% notice warning %}}
-  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with _all_ the latest security patches, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
+  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with the latest set of recommended patches applied, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
   {{% /notice %}}
 
 #### WebLogic distribution installer type
@@ -172,7 +172,12 @@ For example, to use Docker to pull an image from OCR:
         depending in your [image type](#weblogic-distribution-installer-type).
 
         For example, if you are following the operator Quick Start guide
-        (which uses WebLogic GA images), then select `weblogic`.
+        (which uses WebLogic GA images), then select `weblogic`. **NOTE**:
+        GA images are suitable for demonstration and development purposes _only_ where the environments
+        are not available from the public Internet; they are _not_
+        acceptable for production use. In production, you should always use CPU (patched) images
+        from OCR or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}})
+        (WIT) with the `--recommendedPatches` option.  
 
      1. Click **Continue**.
 
