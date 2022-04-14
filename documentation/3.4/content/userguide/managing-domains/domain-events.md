@@ -5,7 +5,7 @@ weight = 10
 pre = "<b> </b>"
 +++
 
-#### Contents
+### Contents
 
 - [Overview](#overview)
 - [Operator-generated event types](#operator-generated-event-types)
@@ -14,68 +14,68 @@ pre = "<b> </b>"
 - [Examples of generated events](#examples-of-generated-events)
 
 
-#### Overview
+### Overview
 
 This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
-#### Operator-generated event types
+### Operator-generated event types
 
 The operator generates these event types in a domain namespace, which indicate the following:
 
- *  `DomainCreated`: A new domain is created.
- *  `DomainChanged`: A change has been made to an existing domain.
- *  `DomainDeleted`: An existing domain has been deleted.
- *  `DomainProcessingStarting`: The operator has started to process a new domain or to update an existing domain. This event may be a result of a `DomainCreate`, `DomainChanged`, or `DomainDeleted` event, or a result of a retry after a failed attempt.
- *  `DomainProcessingFailed`: The operator has encountered a problem while it was processing the domain resource. The failure either could be a configuration error or a Kubernetes API error.
- *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered a failure.
- *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
- *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
- *  `DomainRollStarting`:  The operator has detected domain resource or Model in Image model
-    updates that require it to perform a rolling restart of the domain.
-    If the domain roll is due to a change to domain resource fields
-    `image`, `imagePullPolicy`, `livenessProbe`, `readinessProbe`, `restartVersion`,
-    `domainHome`, `includeServerOutInPodLog`, or `logHome`, then
-    the event message reports the field name plus its old and new values.
-    If the domain roll is due to other domain resource changes that cause servers to be restarted
-    (see [full list of fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})),
-    then the event message simply reports that the domain resource has changed.
-    If the domain roll is due to a Model in Image model update,
-    then the event message reports there has been a change in the WebLogic domain configuration without the details.
- *  `DomainRollCompleted`:  The operator has successfully completed a rolling restart of a domain.
- *  `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
- *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
- *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
- *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
+*  `DomainCreated`: A new domain is created.
+*  `DomainChanged`: A change has been made to an existing domain.
+*  `DomainDeleted`: An existing domain has been deleted.
+*  `DomainProcessingStarting`: The operator has started to process a new domain or to update an existing domain. This event may be a result of a `DomainCreate`, `DomainChanged`, or `DomainDeleted` event, or a result of a retry after a failed attempt.
+*  `DomainProcessingFailed`: The operator has encountered a problem while it was processing the domain resource. The failure either could be a configuration error or a Kubernetes API error.
+*  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered a failure.
+*  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
+*  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
+*  `DomainRollStarting`:  The operator has detected domain resource or Model in Image model
+   updates that require it to perform a rolling restart of the domain.
+   If the domain roll is due to a change to domain resource fields
+   `image`, `imagePullPolicy`, `livenessProbe`, `readinessProbe`, `restartVersion`,
+   `domainHome`, `includeServerOutInPodLog`, or `logHome`, then
+   the event message reports the field name plus its old and new values.
+   If the domain roll is due to other domain resource changes that cause servers to be restarted
+   (see [full list of fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})),
+   then the event message simply reports that the domain resource has changed.
+   If the domain roll is due to a Model in Image model update,
+   then the event message reports there has been a change in the WebLogic domain configuration without the details.
+*  `DomainRollCompleted`:  The operator has successfully completed a rolling restart of a domain.
+*  `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
+*  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
+*  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
+*  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
 
 The operator also generates these event types in the operator's namespace, which indicate the following:
 
 *  `StartManagingNamespace`: The operator has started managing domains in a namespace.
-*  `StopManagingNamespace`: The operator has stopped managing domains in a namespace. 
+*  `StopManagingNamespace`: The operator has stopped managing domains in a namespace.
 *  `StartManagingNamespaceFailed`: The operator failed to start managing domains in a namespace because it does not have the required privileges.
 
 
-#### Operator-generated event details
+### Operator-generated event details
 
 Each operator-generated event contains the following fields:
- *  `metadata`
+*  `metadata`
     *  `namespace`:  Namespace in which the event is generated.
     *  `labels`:   `weblogic.createdByOperator=true` and, for a domain event, `weblogic.domainUID=<domainUID>`.
- *  `type`:  String that describes the type of the event. Possible values are `Normal` or `Warning`.
- *  `count`: Integer that indicates the number of occurrences of the event. Note that the events are matched by the combination of the `reason`, `involvedObject`, and `message` fields.
- *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
- *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
- *  `firstTimestamp`:  `DateTime` field that presents the timestamp of the first occurrence of this event.
- *  `lastTimestamp`:  `DateTime` field that presents the timestamp of the last occurrence of this event.
- *  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
- *  `message`:  String that describes the details of the event.
- *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
+*  `type`:  String that describes the type of the event. Possible values are `Normal` or `Warning`.
+*  `count`: Integer that indicates the number of occurrences of the event. Note that the events are matched by the combination of the `reason`, `involvedObject`, and `message` fields.
+*  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
+*  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
+*  `firstTimestamp`:  `DateTime` field that presents the timestamp of the first occurrence of this event.
+*  `lastTimestamp`:  `DateTime` field that presents the timestamp of the last occurrence of this event.
+*  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
+*  `message`:  String that describes the details of the event.
+*  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
     *  `name`:  String that describes the name of the resource with which the event is associated. It may be the `domainUID`, the name of the namespace that the operator watches, or the name of the operator pod.
     *  `namespace`:  String that describes the namespace of the event, which is either the namespace of the domain resource or the namespace of the operator.
     *  `kind`:  String that describes the kind of resource this object represents. The value is `Domain` for a domain event, `Namespace` for a namespace event in the domain namespace, or `Pod` for the operator pod.
     *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`, for a domain event or unset for a namespace event.
     *  `UID`: String that describes the unique identifier of the object that is generated by the Kubernetes server.
 
-#### How to access the events
+### How to access the events
 
 To access the events that are associated with all resources in a particular namespace, run:
 
@@ -101,7 +101,7 @@ To get all the events that are generated by the operator for a particular domain
 $ kubectl get events -n [namespace] --selector=weblogic.domainUID=sample-domain1,weblogic.createdByOperator=true --sort-by=lastTimestamp
 ```
 
-#### Examples of generated events
+### Examples of generated events
 
 Here are some examples of operator-generated events from the output of the `kubectl describe event` or `kubectl get events` commands for `sample-domain1` in namespace `sample-domain1-ns`.
 
