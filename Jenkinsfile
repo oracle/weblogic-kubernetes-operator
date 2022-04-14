@@ -120,7 +120,7 @@ pipeline {
                defaultValue: '3.7.2'
         )
         choice(name: 'ISTIO_VERSION',
-               description: 'Istio version.',
+               description: 'Istio version',
                choices: [
                    '1.13.2',
                    '1.12.6',
