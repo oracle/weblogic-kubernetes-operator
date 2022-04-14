@@ -211,7 +211,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           if ((info != null) && (callResponse != null)) {
             Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
                     info.setServerPodFromEvent(getPodLabel(result), result));
-            if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
+            if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))
+                || PodHelper.isEvicted(callResponse.getResult())) {
               LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
               removeCallback(resource, callback);
               return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);

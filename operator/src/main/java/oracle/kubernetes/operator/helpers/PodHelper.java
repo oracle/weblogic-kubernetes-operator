@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -221,6 +222,23 @@ public class PodHelper {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Check if pod is in failed state with "Evicted" as the reason.
+   * @param pod pod
+   * @return true, if pod is in failed state with "Evicted" as the reason.
+   */
+  public static boolean isEvicted(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(PodHelper::isEvicted)
+        .orElse(false);
+  }
+
+  public static boolean isEvicted(@Nonnull V1PodStatus status) {
+    return V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())
+        && EVICTED_REASON.equals(status.getReason());
   }
 
   /**

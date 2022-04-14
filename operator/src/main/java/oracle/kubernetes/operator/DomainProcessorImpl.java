@@ -402,6 +402,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         // fall through
       case MODIFIED:
         info.setServerPodFromEvent(serverName, pod);
+        if (PodHelper.isEvicted(pod)) {
+          LOGGER.info(MessageKeys.POD_EVICTED, domainUid, getPodNamespace(pod), serverName);
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
