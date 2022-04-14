@@ -292,7 +292,7 @@ are provided that demonstrate how to create the image using either
 WLST to define the domain
 or [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models to define the domain.
 In these samples, you will see a reference to a "base" or `--fromImage` image.
-You should use an image with the recommended patches installed as this base image,
+You should use an image with the recommended security patches installed as this base image,
 where this image could be an OCR image or a custom image.
 See
 [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
@@ -513,7 +513,7 @@ to create the domain home in Domain in Image.
 
 In the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}})
 documentation, you will see a reference to a "base" or `--fromImage` image. You should use an image with
-the recommended patches installed as this base image, where this image could be an OCR image or a custom image.
+the recommended security patches installed as this base image, where this image could be an OCR image or a custom image.
 
 See [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
 or
