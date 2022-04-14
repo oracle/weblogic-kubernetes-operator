@@ -59,19 +59,184 @@ spec:
       name: weblogic-domain-storage-volume
 ```
 
-#### Add Elasticsearch secrets to WebLogic domain credentials
-The `fluentd` container will be configured to look for Elasticsearch parameters in the domain credentials.  Edit the domain credentials and add the parameters shown in the example below.
+#### Create Elasticsearch secrets
+The `fluentd` container will be configured to look for Elasticsearch parameters in a Kubernetes secret.  Create a secret with following keys.
 
-Example: `kubectl edit secret bobs-bookstore-weblogic-credentials -n bob` and add the base64 encoded values of each Elasticsearch parameter:
+Example: 
 ```text
-elasticsearchhost: ZWxhc3RpY3NlYXJjaC5ib2JzLWJvb2tzLnNhbXBsZS5jb20=
-elasticsearchport: NDQz
-elasticsearchuser: Ym9i
-elasticsearchpassword: d2VsY29tZTE=
+kubectl -n bob create secret generic fluentd-credential 
+  --from-literal elasticsearchhost=quickstart-es-http.default 
+  --from-literal elasticsearchport=9200 
+  --from-literal elasticsearchuser=elastic 
+  --from-literal elasticsearchpassword=xyz
 ```
 
-#### Create Fluentd configuration
-Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
+#### Specify `fluentdSpecification` in the domain resource
+
+```text
+  spec:
+    fluentdSpecification:
+      elasticSearchCredentials: fluentd-credential
+      watchIntrospectorLogs: false
+      volumeMounts:
+      - mountPath: /shared
+        name: weblogic-domain-storage-volume
+```
+
+The `Operator` will automatically
+
+1. Creates a config map `fluentd-config` with a default `Fluentd` configuration. See ...
+2. Set up the `Fluentd` container in each pod to use the `Elasticsearch` secrets.
+
+You can also customize the `Fluentd` configuration to fit your use case.  
+
+`fluentdSpecification`  options:
+
+|Option|Description|Notes|
+|-|-|-|
+|elasticSearchCredentials|Kubernetes secret name for the `Fluentd` container to communicate with `Elasticsearch` engine. ||
+|watchIntrospectorLogs|If set to true, Operator will also setup a `fluentd` container to watch the introspector job output. Default is false|Operator automatically added a volume mount referencing the Configmap volume containing the `Fluentd` configuration|
+|volumeMounts|Additional list of volumeMounts for the `fluentd` container|It should contain at least the logHome shared volume|
+|image|`fluentd` container image name. Default: ||
+|imagePullPolicy|ImagePull policy for the `fluentd` container||
+|env|Additional list of environment variables for `fluentd` container|See below|
+|resources|resources for the `fluentd` container||
+|fluentdConfiguration|Text for `fluentd` configuration instead of the Operator's defaults |See below|
+
+For example:
+
+```text
+ fluentdSpecification:
+    elasticSearchCredentials: fluentd-credential
+    watchIntrospectorLogs: true
+    volumeMounts:
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume
+    fluentdConfiguration: |-
+      <match fluent.**>
+        @type null
+      </match>
+      <source>
+        @type tail
+        path "#{ENV['LOG_PATH']}"
+        pos_file /tmp/server.log.pos
+        read_from_head true
+        tag "#{ENV['DOMAIN_UID']}"
+        # multiline_flush_interval 20s
+        <parse>
+          @type multiline
+          format_firstline /^####/
+          format1 /^####<(?<timestamp>(.*?))>/
+          format2 / <(?<level>(.*?))>/
+          format3 / <(?<subSystem>(.*?))>/
+          format4 / <(?<serverName>(.*?))>/
+          format5 / <(?<serverName2>(.*?))>/
+          format6 / <(?<threadName>(.*?))>/
+          format7 / <(?<info1>(.*?))>/
+          format8 / <(?<info2>(.*?))>/
+          format9 / <(?<info3>(.*?))>/
+          format10 / <(?<sequenceNumber>(.*?))>/
+          format11 / <(?<severity>(.*?))>/
+          format12 / <(?<messageID>(.*?))>/
+          format13 / <(?<message>(.*?))>.*/
+          # use the timestamp field in the message as the timestamp
+          # instead of the time the message was actually read
+          time_key timestamp
+          keep_time_key true
+        </parse>
+      </source>
+      <source>
+        @type tail
+        path "#{ENV['INTROSPECTOR_OUT_PATH']}"
+        pos_file /tmp/introspector.log.pos
+        read_from_head true
+        tag "#{ENV['DOMAIN_UID']}-introspector"
+        # multiline_flush_interval 20s
+
+        <parse>
+          @type multiline
+          format_firstline /@\[/
+          format1 /^@\[(?<timestamp>.*)\]\[(?<filesource>.*?)\]\[(?<level>.*?)\](?<message>.*)/
+          # use the timestamp field in the message as the timestamp
+          # instead of the time the message was actually read
+          time_key timestamp
+          keep_time_key true
+        </parse>
+
+      </source>
+      <match **>
+        @type elasticsearch
+        host "#{ENV['ELASTICSEARCH_HOST']}"
+        port "#{ENV['ELASTICSEARCH_PORT']}"
+        user "#{ENV['ELASTICSEARCH_USER']}"
+        password "#{ENV['ELASTICSEARCH_PASSWORD']}"
+        index_name "#{ENV['DOMAIN_UID']}"
+        scheme https
+        ssl_version TLSv1_2
+        ssl_verify false
+        key_name timestamp
+        types timestamp:time
+        suppress_type_name true
+        # inject the @timestamp special field (as type time) into the record
+        # so you will be able to do time based queries.
+        # not to be confused with timestamp which is of type string!!!
+        include_timestamp true
+      </match>
+```
+
+#### Environment variables in the `fluentd` container
+
+Operator automatically set up the `fluentd` container with the following:
+
+```text
+    env:
+    - name: ELASTICSEARCH_HOST
+      valueFrom:
+        secretKeyRef:
+          key: elasticsearchhost
+          name: fluentd-credential
+          optional: false
+    - name: ELASTICSEARCH_PORT
+      valueFrom:
+        secretKeyRef:
+          key: elasticsearchport
+          name: fluentd-credential
+          optional: false
+    - name: ELASTICSEARCH_USER
+      valueFrom:
+        secretKeyRef:
+          key: elasticsearchuser
+          name: fluentd-credential
+          optional: true
+    - name: ELASTICSEARCH_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: elasticsearchpassword
+          name: fluentd-credential
+          optional: true
+    - name: FLUENT_ELASTICSEARCH_SED_DISABLE
+      value: "true"
+    - name: FLUENTD_CONF
+      value: fluentd.conf
+    - name: DOMAIN_UID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.labels['weblogic.domainUID']
+    - name: SERVER_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.labels['weblogic.serverName']
+    - name: LOG_PATH
+      value: /shared/logs/sample-domain1/admin-server.log
+    - name: INTROSPECTOR_OUT_PATH
+      value: /shared/logs/sample-domain1/introspector_script.out
+
+```
+
+#### Fluentd configuration
+Operator automatically creates a `ConfigMap` named `webogic-fluentd-configmap` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
 
 Here's an explanation of some elements defined in the `ConfigMap`:
 
@@ -81,152 +246,76 @@ Here's an explanation of some elements defined in the `ConfigMap`:
 * The `<parse>` section defines how to interpret and tag each element of a log record.
 * The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`.
 
-The following is an example of how to create the `ConfigMap`:
-```shell
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    weblogic.domainUID: bobs-bookstore
-  name: fluentd-config
-  namespace: bob
-data:
-  fluentd.conf: |
-    <match fluent.**>
-      @type null
-    </match>
-    <source>
-      @type tail
-      path "#{ENV['LOG_PATH']}"
-      pos_file /tmp/server.log.pos
-      read_from_head true
-      tag "#{ENV['DOMAIN_UID']}"
-      # multiline_flush_interval 20s
-      <parse>
-        @type multiline
-        format_firstline /^####/
-        format1 /^####<(?<timestamp>(.*?))>/
-        format2 / <(?<level>(.*?))>/
-        format3 / <(?<subSystem>(.*?))>/
-        format4 / <(?<serverName>(.*?))>/
-        format5 / <(?<serverName2>(.*?))>/
-        format6 / <(?<threadName>(.*?))>/
-        format7 / <(?<info1>(.*?))>/
-        format8 / <(?<info2>(.*?))>/
-        format9 / <(?<info3>(.*?))>/
-        format10 / <(?<sequenceNumber>(.*?))>/
-        format11 / <(?<severity>(.*?))>/
-        format12 / <(?<messageID>(.*?))>/
-        format13 / <(?<message>(.*?))>/
-        # use the timestamp field in the message as the timestamp
-        # instead of the time the message was actually read
-        time_key timestamp
-        keep_time_key true
-      </parse>
-    </source>
-    <match **>
-      @type elasticsearch
-      host "#{ENV['ELASTICSEARCH_HOST']}"
-      port "#{ENV['ELASTICSEARCH_PORT']}"
-      user "#{ENV['ELASTICSEARCH_USER']}"
-      password "#{ENV['ELASTICSEARCH_PASSWORD']}"
-      index_name "#{ENV['DOMAIN_UID']}"
-      scheme https
-      ssl_version TLSv1_2
-      key_name timestamp
-      types timestamp:time
-      # inject the @timestamp special field (as type time) into the record
-      # so you will be able to do time based queries.
-      # not to be confused with timestamp which is of type string!!!
-      include_timestamp true
-    </match>
-EOF
+The following is the default `Fluentd` configuration if `fluentdConfiguration` is not specified:
+```text
+      <match fluent.**>
+          @type null
+        </match>
+        <source>
+          @type tail
+          path "#{ENV['LOG_PATH']}"
+          pos_file /tmp/server.log.pos
+          read_from_head true
+          tag "#{ENV['DOMAIN_UID']}"
+          # multiline_flush_interval 20s
+          <parse>
+            @type multiline
+            format_firstline /^####/
+            format1 /^####<(?<timestamp>(.*?))>/
+            format2 / <(?<level>(.*?))>/
+            format3 / <(?<subSystem>(.*?))>/
+            format4 / <(?<serverName>(.*?))>/
+            format5 / <(?<serverName2>(.*?))>/
+            format6 / <(?<threadName>(.*?))>/
+            format7 / <(?<info1>(.*?))>/
+            format8 / <(?<info2>(.*?))>/
+            format9 / <(?<info3>(.*?))>/
+            format10 / <(?<sequenceNumber>(.*?))>/
+            format11 / <(?<severity>(.*?))>/
+            format12 / <(?<messageID>(.*?))>/
+            format13 / <(?<message>(.*?))>/
+            # use the timestamp field in the message as the timestamp
+            # instead of the time the message was actually read
+            time_key timestamp
+            keep_time_key true
+          </parse>
+        </source>
+        <source>
+          @type tail
+          path "#{ENV['INTROSPECTOR_OUT_PATH']}"
+          pos_file /tmp/introspector.log.pos
+          read_from_head true
+          tag "#{ENV['DOMAIN_UID']}-introspector"
+          # multiline_flush_interval 20s
+          <parse>
+            @type multiline
+            format_firstline /@\[/
+            format1 /^@\[(?<timestamp>.*)\]\[(?<filesource>.*?)\]\[(?<level>.*?)\](?<message>.*)/
+            # use the timestamp field in the message as the timestamp
+            # instead of the time the message was actually read
+            time_key timestamp
+            keep_time_key true
+          </parse>
+         </source>
+        <match **>
+          @type elasticsearch
+          host "#{ENV['ELASTICSEARCH_HOST']}"
+          port "#{ENV['ELASTICSEARCH_PORT']}"
+          user "#{ENV['ELASTICSEARCH_USER']}"
+          password "#{ENV['ELASTICSEARCH_PASSWORD']}"
+          index_name "#{ENV['DOMAIN_UID']}"
+          suppress_type_name true
+          type_name fluentd
+          logstash_format true
+          logstash_prefix fluentd
+          # inject the @timestamp special field (as type time) into the record
+          # so you will be able to do time based queries.
+          # not to be confused with timestamp which is of type string!!!
+          include_timestamp true
+        </match>
+
 ```
 
-#### Mount the ConfigMap as a volume in the `weblogic-server` container
-Edit the domain definition and configure a volume for the `ConfigMap` containing the `fluentd` configuration.
-
-**NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
-
-Example: `kubectl edit domain bobs-bookstore -n bob` and add the following portions to the domain definition.  
-```yaml
-spec:
-  serverPod:
-    volumes:
-    - configMap:
-        defaultMode: 420
-        name: fluentd-config
-      name: fluentd-config-volume
-```
-
-#### Add `fluentd` container
-Add a container to the domain that will run `fluentd` in the Administration Server and Managed Server pods.
-
-Notice the container definition:
-
-* Defines a `LOG_PATH` environment variable that points to the log location of `bobbys-front-end`.
-* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their values from the secret `bobs-bookstore-weblogic-credentials`.
-* Has volume mounts for the `fluentd-config` `ConfigMap` and the volume containing the domain logs.
-
-**NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
-
-Example: `kubectl edit domain bobs-bookstore -n bob` and add the following container definition.
-```yaml
-spec:
-  serverPod:
-    containers:
-    - args:
-      - -c
-      - /etc/fluent.conf
-      env:
-      - name: DOMAIN_UID
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['weblogic.domainUID']
-      - name: SERVER_NAME
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['weblogic.serverName']
-      - name: LOG_PATH
-        value: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
-      - name: FLUENTD_CONF
-        value: fluentd.conf
-      - name: FLUENT_ELASTICSEARCH_SED_DISABLE
-        value: "true"
-      - name: ELASTICSEARCH_HOST
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchhost
-            name: bobs-bookstore-weblogic-credentials
-      - name: ELASTICSEARCH_PORT
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchport
-            name: bobs-bookstore-weblogic-credentials
-      - name: ELASTICSEARCH_USER
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchuser
-            name: bobs-bookstore-weblogic-credentials
-            optional: true
-      - name: ELASTICSEARCH_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchpassword
-            name: bobs-bookstore-weblogic-credentials
-            optional: true
-      image: fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3
-      imagePullPolicy: IfNotPresent
-      name: fluentd
-      resources: {}
-      volumeMounts:
-      - mountPath: /fluentd/etc/fluentd.conf
-        name: fluentd-config-volume
-        subPath: fluentd.conf
-      - mountPath: /scratch
-        name: weblogic-domain-storage-volume
-```
 
 #### Verify logs are exported to Elasticsearch
 
@@ -250,116 +339,3 @@ messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:3
 _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 ```
 
-#### Domain example
-
-The following is a complete example of a domain custom resource with a `fluentd` container configured.
-
-```yaml
-apiVersion: weblogic.oracle/v9
-kind: Domain
-metadata:
-  labels:
-    weblogic.domainUID: bobs-bookstore
-  name: bobs-bookstore
-  namespace: bob
-spec:
-  adminServer:
-    adminService:
-      channels:
-      - channelName: default
-        nodePort: 32401
-      - channelName: T3Channel
-        nodePort: 32402
-  clusters:
-  - clusterName: cluster-1
-    serverPod:
-  domainHome: /u01/oracle/user_projects/domains/bobs-bookstore
-  domainHomeSourceType: Image
-  domainUID: bobs-bookstore
-  experimental:
-    istio:
-      enabled: true
-      readinessPort: 8888
-  image: phx.ocir.io/bobs-bookstore
-  imagePullPolicy: IfNotPresent
-  imagePullSecrets:
-  - name: ocir
-  includeServerOutInPodLog: true
-  logHome: /scratch/logs/bobs-bookstore
-  logHomeEnabled: true
-  replicas: 2
-  serverPod:
-    containers:
-    - args:
-      - -c
-      - /etc/fluent.conf
-      env:
-      - name: DOMAIN_UID
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['weblogic.domainUID']
-      - name: SERVER_NAME
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['weblogic.serverName']
-      - name: LOG_PATH
-        value: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
-      - name: FLUENTD_CONF
-        value: fluentd.conf
-      - name: FLUENT_ELASTICSEARCH_SED_DISABLE
-        value: "true"
-      - name: ELASTICSEARCH_HOST
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchhost
-            name: bobs-bookstore-weblogic-credentials
-      - name: ELASTICSEARCH_PORT
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchport
-            name: bobs-bookstore-weblogic-credentials
-      - name: ELASTICSEARCH_USER
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchuser
-            name: bobs-bookstore-weblogic-credentials
-            optional: true
-      - name: ELASTICSEARCH_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            key: elasticsearchpassword
-            name: bobs-bookstore-weblogic-credentials
-            optional: true
-      image: fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3
-      imagePullPolicy: IfNotPresent
-      name: fluentd
-      resources: {}
-      volumeMounts:
-      - mountPath: /fluentd/etc/fluentd.conf
-        name: fluentd-config-volume
-        subPath: fluentd.conf
-      - mountPath: /scratch
-        name: weblogic-domain-storage-volume
-    env:
-    - name: JAVA_OPTIONS
-      value: -Dweblogic.StdoutDebugEnabled=false
-    - name: USER_MEM_ARGS
-      value: '-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m '
-    - name: WL_HOME
-      value: /u01/oracle/wlserver
-    - name: MW_HOME
-      value: /u01/oracle
-    volumeMounts:
-    - mountPath: /scratch
-      name: weblogic-domain-storage-volume
-    volumes:
-    - emptyDir: {}
-      name: weblogic-domain-storage-volume
-    - configMap:
-        defaultMode: 420
-        name: fluentd-config
-      name: fluentd-config-volume
-  serverStartPolicy: IF_NEEDED
-  webLogicCredentialsSecret:
-    name: bobs-bookstore-weblogic-credentials
-```
