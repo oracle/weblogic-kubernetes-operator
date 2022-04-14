@@ -164,7 +164,7 @@ class ItIstioSessionMigration {
     String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
     String origSessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     logger.info("Got the primary server {0}, the secondary server {1} "
-        + "and session create time {2} before shutting down the primary server",
+        + "and session create time {2} before shutting down the primary server.",
         origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
     // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
