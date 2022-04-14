@@ -66,7 +66,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
       - As a layer on an existing
         WebLogic image in the repository
         that doesn't already have a domain home, such as an updated CPU image from OCR.
-      - Or, as a new WebLogic image from a base OS image.
+      - Or, as a new WebLogic image from a base OS image. **NOTE**:  Oracle strongly recommends rebasing your images with the latest security patches by applying the `--recommendedPatches` option.
       - For more information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/patch-images#domain-in-image" >}}).
 
   - WIT [`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command:

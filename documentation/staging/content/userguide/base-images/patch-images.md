@@ -124,11 +124,11 @@ The `rebase` command does the following:
 
 Using `rebase`, the new image can be created in one of two ways:
 
-- As a new WebLogic image from a base OS image (similar to the `create` command; recommended). 
+- As a new WebLogic image from a base OS image (similar to the `create` command; recommended).
+  **NOTE**:  Oracle strongly recommends rebasing your images with the latest security patches by applying the `--recommendedPatches` option.
 
-- Or, as a new layer on an existing
-  WebLogic image in the repository
-  that doesn't already have a domain home (similar to the `update` command; not recommended).
+- Or, as a base image, use WebLogic Server CPU images from OCR that do not already have a domain home.
+
   - Usage:
     - Set `--tag` to the name of the final new image.
     - Set `--sourceImage` to the WebLogic image that contains the WebLogic configuration.
@@ -139,7 +139,7 @@ Using `rebase`, the new image can be created in one of two ways:
     $ /tmp/imagetool/bin/imagetool.sh rebase \
       --tag mydomain:v2 \
       --sourceImage mydomain:v1 \
-      --targetImage oracle/weblogic:12.2.1.4-patched
+      --targetImage container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
     ```
    - Second, edit the domain resource `domain.spec.image`
     attribute with the new image's name `mydomain:2`.

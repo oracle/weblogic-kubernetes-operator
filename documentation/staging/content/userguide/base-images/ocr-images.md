@@ -161,7 +161,7 @@ For example, to use Docker to pull an image from OCR:
      [https://container-registry.oracle.com](https://container-registry.oracle.com)
      and log in using the Oracle Single Sign-On (SSO) authentication service.
      If you do not already have SSO credentials,
-     then at the top of the page, click **Sign In** to create them. 
+     then at the top of the page, click **Sign In** to create them.
 
    - Use the web interface to accept the Oracle Standard Terms and Restrictions
      for the Oracle software images that you intend to deploy:
@@ -173,8 +173,9 @@ For example, to use Docker to pull an image from OCR:
 
         For example, if you are following the operator Quick Start guide
         (which uses WebLogic GA images), then select `weblogic`. **NOTE**:
-        GA images are suitable for demonstration purposes _only_; they are _not_
-        acceptable for production use. In production, you must use CPU (patched) images
+        GA images are suitable for demonstration and development purposes _only_ where the environments
+        are not available from the public Internet; they are _not_
+        acceptable for production use. In production, you should always use CPU (patched) images
         from OCR or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
         (WIT) with the `--recommendedPatches` option.  
 

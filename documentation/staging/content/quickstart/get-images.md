@@ -26,11 +26,7 @@ weight: 3
     b. Find and then pull the WebLogic 12.2.1.4 General Availability (GA) installation image.
 
    {{% notice warning %}}
-   GA images are suitable for demonstration purposes _only_; they are **not
-   acceptable for production use**. In production, you must use CPU (patched) images
-   from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}})
-   or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
-   (WIT) with the `--recommendedPatches` option.
+   GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
    {{% /notice %}}
 
      ```shell
