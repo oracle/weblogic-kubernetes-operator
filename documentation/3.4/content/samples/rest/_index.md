@@ -39,7 +39,7 @@ by `DNS:` for a host name, or `IP:` for an address, as in this example:
 ```
 
 The external certificate and key can be changed after installation of the operator. For
-more information, see [Updating operator external certificates]({{<relref "/security/certificates#updating-operator-external-certificates">}}).
+more information, see [Updating operator external certificates]({{<relref "/userguide/managing-operators/the-rest-api#updating-operator-external-certificates">}}).
 
 The following script will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns`, using a self-signed
 certificate and private key:
@@ -56,6 +56,6 @@ $ generate-external-rest-identity.sh \
 $ kubectl -n weblogic-operator-ns describe secret weblogic-operator-identity
 ```
 ```shell
-$ helm install my_operator kubernetes/charts/weblogic-operator \
+$ helm install my_operator weblogic-operator/weblogic-operator \
   --namespace weblogic-operator-ns --values my_values.yaml --wait
 ```

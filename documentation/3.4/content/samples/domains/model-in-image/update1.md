@@ -10,7 +10,7 @@ This use case demonstrates dynamically adding a data source to your running doma
 - A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
 - Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.
 
-For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
+For a detailed description of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
 
 {{% notice warning %}}
 The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
@@ -163,7 +163,7 @@ Here are the steps:
 
    Now that the data source is deployed in a ConfigMap and its secret is also deployed, and you have applied an updated Domain YAML file with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, tell the operator to roll the domain.
 
-   When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
+   When a model domain restarts, it will rerun its introspector job to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. To do this:
 
    - Option 1: Edit your domain custom resource.
