@@ -402,7 +402,7 @@ public class DomainSpec extends BaseConfiguration {
     return fluentdSpecification == null ? null : fluentdSpecification.getImage();
   }
 
-  String getFluentdImagePullPolicy() {
+  V1Container.ImagePullPolicyEnum getFluentdImagePullPolicy() {
     return fluentdSpecification == null ? null : fluentdSpecification.getImagePullPolicy();
   }
 
@@ -420,7 +420,7 @@ public class DomainSpec extends BaseConfiguration {
    * Specifies the pull policy for the fluentd image.
    * @param pullPolicy a Kubernetes pull policy
    */
-  public void setFluentdImagePullPolicy(String pullPolicy) {
+  public void setFluentdImagePullPolicy(V1Container.ImagePullPolicyEnum pullPolicy) {
     assert fluentdSpecification != null : "May not set image pull policy without configuration";
 
     fluentdSpecification.setImagePullPolicy(pullPolicy);
