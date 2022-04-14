@@ -26,7 +26,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   @Description(
       "The type of the condition. Valid types are Completed, "
-          + "Available, Failed, and ConfigChangesPendingRestart.")
+          + "Available, Failed, Rolling, and ConfigChangesPendingRestart.")
   @NotNull
   private final DomainConditionType type;
 
