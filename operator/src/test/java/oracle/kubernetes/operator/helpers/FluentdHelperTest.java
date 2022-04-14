@@ -60,9 +60,8 @@ class FluentdHelperTest {
     domainConfigurator
         .withFluentdConfiguration(true, "fluentd-cred",
             data);
-    V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(newDomain.getFluentdSpecification(),
-        newDomain.getDomainUid(),
-        newDomain.getNamespace());
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(info);
 
     assertThat(configMap.getData().get(FLUENTD_CONFIG_DATA_NAME), equalTo(data));
   }
@@ -72,9 +71,8 @@ class FluentdHelperTest {
     domainConfigurator
         .withFluentdConfiguration(true, "fluentd-cred",
             null);
-    V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(newDomain.getFluentdSpecification(),
-        newDomain.getDomainUid(),
-        newDomain.getNamespace());
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(info);
 
     assertThat(configMap.getData().get(FLUENTD_CONFIG_DATA_NAME), notNullValue());
     assertThat(configMap.getData().get(FLUENTD_CONFIG_DATA_NAME), startsWith("   <match fluent.**>"));

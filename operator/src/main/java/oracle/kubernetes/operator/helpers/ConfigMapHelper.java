@@ -790,14 +790,10 @@ public class ConfigMapHelper {
             .filter(this::isIntrospectorOrFluentdConfigMapName)
             .collect(Collectors.toList());
     }
-    
+
     private boolean isIntrospectorOrFluentdConfigMapName(String name) {
       return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
-              || isFluentdConfigMapName(name);
-   }
-
-    private boolean isFluentdConfigMapName(String name) {
-      return name.equals(FLUENTD_CONFIGMAP_NAME);
+              || FLUENTD_CONFIGMAP_NAME.equals(name);
     }
 
     @Nonnull
@@ -996,8 +992,8 @@ public class ConfigMapHelper {
       FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
       if (fluentdSpecification != null) {
         return new CallBuilder()
-                .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(fluentdSpecification,
-                        info.getDomainUid(), info.getNamespace()), new FluentdConfigMapResponseStep(next));
+                .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(info),
+                        new FluentdConfigMapResponseStep(next));
       } else {
         return next;
       }
@@ -1008,8 +1004,7 @@ public class ConfigMapHelper {
       if (fluentdSpecification != null) {
         return new CallBuilder()
                 .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-                        FluentdHelper.getFluentdConfigMap(fluentdSpecification,
-                                info.getDomainUid(), info.getNamespace()),
+                        FluentdHelper.getFluentdConfigMap(info),
                         new FluentdConfigMapResponseStep(next));
       } else {
         return next;

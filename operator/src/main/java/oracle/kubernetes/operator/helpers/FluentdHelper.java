@@ -13,8 +13,10 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
@@ -58,15 +60,14 @@ public class FluentdHelper {
 
   /**
    *  Return the default or user supplied fluentd configuration.
-   * @param fluentdSpecification FluentdSpecification from domain spec.
-   * @param domainUid  domain uid.
-   * @param namespace  domain namespace.
+   * @param info DomainPresenceInfo.
    * @return fluentd configuration configmap.
    */
-  public static V1ConfigMap getFluentdConfigMap(FluentdSpecification fluentdSpecification, String domainUid,
-                                                   String namespace) {
+  public static V1ConfigMap getFluentdConfigMap(DomainPresenceInfo info) {
     StringBuilder fluentdConfBuilder = new StringBuilder();
-
+    String domainUid = info.getDomainUid();
+    String namespace = info.getNamespace();
+    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
     if (fluentdSpecification.getFluentdConfiguration() != null) {
       fluentdConfBuilder.append(fluentdSpecification.getFluentdConfiguration());
     } else {
@@ -146,6 +147,7 @@ public class FluentdHelper {
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUID", domainUid);
+    labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
 
     Map<String, String> data = new HashMap<>();
     data.put(FLUENTD_CONFIG_DATA_NAME, fluentdConfBuilder.toString());
@@ -154,6 +156,18 @@ public class FluentdHelper {
         .name(FLUENTD_CONFIGMAP_NAME)
         .labels(labels)
         .namespace(namespace);
+
+    Domain domain = info.getDomain();
+    if (domain != null) {
+      V1ObjectMeta domainMetadata = domain.getMetadata();
+      meta.addOwnerReferencesItem(
+              new V1OwnerReference()
+                      .apiVersion(domain.getApiVersion())
+                      .kind(domain.getKind())
+                      .name(domainMetadata.getName())
+                      .uid(domainMetadata.getUid())
+                      .controller(true));
+    }
 
     return new V1ConfigMap()
         .kind("ConfigMap")
