@@ -137,9 +137,9 @@ public class FluentdHelper {
       //      fluentdConfBuilder.append("      ssl_version TLSv1_2\n");
       //      fluentdConfBuilder.append("      ssl_verify false\n");
       //fluentdConfBuilder.append("      suppress_type_name true\n");
-      fluentdConfBuilder.append("      type_name fluentd");
-      fluentdConfBuilder.append("      logstash_format true");
-      fluentdConfBuilder.append("      logstash_prefix fluentd");
+      fluentdConfBuilder.append("      type_name fluentd\n");
+      fluentdConfBuilder.append("      logstash_format true\n");
+      fluentdConfBuilder.append("      logstash_prefix fluentd\n");
       fluentdConfBuilder.append("      # inject the @timestamp special field (as type time) into the record\n");
       fluentdConfBuilder.append("      # so you will be able to do time based queries.\n");
       fluentdConfBuilder.append("      # not to be confused with timestamp which is of type string!!!\n");
