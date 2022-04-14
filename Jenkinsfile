@@ -122,8 +122,8 @@ pipeline {
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version.',
                choices: [
-                   '0.13.2',
-                   '0.12.6',
+                   '1.13.2',
+                   '1.12.6',
                    '1.11.1',
                    '1.10.4',
                    '1.9.9'
