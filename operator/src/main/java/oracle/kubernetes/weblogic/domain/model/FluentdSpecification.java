@@ -93,7 +93,7 @@ public class FluentdSpecification {
     return fluentdConfiguration;
   }
 
-  void setFluentdConfiguration(String configurationConfigMapMapName) {
+  public void setFluentdConfiguration(String configurationConfigMapMapName) {
     this.fluentdConfiguration = configurationConfigMapMapName;
   }
 

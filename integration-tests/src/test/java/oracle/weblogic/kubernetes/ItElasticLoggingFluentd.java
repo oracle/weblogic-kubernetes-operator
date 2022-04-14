@@ -386,6 +386,7 @@ class ItElasticLoggingFluentd {
     // create the domain CR
 
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
+
     fluentdSpecification.setImage(FLUENTD_IMAGE);
     fluentdSpecification.setImagePullPolicy("IfNotPresent");
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
