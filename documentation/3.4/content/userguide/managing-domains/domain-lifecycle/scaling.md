@@ -113,7 +113,7 @@ The internal REST endpoint is only accessible from within the Kubernetes cluster
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available [here]({{< relref "/userguide/managing-operators/_index.md#optional-configure-the-operators-external-rest-https-interface" >}}).
+Detailed instructions for configuring the external REST endpoint are available [here]({{< relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface" >}}).
 
 {{% notice note %}}
 Regardless of which endpoint is being invoked, the URL format for scaling is the same.
@@ -209,7 +209,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 ##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
-The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the Domain.
+The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
 {{% notice note %}}
