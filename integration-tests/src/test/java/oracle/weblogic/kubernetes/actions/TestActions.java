@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -75,10 +76,12 @@ import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -856,6 +859,15 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createConfigMap(V1ConfigMap configMap) throws ApiException {
+    // delete the config map if exists
+    assertNotNull(configMap);
+    assertNotNull(configMap.getMetadata());
+    String cmName = configMap.getMetadata().getName();
+    String cmNamespace = configMap.getMetadata().getNamespace();
+    if (doesCMExist(cmName, cmNamespace)) {
+      deleteConfigMap(cmName, cmNamespace);
+    }
+
     return ConfigMap.create(configMap);
   }
 
@@ -1337,7 +1349,8 @@ public class TestActions {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+      throws ApiException {
     return Pod.getPodStatusPhase(namespace, labelSelectors, podName);
   }
 

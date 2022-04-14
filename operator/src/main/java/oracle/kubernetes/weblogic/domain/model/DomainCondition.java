@@ -26,7 +26,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   @Description(
       "The type of the condition. Valid types are Completed, "
-          + "Available, Failed, and ConfigChangesPendingRestart.")
+          + "Available, Failed, Rolling, and ConfigChangesPendingRestart.")
   @NotNull
   private final DomainConditionType type;
 
@@ -293,6 +293,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   boolean isSpecifiedFailure(DomainFailureReason reason) {
-    return hasType(FAILED) && reason.label().equals(getReason());
+    return hasType(FAILED) && reason.toString().equals(getReason());
   }
 }

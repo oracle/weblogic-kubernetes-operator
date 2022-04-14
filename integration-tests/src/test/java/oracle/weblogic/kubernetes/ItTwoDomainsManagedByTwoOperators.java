@@ -57,6 +57,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -99,6 +100,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotCh
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
@@ -132,9 +134,8 @@ class ItTwoDomainsManagedByTwoOperators {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = "default-sharing-pvc";
-  private static final String defaultSharingPvName = "default-sharing-pv";
-
+  private static final String defaultSharingPvcName = getUniqueName("default-sharing-pvc-");
+  private static final String defaultSharingPvName = getUniqueName("default-sharing-pv-");
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
   private static String domain2Uid = null;
@@ -246,6 +247,7 @@ class ItTwoDomainsManagedByTwoOperators {
    * shutdown both domains
    */
   @Test
+  @Tag("gate")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createMultipleDomainsSharingPVUsingWlstAndVerify(
@@ -343,8 +345,8 @@ class ItTwoDomainsManagedByTwoOperators {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = domainUid + "-pv-" + domainNamespace;
-      String pvcName = domainUid + "-pvc";
+      String pvName = getUniqueName(domainUid + "-pv-");
+      String pvcName = getUniqueName(domainUid + "-pvc-");
 
       // create WebLogic credentials secret
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -357,7 +359,7 @@ class ItTwoDomainsManagedByTwoOperators {
               .addAccessModesItem("ReadWriteMany")
               .volumeMode("Filesystem")
               .putCapacityItem("storage", Quantity.fromString("2Gi"))
-              .persistentVolumeReclaimPolicy("Retain"))
+              .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
               .build()
@@ -467,7 +469,7 @@ class ItTwoDomainsManagedByTwoOperators {
             .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
-                    .restartPolicy("Never")
+                    .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
                     .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")

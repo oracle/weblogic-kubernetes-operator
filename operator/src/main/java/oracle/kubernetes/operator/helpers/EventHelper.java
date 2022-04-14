@@ -7,11 +7,11 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
-import oracle.kubernetes.common.Labeled;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainNamespaces;
@@ -30,7 +30,11 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -62,6 +66,9 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodUID;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodUID;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
@@ -117,8 +124,7 @@ public class EventHelper {
           .orElse(getAdditionalMessageFromFailureReason(eventData, info));
     }
 
-    private static V1ObjectMeta createMetadata(
-        EventData eventData) {
+    private static V1ObjectMeta createMetadata(EventData eventData) {
       final V1ObjectMeta metadata =
           new V1ObjectMeta().name(eventData.eventItem.generateEventName(eventData)).namespace(eventData.getNamespace());
 
@@ -314,7 +320,7 @@ public class EventHelper {
     return (long) (Math.random() * Long.MAX_VALUE);
   }
 
-  public enum EventItem implements Labeled {
+  public enum EventItem {
     DOMAIN_AVAILABLE {
       @Override
       public String getReason() {
@@ -616,6 +622,42 @@ public class EventHelper {
       protected String generateEventName(EventData eventData) {
         return generateOperatorNSEventName(eventData);
       }
+    },
+    CONVERSION_WEBHOOK_FAILED {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return CONVERSION_WEBHOOK_FAILED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_CONVERSION_FAILED;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByWebhookLabel(metadata);
+      }
+
+      @Override
+      public String getMessage(EventData eventData) {
+        return getMessageFromFailedConversionEventData(eventData);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return new V1ObjectReference()
+            .name(getWebhookPodName())
+            .namespace(getWebhookNamespace())
+            .kind(KubernetesConstants.POD)
+            .uid(getWebhookPodUID())
+            .apiVersion("v1");
+      }
     };
 
     private static String getMessageFromEventData(EventData eventData) {
@@ -628,6 +670,12 @@ public class EventHelper {
           eventData.getResourceNameFromInfo(),
           getEffectiveReasonDetail(eventData),
           getEffectiveMessage(eventData),
+          getAdditionalMessage(eventData));
+    }
+
+    private static String getMessageFromFailedConversionEventData(EventData eventData) {
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
+          Optional.ofNullable(eventData.message).orElse(""),
           getAdditionalMessage(eventData));
     }
 
@@ -654,6 +702,10 @@ public class EventHelper {
 
     private static void addCreatedByOperatorLabel(V1ObjectMeta metadata) {
       metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    }
+
+    private static void addCreatedByWebhookLabel(V1ObjectMeta metadata) {
+      metadata.putLabelsItem(LabelConstants.CREATEDBY_CONVERSION_WEBHOOK_LABEL, "true");
     }
 
     protected String generateEventName(EventData eventData) {
@@ -726,16 +778,6 @@ public class EventHelper {
     public abstract String getPattern();
 
     public abstract String getReason();
-
-    @Override
-    public String label() {
-      return name();
-    }
-
-    @Override
-    public String toString() {
-      return label();
-    }
   }
 
   public static class EventData {
@@ -834,5 +876,33 @@ public class EventHelper {
     private String getResourceNameFromInfo() {
       return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
     }
+  }
+
+  /**
+   * Create the conversion webhook related event.
+   *
+   * @param eventData Data for the event to be created.
+   */
+  public static void createConversionWebhookEvent(EventData eventData) {
+    try {
+      new CallBuilder()
+          .createEvent(getWebhookNamespace(), createConversionWebhookEventModel(eventData.getItem(), eventData));
+    } catch (ApiException apiException) {
+      LOGGER.warning(EXCEPTION, apiException);
+    }
+  }
+
+  private static CoreV1Event createConversionWebhookEventModel(EventItem eventItem, EventData eventData) {
+    return new CoreV1Event()
+                .reportingComponent(CONVERSION_WEBHOOK_COMPONENT)
+                .reportingInstance(getWebhookPodName())
+                .firstTimestamp(eventItem.getCurrentTimestamp())
+                .lastTimestamp(eventItem.getCurrentTimestamp())
+                .type(eventItem.getType())
+                .reason(eventItem.getReason())
+                .message(eventItem.getMessage(eventData))
+                .involvedObject(eventItem.createInvolvedObject(eventData))
+                .metadata(CreateEventStep.createMetadata(eventData))
+                .count(1);
   }
 }

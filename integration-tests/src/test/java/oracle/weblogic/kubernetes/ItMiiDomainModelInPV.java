@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -67,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -78,7 +80,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -113,8 +114,8 @@ public class ItMiiDomainModelInPV {
   private static String adminSecretName;
   private static String encryptionSecretName;
 
-  private static final String pvName = getUniquePvOrPvcName(domainUid1 + "-wdtmodel-pv-");
-  private static final String pvcName = getUniquePvOrPvcName(domainUid1 + "-wdtmodel-pvc-");
+  private static final String pvName = getUniqueName(domainUid1 + "-wdtmodel-pv-");
+  private static final String pvcName = getUniqueName(domainUid1 + "-wdtmodel-pvc-");
 
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";
@@ -243,6 +244,7 @@ public class ItMiiDomainModelInPV {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
+  @Tag("gate")
   void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
     String domainUid = params.getKey();
@@ -352,7 +354,7 @@ public class ItMiiDomainModelInPV {
                 new V1Container()
                     .name("weblogic-container")
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                     .addCommandItem("sleep")
                     .addArgsItem("600")
                     .volumeMounts(Arrays.asList(

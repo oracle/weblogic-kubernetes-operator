@@ -11,6 +11,9 @@ import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CrdHelper;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.rest.BaseRestServer;
+import oracle.kubernetes.operator.rest.RestConfig;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -21,23 +24,42 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
+import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
+import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
 /** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain extends BaseMain {
+
+  private final ConversionWebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
+  private RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = ConversionWebhookMain::createInitializeWebhookIdentityStep;
 
-  static class ConversionWebhookMainDelegateImpl extends CoreDelegateImpl {
+  static class ConversionWebhookMainDelegateImpl extends CoreDelegateImpl implements ConversionWebhookMainDelegate {
     public ConversionWebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
     }
 
     private void logStartup() {
-      ConversionWebhookMain.LOGGER.info(MessageKeys.CONVERSION_WEBHOOK_STARTED, buildVersion,
+      LOGGER.info(MessageKeys.CONVERSION_WEBHOOK_STARTED, buildVersion,
               deploymentImpl, deploymentBuildTime);
-      ConversionWebhookMain.LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace());
+      LOGGER.info(MessageKeys.WEBHOOK_CONFIG_NAMESPACE, getWebhookNamespace());
+    }
+
+    @Override
+    public String getWebhookCertUri() {
+      return SECRETS_WEBHOOK_CERT;
+    }
+
+    @Override
+    public String getWebhookKeyUri() {
+      return SECRETS_WEBHOOK_KEY;
     }
   }
 
@@ -70,21 +92,23 @@ public class ConversionWebhookMain extends BaseMain {
     return new ConversionWebhookMain(delegate);
   }
 
-  ConversionWebhookMain(CoreDelegate delegate) {
-    super(delegate);
+  ConversionWebhookMain(ConversionWebhookMainDelegate conversionWebhookMainDelegate) {
+    super(conversionWebhookMainDelegate);
+    this.conversionWebhookMainDelegate = conversionWebhookMainDelegate;
   }
 
   @Override
   protected Step createStartupSteps() {
-    return nextStepFactory.createInitializationStep(delegate, CrdHelper.createDomainCrdStep(
-            delegate.getKubernetesVersion(), delegate.getProductVersion(), new Certificates(delegate)));
+    return nextStepFactory.createInitializationStep(conversionWebhookMainDelegate,
+        Step.chain(CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
+            new Certificates(delegate)), new CheckFailureAndCreateEventStep()));
   }
 
-  private static Step createInitializeWebhookIdentityStep(CoreDelegate delegate, Step next) {
+  private static Step createInitializeWebhookIdentityStep(ConversionWebhookMainDelegate delegate, Step next) {
     return new InitializeWebhookIdentityStep(delegate, next);
   }
 
-  private void completeBegin() {
+  void completeBegin() {
     try {
       // start the conversion webhook REST server
       startRestServer();
@@ -95,8 +119,12 @@ public class ConversionWebhookMain extends BaseMain {
 
       markReadyAndStartLivenessThread();
 
-    } catch (Throwable e) {
+    } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
+      EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, e.getMessage())
+          .resourceName(CONVERSION_WEBHOOK_COMPONENT);
+      createConversionWebhookEvent(eventData);
+
     }
   }
 
@@ -138,13 +166,13 @@ public class ConversionWebhookMain extends BaseMain {
   @Override
   protected void startRestServer()
           throws Exception {
-    WebhookRestServer.create(new RestConfigImpl(new Certificates(delegate)));
-    WebhookRestServer.getInstance().start(container);
+    WebhookRestServer.create(restConfig);
+    BaseRestServer.getInstance().start(container);
   }
 
   private static void stopWebhookRestServer() {
-    WebhookRestServer.getInstance().stop();
-    WebhookRestServer.destroy();
+    BaseRestServer.getInstance().stop();
+    BaseRestServer.destroy();
   }
 
   @Override
@@ -154,6 +182,24 @@ public class ConversionWebhookMain extends BaseMain {
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createInitializationStep(CoreDelegate delegate, Step next);
+    Step createInitializationStep(ConversionWebhookMainDelegate delegate, Step next);
+  }
+
+  public static class CheckFailureAndCreateEventStep extends Step {
+    @Override
+    public NextAction apply(Packet packet) {
+      Exception failure = packet.getSpi(Exception.class);
+      if (failure != null) {
+        return doNext(createEventStep(new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, failure.getMessage())
+            .namespace(getWebhookNamespace())), packet);
+      }
+      return doNext(getNext(), packet);
+    }
+  }
+
+  public static class DeploymentException extends Exception {
+    public DeploymentException(Exception e) {
+      super(e);
+    }
   }
 }

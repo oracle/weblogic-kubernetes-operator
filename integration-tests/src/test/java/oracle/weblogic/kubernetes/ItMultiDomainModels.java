@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -109,6 +110,7 @@ class ItMultiDomainModels {
   @DisplayName("scale cluster by patching domain resource with three different type of domains and "
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @Tag("gate")
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");

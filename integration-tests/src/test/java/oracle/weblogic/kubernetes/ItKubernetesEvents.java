@@ -37,23 +37,23 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -73,9 +73,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -106,7 +109,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -117,7 +119,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -151,22 +152,18 @@ class ItKubernetesEvents {
   final String cluster1Name = "mycluster";
   final String cluster2Name = "cl2";
   final String adminServerName = "admin-server";
+  final String domainUid = "k8seventsdomain";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
-  final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
-  private static final String domainUid = "k8seventsdomain";
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   private final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
-
-  public static ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(10, MINUTES).await();
 
   public enum ScaleAction {
     scaleUp,
@@ -226,6 +223,7 @@ class ItKubernetesEvents {
   @Order(1)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
+  @Tag("gate")
   void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");
@@ -510,8 +508,8 @@ class ItKubernetesEvents {
   void testDomainK8sEventsFailed() {
     OffsetDateTime timestamp = now();
     try {
-      String pvName = getUniquePvOrPvcName("sample-pv-");
-      String pvcName = getUniquePvOrPvcName("sample-pvc-");
+      String pvName = getUniqueName("sample-pv-");
+      String pvcName = getUniqueName("sample-pvc-");
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace1);
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
@@ -563,9 +561,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace1));
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
@@ -607,10 +603,22 @@ class ItKubernetesEvents {
     }
 
     //verify the logHome change causes the domain roll events to be logged
+    verifyDomainRollAndPodCycleEvents(timestamp);
+  }
+
+  private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp) {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    // verify that Rolling condition is removed
+    testUntil(
+        () -> verifyDomainStatusConditionTypeDoesNotExist(
+            domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_ROLLING_TYPE),
+        logger,
+        "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
+        domainUid,
+        domainNamespace1);
   }
 
 
@@ -625,9 +633,7 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace1));
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace1, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
@@ -672,10 +678,7 @@ class ItKubernetesEvents {
     }
 
     //verify the includeServerOutInPodLog change causes the domain roll events to be logged
-    logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    verifyDomainRollAndPodCycleEvents(timestamp);
   }
 
   /**
@@ -775,7 +778,7 @@ class ItKubernetesEvents {
 
     logger.info("Labeling namespace {0} to enable it in the operator watch list", domainNamespace3);
     // label domainNamespace3
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
@@ -801,7 +804,7 @@ class ItKubernetesEvents {
         + "watch list", domainNamespace3);
 
     // label domainNamespace3 to weblogic-operator=disabled
-    new Command()
+    Command
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
         .execute();
@@ -817,7 +820,7 @@ class ItKubernetesEvents {
       assertDoesNotThrow(() -> createNamespaces(newNSWithoutLabels, newNSWithLabels),
           "Failed to create new namespaces");
 
-      new Command()
+      Command
           .withParams(new CommandParams()
               .command("kubectl label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
           .execute();
@@ -1037,7 +1040,7 @@ class ItKubernetesEvents {
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster

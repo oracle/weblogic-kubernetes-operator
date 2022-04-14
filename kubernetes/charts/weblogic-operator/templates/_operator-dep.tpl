@@ -65,8 +65,10 @@ spec:
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
+        {{- if .kubernetesPlatform }}
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
+        {{- end }}
         - name: "JAVA_LOGGING_MAXSIZE"
           value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
@@ -280,6 +282,11 @@ spec:
             - name: "weblogic-webhook-secrets-volume"
               mountPath: "/deployment/secrets"
               readOnly: true
+            {{- if .elkIntegrationEnabled }}
+            - mountPath: "/logs"
+              name: "log-dir"
+              readOnly: false
+            {{- end }}
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
@@ -327,7 +334,7 @@ spec:
               medium: "Memory"
           - name: "logstash-config-cm-volume"
             configMap:
-              name: "weblogic-webhook-logstash-cm"
+              name: "weblogic-operator-logstash-cm"
               items:
               - key: logstash.conf
                 path: logstash.conf

@@ -12,19 +12,20 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
 
@@ -92,13 +93,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withDefaultServerStartPolicy(String startPolicy) {
+  public DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy) {
     getDomainSpec().setServerStartPolicy(startPolicy);
     return this;
   }
 
   @Override
-  public DomainConfigurator withServerStartState(String startState) {
+  public DomainConfigurator withServerStartState(ServerStartState startState) {
     getDomainSpec().setServerStartState(startState);
     return this;
   }
@@ -315,7 +316,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withRestartPolicy(String restartPolicy) {
+  public DomainConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
     getDomainSpec().setRestartPolicy(restartPolicy);
     return this;
   }
@@ -424,7 +425,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withDomainType(String type) {
+  public DomainConfigurator withDomainType(ModelInImageDomainType type) {
     getOrCreateModel().withDomainType(type);
     return this;
   }
@@ -463,7 +464,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+    configureAdminServer().withServerStartPolicy(shuttingDown ? ServerStartPolicy.NEVER : ServerStartPolicy.ALWAYS);
   }
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
@@ -493,7 +494,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withDesiredState(String desiredState) {
+    public ServerConfigurator withDesiredState(ServerStartState desiredState) {
       server.setServerStartState(desiredState);
       return this;
     }
@@ -511,12 +512,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withServerStartState(String state) {
+    public ServerConfigurator withServerStartState(ServerStartState state) {
       return withDesiredState(state);
     }
 
     @Override
-    public ServerConfigurator withServerStartPolicy(String policy) {
+    public ServerConfigurator withServerStartPolicy(ServerStartPolicy policy) {
       server.setServerStartPolicy(policy);
       return this;
     }
@@ -631,7 +632,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withRestartPolicy(String restartPolicy) {
+    public ServerConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
       server.setRestartPolicy(restartPolicy);
       return this;
     }
@@ -693,7 +694,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withDesiredState(String state) {
+    public ClusterConfigurator withDesiredState(ServerStartState state) {
       cluster.setServerStartState(state);
       return this;
     }
@@ -705,12 +706,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withServerStartState(String state) {
+    public ClusterConfigurator withServerStartState(ServerStartState state) {
       return withDesiredState(state);
     }
 
     @Override
-    public ClusterConfigurator withServerStartPolicy(String policy) {
+    public ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy) {
       cluster.setServerStartPolicy(policy);
       return this;
     }
@@ -825,7 +826,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withRestartPolicy(String restartPolicy) {
+    public ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
       cluster.setRestartPolicy(restartPolicy);
       return this;
     }

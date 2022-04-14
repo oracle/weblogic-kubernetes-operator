@@ -213,7 +213,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     OperatorMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(OPERATOR_STARTED, GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
+    assertThat(logRecords, containsInfo(OPERATOR_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
   }
 
   @Test
@@ -222,7 +222,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     OperatorMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(OP_CONFIG_NAMESPACE, getOperatorNamespace()));
+    assertThat(logRecords, containsInfo(OP_CONFIG_NAMESPACE).withParams(getOperatorNamespace()));
   }
 
   @Test
@@ -231,7 +231,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     OperatorMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT, "default"));
+    assertThat(logRecords, containsInfo(OP_CONFIG_SERVICE_ACCOUNT).withParams("default"));
   }
 
   @Test
@@ -243,8 +243,8 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     OperatorMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES,
-          String.join(", ", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3)));
+    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES)
+          .withParams(String.join(", ", NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3)));
   }
 
   @Test
@@ -254,7 +254,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     OperatorMain.createMain(buildProperties);
 
-    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES, getOperatorNamespace()));
+    assertThat(logRecords, containsInfo(OP_CONFIG_DOMAIN_NAMESPACES).withParams(getOperatorNamespace()));
   }
 
   @Test
@@ -807,9 +807,9 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE, NS_WEBLOGIC1));
-    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE, NS_WEBLOGIC2));
-    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE, NS_WEBLOGIC3));
+    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE).withParams(NS_WEBLOGIC1));
+    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE).withParams(NS_WEBLOGIC2));
+    assertThat(logRecords, containsInfo(MessageKeys.BEGIN_MANAGING_NAMESPACE).withParams(NS_WEBLOGIC3));
   }
 
   @Test
@@ -865,7 +865,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     createNamespaces(4);
 
     runCreateReadNamespacesStep();
-    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE, "NS3"));
+    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE).withParams("NS3"));
   }
 
   @Test
@@ -1005,7 +1005,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     runCreateReadNamespacesStep();
 
-    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE, "NS3"));
+    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE).withParams("NS3"));
   }
 
   @Test
@@ -1083,7 +1083,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
-    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE, "NS3"));
+    assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE).withParams("NS3"));
   }
 
   @Test

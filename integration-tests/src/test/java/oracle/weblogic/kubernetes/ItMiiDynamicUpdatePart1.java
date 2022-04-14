@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -136,6 +137,7 @@ class ItMiiDynamicUpdatePart1 {
   @Test
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
+  @Tag("gate")
   void testMiiAddWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -151,7 +153,7 @@ class ItMiiDynamicUpdatePart1 {
       pods.put(helper.managedServerPrefix + i, 
           getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
     }
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -199,7 +201,7 @@ class ItMiiDynamicUpdatePart1 {
           getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
     }
 
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.update.wm.yaml"),
         withStandardRetryPolicy);
 
@@ -256,7 +258,7 @@ class ItMiiDynamicUpdatePart1 {
     verifyApplicationAccessOnCluster();
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToChangeTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
@@ -309,7 +311,7 @@ class ItMiiDynamicUpdatePart1 {
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
             pathToAddClusterYaml.toString()), withStandardRetryPolicy);
 
@@ -395,7 +397,7 @@ class ItMiiDynamicUpdatePart1 {
 
     // Update the Dynamic ClusterSize and add distributed destination to verify JMS connection and message distribution
     // after the cluster is scaled.
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.cluster.size.yaml"), withStandardRetryPolicy);
 
@@ -502,7 +504,7 @@ class ItMiiDynamicUpdatePart1 {
     assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.cluster.size.yaml",
             pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);

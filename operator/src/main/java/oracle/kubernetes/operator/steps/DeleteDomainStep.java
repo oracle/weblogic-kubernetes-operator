@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -77,7 +77,7 @@ public class DeleteDomainStep extends Step {
             .listPodDisruptionBudgetAsync(
                     namespace,
                     new ActionResponseStep<>() {
-                    public Step createSuccessStep(V1beta1PodDisruptionBudgetList result, Step next) {
+                    public Step createSuccessStep(V1PodDisruptionBudgetList result, Step next) {
                       return new DeletePodDisruptionBudgetListStep(result.getItems(), next);
                     }
                   });

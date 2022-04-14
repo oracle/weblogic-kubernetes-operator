@@ -16,6 +16,7 @@ import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -128,6 +129,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    */
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  @Tag("gate")
   void testCompleteAvailableConditionWithIfNeeded() {
 
     // verify the condition type Completed exists

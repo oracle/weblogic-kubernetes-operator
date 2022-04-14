@@ -16,6 +16,7 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -67,7 +68,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -126,12 +126,12 @@ public class MonitoringUtils {
         monitoringExporterRelease,
         monitoringExporterWebAppVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(curlDownloadCmd))
         .execute(), "Failed to download monitoring exporter webapp");
     String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to download monitoring exporter webapp");
@@ -142,7 +142,7 @@ public class MonitoringUtils {
         configFile);
 
     testUntil(
-        (() -> new Command()
+        (() -> Command
           .withParams(
               new CommandParams()
               .verbose(true)
@@ -172,7 +172,7 @@ public class MonitoringUtils {
     Path srcFile = Paths.get(monitoringExporterSrcDir,
         "target", "wls-exporter.war");
 
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter webapp");
@@ -449,25 +449,8 @@ public class MonitoringUtils {
     if (OKD) {
       addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
     }
-    try {
-      assertTrue(installGrafana(grafanaParams),
-          String.format("Failed to install grafana in namespace %s",grafanaNamespace));
-    } catch (AssertionError err) {
-      //retry with different nodeport
-      uninstallGrafana(grafanaHelmParams);
-      grafanaNodePort = getNextFreePort();
-      grafanaParams = new GrafanaParams()
-          .helmParams(grafanaHelmParams)
-          .nodePort(grafanaNodePort);
-      isGrafanaInstalled = installGrafana(grafanaParams);
-      if (!isGrafanaInstalled) {
-        //clean up
-        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
-            grafanaNamespace, grafanaNodePort));
-        uninstallGrafana(grafanaHelmParams);
-        return null;
-      }
-    }
+    assertTrue(installGrafana(grafanaParams),
+        String.format("Failed to install grafana in namespace %s",grafanaNamespace));
     logger.info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
@@ -599,7 +582,7 @@ public class MonitoringUtils {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(appPath);
     appList.add(appName);
 
@@ -717,7 +700,7 @@ public class MonitoringUtils {
         e.printStackTrace();
       }
 
-      String imagePullPolicy = "IfNotPresent";
+      V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
           .imagePullPolicy(imagePullPolicy)
@@ -1007,7 +990,7 @@ public class MonitoringUtils {
           + monitoringExporterSrcDir);
     }
     logger.info("Executing command " + command);
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter image");

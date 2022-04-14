@@ -55,6 +55,12 @@ data:
   {{- if .kubernetesPlatform }}
   kubernetesPlatform: {{ .kubernetesPlatform | quote }}
   {{- end }}
+  {{- if .domainPresenceFailureRetryMaxCount }}
+  domainPresenceFailureRetryMaxCount: {{ .domainPresenceFailureRetryMaxCount | quote }}
+  {{- end }}
+  {{- if .domainPresenceFailureRetrySeconds }}
+  domainPresenceFailureRetrySeconds: {{ .domainPresenceFailureRetrySeconds | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:

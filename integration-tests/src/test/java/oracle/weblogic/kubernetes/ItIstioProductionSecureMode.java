@@ -89,7 +89,7 @@ class ItIstioProductionSecureMode {
     domainNamespace = namespaces.get(1);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
@@ -178,7 +178,7 @@ class ItIstioProductionSecureMode {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);

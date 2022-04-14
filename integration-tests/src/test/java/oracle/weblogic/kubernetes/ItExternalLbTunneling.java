@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -73,7 +72,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
@@ -115,7 +113,6 @@ class ItExternalLbTunneling {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
-  private static String nginxNamespace = null;
   private static HelmParams traefikHelmParams = null;
   private static NginxParams nginxHelmParams = null;
   private static int replicaCount = 2;
@@ -140,7 +137,7 @@ class ItExternalLbTunneling {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
 
@@ -156,10 +153,6 @@ class ItExternalLbTunneling {
     logger.info("Assigning unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
-
-    logger.info("Assigning unique namespace for Nginx");
-    assertNotNull(namespaces.get(3), "Namespace list is null");
-    nginxNamespace = namespaces.get(3);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -182,7 +175,7 @@ class ItExternalLbTunneling {
 
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
-    Map<String, String> configTemplateMap  = new HashMap();
+    Map<String, String> configTemplateMap  = new HashMap<>();
     configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
@@ -266,7 +259,7 @@ class ItExternalLbTunneling {
 
     // Prepare the ingress file from the template file by replacing
     // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
@@ -305,65 +298,6 @@ class ItExternalLbTunneling {
   }
 
   /**
-   * Verify RMI access to WLS through NGINX LoadBalancer.
-   */
-  @Disabled("NGNIX tls ingress yaml file not ready")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @Test
-  @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
-  void testExternalRmiAccessThruNginx() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-    logger.info("Installing Nginx controller using helm");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
-    // Build the standalone JMS Client to send and receive messages
-    buildClient();
-    buildClientOnPod();
-
-    // Prepare the ingress file from the template file by replacing
-    // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
-    templateMap.put("DOMAIN_NS", domainNamespace);
-    templateMap.put("DOMAIN_UID", domainUid);
-    templateMap.put("CLUSTER", clusterName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-
-    Path srcNginxHttpFile = Paths.get(RESOURCE_DIR,
-        "tunneling", "nginx.tunneling.template.yaml");
-    Path targetNginxHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcNginxHttpFile.toString(),
-        "nginx.tunneling.yaml", templateMap));
-    logger.info("Generated Nginx Http Tunneling file {0}", targetNginxHttpFile);
-
-    StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
-    deployIngress.append(Paths.get(RESULTS_ROOT, "nginx.tunneling.yaml"));
-    // Deploy the nginx ingress controller
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(deployIngress), true));
-
-    logger.info("kubectl apply returned {0}", result.toString());
-
-    // Get the ingress service nodeport corresponding to non-tls service
-    // Get the Traefik Service Name ginx-release-etqg-ingress-nginx-controller
-    String service = 
-        NGINX_RELEASE_NAME + "-" 
-        + nginxNamespace.substring(3) + "-ingress-nginx-controller";
- 
-    logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
-    int httpTunnelingPort =
-        getServiceNodePort(nginxNamespace, service, "http");
-    assertNotEquals(-1, httpTunnelingPort,
-        "Could not get the Nginx HttpTunnelingPort service node port");
-    logger.info("HttpTunnelingPort for Nginx {0}", httpTunnelingPort);
-
-    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
-    runExtClient(httpTunnelingPort, 2, false);
-    logger.info("External RMI tunneling works for Nginx");
-  }
-
-  /**
    * The external JMS client sends 300 messages to a Uniform Distributed
    * Queue using load balancer HTTPS url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
@@ -384,7 +318,7 @@ class ItExternalLbTunneling {
 
     // Prepare the ingress file from the template file by replacing
     // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
@@ -416,59 +350,6 @@ class ItExternalLbTunneling {
     assertNotEquals(-1, httpsTunnelingPort,
         "Could not get the Traefik HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Traefik {0}", httpsTunnelingPort);
-    runExtHttpsClient(httpsTunnelingPort, 2, false);
-  }
-
-  /**
-   * Verify tls RMI access to WLS through NGNIX LoadBalancer.
-   */
-  @Disabled("NGNIX tls ingress yaml file not ready")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @Test
-  @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
-  void testExternalRmiAccessThruNginxHttpsTunneling() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-    logger.info("Installing Nginx controller using helm");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
-    // Build the standalone JMS Client to send and receive messages
-    buildClient();
-
-    // Prepare the ingress file from the template file by replacing
-    // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
-    templateMap.put("DOMAIN_NS", domainNamespace);
-    templateMap.put("DOMAIN_UID", domainUid);
-    templateMap.put("CLUSTER", clusterName);
-    templateMap.put("TLS_CERT", tlsSecretName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-
-    Path srcNginxHttpsFile  = Paths.get(RESOURCE_DIR,
-        "tunneling", "nginx.tls.tunneling.template.yaml");
-    Path targetNginxHttpsFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcNginxHttpsFile.toString(),
-            "nginx.tls.tunneling.yaml", templateMap));
-    logger.info("Generated Nginx Https Tunneling file {0}", targetNginxHttpsFile);
-
-    // Deploy nginx ingress controller with tls enabled service with SSL
-    // terminating at Ingress.
-    StringBuffer deployNginxIngress = new StringBuffer("kubectl apply -f ");
-    deployNginxIngress.append(Paths.get(RESULTS_ROOT, "nginx.tls.tunneling.yaml"));
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(deployNginxIngress), true));
-    logger.info("kubectl apply returned {0}", result.toString());
-
-    // Get the ingress service nodeport corresponding to tls service
-    // Get the Nginx Service Name nginx-release-{ns}
-    String service = 
-         NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3);
-    logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
-    int httpsTunnelingPort =
-        getServiceNodePort(nginxNamespace, service, "websecure");
-    assertNotEquals(-1, httpsTunnelingPort,
-        "Could not get the Nginx HttpsTunnelingPort service node port");
-    logger.info("HttpsTunnelingPort for Nginx {0}", httpsTunnelingPort);
     runExtHttpsClient(httpsTunnelingPort, 2, false);
   }
 
@@ -506,7 +387,7 @@ class ItExternalLbTunneling {
   /**
    * Verify tls RMI access to WLS through routes with edge termination - only for OKD cluster.
    */
-  @Disabled("need to add itls key and certs")
+  @Disabled("need to add tls key and certs")
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Verify tls RMI access WLS through Route in OKD ")
@@ -712,7 +593,7 @@ class ItExternalLbTunneling {
   // Create and display SSL certificate and key using openSSL with SAN extension
   private static void createCertKeyFiles(String cn) {
 
-    Map<String, String> sanConfigTemplateMap  = new HashMap();
+    Map<String, String> sanConfigTemplateMap  = new HashMap<>();
     sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
     Path srcFile = Paths.get(RESOURCE_DIR,
@@ -729,12 +610,12 @@ class ItExternalLbTunneling {
           + " -subj \"/CN=" + cn + "\" -extensions san"
           + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(opcmd)).execute(), "openssl req command fails");
 
     String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(opcmd2)).execute(), "openssl list command fails");
   }
 
@@ -747,13 +628,13 @@ class ItExternalLbTunneling {
         + " --keystore " + jksTrustFile
         + " -storetype jks -storepass password -noprompt ";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(keycmd)).execute(), "keytool import command fails");
 
     String keycmd2 = "keytool -list -keystore " + jksTrustFile
                    + " -storepass password -noprompt";
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(keycmd2)).execute(), "keytool list command fails");
   }
 
@@ -762,7 +643,7 @@ class ItExternalLbTunneling {
     String kcmd = "kubectl create secret tls " + tlsSecretName + " --key "
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
     assertTrue(
-          new Command().withParams(new CommandParams()
+          Command.withParams(new CommandParams()
              .command(kcmd)).execute(), "kubectl create secret command fails");
   }
 

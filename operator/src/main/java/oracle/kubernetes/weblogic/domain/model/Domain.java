@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -34,13 +35,9 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -48,6 +45,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
+import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -65,8 +63,6 @@ public class Domain implements KubernetesObject {
    * The ending marker of a token that needs to be substituted with a matching env var.
    */
   public static final String TOKEN_END_MARKER = ")";
-
-  static final String CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM = "clusterSizePaddingValidationEnabled";
 
   /**
    * The pattern for computing the default shared logs directory.
@@ -142,14 +138,14 @@ public class Domain implements KubernetesObject {
   /**
    * check if the external service is configured for the admin server.
    *
-   * @param domainSpec Domain spec
+   *
    * @return true if the external service is configured
    */
-  public static boolean isExternalServiceConfigured(DomainSpec domainSpec) {
-    AdminServer adminServer = domainSpec.getAdminServer();
-    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
-    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    return channels != null && !channels.isEmpty();
+  public boolean isExternalServiceConfigured() {
+    return !Optional.ofNullable(getSpec().getAdminServer())
+          .map(AdminServer::getAdminService)
+          .map(AdminService::getChannels)
+          .orElse(Collections.emptyList()).isEmpty();
   }
 
   /**
@@ -286,7 +282,7 @@ public class Domain implements KubernetesObject {
     return spec.getMonitoringExporterImage();
   }
 
-  public String getMonitoringExporterImagePullPolicy() {
+  public V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
     return spec.getMonitoringExporterImagePullPolicy();
   }
 
@@ -523,7 +519,7 @@ public class Domain implements KubernetesObject {
     return spec.getDataHome();
   }
 
-  public String getWdtDomainType() {
+  public ModelInImageDomainType getWdtDomainType() {
     return spec.getWdtDomainType();
   }
 
@@ -877,10 +873,6 @@ public class Domain implements KubernetesObject {
     return new Validator().getAdditionalValidationFailures(podSpec);
   }
 
-  public List<String> getAfterIntrospectValidationFailures(Packet packet) {
-    return new Validator().getAfterIntrospectValidationFailures(packet);
-  }
-
   class Validator {
     public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
     public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
@@ -927,111 +919,11 @@ public class Domain implements KubernetesObject {
     private void verifyIntrospectorJobName() {
       // K8S adds a 5 character suffix to an introspector job name
       if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
-          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
+          > LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
         failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(
             getDomainUid(),
             LegalNames.toJobIntrospectorName(getDomainUid()),
-            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
-      }
-    }
-
-    private void verifyServerPorts(WlsDomainConfig wlsDomainConfig) {
-      // domain level serverConfigs do not contain servers in dynamic clusters
-      wlsDomainConfig.getServerConfigs()
-          .values()
-          .forEach(this::checkServerPorts);
-      wlsDomainConfig.getClusterConfigs()
-          .values()
-          .iterator()
-          .forEachRemaining(wlsClusterConfig
-              // serverConfigs contains configured and dynamic servers in the cluster
-              -> wlsClusterConfig.getServerConfigs().forEach(this::checkServerPorts));
-    }
-
-    private void checkServerPorts(WlsServerConfig wlsServerConfig) {
-      if (noAvailablePort(wlsServerConfig)) {
-        failures.add(DomainValidationMessages.noAvailablePortToUse(getDomainUid(), wlsServerConfig.getName()));
-      }
-    }
-
-    private boolean noAvailablePort(WlsServerConfig wlsServerConfig) {
-      return wlsServerConfig.getAdminProtocolChannelName() == null;
-    }
-
-    private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
-      checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName(), -1);
-      if (isExternalServiceConfigured(getSpec())) {
-        checkGeneratedExternalServiceName(wlsDomainConfig.getAdminServerName());
-      }
-
-      // domain level serverConfigs do not contain servers in dynamic clusters
-      wlsDomainConfig.getServerConfigs()
-          .values()
-          .stream()
-          .map(WlsServerConfig::getName)
-          .forEach(serverName -> checkGeneratedServerServiceName(serverName, -1));
-      wlsDomainConfig.getClusterConfigs()
-          .values()
-          .iterator()
-          .forEachRemaining(wlsClusterConfig
-              // serverConfigs contains configured and dynamic servers in the cluster
-              -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
-                  -> this.checkGeneratedServerServiceName(
-                      wlsServerConfig.getName(), wlsClusterConfig.getServerConfigs().size())));
-      wlsDomainConfig.getClusterConfigs()
-          .values()
-          .iterator()
-          .forEachRemaining(wlsClusterConfig -> this.checkGeneratedClusterServiceName(wlsClusterConfig.getName()));
-    }
-
-    private void checkGeneratedExternalServiceName(String adminServerName) {
-      if (LegalNames.toExternalServiceName(getDomainUid(), adminServerName).length()
-          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxExternalServiceName(
-            getDomainUid(),
-            adminServerName,
-            LegalNames.toExternalServiceName(getDomainUid(), adminServerName),
-            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
-      }
-    }
-
-    private void checkGeneratedServerServiceName(String serverName, int clusterSize) {
-      int limit = LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
-      if (isClusterSizePaddingValidationEnabled() && clusterSize > 0 && clusterSize < 100) {
-        limit = clusterSize >= 10 ? limit - 1 : limit - 2;
-      }
-
-      if (LegalNames.toServerServiceName(getDomainUid(), serverName).length() > limit) {
-        failures.add(DomainValidationMessages.exceedMaxServerServiceName(
-            getDomainUid(),
-            serverName,
-            LegalNames.toServerServiceName(getDomainUid(), serverName),
-            limit));
-      }
-    }
-
-    /**
-     * Gets the configured boolean for enabling cluster size padding validation.
-     * @return boolean enabled
-     */
-    boolean isClusterSizePaddingValidationEnabled() {
-      return "true".equalsIgnoreCase(getClusterSizePaddingValidationEnabledParameter());
-    }
-
-    private String getClusterSizePaddingValidationEnabledParameter() {
-      return Optional.ofNullable(TuningParameters.getInstance())
-            .map(t -> t.get(CLUSTER_SIZE_PADDING_VALIDATION_ENABLED_PARAM))
-            .orElse("true");
-    }
-
-    private void checkGeneratedClusterServiceName(String clusterName) {
-      if (LegalNames.toClusterServiceName(getDomainUid(), clusterName).length()
-          > LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH) {
-        failures.add(DomainValidationMessages.exceedMaxClusterServiceName(
-            getDomainUid(),
-            clusterName,
-            LegalNames.toClusterServiceName(getDomainUid(), clusterName),
-            LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH));
+            LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
       }
     }
 
@@ -1144,7 +1036,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void verifyLivenessProbeSuccessThreshold() {
-      Optional.ofNullable(getAdminServerSpec().getLivenessProbe())
+      Optional.of(getAdminServerSpec().getLivenessProbe())
               .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
                       + ".livenessProbe.successThreshold"));
       getSpec().getClusters().forEach(cluster ->
@@ -1286,13 +1178,6 @@ public class Domain implements KubernetesObject {
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
     }
 
-    List<String> getAfterIntrospectValidationFailures(Packet packet) {
-      WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-      verifyGeneratedResourceNames(wlsDomainConfig);
-      verifyServerPorts(wlsDomainConfig);
-      return failures;
-    }
-
     class EnvironmentVariableCheck {
       private final Predicate<String> isReserved;
 
@@ -1345,7 +1230,7 @@ public class Domain implements KubernetesObject {
         } else {
           verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RUNTIME_ENCRYPTION);
         }
-        if (ModelInImageDomainType.JRF.toString().equals(getWdtDomainType()) 
+        if (ModelInImageDomainType.JRF.equals(getWdtDomainType())
             && getOpssWalletPasswordSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredOpssSecret(
               "spec.configuration.opss.walletPasswordSecret"));

@@ -264,19 +264,19 @@ class ItPodTemplates {
                                               String domainHomeSource,
                                               int replicaCount) {
     // add labels to serverPod
-    Map<String, String> labelKeyValues = new HashMap();
+    Map<String, String> labelKeyValues = new HashMap<>();
     labelKeyValues.put("servername", "$(SERVER_NAME)");
     labelKeyValues.put("domainname", "$(DOMAIN_NAME)");
     labelKeyValues.put("domainuid", "$(DOMAIN_UID)");
 
     // add annotations to serverPod as DOMAIN_HOME and LOG_HOME contains "/" which is not allowed
     // in labels
-    Map<String, String> annotationKeyValues = new HashMap();
+    Map<String, String> annotationKeyValues = new HashMap<>();
     annotationKeyValues.put("domainhome", "$(DOMAIN_HOME)");
     annotationKeyValues.put("loghome", "$(LOG_HOME)");
 
     // add label to cluster serverPod for CLUSTER_NAME
-    Map<String, String> clusterLabelKeyValues = new HashMap();
+    Map<String, String> clusterLabelKeyValues = new HashMap<>();
     clusterLabelKeyValues.put("clustername", "$(CLUSTER_NAME)");
     // create the domain CR
     Domain domain = new Domain()

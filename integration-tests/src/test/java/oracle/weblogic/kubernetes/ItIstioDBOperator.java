@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
@@ -108,7 +109,6 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -153,8 +153,8 @@ class ItIstioDBOperator {
   private String adminSvcExtHost = null;
 
   private static final String wlsDomainUid = "mii-jms-istio-db";
-  private static final String pvName = getUniquePvOrPvcName(wlsDomainUid + "-pv-");
-  private static final String pvcName = getUniquePvOrPvcName(wlsDomainUid + "-pvc-");
+  private static final String pvName = getUniqueName(wlsDomainUid + "-pv-");
+  private static final String pvcName = getUniqueName(wlsDomainUid + "-pvc-");
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
   private static int wlDomainIstioIngressPort;
@@ -207,7 +207,7 @@ class ItIstioDBOperator {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(fmwDomainNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(wlsDomainNamespace, labelMap));
@@ -288,7 +288,7 @@ class ItIstioDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.EMPTY_LIST);
+    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
     Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
@@ -732,7 +732,7 @@ class ItIstioDBOperator {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + namespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap = new HashMap();
+    Map<String, String> templateMap = new HashMap<>();
     templateMap.put("NAMESPACE", namespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE", adminServerPodName);

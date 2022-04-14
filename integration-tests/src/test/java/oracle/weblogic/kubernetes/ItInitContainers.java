@@ -30,11 +30,14 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -186,13 +189,13 @@ class ItInitContainers {
     //check if init container got executed in the server pods
     assertTrue(checkPodLogContainMsg(domain1Uid + "-admin-server",domain1Namespace,
         domain1Uid,"Hi from Domain"),
-         "failed to init busybox container command for admin server");
+         "failed to init init-container container command for admin server");
     assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server1",domain1Namespace,
         domain1Uid, "Hi from Domain"),
-        "failed to init busybox container command for managed server1");
+        "failed to init init-container container command for managed server1");
     assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server2",domain1Namespace,
         domain1Uid,"Hi from Domain"),
-        "failed to init busybox container command for managed server2");
+        "failed to init init-container container command for managed server2");
 
     // get the pod creation time stamps
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -220,7 +223,7 @@ class ItInitContainers {
       logger.info("Checking that pod {0} exists in namespace {1}",
           podName, podNamespace);
       checkPodReady(podName, domainUid, podNamespace);
-      podLog = getPodLog(podName, podNamespace,"busybox");
+      podLog = getPodLog(podName, podNamespace,"init-container");
     } catch (Exception ex) {
       logger.info("Caught unexpected exception while calling getPodLog for pod "
           + podName
@@ -250,9 +253,9 @@ class ItInitContainers {
         "can't start or verify domain in namespace " + domain2Namespace);
 
     //check if init container got executed for admin server pod
-    assertTrue(assertDoesNotThrow(() -> getPodLog(domain2Uid + "-admin-server", domain2Namespace,"busybox")
+    assertTrue(assertDoesNotThrow(() -> getPodLog(domain2Uid + "-admin-server", domain2Namespace,"init-container")
             .contains("Hi from AdminServer"),
-        "failed to init busybox container command for admin server"));
+        "failed to init init-container container command for admin server"));
   }
 
   /**
@@ -263,17 +266,18 @@ class ItInitContainers {
    */
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
+  @Tag("gate")
   void testClusterInitContainer() {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
     //check if init container got executed
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server1",
-        domain3Namespace,"busybox").contains("Hi from Cluster"),
-        "failed to init busybox container command for cluster's managed-server1"));
+        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        "failed to init init-container container command for cluster's managed-server1"));
     assertTrue(assertDoesNotThrow(() -> getPodLog(domain3Uid + "-managed-server2",
-        domain3Namespace,"busybox").contains("Hi from Cluster"),
-        "failed to init busybox container command for cluster's managed-server2"));
+        domain3Namespace,"init-container").contains("Hi from Cluster"),
+        "failed to init init-container container command for cluster's managed-server2"));
   }
 
   /**
@@ -289,9 +293,9 @@ class ItInitContainers {
         "can't start or verify domain in namespace " + domain4Namespace);
 
     //check if init container got executed
-    assertTrue(assertDoesNotThrow(() -> getPodLog(domain4Uid + "-managed-server1", domain4Namespace,"busybox")
+    assertTrue(assertDoesNotThrow(() -> getPodLog(domain4Uid + "-managed-server1", domain4Namespace,"init-container")
             .contains("Hi from managed-server1"),
-        "failed to init busybox container command for managed server1"));
+        "failed to init init-container container command for managed server1"));
   }
 
   private boolean createVerifyDomain(String domainNamespace, String domainUid, String parentNodeName) {
@@ -360,9 +364,9 @@ class ItInitContainers {
       case "spec":
         domain.getSpec().getServerPod().addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
-            .name("busybox")
-            .imagePullPolicy("IfNotPresent")
-            .image("busybox").addEnvItem(new V1EnvVar()
+            .name("init-container")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG).addEnvItem(new V1EnvVar()
                                     .name("DOMAIN_NAME")
                                     .value("xyz")));
         setPodAntiAffinity(domain);
@@ -371,9 +375,9 @@ class ItInitContainers {
         domain.getSpec().getAdminServer().serverPod(new ServerPod()
             .addInitContainersItem(new V1Container()
             .addCommandItem("echo").addArgsItem("\"Hi from AdminServer\"")
-            .name("busybox")
-            .imagePullPolicy("IfNotPresent")
-            .image("busybox")));
+            .name("init-container")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG)));
         setPodAntiAffinity(domain);
         break;
       case "clusters":
@@ -387,9 +391,9 @@ class ItInitContainers {
         mycluster.getServerPod()
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from Cluster \"")
-                    .name("busybox")
-                    .imagePullPolicy("IfNotPresent")
-                    .image("busybox"));
+                    .name("init-container")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG));
         break;
       case "managedServers":
         domain.getSpec().addManagedServersItem(new ManagedServer()
@@ -397,9 +401,9 @@ class ItInitContainers {
             .serverPod(new ServerPod()
                 .addInitContainersItem(new V1Container()
                     .addCommandItem("echo").addArgsItem("\"Hi from managed-server1\"")
-                    .name("busybox")
-                    .imagePullPolicy("IfNotPresent")
-                    .image("busybox"))));
+                    .name("init-container")
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .image(BUSYBOX_IMAGE + ":" + BUSYBOX_TAG))));
         setPodAntiAffinity(domain);
         break;
       default:

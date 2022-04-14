@@ -12,6 +12,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -28,8 +29,10 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
@@ -37,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -51,8 +55,10 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
@@ -138,12 +144,7 @@ class ItPodsRestart {
   void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
@@ -181,6 +182,9 @@ class ItPodsRestart {
           String.format("server pod compute resources cpu request is already set to %s, set cpu request to "
               + "a different value", cpuRequest));
     }
+
+    //get current timestamp before domain rolling restart to verify domain roll events
+    OffsetDateTime timestamp = now();
 
     // add/modify the server pod resources by patching the domain custom resource
     assertTrue(addServerPodResources(cpuLimit, cpuRequest),
@@ -227,9 +231,6 @@ class ItPodsRestart {
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber()));
 
-    //get current timestamp before domain rolling restart to verify domain roll events
-    OffsetDateTime timestamp = now();
-
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -238,6 +239,11 @@ class ItPodsRestart {
 
     //verify the resource change causes the domain restart and domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
+    verifyDomainRollAndPodCycleEvents(timestamp);
+
+  }
+
+  private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp) {
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
@@ -245,7 +251,14 @@ class ItPodsRestart {
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
-
+    // verify that Rolling condition is removed
+    testUntil(
+        () -> verifyDomainStatusConditionTypeDoesNotExist(
+            domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_ROLLING_TYPE),
+        logger,
+        "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
+        domainUid,
+        domainNamespace);
   }
 
   /**
@@ -258,11 +271,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
   void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -281,6 +290,9 @@ class ItPodsRestart {
         .append("}]");
     logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr.toString());
 
+    //get current timestamp before domain rolling restart to verify domain roll events
+    OffsetDateTime timestamp = now();
+
     boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(IncludeServerOutInPodLog) failed");
 
@@ -295,9 +307,6 @@ class ItPodsRestart {
         includeServerOutInPodLog);
     assertFalse(includeServerOutInPodLog, "IncludeServerOutInPodLog was not updated");
 
-    //get current timestamp before domain rolling restart to verify domain roll events
-    OffsetDateTime timestamp = now();
-
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -306,14 +315,7 @@ class ItPodsRestart {
 
     //verify the includeServerOutInPodLog change causes the domain restart and domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
   }
 
   /**
@@ -326,16 +328,15 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
   void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getEnv(), domain1 + "/spec/serverPod/env is null");
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
+
+    //get current timestamp before domain rolling restart to verify domain roll events
+    OffsetDateTime timestamp = now();
 
     //print out the original env
     List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
@@ -374,9 +375,6 @@ class ItPodsRestart {
     assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
         + " in the new patched domain");
 
-    //get current timestamp before domain rolling restart to verify domain roll events
-    OffsetDateTime timestamp = now();
-
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -384,14 +382,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -406,11 +397,7 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getPodSecurityContext(), domain1
         + "/spec/serverPod/podSecurityContext is null");
@@ -463,14 +450,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -484,17 +464,13 @@ class ItPodsRestart {
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
 
     //print out the original imagePullPolicy
-    String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
+    V1Container.ImagePullPolicyEnum imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
     //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
@@ -506,6 +482,9 @@ class ItPodsRestart {
         .append("Never")
         .append("\"}]");
     logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
+
+    //get current timestamp before domain rolling restart to verify domain roll events
+    OffsetDateTime timestamp = now();
 
     boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(imagePullPolicy) failed");
@@ -519,11 +498,8 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
+    assertEquals(V1Container.ImagePullPolicyEnum.NEVER, imagePullPolicy, "imagePullPolicy was not updated"
         + " in the new patched domain");
-
-    //get current timestamp before domain rolling restart to verify domain roll events
-    OffsetDateTime timestamp = now();
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -532,14 +508,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -550,13 +519,10 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Restart pods using restartVersion flag")
+  @Tag("gate")
   void testRestartVersion() {
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
@@ -564,6 +530,8 @@ class ItPodsRestart {
     String oldVersion = assertDoesNotThrow(()
         -> getDomainCustomResource(domainUid, domainNamespace).getSpec().getRestartVersion());
     int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+
+    OffsetDateTime timestamp = now();
 
     logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
     String patchStr
@@ -576,8 +544,6 @@ class ItPodsRestart {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    OffsetDateTime timestamp = now();
-
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -585,14 +551,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 
@@ -603,6 +562,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Check restart of pods after image change")
+  @Tag("gate")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();
@@ -611,14 +571,12 @@ class ItPodsRestart {
     dockerLoginAndPushImageToRegistry(newImage);
 
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
+
+    OffsetDateTime timestamp = now();
 
     logger.info("patch the domain resource with new image");
     String patchStr
@@ -631,8 +589,6 @@ class ItPodsRestart {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    OffsetDateTime timestamp = now();
-
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
@@ -640,14 +596,7 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
-        "Normal", timestamp, withStandardRetryPolicy);
-
-    logger.info("verify domain roll completed event is logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
-        "Normal", timestamp, withStandardRetryPolicy);
+    verifyDomainRollAndPodCycleEvents(timestamp);
 
   }
 

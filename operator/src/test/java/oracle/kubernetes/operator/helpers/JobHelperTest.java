@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -47,7 +48,6 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -142,7 +142,8 @@ class JobHelperTest extends DomainValidationTestBase {
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
-  private final V1Toleration toleration = createToleration("key","Eqauls", "value", "NoSchedule");
+  private final V1Toleration toleration = createToleration("key", V1Toleration.OperatorEnum.EQUAL, "value",
+      V1Toleration.EffectEnum.NOSCHEDULE);
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
@@ -216,7 +217,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+        .withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -224,7 +225,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+        .withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -232,7 +233,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_NEVER);
+        .withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
@@ -240,7 +241,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+        .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -248,7 +249,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
+        .withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -770,18 +771,18 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void introspectorPodSpec_alwaysCreatedWithNeverRestartPolicy() {
     configureDomain()
-        .withRestartPolicy("Always");
+        .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getPodSpec(jobSpec).getRestartPolicy(),
-        is("Never"));
+        is(V1PodSpec.RestartPolicyEnum.NEVER));
   }
 
   @Test
   void introspectorPodSpec_createdWithoutConfiguredReadinessGates() {
     configureDomain()
-        .withReadinessGate(new V1PodReadinessGate().conditionType("www.example.com/feature-1"));
+        .withReadinessGate(new V1PodReadinessGate().conditionType(V1PodReadinessGate.ConditionTypeEnum.READY));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -1369,13 +1370,13 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private void configureServersToStart() {
-    configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
-        .withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+        .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     return domainPresenceInfo;
   }
 
