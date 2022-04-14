@@ -399,6 +399,7 @@ class ItElasticLoggingFluentd {
 
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
     fluentdSpecification.setImage(FLUENTD_IMAGE);
+    fluentdSpecification.setWatchIntrospectorLogs(false);
     fluentdSpecification.setImagePullPolicy("IfNotPresent");
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
