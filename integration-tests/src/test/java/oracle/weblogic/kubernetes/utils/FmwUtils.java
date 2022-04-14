@@ -207,18 +207,6 @@ public class FmwUtils {
           managedServerName, domainNamespace);
       checkPodReadyAndServiceExists(managedServerName, domainUid, domainNamespace);
     }
-
-    //check access to the em console: http://hostname:port/em
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort, "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/em --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd1);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
-    logger.info("EM console is accessible thru default service");
   }
 
   /**
