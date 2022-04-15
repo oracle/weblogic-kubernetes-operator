@@ -22,13 +22,12 @@
 
   <scm>
     <connection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git</connection>
-    <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git
-    </developerConnection>
+    <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git</developerConnection>
     <url>https://github.com/oracle/weblogic-kubernetes-operator</url>
-    <tag>v4.0.0</tag>
+    <tag>v${project.version}</tag>
   </scm>
 
-  <description>Oracle WebLogic Server Kubernetes Operator</description>
+  <description>WebLogic Kubernetes Operator</description>
   <name>weblogic-kubernetes-operator</name>
   <packaging>pom</packaging>
 
