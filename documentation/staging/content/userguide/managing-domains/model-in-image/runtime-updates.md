@@ -882,7 +882,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   #      /tmp/compare_model_stdout
   ```
 
-> **Note**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
+**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
 
 #### Changing a Domain `restartVersion` or `introspectVersion`
 
