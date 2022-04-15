@@ -196,7 +196,7 @@ In most use cases, Kubernetes will automatically download (pull) the operator im
 to the machines on its cluster nodes.
 
 If you want to manually place an operator image
-in a particular machine's Docker image pool, or test access to an image,
+in a particular machine's container image pool, or test access to an image,
 then call `docker pull`. For example:
 
 ```text

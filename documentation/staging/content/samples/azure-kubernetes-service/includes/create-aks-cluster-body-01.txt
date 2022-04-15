@@ -86,4 +86,4 @@ You will need an Oracle account. The following steps will direct you to accept t
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
-   If you have problems accessing the Oracle Container Registry, you can build your own Docker images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).
+   If you have problems accessing the Oracle Container Registry, you can build your own images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).
