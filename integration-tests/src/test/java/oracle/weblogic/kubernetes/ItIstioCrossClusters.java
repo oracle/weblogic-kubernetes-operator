@@ -45,12 +45,12 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST1;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST2;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -328,7 +328,7 @@ class ItIstioCrossClusters {
     createOcirRepoSecret(domainNamespace);
 
     // create the domain CR
-    createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
+    createDomainResource(domainUid, domainNamespace, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
         replicaCount, domainImage);
 
     // wait for the domain to exist
@@ -383,7 +383,7 @@ class ItIstioCrossClusters {
     logger.info("Validating WebLogic admin server access by login to console");
     //boolean loginSuccessful = assertDoesNotThrow(() -> {
     testUntil(
-        assertDoesNotThrow(() -> {    
+        assertDoesNotThrow(() -> {
           return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT,
           ADMIN_PASSWORD_DEFAULT);
         }, "Access to admin server node port failed"),

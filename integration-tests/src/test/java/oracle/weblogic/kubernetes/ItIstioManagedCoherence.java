@@ -39,10 +39,10 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -165,7 +165,7 @@ class ItIstioManagedCoherence {
    * Associate them with a Coherence cluster
    * Deploy the EAR file to cluster-1 that has no storage enabled
    * Deploy the GAR file to cluster-2 that has storage enabled
-   * Verify that data can be added and stored in the cache 
+   * Verify that data can be added and stored in the cache
    * and can also be retrieved from cache.
    */
   @Test
@@ -190,9 +190,9 @@ class ItIstioManagedCoherence {
     Path targetHttpFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-    
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -450,7 +450,7 @@ class ItIstioManagedCoherence {
             .domainHomeSourceType("Image")
             .image(domImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(BASE_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainInImageNamespace))

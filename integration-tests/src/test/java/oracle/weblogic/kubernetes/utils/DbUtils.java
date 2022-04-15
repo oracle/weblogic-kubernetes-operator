@@ -63,10 +63,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -89,8 +89,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 
 /**
  * Utility class to start DB service and RCU schema.
@@ -705,7 +703,7 @@ public class DbUtils {
     FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
     replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
-    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", BASE_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
         "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
     createOcirRepoSecret(namespace);
@@ -788,7 +786,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCIR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));

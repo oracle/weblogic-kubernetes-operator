@@ -56,15 +56,16 @@ public interface TestConstants {
   // BASE_IMAGES_REPO constants
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
 
-  public static final String OCIR_REGISTRY = System.getenv("BASE_IMAGES_REPO");
-  public static final String OCIR_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
-  public static final String OCIR_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
-  public static final String OCIR_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
-  public static final String OCIR_SECRET_NAME = "ocir-secret";
+  public static final String BASE_IMAGES_REPO_REGISTRY = System.getenv("BASE_IMAGES_REPO");
+  public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
+  public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
+  public static final String BASE_IMAGES_REPO_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
+  public static final String BASE_IMAGES_REPO_SECRET_NAME = "base-images-repo-secret";
 
   public static final String REPO_REGISTRY_USERNAME = System.getenv("REPO_REGISTRY_USERNAME");
   public static final String REPO_REGISTRY_PASSWORD = System.getenv("REPO_REGISTRY_PASSWORD");
   public static final String REPO_REGISTRY_EMAIL = System.getenv("REPO_REGISTRY_EMAIL");
+  public static final String REPO_REGISTRY_SECRET_NAME = "repo-registry-secret";
 
   // ocir default image values, these values will be used while running locally
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
@@ -85,7 +86,7 @@ public interface TestConstants {
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
   public static final String BASE_IMAGES_REPO = 
       getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
-  public static final String BASE_IMAGES_REPO_SECRET = OCIR_SECRET_NAME;
+  public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values

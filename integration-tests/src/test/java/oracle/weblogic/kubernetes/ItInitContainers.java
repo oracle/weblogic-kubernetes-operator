@@ -36,13 +36,13 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
@@ -171,9 +171,9 @@ class ItInitContainers {
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
-   * The following introspect version usecase was added based on issue 
-   * reported by OFSS team. With initContainer configured, the WebLogic server 
-   * pod should not roll with modified introspect version without any update to 
+   * The following introspect version usecase was added based on issue
+   * reported by OFSS team. With initContainer configured, the WebLogic server
+   * pod should not roll with modified introspect version without any update to
    * domain resource.
    * Update the introspect version with out any change to domain resource
    * Make sure no WebLogic server pod get rolled.
@@ -213,7 +213,7 @@ class ItInitContainers {
     patchDomainResourceWithNewIntrospectVersion(domain1Uid,domain1Namespace);
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(domain1Namespace, pods);
-   
+
   }
 
   private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {
@@ -334,7 +334,7 @@ class ItInitContainers {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(BASE_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))

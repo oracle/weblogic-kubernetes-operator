@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -35,7 +36,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -154,7 +154,7 @@ class ItMiiCreateAuxImageWithImageTool {
         createAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, modelList, archiveList),
         logger,
         "createAuxImage to be successful");
-   
+
 
     // push auxiliary image to repo for multi node cluster
     logger.info("docker push image {0} to registry {2}", miiAuxiliaryImage,
@@ -165,7 +165,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage);
 
@@ -238,7 +238,7 @@ class ItMiiCreateAuxImageWithImageTool {
         createAuxiliaryImage(witParams),
         logger,
         "createAuxImage to be successful");
-    
+
 
     // push image1 to repo for multi node cluster
     logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
@@ -249,7 +249,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
         miiAuxiliaryImage);
 
@@ -321,7 +321,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domain3Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()

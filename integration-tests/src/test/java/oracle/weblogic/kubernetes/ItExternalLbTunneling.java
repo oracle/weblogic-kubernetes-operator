@@ -43,13 +43,13 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -193,7 +193,7 @@ class ItExternalLbTunneling {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -208,7 +208,7 @@ class ItExternalLbTunneling {
       logger.info("Installing Traefik controller using helm");
       traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
     }
-    
+
     // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
     // Create kubernates secret using genereated certificate and key
@@ -243,8 +243,8 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTP url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -282,7 +282,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to non-tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpTunnelingPort =
@@ -292,7 +292,7 @@ class ItExternalLbTunneling {
     logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtClient(httpTunnelingPort, 2, false);
     logger.info("External RMI tunneling works for Traefik");
   }
@@ -302,8 +302,8 @@ class ItExternalLbTunneling {
    * Queue using load balancer HTTPS url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each destination member gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    * Verify tls RMI access to WLS through Traefik LoadBalancer.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -342,7 +342,7 @@ class ItExternalLbTunneling {
 
     // Get the ingress service nodeport corresponding to tls service
     // Get the Traefik Service Name traefik-release-{ns}
-    String service = 
+    String service =
          TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
     logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
     int httpsTunnelingPort =
@@ -404,7 +404,7 @@ class ItExternalLbTunneling {
              "Could not get the cluster custom channel port");
     logger.info("Found the administration service nodePort {0}", httpsTunnelingPort);
 
-    assertDoesNotThrow(() -> 
+    assertDoesNotThrow(() ->
                   setTlsEdgeTerminationForRoute(clusterServiceName, domainNamespace, tlsKeyFile, tlsCertFile));
     // In OKD cluster, we need to set the target port of the route to be the httpTunnelingport
     // By default, when a service is exposed as a route, the endpoint is set to the default port.
@@ -412,7 +412,7 @@ class ItExternalLbTunneling {
     String routeHost = clusterSvcRouteHost + ":443";
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
+    // works from RMI client outside of k8s cluster
     runExtHttpsClient(routeHost, 0, 2, false);
     logger.info("External RMI https tunneling works for route");
   }

@@ -45,7 +45,9 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
@@ -57,8 +59,6 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
@@ -177,8 +177,11 @@ class ItDiagnosticsFailedCondition {
     try {
       // Test - test bad model file status with introspector failure
       logger.info("Creating a domain resource with bad model file from configmap");
-      Domain domain = createDomainResourceWithConfigMap(domainName, domainNamespace, adminSecretName,
-          OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
+      Domain domain = createDomainResourceWithConfigMap(domainName, 
+          domainNamespace, adminSecretName,
+          BASE_IMAGES_REPO_SECRET_NAME, 
+          encryptionSecretName, replicaCount, 
+          imageName + ":" + imageTag, badModelFileCm, 30L);
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
@@ -210,7 +213,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain resource with replicas=100");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, 100, image);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image);
 
     try {
       logger.info("Creating domain");
@@ -245,7 +248,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain resource with non-existing image");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
       logger.info("Creating domain");
@@ -280,7 +283,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain resource with missing image pull secret");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME + "bad", encryptionSecretName, 100, image);
+        BASE_IMAGES_REPO_SECRET_NAME + "bad", encryptionSecretName, 100, image);
 
     try {
       logger.info("Creating domain");
@@ -312,7 +315,7 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     logger.info("Creating a docker secret with invalid credentials");
-    createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
+    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO_REGISTRY,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
@@ -430,7 +433,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain custom resource");
     Domain domain = createDomainResource(domainName, domainNamespace, "non-existent-secret",
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
       logger.info("Creating domain");
@@ -465,7 +468,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain custom resource");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     AdminServer as = new AdminServer()
         .serverStartState("RUNNING")
@@ -508,7 +511,7 @@ class ItDiagnosticsFailedCondition {
 
     logger.info("Creating domain custom resource");
     Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, image);
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
     try {
@@ -600,7 +603,7 @@ class ItDiagnosticsFailedCondition {
       Domain domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
           domainNamespace,
           adminSecretName,
-          OCIR_SECRET_NAME,
+          BASE_IMAGES_REPO_SECRET_NAME,
           encryptionSecretName,
           rcuaccessSecretName,
           opsswalletpassSecretName,

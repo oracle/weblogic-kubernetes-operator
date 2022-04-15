@@ -37,6 +37,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
@@ -49,9 +52,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
@@ -156,12 +156,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCIR if OCIR_USERNAME and OCIR_PASSWORD is 
+        // docker login to OCIR if BASE_IMAGES_REPO_USERNAME and BASE_IMAGES_REPO_PASSWORD is 
         // provided in env var
-        if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
-          testUntil(
-                withVeryLongRetryPolicy,
-                () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+        if (BASE_IMAGES_REPO.equals(BASE_IMAGES_REPO_REGISTRY)) {
+          testUntil(withVeryLongRetryPolicy,
+                () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
                 "docker login to OCIR to be successful");
         } 
@@ -235,9 +234,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               String.format("Image %s doesn't exist", wdtBasicImage));
 
         logger.info("docker login");
-        testUntil(
-              withVeryLongRetryPolicy,
-              () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+        testUntil(withVeryLongRetryPolicy,
+              () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
               "docker login to OCIR to be successful");
 
@@ -381,9 +379,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     StringBuilder cmd = new StringBuilder()
         .append(scriptPath.toFile().getAbsolutePath())
-        .append(" -u " + OCIR_USERNAME)
-        .append(" -p \"" + OCIR_PASSWORD + "\"")
-        .append(" -e " + OCIR_REGISTRY);
+        .append(" -u " + BASE_IMAGES_REPO_USERNAME)
+        .append(" -p \"" + BASE_IMAGES_REPO_PASSWORD + "\"")
+        .append(" -e " + BASE_IMAGES_REPO_REGISTRY);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(cmd.toString(), true);
