@@ -17,10 +17,6 @@ description: "Obtain and inspect images for WebLogic Server or Fusion Middleware
 - [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
 - [Inspect images](#inspect-images)
 - [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
-- [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images)
-  - [Option 1:](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource) Store images in a central registry and set up image pull secrets on each domain resource
-  - [Option 2:](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace) Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
-  - [Option 3:](#option-3-manually-place-images-on-kubernetes-cluster-nodes) Manually place images on Kubernetes cluster nodes
 
 
 
@@ -66,7 +62,7 @@ See the following sections for information about OCR images:
   - Suitable for production use.
 
   {{% notice warning %}}
-  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with _all_ the latest security patches, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
+  WebLogic Server GA images and Fusion Middleware Infrastructure GA images on OCR **do not include the latest security patches** for WebLogic Server or Fusion Middleware Infrastructure. Oracle strongly recommends using images with the latest set of recommended patches applied, such as the Critical Patch Updates (CPU) images provided quarterly on OCR or custom generated images using the WebLogic Image Tool (WIT) with the [`--recommendedPatches`]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) option.  See [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images).
   {{% /notice %}}
 
 #### WebLogic distribution installer type
@@ -101,7 +97,7 @@ and usually, the type can be determined by examining the image name and tag:
     - WebLogic examples and Console help files have been removed
       (the WebLogic Server Administration Console is still included).
     - All binaries that remain included are the same as those in the WebLogic generic image.
-  - This image type is primarily intended to provide a Docker image
+  - This image type is primarily intended to provide a container image
     that is consistent with the WebLogic "quick installers" intended for development only.
     **NOTE**: Production WebLogic domains should use the WebLogic generic, WebLogic slim,
     or Fusion Middleware Infrastructure images.
@@ -172,7 +168,12 @@ For example, to use Docker to pull an image from OCR:
         depending in your [image type](#weblogic-distribution-installer-type).
 
         For example, if you are following the operator Quick Start guide
-        (which uses WebLogic GA images), then select `weblogic`.
+        (which uses WebLogic GA images), then select `weblogic`. **NOTE**:
+        GA images are suitable for demonstration and development purposes _only_ where the environments
+        are not available from the public Internet; they are _not_
+        acceptable for production use. In production, you should always use CPU (patched) images
+        from OCR or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}})
+        (WIT) with the `--recommendedPatches` option.  
 
      1. Click **Continue**.
 
@@ -289,114 +290,3 @@ Please review the following guidance to ensure that you are using recently patch
   To determine the patches and versions of software within a particular image, see [Inspect images](#inspect-images).
 
   For information about licensed access to WebLogic patches and CPU images, see [Supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
-
-### Set up Kubernetes to access domain images
-
-In most operator samples, it is assumed that the Kubernetes cluster has a single worker node
-and any images that are needed by that node have either been created on that node or
-externally pulled to the node from a registry (using `docker pull`).
-This is fine for most demonstration purposes,
-and if this assumption is correct, then no additional steps
-are needed to ensure that Kubernetes has access to the image.
-_Otherwise, additional steps are typically required to ensure that a Kubernetes cluster has access to domain images._
-
-For example, it is typical in production deployments
-for the Kubernetes cluster to be remote and have multiple worker nodes,
-and to store domain images in a central repository that requires authentication.
-
-Here are three typical scenarios for supplying domain images to such deployments:
-
-- [Option 1](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource): Store images in a central registry and set up image pull secrets on each domain resource
-
-- [Option 2](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace): Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
-
-- [Option 3](#option-3-manually-place-images-on-kubernetes-cluster-nodes): Manually place images on Kubernetes cluster nodes
-
-#### Option 1: Store images in a central registry and set up image pull secrets on each domain resource
-
-The most commonly used option is to store the image in a central registry
-and set up image pull secrets for a domain resource:
-
-- A Kubernetes `docker-registry` secret containing the registry credentials must be created
-  in the same namespace as domain resources with a `domain.spec.image` attribute that reference the image.
-  For example, to create a secret with OCR credentials:
-
-  ```shell
-  $ kubectl create secret docker-registry SECRET_NAME \
-    -n NAMESPACE_WHERE_YOU_DEPLOY_DOMAINS \
-    --docker-server=container-registry.oracle.com \
-    --docker-username=YOUR_USERNAME \
-    --docker-password=YOUR_PASSWORD \
-    --docker-email=YOUR_EMAIL
-  ```
-
-- The name of the secret must be added to these domain resources using
-  the `domain.spec.imagePullSecrets` field. For example:
-
-  ```text
-  ...
-  spec:
-  ...
-    imagePullSecrets:
-    - name: SECRET_NAME
-  ...
-  ```
-
-- If you are using the Oracle Container Registry, then
-  you must use the web interface to accept the Oracle Standard Terms and Restrictions
-  for the Oracle software images that you intend to deploy.
-  You need to do this only once for a particular image.
-  See [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
-
-For more information about creating Kubernetes Secrets for accessing
-the registry, see the Kubernetes documentation,
-[Pull an image from a private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
-
-#### Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
-
-An option for accessing an image that is stored in a private registry
-is to set up the Kubernetes `ServiceAccount` in the namespace running the
-WebLogic domain with a set of image pull secrets thus avoiding the need to
-set `imagePullSecrets` for each `Domain` resource being created (because each resource
-instance represents a WebLogic domain that the operator is managing):
-
-- Create a Kubernetes `docker-registry` secret as shown
-  in [Option 1](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource).
-
-- Modify the `ServiceAccount` that is in the same namespace
-  as your domain resources to include this image pull secret:
-
-  ```shell
-  $ kubectl patch serviceaccount default -n domain1-ns \
-  -p '{"imagePullSecrets": [{"name": "my-registry-pull-secret"}]}'
-  ```
-
-  Note that this patch command entirely replaces the current list of
-  image pull secrets (if any). To include multiple secrets, use
-  the following format:
-  `-p '{"imagePullSecrets": [{"name": "my-registry-pull-secret"}, {"name": "my-registry-pull-secret2"}]}'`.
-
-For more information about updating a Kubernetes `ServiceAccount`
-for accessing the registry, see the Kubernetes documentation,
-[Configure service accounts for pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secrets-to-a-service-account).
-
-#### Option 3: Manually place images on Kubernetes cluster nodes
-
-Alternatively, it may be preferable to manually place an image
-on each Kubernetes worker node in your Kubernetes cluster in advance.
-
-For example, if the desired image is located in a Docker registry,
-then you can manually call `docker login` and `docker pull` on each
-worker node. For the steps with Oracle Container Registry images,
-see [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
-
-As another example,
-if the Docker image is located in a local Docker cache,
-then you can get an inventory of the cache by calling `docker images`:
-
-- Save the image to a TAR file: `docker save -o myimage.tar myimagerepo:myimagetag`.
-- Then, copy the TAR file to each node.
-- Call `docker load -o myimage.tar` on each node.
-
-If you choose this approach, then a Kubernetes Secret is not required
-and your domain resource `domain.spec.imagePullPolicy` must be set to `Never` or `IfNotPresent`.
