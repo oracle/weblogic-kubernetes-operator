@@ -12,9 +12,8 @@
 
   <artifactId>domain-upgrader</artifactId>
 
-  <description>Domain Upgrader for Oracle WebLogic Server Kubernetes Operator</description>
+  <description>Domain Upgrader for WebLogic Kubernetes Operator</description>
   <name>domain-upgrader</name>
-  <packaging>jar</packaging>
 
   <build>
     <finalName>domain-upgrader</finalName>

@@ -12,18 +12,8 @@
 
     <artifactId>operator-swagger</artifactId>
 
-    <description>Oracle WebLogic Server Kubernetes Operator</description>
+    <description>WebLogic Kubernetes Operator Swagger Generator</description>
     <name>operator-swagger</name>
-    <packaging>jar</packaging>
-
-    <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
-    <inceptionYear>2017</inceptionYear>
-    <licenses>
-        <license>
-            <name>The Universal Permissive License (UPL), Version 1.0</name>
-            <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-        </license>
-    </licenses>
 
     <build>
         <plugins>
