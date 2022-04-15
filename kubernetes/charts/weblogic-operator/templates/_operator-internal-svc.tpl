@@ -17,4 +17,5 @@ spec:
   ports:
     - port: 8082
       name: "rest"
+      appProtocol: https
 {{- end }}
