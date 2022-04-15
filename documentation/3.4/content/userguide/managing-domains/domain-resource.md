@@ -108,7 +108,7 @@ DESCRIPTION:
 
 The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
 
-> Note: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
+**NOTE**: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
 
 Elements related to domain identification, container image, and domain home:
 
