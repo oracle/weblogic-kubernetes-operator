@@ -19,11 +19,13 @@ spec:
     {{- if .externalRestEnabled }}
     - name: "rest"
       port: 8081
+      appProtocol: https
       nodePort: {{ .externalRestHttpsPort }}
     {{- end }}
     {{- if .remoteDebugNodePortEnabled }}
     - name: "debug"
       port: {{ .internalDebugHttpPort }}
+      appProtocol: http
       nodePort: {{ .externalDebugHttpPort }}
     {{- end }}
 {{- end }}
