@@ -17,6 +17,7 @@ spec:
   ports:
     - port: 8082
       name: "rest"
+      appProtocol: https
 ---
 apiVersion: "v1"
 kind: "Service"
@@ -32,4 +33,5 @@ spec:
   ports:
     - port: 8084
       name: "restwebhook"
+      appProtocol: https
 {{- end }}
