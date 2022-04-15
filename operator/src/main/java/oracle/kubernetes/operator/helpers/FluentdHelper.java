@@ -34,10 +34,11 @@ public class FluentdHelper {
    * Add init container for fluentd.
    * @param fluentdSpecification  FluentdSpecification.
    * @param containers  List of containers.
+   * @param isJobPod  whether it belongs to the introspector job pod.
    * @param domain  Domain.
    */
   public static void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers,
-                                         Domain domain) {
+                                         Domain domain, boolean isJobPod) {
 
     V1Container fluentdContainer = new V1Container();
     fluentdContainer
@@ -49,7 +50,7 @@ public class FluentdHelper {
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
 
-    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain);
+    addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain, isJobPod);
 
     fluentdSpecification.getVolumeMounts()
         .forEach(fluentdContainer::addVolumeMountsItem);
@@ -176,7 +177,7 @@ public class FluentdHelper {
   }
 
   private static void addFluentdContainerEnvList(FluentdSpecification fluentdSpecification,
-                                                 V1Container fluentdContainer, Domain domain) {
+                                                 V1Container fluentdContainer, Domain domain, boolean isJobPod) {
 
     addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
         "elasticsearchhost");
@@ -204,12 +205,15 @@ public class FluentdHelper {
             false);
 
     // Always add this because we only have one fluentd configmap, and it may contain the
-    // introspector log parser config, if this environment variable is not set then the managed server
-    // fluentd will not run. If the file is not there then there won't be any problem.
-    // TODO: may need to create two different configmaps..
-    //
+    // introspector log parser config. If this environment variable is not set then the managed server
+    // fluentd will not run. If the file is not there, then there won't be any problems.  Set it to
+    //  a dummy name for non job pod fluentd container
+    String introspectorJobScript = "/introspector_script.out";
+    if (!isJobPod) {
+      introspectorJobScript = "not_introspector_script.outx";
+    }
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "INTROSPECTOR_OUT_PATH",
-        domain.getEffectiveLogHome() + "/introspector_script.out",
+        domain.getEffectiveLogHome() + introspectorJobScript,
         false);
 
 

@@ -521,7 +521,9 @@ public class JobHelper {
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
-        // TODO: fluentd container log can be huge, may not be a good idea to read the container log
+        // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+        //  Just set a flag and let the user know they can check the container log to determine unlikely
+        //  starting error, most likely a very bad formatted configuration.
         if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
           severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
         }

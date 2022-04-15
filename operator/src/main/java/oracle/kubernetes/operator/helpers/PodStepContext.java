@@ -735,7 +735,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
     Optional.ofNullable(getDomain().getFluentdSpecification())
-        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain()));
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
     return containers;
   }
 
