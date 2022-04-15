@@ -135,7 +135,7 @@ Status:
 
 #### Domain debugging
 
-For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
+For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
 
 #### WSL2 bad timestamp
 
@@ -171,7 +171,7 @@ Fri Nov 27 13:07:14 CST 2020
 You may run into a timeout while installing the operator and get the following error:
 
 ```shell
-$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
+$ helm install weblogic-operator weblogic-operator/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
    --set "enableClusterRoleBinding=true" \
@@ -201,7 +201,7 @@ $ cd weblogic-kubernetes-operator
 $ git checkout main
 ```
 ```shell
-$ helm install weblogic-operator kubernetes/charts/weblogic-operator \
+$ helm install weblogic-operator weblogic-operator/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
    --set "enableClusterRoleBinding=true" \
