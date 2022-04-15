@@ -121,7 +121,7 @@ You can specify the operator image by changing value of `--set image`. If you ru
 {{% /notice %}}
 
 {{% notice info %}}
-If you have a container image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
+If you have an image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
 {{% /notice %}}
 
 #### Create Docker image
@@ -150,7 +150,7 @@ If you have a container image built with domain models following [Model in Image
 
    **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`, (`mii` is short for model in image); however, you can use a different location.
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image images.
 
    ```shell
    $ cd /tmp/mii-sample/model-images
@@ -307,7 +307,7 @@ At this point, you have staged all of the files needed for the image `model-in-i
 
 If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
 
-Now, you use the Image Tool to create a container image named `model-in-image:WLS-v1` with a `FROM` clause that references a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
+Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` with a `FROM` clause that references a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
 
 Run the following commands to create the model image and verify that it worked:
 
@@ -330,7 +330,7 @@ If you don’t see the `imagetool` directory, then you missed a step in the prer
 
 The preceding command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
       - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
       - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
