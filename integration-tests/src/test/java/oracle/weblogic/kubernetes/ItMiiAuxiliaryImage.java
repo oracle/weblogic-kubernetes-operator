@@ -1063,6 +1063,10 @@ class ItMiiAuxiliaryImage {
     createDomainAndVerify(domainUid, domainCR, wdtDomainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
 
+    //create route for admin service on OKD in wdtDomainNamespace
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), wdtDomainNamespace);
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+
     // check configuration for DataSource in the running domain
     int adminServiceNodePort
         = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
