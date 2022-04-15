@@ -91,6 +91,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -403,7 +404,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case MODIFIED:
         boolean podAlreadyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
         if (PodHelper.isEvicted(pod) && !podAlreadyEvicted) {
-          LOGGER.info(MessageKeys.POD_EVICTED, domainUid, getPodNamespace(pod), serverName);
+          LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;

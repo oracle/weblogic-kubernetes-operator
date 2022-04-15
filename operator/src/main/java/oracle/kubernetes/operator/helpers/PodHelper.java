@@ -236,6 +236,11 @@ public class PodHelper {
         .orElse(false);
   }
 
+  /**
+   * Chcek if the pod status shows that the pod is evicted.
+   * @param status Pod status to be checked
+   * @return True if the pod status shows that the pod is evicted, false otherwise
+   */
   public static boolean isEvicted(@Nonnull V1PodStatus status) {
     return V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())
         && EVICTED_REASON.equals(status.getReason());
@@ -263,6 +268,17 @@ public class PodHelper {
     return null;
   }
 
+  /**
+   * Get the message from the pod's status.
+   * @param pod pod
+   * @return Message string from the pod's status
+   */
+  public static String getPodStatusMessage(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(V1PodStatus::getMessage)
+        .orElse(null);
+  }
 
   /**
    * Factory for {@link Step} that creates admin server pod.

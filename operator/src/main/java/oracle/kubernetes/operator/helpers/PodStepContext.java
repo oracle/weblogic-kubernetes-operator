@@ -455,12 +455,13 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
-  Step restartEvictedPodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next);
+  Step cycleEvictedPodStep(V1Pod pod, Step next) {
+    return new CyclePodStep(pod, next, LOGGER.formatMessage("podEvicted"));
   }
 
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, next));
+    return Step.chain(DomainStatusUpdater.createStartRollStep(),
+        new CyclePodStep(pod, next, LOGGER.formatMessage("podSpecChanged")));
   }
 
   private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
@@ -1001,10 +1002,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   public class CyclePodStep extends BaseStep {
     private final V1Pod pod;
+    private final String reason;
 
-    CyclePodStep(V1Pod pod, Step next) {
+    CyclePodStep(V1Pod pod, Step next, String reason) {
       super(next);
       this.pod = pod;
+      this.reason = reason;
     }
 
     private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
@@ -1038,7 +1041,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private Step createCyclePodEventStep(Step next) {
       LOGGER.info(MessageKeys.CYCLING_POD, Objects.requireNonNull(pod.getMetadata()).getName());
-      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING).podName(getPodName())),
+      return Step.chain(EventHelper.createEventStep(
+          new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
           next);
     }
   }
@@ -1211,7 +1215,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else if (!canUseCurrentPod(currentPod)) {
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (PodHelper.isEvicted(currentPod)) {
-        return doNext(restartEvictedPodStep(currentPod, getNext()), packet);
+        return doNext(cycleEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
