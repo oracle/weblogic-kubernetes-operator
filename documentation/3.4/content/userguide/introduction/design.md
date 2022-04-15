@@ -22,7 +22,7 @@ The operator is designed with security in mind from the outset.  Some examples o
 
 *	During the deployment of the operator, Kubernetes Roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its tasks.
 *	The code base is regularly scanned with security auditing tools and any issues that are identified are promptly resolved.
-*	All HTTP communications – between the operator and an external client, between the operator and WebLogic Server Administration Servers, and so on – are configured to require SSL and TLS 1.2.
+*	All HTTP communications – between the operator and an external client, between the operator and WebLogic Server Administration Servers, and so on – are configured to require TLS 1.2.
 *	Unused code is pruned from the code base regularly.
 *	Dependencies are kept as up-to-date as possible and are regularly reviewed for security vulnerabilities.
 
