@@ -137,13 +137,13 @@ public class ManagedServersUpStep extends Step {
       factory.addServerIfNeeded(serverConfig.wlsServerConfig, serverConfig.wlsClusterConfig);
     }
 
-    info.getServerPods().filter(pod -> shouldShutdownPod(pod, factory))
+    info.getServerPods().filter(pod -> podShouldNotBeRunning(pod, factory))
             .filter(pod -> !getPodServerName(pod).equals(wlsDomainConfig.getAdminServerName()))
             .forEach(pod -> shutdownServersNotPresentInDomainConfig(factory, pod));
   }
 
-  private boolean shouldShutdownPod(V1Pod pod, ServersUpStepFactory factory) {
-    return !factory.getServers().contains(getPodServerName(pod)) || PodHelper.isEvicted(pod);
+  private boolean podShouldNotBeRunning(V1Pod pod, ServersUpStepFactory factory) {
+    return !factory.getServers().contains(getPodServerName(pod));
   }
 
   private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {

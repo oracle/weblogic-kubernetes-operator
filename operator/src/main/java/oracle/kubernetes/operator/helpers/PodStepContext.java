@@ -455,6 +455,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
+  Step restartEvictedPodStep(V1Pod pod, Step next) {
+    return new CyclePodStep(pod, next);
+  }
+
   Step createCyclePodStep(V1Pod pod, Step next) {
     return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, next));
   }
@@ -1206,6 +1210,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
+      } else if (PodHelper.isEvicted(currentPod)) {
+        return doNext(restartEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
