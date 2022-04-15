@@ -8,26 +8,26 @@ description = "Auxiliary images are an alternative approach for supplying a doma
 
 ### Contents
 
- - [Introduction](#introduction)
- - [References](#references)
- - [Configuration](#configuration)
-   - [Auxiliary volumes and paths](#auxiliary-volumes-and-paths)
-   - [Auxiliary images](#auxiliary-images)
-   - [Model in Image paths](#model-in-image-paths)
- - [Merge order](#merge-order)
-   - [Expected merge order](#expected-merge-order)
-   - [Performing replaces instead of merges](#performing-replaces-instead-of-merges)
-   - [Merge ordering example](#merge-ordering-example)
- - [Sample](#sample)
-   - [Step 1: Prerequisites](#step-1-prerequisites)
-   - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
-   - [Step 3: Prepare and apply the domain resource](#step-3-prepare-and-apply-the-domain-resource)
-   - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
+- [Introduction](#introduction)
+- [References](#references)
+- [Configuration](#configuration)
+    - [Auxiliary volumes and paths](#auxiliary-volumes-and-paths)
+    - [Auxiliary images](#auxiliary-images)
+    - [Model in Image paths](#model-in-image-paths)
+- [Merge order](#merge-order)
+    - [Expected merge order](#expected-merge-order)
+    - [Performing replaces instead of merges](#performing-replaces-instead-of-merges)
+    - [Merge ordering example](#merge-ordering-example)
+- [Sample](#sample)
+    - [Step 1: Prerequisites](#step-1-prerequisites)
+    - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
+    - [Step 3: Prepare and apply the domain resource](#step-3-prepare-and-apply-the-domain-resource)
+    - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
 
 ### Introduction
 
 Auxiliary images are an alternative approach for including Model in Image model files,
-application archive files, WebLogic Deploying Tooling installation files,
+application archive files, WebLogic Deploy Tooling installation files,
 or other types of files, in your pods.
 This feature eliminates the need to provide these files in the image specified
 in `domain.spec.image`.
@@ -78,8 +78,8 @@ auxiliary image volume defines a `mountPath`, `name`, plus
 [additional optional fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image-volume).
 The `mountPath` field is the location of a directory in an auxiliary image, and
 is also the location in the main pod container (which will automatically contain
-a recursive copy of the auxiliary image directory). The `name` field is 
-arbitrary, and is in turn referenced by one or more auxiliary images that 
+a recursive copy of the auxiliary image directory). The `name` field is
+arbitrary, and is in turn referenced by one or more auxiliary images that
 are defined separately using
 [Auxiliary images](#auxiliary-images) configuration.
 
@@ -105,9 +105,9 @@ which defaults to `Always` if the `image` ends in `:latest` and to `IfNotPresent
 otherwise.
 Also, optionally, you can customize
 the command that is used to merge (copy) the auxiliary image's files
-into the auxiliary image volume during pod startup (this is rarely 
+into the auxiliary image volume during pod startup (this is rarely
 needed, see [Performing replaces instead of merges](#performing-replaces-instead-of-merges) for an example).
-For details 
+For details
 about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
 
 A `serverPod` can be defined at the domain scope, which applies to every pod in
@@ -150,15 +150,15 @@ respectively, and must be changed to specify a directory in
 
 {{% notice warning %}}
 If multiple auxiliary images supply different versions of a WebLogic Deploy Tool installation
-to the same `wdtInstallHome` path, then it is recommended 
+to the same `wdtInstallHome` path, then it is recommended
 to ensure that the newer version completely replaces the older version
 instead of merges with it. See [Performing replaces instead of merges](#performing-replaces-instead-of-merges).
 {{% /notice %}}
 
 ### Merge order
 
-Refer to this section if you need to control the merge order of files from 
-multiple auxiliary images that all reference the same volume, or if 
+Refer to this section if you need to control the merge order of files from
+multiple auxiliary images that all reference the same volume, or if
 you want to customize the command that is used to copy the
 files from an auxiliary image into its volume. You can
 use command customization to force "replace" behavior instead
@@ -181,7 +181,7 @@ the same auxiliary image volume is:
   domain scope will be merged first, the cluster scope second,
   and the server scope last.
 
-- If you specify multiple auxiliary images at the same scope, 
+- If you specify multiple auxiliary images at the same scope,
   and they all share the same volume, then the files
   will be merged in the order in which images appear
   under `serverPod.auxiliaryImages`.
@@ -201,7 +201,7 @@ image instead of combining the two directories,
 then you can customize the command that the second image uses to populate
 the shared volume in order to force a replace.
 
-For example, you can customize the 
+For example, you can customize the
 the second image's `serverPod.auxiliaryImage.command` field
 to first delete the directory that was already copied from the
 earlier image and then have it perform a normal copy:
@@ -282,18 +282,18 @@ container image.
 
   This will:
 
-  - Set up the operator and a namespace for the domain.
-  - Download a WebLogic Deploy Tool ZIP installation.
-  - Deploy a domain _without_ auxiliary images.
+    - Set up the operator and a namespace for the domain.
+    - Download a WebLogic Deploy Tool ZIP installation.
+    - Deploy a domain _without_ auxiliary images.
 
 - Second, shut down the domain and wait for its pods to exit.
-  - You can use the `wl-pod-wait.sh` script to wait.
-  - For example, assuming that
-    you have set up `/tmp/mii-sample` as your working directory:
-    ```shell
-    $ kubectl delete domain sample-domain1 -n sample-domain1-ns
-    $ /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
-    ```
+    - You can use the `wl-pod-wait.sh` script to wait.
+    - For example, assuming that
+      you have set up `/tmp/mii-sample` as your working directory:
+      ```shell
+      $ kubectl delete domain sample-domain1 -n sample-domain1-ns
+      $ /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
+      ```
 
 #### Step 2: Create the auxiliary image
 
@@ -417,7 +417,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 or you can directly use the file `/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml`
 that is included in the sample source.
 
-  {{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
+{{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
   ```yaml
     # Copyright (c) 2021, Oracle and/or its affiliates.
     # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
@@ -577,7 +577,7 @@ that is included in the sample source.
         #secrets:
         #- sample-domain1-datasource-secret
   ```
-  {{% /expand %}}
+{{% /expand %}}
 
 You can compare this domain resource YAML file with the domain resource YAML file
 from the original initial use case (`/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`)
@@ -621,13 +621,13 @@ $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI
 ```
 
 **Note**: If you are choosing _not_ to use the predefined Domain YAML file
-  and instead created your own Domain YAML file earlier, then substitute your
-  custom file name in the previous command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+and instead created your own Domain YAML file earlier, then substitute your
+custom file name in the previous command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Now, if you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see
 the introspector job run and your WebLogic Server pods start. The output will look something like this:
 
-  {{%expand "Click here to expand." %}}
+{{%expand "Click here to expand." %}}
   ```shell
   $ kubectl get pods -n sample-domain1-ns --watch
   ```
@@ -662,7 +662,7 @@ the introspector job run and your WebLogic Server pods start. The output will lo
   sample-domain1-managed-server2      1/1     Running           0          39s
   sample-domain1-managed-server1      1/1     Running           0          43s
   ```
-  {{% /expand %}}
+{{% /expand %}}
 
 Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`.
 This utility script exits successfully when the designated number of WebLogic
@@ -670,7 +670,7 @@ Server pods reach a `ready` state and have `restartVersion`, `introspectVersion`
 `spec.image`, and `spec.serverPod.auxiliaryImages.image` values that match
 their corresponding values in their domain resource.
 
-  {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
+{{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```shell
     $ ./wl-pod-wait.sh -?
   ```
@@ -713,9 +713,9 @@ their corresponding values in their domain resource.
 
       -?              : This help.
   ```
-  {{% /expand %}}
+{{% /expand %}}
 
-  {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
+{{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```text
   @@ [2021-06-14T20:35:35][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
   @@ [2021-06-14T20:35:35][seconds=0] Info:   ready='true'
@@ -802,7 +802,7 @@ their corresponding values in their domain resource.
 
   @@ [2021-06-14T20:38:20][seconds=165] Info: Success!
   ```
-  {{% /expand %}}
+{{% /expand %}}
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
