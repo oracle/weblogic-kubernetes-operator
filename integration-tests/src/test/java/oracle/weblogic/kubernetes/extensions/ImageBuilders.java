@@ -156,17 +156,17 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCIR if BASE_IMAGES_REPO_USERNAME and BASE_IMAGES_REPO_PASSWORD is 
-        // provided in env var
+        // docker login to BASE_IMAGES_REPO if BASE_IMAGES_REPO_USERNAME i
+        // and BASE_IMAGES_REPO_PASSWORD is provided in env var
         if (BASE_IMAGES_REPO.equals(BASE_IMAGES_REPO_REGISTRY)) {
           testUntil(withVeryLongRetryPolicy,
                 () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
-                "docker login to OCIR to be successful");
+                "docker login to BASE_IMAGES_REPO to be successful");
         } 
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
-          // The kind clusters can't pull images from OCIR using the image pull secret.
+          // The kind clusters can't pull images from BASE_IMAGES_REPO using the image pull secret.
           // It may be a containerd bug. We are going to workaround this issue.
           // The workaround will be to:
           //   1. docker login
@@ -237,7 +237,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         testUntil(withVeryLongRetryPolicy,
               () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
-              "docker login to OCIR to be successful");
+              "docker login to BASE_IMAGES_REPO to be successful");
 
         // push the images to repo
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -260,7 +260,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 withVeryLongRetryPolicy,
                 () -> dockerPush(image),
                 logger,
-                "docker push to OCIR/kind for image {0} to be successful",
+                "docker push to REPO_REGISTRY/kind for image {0} to be successful",
                 image);
           }
 
@@ -299,7 +299,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // check initialization is already done and is not successful
     assertTrue(started.get() && isInitializationSuccessful,
-        "Initialization(login/push to OCIR) failed, "
+        "Initialization(login/push to BASE_IMAGES_REPO) failed, "
             + "check the actual error or stack trace in the first test that failed in the test suite");
 
   }
@@ -348,11 +348,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       }
     }
 
-    // delete images from OCIR, if necessary
+    // delete images from REPO_REGISTRY, if necessary
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
-        logger.info("Deleting these images from OCIR");
+        logger.info("Deleting these images from REPO_REGISTRY");
         logger.info(String.join(", ", pushedImages));
         for (String image : pushedImages.stream().distinct().collect(Collectors.toList())) {
           deleteImageOcir(token, image);

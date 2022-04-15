@@ -844,7 +844,7 @@ public class LoadBalancerUtils {
     return (() -> {
       String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
       LoggingFacade logger = getLogger();
-      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+      logger.info("pulling image {0} from BASE_IMAGES_REPO, tag it as image {1} ",
           localImage, nginxImage);
       return dockerPull(localImage) && dockerTag(localImage, nginxImage);
     });
