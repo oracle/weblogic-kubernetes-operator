@@ -17,13 +17,11 @@ For example, it is typical in production deployments
 for the Kubernetes cluster to be remote and have multiple worker nodes,
 and to store domain images in a central repository that requires authentication.
 
-Here are three typical scenarios for supplying domain images to such deployments:
+Here are two typical scenarios for supplying domain images to such deployments:
 
 - [Option 1](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource): Store images in a central registry and set up image pull secrets on each domain resource
 
 - [Option 2](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace): Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
-
-- [Option 3](#option-3-manually-place-images-on-kubernetes-cluster-nodes): Manually place images on Kubernetes cluster nodes
 
 #### Option 1: Store images in a central registry and set up image pull secrets on each domain resource
 
@@ -92,24 +90,3 @@ instance represents a WebLogic domain that the operator is managing):
 For more information about updating a Kubernetes `ServiceAccount`
 for accessing the registry, see the Kubernetes documentation,
 [Configure service accounts for pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secrets-to-a-service-account).
-
-#### Option 3: Manually place images on Kubernetes cluster nodes
-
-Alternatively, it may be preferable to manually place an image
-on each Kubernetes worker node in your Kubernetes cluster in advance.
-
-For example, if the desired image is located in a Docker registry,
-then you can manually call `docker login` and `docker pull` on each
-worker node. For the steps with Oracle Container Registry images,
-see [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
-
-As another example,
-if the Docker image is located in a local Docker cache,
-then you can get an inventory of the cache by calling `docker images`:
-
-- Save the image to a TAR file: `docker save -o myimage.tar myimagerepo:myimagetag`.
-- Then, copy the TAR file to each node.
-- Call `docker load -o myimage.tar` on each node.
-
-If you choose this approach, then a Kubernetes Secret is not required
-and your domain resource `domain.spec.imagePullPolicy` must be set to `Never` or `IfNotPresent`.

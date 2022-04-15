@@ -97,7 +97,7 @@ and usually, the type can be determined by examining the image name and tag:
     - WebLogic examples and Console help files have been removed
       (the WebLogic Server Administration Console is still included).
     - All binaries that remain included are the same as those in the WebLogic generic image.
-  - This image type is primarily intended to provide a Docker image
+  - This image type is primarily intended to provide a container image
     that is consistent with the WebLogic "quick installers" intended for development only.
     **NOTE**: Production WebLogic domains should use the WebLogic generic, WebLogic slim,
     or Fusion Middleware Infrastructure images.

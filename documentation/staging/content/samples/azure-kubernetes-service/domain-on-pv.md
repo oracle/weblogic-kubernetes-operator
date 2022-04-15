@@ -1,4 +1,4 @@
----
+container image---
 title: "Domain home on a PV"
 date: 2020-07-12T18:22:31-05:00
 weight: 2
@@ -499,8 +499,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal; refer to the application ID in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
-| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
+| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server container image. |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server container image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 
