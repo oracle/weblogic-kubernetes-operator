@@ -325,6 +325,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
           newServicePort()
               .name("rest")
               .port(8081)
+              .appProtocol("https")
               .nodePort(Integer.parseInt(getInputs().getExternalRestHttpsPort())));
     }
     if (debuggingEnabled) {
@@ -332,6 +333,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
           newServicePort()
               .name("debug")
               .port(Integer.parseInt(getInputs().getInternalDebugHttpPort()))
+              .appProtocol("http")
               .nodePort(Integer.parseInt(getInputs().getExternalDebugHttpPort())));
     }
     return newService()
@@ -365,7 +367,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             newServiceSpec()
                 .type(V1ServiceSpec.TypeEnum.CLUSTERIP)
                 .putSelectorItem(APP_LABEL, "weblogic-operator")
-                .addPortsItem(newServicePort().name("rest").port(8082)));
+                .addPortsItem(newServicePort().name("rest").appProtocol("https").port(8082)));
   }
 
   @Test
