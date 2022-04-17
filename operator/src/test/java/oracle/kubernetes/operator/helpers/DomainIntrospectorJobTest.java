@@ -51,6 +51,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
@@ -103,6 +104,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -589,6 +592,25 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
+  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() {
+    String jobName = UID + "-introspector";
+    DomainConfiguratorFactory.forDomain(domain)
+        .withFluentdConfiguration(true, "elastic-cred", null);
+    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
+    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
+        true, false);
+    testSupport.defineResources(jobPod);
+    defineNormalFluentdContainerInIntrospection();
+
+    Packet packet = testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
+    logRecords.clear();
+    assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
+            equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
+    assertThat(terminalStep.wasRun(), is(false));
+
+  }
+
+  @Test
   void whenNewSuccessfulJobExists_readOldPodLogWithoutCreatingNewJob() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
@@ -640,6 +662,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private void defineFailedFluentdContainerInIntrospection() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
+  }
+
+  private void defineNormalFluentdContainerInIntrospection() {
+    testSupport.defineResources(createIntrospectorJob());
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
   }
 

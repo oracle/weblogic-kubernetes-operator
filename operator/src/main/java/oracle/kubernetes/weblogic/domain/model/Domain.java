@@ -1238,7 +1238,7 @@ public class Domain implements KubernetesObject {
       }
 
       if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
-        failures.add(DomainValidationMessages.missingRequiredSecret(
+        failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 

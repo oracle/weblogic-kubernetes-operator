@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -338,16 +339,19 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
       private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
         // if the job container (<domin uid>-introspecto) exited, then the check for pod container finished is done
-        if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
-          List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
 
-          for (V1ContainerStatus containerStatus : containerStatuses) {
-            if (containerStatus.getName().equals(jobName)
-                    && containerStatus.getState().getTerminated() != null) {
-              packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
-            }
-          }
+        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
+                .map(V1Pod::getStatus)
+                .map(V1PodStatus::getContainerStatuses)
+                .orElseGet(Collections::emptyList)
+                .stream().filter(v -> v.getState().getTerminated() != null)
+                .filter(c -> jobName.equals(c.getName()))
+                .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
         }
+
       }
 
       private String getName(V1Pod pod) {

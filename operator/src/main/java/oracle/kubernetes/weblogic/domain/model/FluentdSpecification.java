@@ -75,10 +75,6 @@ public class FluentdSpecification {
     this.env = env;
   }
 
-  public V1ResourceRequirements getResources() {
-    return resources;
-  }
-
   public List<V1VolumeMount> getVolumeMounts() {
     return volumeMounts;
   }
@@ -125,6 +121,10 @@ public class FluentdSpecification {
 
   public void setElasticSearchCredentials(String elasticSearchCredentials) {
     this.elasticSearchCredentials = elasticSearchCredentials;
+  }
+
+  public V1ResourceRequirements getResources() {
+    return resources;
   }
 
   @Override

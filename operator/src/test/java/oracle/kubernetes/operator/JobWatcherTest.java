@@ -6,21 +6,15 @@ package oracle.kubernetes.operator;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -35,8 +29,6 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
@@ -373,26 +365,6 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     } finally {
       stopping.set(true);
     }
-  }
-
-  private void setJobContainersCompleteStatus(V1Pod jobPod, String jobName) {
-    Map<String, String> labels = new HashMap<>();
-    labels.put(JOBNAME_LABEL, jobName);
-    jobPod.getMetadata().setLabels(labels);
-    V1PodStatus podStatus = new V1PodStatus();
-    V1ContainerState jobContainerState = new V1ContainerState();
-
-    jobContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(0));
-    podStatus.addContainerStatusesItem(new V1ContainerStatus()
-            .name(jobName).state(jobContainerState));
-
-    V1ContainerState fluentdContainerState = new V1ContainerState();
-    fluentdContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(0));
-    podStatus.addContainerStatusesItem(new V1ContainerStatus()
-            .name(FLUENTD_CONTAINER_NAME).state(fluentdContainerState));
-
-    jobPod.setStatus(podStatus);
-
   }
 
   @Test

@@ -388,7 +388,7 @@ public class DomainSpec extends BaseConfiguration {
     return fluentdSpecification;
   }
 
-  void withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
+  DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
                                 String fluentdConfig) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
@@ -396,34 +396,7 @@ public class DomainSpec extends BaseConfiguration {
     fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
     fluentdSpecification.setElasticSearchCredentials(credentialName);
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
-  }
-
-  String getFluentdImage() {
-    return fluentdSpecification == null ? null : fluentdSpecification.getImage();
-  }
-
-  V1Container.ImagePullPolicyEnum getFluentdImagePullPolicy() {
-    return fluentdSpecification == null ? null : fluentdSpecification.getImagePullPolicy();
-  }
-
-  /**
-   * Specifies the image for the monitoring exporter sidecar.
-   * @param imageName the name of the docker image
-   */
-  public void setFluentdImage(String imageName) {
-    assert fluentdSpecification != null : "May not set image without configuration";
-
-    fluentdSpecification.setImage(imageName);
-  }
-
-  /**
-   * Specifies the pull policy for the fluentd image.
-   * @param pullPolicy a Kubernetes pull policy
-   */
-  public void setFluentdImagePullPolicy(V1Container.ImagePullPolicyEnum pullPolicy) {
-    assert fluentdSpecification != null : "May not set image pull policy without configuration";
-
-    fluentdSpecification.setImagePullPolicy(pullPolicy);
+    return this;
   }
 
 

@@ -967,14 +967,29 @@ public class ConfigMapHelper {
     }
   }
 
-  private static class FluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+  private static class CreateFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
 
-    FluentdConfigMapResponseStep(Step next) {
+    CreateFluentdConfigMapResponseStep(Step next) {
       super(next);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTD_CONFIGMAP_CREATED);
+      return doNext(packet);
+    }
+
+  }
+
+  private static class ReplaceFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReplaceFluentdConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTD_CONFIGMAP_REPLACED);
       return doNext(packet);
     }
 
@@ -993,7 +1008,7 @@ public class ConfigMapHelper {
       if (fluentdSpecification != null) {
         return new CallBuilder()
                 .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(info),
-                        new FluentdConfigMapResponseStep(next));
+                        new CreateFluentdConfigMapResponseStep(next));
       } else {
         return next;
       }
@@ -1005,7 +1020,7 @@ public class ConfigMapHelper {
         return new CallBuilder()
                 .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
                         FluentdHelper.getFluentdConfigMap(info),
-                        new FluentdConfigMapResponseStep(next));
+                        new ReplaceFluentdConfigMapResponseStep(next));
       } else {
         return next;
       }

@@ -688,36 +688,45 @@ public class JobHelper {
 
       private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
 
-        if (jobPod.getStatus() != null && jobPod.getStatus().getContainerStatuses() != null) {
-          List<V1ContainerStatus> containerStatuses = jobPod.getStatus().getContainerStatuses();
-          for (V1ContainerStatus containerStatus : containerStatuses) {
-            if (containerStatus.getName().equals(FLUENTD_CONTAINER_NAME)
-                    && containerStatus.getState().getTerminated() != null) {
+        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> FLUENTD_CONTAINER_NAME.equals(c.getName()))
+            .findFirst();
 
-              LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                      jobPod.getMetadata().getNamespace(),
-                      containerStatus.getState().getTerminated().getExitCode(),
-                      containerStatus.getState().getTerminated().getReason(),
-                      containerStatus.getState().getTerminated().getMessage());
+        if (!containerStatus.isEmpty()) {
+          LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+              jobPod.getMetadata().getNamespace(),
+              containerStatus.get().getState().getTerminated().getExitCode(),
+              containerStatus.get().getState().getTerminated().getReason(),
+              containerStatus.get().getState().getTerminated().getMessage());
 
-              packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
-                      LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
-                              jobPod.getMetadata().getNamespace(),
-                              containerStatus.getState().getTerminated().getExitCode(),
-                              containerStatus.getState().getTerminated().getReason(),
-                              containerStatus.getState().getTerminated().getMessage()));
+          packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+              LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                  jobPod.getMetadata().getNamespace(),
+                  containerStatus.get().getState().getTerminated().getExitCode(),
+                  containerStatus.get().getState().getTerminated().getReason(),
+                  containerStatus.get().getState().getTerminated().getMessage()));
 
-              return;
-            }
-          }
-          for (V1ContainerStatus containerStatus : containerStatuses) {
-            // Only set done if the exit code is 0 and terminated, otherwise it is error
-            if (containerStatus.getName().equals(jobName) && containerStatus.getState().getTerminated() != null
-                    && containerStatus.getState().getTerminated().getExitCode() == 0) {
-              packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
-            }
-          }
+          return;
+
         }
+
+        containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> jobName.equals(c.getName()))
+            .filter(c -> c.getState().getTerminated().getExitCode() == 0)
+            .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+        }
+
       }
 
       @Override
