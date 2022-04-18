@@ -31,7 +31,7 @@ public class FluentdHelper {
   }
 
   /**
-   * Add init container for fluentd.
+   * Add sidecar container for fluentd.
    * @param fluentdSpecification  FluentdSpecification.
    * @param containers  List of containers.
    * @param isJobPod  whether it belongs to the introspector job pod.
