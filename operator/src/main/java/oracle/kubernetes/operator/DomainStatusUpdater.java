@@ -269,7 +269,7 @@ public class DomainStatusUpdater {
    * @param next the next step to run. May be null.
    */
   public static Step createTopologyMismatchFailureSteps(String message, Step next) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message).removingOldFailures(TOPOLOGY_MISMATCH);
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
   }
 
   /**
