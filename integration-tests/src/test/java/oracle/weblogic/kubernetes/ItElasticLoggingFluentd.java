@@ -369,12 +369,10 @@ class ItElasticLoggingFluentd {
         .name(volumeName)
         .mountPath(logHomeRootPath)));
 
-    try {
+    assertDoesNotThrow(() -> {
       Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
       fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
-    } catch (Exception ex) {
-      logger.severe("Failed to read fluentd configuration file " + MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
-    }
+    });
 
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)

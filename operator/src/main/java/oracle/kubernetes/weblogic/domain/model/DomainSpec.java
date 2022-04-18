@@ -377,8 +377,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Automatic fluentd sidecar injection. If "
           + "specified, the operator "
-          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
-          + "WebLogic Server instances that are already running when the `monitoringExporter` field is created "
+          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, "
+          + "Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. "
+          + "WebLogic Server instances that are already running when the `fluentdSpecification` field is created "
           + "or deleted, will not be affected until they are restarted. When any given server "
           + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
           + " will have the fluentd sidecar or not, as appropriate")

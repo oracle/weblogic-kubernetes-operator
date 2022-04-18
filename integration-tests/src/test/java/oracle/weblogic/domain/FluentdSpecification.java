@@ -26,7 +26,7 @@ public class FluentdSpecification {
    * The Fluentd sidecar image.
   */
   @ApiModelProperty(
-          "The Fluentd container image name. Defaults to ")
+          "The Fluentd container image name.")
   private String image;
 
   @ApiModelProperty(
@@ -50,8 +50,8 @@ public class FluentdSpecification {
   @ApiModelProperty("Volume mounts for fluentd container")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  @ApiModelProperty("Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain."
-            + " It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address,"
+  @ApiModelProperty("Fluentd elastic search credentials. A Kubernetes secret in the same namespace as the domain."
+            + " It must contain 4 keys: elasticsearchhost - ElasticSearch Host Service Address,"
             + " elasticsearchport - Elastic Search Service Port,"
             + " elasticsearchuser - Elastic Search Service User Name,"
             + " elasticsearchpassword - Elastic Search User Password")

@@ -95,7 +95,7 @@ You can customize the `fluentd` configuration to fit your use case. See the foll
 |`elasticSearchCredentials`|Kubernetes secret name for the `fluentd` container to communicate with the `Elasticsearch` engine. ||
 |`watchIntrospectorLogs`|If set to `true`, the operator also will set up a `fluentd` container to watch the introspector job output. Default is `false`.| The operator automatically added a volume mount referencing the ConfigMap volume containing the `fluentd` configuration.|
 |`volumeMounts`|Additional list of `volumeMounts` for the `fluentd` container.| It should contain at least the `logHome` shared volume.|
-|`image`|`fluentd` container image name. Default: ||
+|`image`|`fluentd` container image name. Default: `fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1` ||
 |`imagePullPolicy`|The `ImagePull` policy for the `fluentd` container.||
 |`env`|Additional list of environment variables for the `fluentd` container.| See [Environment variables in the `fluentd` container](#environment-variables-in-the-fluentd-container).|
 |`resources`|Resources for the `fluentd` container.||
