@@ -15,11 +15,15 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -119,7 +123,7 @@ public abstract class DomainConfigurator {
    * @param imagepullpolicy the new policy
    * @return this object
    */
-  public DomainConfigurator withDefaultImagePullPolicy(String imagepullpolicy) {
+  public DomainConfigurator withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum imagepullpolicy) {
     getDomainSpec().setImagePullPolicy(imagepullpolicy);
     return this;
   }
@@ -318,7 +322,7 @@ public abstract class DomainConfigurator {
    * @param startPolicy the new default policy
    * @return this object
    */
-  public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
+  public abstract DomainConfigurator withDefaultServerStartPolicy(ServerStartPolicy startPolicy);
 
   /**
    * Sets the server start state ("RUNNING" or "ADMIN") for the domain.
@@ -326,7 +330,7 @@ public abstract class DomainConfigurator {
    * @param startState the server start state
    * @return this object
    */
-  public abstract DomainConfigurator withServerStartState(String startState);
+  public abstract DomainConfigurator withServerStartState(ServerStartState startState);
 
   /**
    * Add an environment variable with the given name and value to the domain.
@@ -489,7 +493,7 @@ public abstract class DomainConfigurator {
    * @param restartPolicy restart policy to be set to this DomainConfigurator
    * @return this object
    */
-  public abstract DomainConfigurator withRestartPolicy(String restartPolicy);
+  public abstract DomainConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
 
   /**
    * Add readiness gate to the pod configuration.
@@ -629,5 +633,5 @@ public abstract class DomainConfigurator {
    * @param type the domain type
    * @return this object
    */
-  public abstract DomainConfigurator withDomainType(String type);
+  public abstract DomainConfigurator withDomainType(ModelInImageDomainType type);
 }

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f451b33af7033ab88b73407508d72df59152030ce91676eab8c18c480cc65c58
+    weblogic.sha256: baadbaeec1569ed35df10282c37b6f478ecd2ccf8798a9e43a1e419ccb3d1fb6
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -48,8 +48,8 @@ spec:
                       IfNotPresent, otherwise.
                     enum:
                     - Always
-                    - Never
                     - IfNotPresent
+                    - Never
                     type: string
                   configuration:
                     description: The configuration for the WebLogic Monitoring Exporter.
@@ -161,8 +161,8 @@ spec:
                               type: string
                               enum:
                               - Always
-                              - Never
                               - IfNotPresent
+                              - Never
                             sourceModelHome:
                               description: The source location of the WebLogic Deploy
                                 Tooling model home within the auxiliary image that
@@ -479,6 +479,11 @@ spec:
                           properties:
                             conditionType:
                               type: string
+                              enum:
+                              - ContainersReady
+                              - Initialized
+                              - PodScheduled
+                              - Ready
                           required:
                           - conditionType
                         type: array
@@ -512,6 +517,10 @@ spec:
                               localhostProfile:
                                 type: string
                               type:
+                                enum:
+                                - Localhost
+                                - RuntimeDefault
+                                - Unconfined
                                 type: string
                             required:
                             - type
@@ -626,6 +635,10 @@ spec:
                           properties:
                             effect:
                               type: string
+                              enum:
+                              - NoExecute
+                              - NoSchedule
+                              - PreferNoSchedule
                             tolerationSeconds:
                               type: number
                             value:
@@ -634,6 +647,9 @@ spec:
                               type: string
                             operator:
                               type: string
+                              enum:
+                              - Equal
+                              - Exists
                         type: array
                       readinessProbe:
                         description: Settings for the readiness probe associated with
@@ -701,6 +717,10 @@ spec:
                               localhostProfile:
                                 type: string
                               type:
+                                enum:
+                                - Localhost
+                                - RuntimeDefault
+                                - Unconfined
                                 type: string
                             required:
                             - type
@@ -1607,6 +1627,10 @@ spec:
                           Pod. One of Always, OnFailure, Never. Default to Always.
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                           See `kubectl explain pods.spec.restartPolicy`.'
+                        enum:
+                        - Always
+                        - Never
+                        - OnFailure
                         type: string
                       labels:
                         additionalProperties:
@@ -1636,6 +1660,10 @@ spec:
                               type: string
                             imagePullPolicy:
                               type: string
+                              enum:
+                              - Always
+                              - IfNotPresent
+                              - Never
                             livenessProbe:
                               type: object
                               properties:
@@ -1676,6 +1704,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -1683,6 +1720,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -1714,6 +1754,9 @@ spec:
                               type: boolean
                             terminationMessagePolicy:
                               type: string
+                              enum:
+                              - FallbackToLogsOnError
+                              - File
                             terminationMessagePath:
                               type: string
                             workingDir:
@@ -1765,6 +1808,10 @@ spec:
                                       type: string
                                     type:
                                       type: string
+                                      enum:
+                                      - Localhost
+                                      - RuntimeDefault
+                                      - Unconfined
                                   required:
                                   - type
                                 windowsOptions:
@@ -1828,6 +1875,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -1835,6 +1891,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -1934,6 +1993,10 @@ spec:
                                 properties:
                                   protocol:
                                     type: string
+                                    enum:
+                                    - SCTP
+                                    - TCP
+                                    - UDP
                                   hostIP:
                                     type: string
                                   name:
@@ -2010,6 +2073,9 @@ spec:
                                           type: string
                                         scheme:
                                           type: string
+                                          enum:
+                                          - HTTP
+                                          - HTTPS
                                         port:
                                           type: object
                                           properties:
@@ -2072,6 +2138,9 @@ spec:
                                           type: string
                                         scheme:
                                           type: string
+                                          enum:
+                                          - HTTP
+                                          - HTTPS
                                         port:
                                           type: object
                                           properties:
@@ -2143,6 +2212,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2150,6 +2228,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2225,6 +2306,10 @@ spec:
                               type: string
                             imagePullPolicy:
                               type: string
+                              enum:
+                              - Always
+                              - IfNotPresent
+                              - Never
                             livenessProbe:
                               type: object
                               properties:
@@ -2265,6 +2350,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2272,6 +2366,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2303,6 +2400,9 @@ spec:
                               type: boolean
                             terminationMessagePolicy:
                               type: string
+                              enum:
+                              - FallbackToLogsOnError
+                              - File
                             terminationMessagePath:
                               type: string
                             workingDir:
@@ -2354,6 +2454,10 @@ spec:
                                       type: string
                                     type:
                                       type: string
+                                      enum:
+                                      - Localhost
+                                      - RuntimeDefault
+                                      - Unconfined
                                   required:
                                   - type
                                 windowsOptions:
@@ -2417,6 +2521,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2424,6 +2537,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2523,6 +2639,10 @@ spec:
                                 properties:
                                   protocol:
                                     type: string
+                                    enum:
+                                    - SCTP
+                                    - TCP
+                                    - UDP
                                   hostIP:
                                     type: string
                                   name:
@@ -2599,6 +2719,9 @@ spec:
                                           type: string
                                         scheme:
                                           type: string
+                                          enum:
+                                          - HTTP
+                                          - HTTPS
                                         port:
                                           type: object
                                           properties:
@@ -2661,6 +2784,9 @@ spec:
                                           type: string
                                         scheme:
                                           type: string
+                                          enum:
+                                          - HTTP
+                                          - HTTPS
                                         port:
                                           type: object
                                           properties:
@@ -2732,6 +2858,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2739,6 +2874,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2845,6 +2983,13 @@ spec:
                                                 type: string
                                               operator:
                                                 type: string
+                                                enum:
+                                                - DoesNotExist
+                                                - Exists
+                                                - Gt
+                                                - In
+                                                - Lt
+                                                - NotIn
                                             required:
                                             - key
                                             - operator
@@ -2861,6 +3006,13 @@ spec:
                                                 type: string
                                               operator:
                                                 type: string
+                                                enum:
+                                                - DoesNotExist
+                                                - Exists
+                                                - Gt
+                                                - In
+                                                - Lt
+                                                - NotIn
                                             required:
                                             - key
                                             - operator
@@ -2888,6 +3040,13 @@ spec:
                                                 type: string
                                               operator:
                                                 type: string
+                                                enum:
+                                                - DoesNotExist
+                                                - Exists
+                                                - Gt
+                                                - In
+                                                - Lt
+                                                - NotIn
                                             required:
                                             - key
                                             - operator
@@ -2904,6 +3063,13 @@ spec:
                                                 type: string
                                               operator:
                                                 type: string
+                                                enum:
+                                                - DoesNotExist
+                                                - Exists
+                                                - Gt
+                                                - In
+                                                - Lt
+                                                - NotIn
                                             required:
                                             - key
                                             - operator
@@ -3363,6 +3529,11 @@ spec:
                             properties:
                               conditionType:
                                 type: string
+                                enum:
+                                - ContainersReady
+                                - Initialized
+                                - PodScheduled
+                                - Ready
                             required:
                             - conditionType
                         serviceAccountName:
@@ -3398,6 +3569,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -3512,6 +3687,10 @@ spec:
                             properties:
                               effect:
                                 type: string
+                                enum:
+                                - NoExecute
+                                - NoSchedule
+                                - PreferNoSchedule
                               tolerationSeconds:
                                 type: number
                               value:
@@ -3520,6 +3699,9 @@ spec:
                                 type: string
                               operator:
                                 type: string
+                                enum:
+                                - Equal
+                                - Exists
                         readinessProbe:
                           description: Settings for the readiness probe associated
                             with a WebLogic Server instance.
@@ -3590,6 +3772,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -4497,6 +4683,10 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
+                          enum:
+                          - Always
+                          - Never
+                          - OnFailure
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
@@ -4526,6 +4716,10 @@ spec:
                                 type: string
                               imagePullPolicy:
                                 type: string
+                                enum:
+                                - Always
+                                - IfNotPresent
+                                - Never
                               livenessProbe:
                                 type: object
                                 properties:
@@ -4566,6 +4760,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -4573,6 +4776,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -4604,6 +4810,9 @@ spec:
                                 type: boolean
                               terminationMessagePolicy:
                                 type: string
+                                enum:
+                                - FallbackToLogsOnError
+                                - File
                               terminationMessagePath:
                                 type: string
                               workingDir:
@@ -4655,6 +4864,10 @@ spec:
                                         type: string
                                       type:
                                         type: string
+                                        enum:
+                                        - Localhost
+                                        - RuntimeDefault
+                                        - Unconfined
                                     required:
                                     - type
                                   windowsOptions:
@@ -4718,6 +4931,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -4725,6 +4947,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -4824,6 +5049,10 @@ spec:
                                   properties:
                                     protocol:
                                       type: string
+                                      enum:
+                                      - SCTP
+                                      - TCP
+                                      - UDP
                                     hostIP:
                                       type: string
                                     name:
@@ -4900,6 +5129,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -4962,6 +5194,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -5033,6 +5268,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5040,6 +5284,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -5115,6 +5362,10 @@ spec:
                                 type: string
                               imagePullPolicy:
                                 type: string
+                                enum:
+                                - Always
+                                - IfNotPresent
+                                - Never
                               livenessProbe:
                                 type: object
                                 properties:
@@ -5155,6 +5406,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5162,6 +5422,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -5193,6 +5456,9 @@ spec:
                                 type: boolean
                               terminationMessagePolicy:
                                 type: string
+                                enum:
+                                - FallbackToLogsOnError
+                                - File
                               terminationMessagePath:
                                 type: string
                               workingDir:
@@ -5244,6 +5510,10 @@ spec:
                                         type: string
                                       type:
                                         type: string
+                                        enum:
+                                        - Localhost
+                                        - RuntimeDefault
+                                        - Unconfined
                                     required:
                                     - type
                                   windowsOptions:
@@ -5307,6 +5577,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5314,6 +5593,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -5413,6 +5695,10 @@ spec:
                                   properties:
                                     protocol:
                                       type: string
+                                      enum:
+                                      - SCTP
+                                      - TCP
+                                      - UDP
                                     hostIP:
                                       type: string
                                     name:
@@ -5489,6 +5775,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -5551,6 +5840,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -5622,6 +5914,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5629,6 +5930,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -5738,6 +6042,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -5754,6 +6065,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -5780,6 +6098,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -5796,6 +6121,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -6138,8 +6470,8 @@ spec:
                   if image ends in :latest; IfNotPresent, otherwise.
                 enum:
                 - Always
-                - Never
                 - IfNotPresent
+                - Never
                 type: string
               maxClusterConcurrentStartup:
                 description: The maximum number of cluster member Managed Server instances
@@ -6264,6 +6596,11 @@ spec:
                       properties:
                         conditionType:
                           type: string
+                          enum:
+                          - ContainersReady
+                          - Initialized
+                          - PodScheduled
+                          - Ready
                       required:
                       - conditionType
                     type: array
@@ -6297,6 +6634,10 @@ spec:
                           localhostProfile:
                             type: string
                           type:
+                            enum:
+                            - Localhost
+                            - RuntimeDefault
+                            - Unconfined
                             type: string
                         required:
                         - type
@@ -6409,6 +6750,10 @@ spec:
                       properties:
                         effect:
                           type: string
+                          enum:
+                          - NoExecute
+                          - NoSchedule
+                          - PreferNoSchedule
                         tolerationSeconds:
                           type: number
                         value:
@@ -6417,6 +6762,9 @@ spec:
                           type: string
                         operator:
                           type: string
+                          enum:
+                          - Equal
+                          - Exists
                     type: array
                   readinessProbe:
                     description: Settings for the readiness probe associated with
@@ -6482,6 +6830,10 @@ spec:
                           localhostProfile:
                             type: string
                           type:
+                            enum:
+                            - Localhost
+                            - RuntimeDefault
+                            - Unconfined
                             type: string
                         required:
                         - type
@@ -7386,6 +7738,10 @@ spec:
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                       See `kubectl explain pods.spec.restartPolicy`.'
+                    enum:
+                    - Always
+                    - Never
+                    - OnFailure
                     type: string
                   labels:
                     additionalProperties:
@@ -7415,6 +7771,10 @@ spec:
                           type: string
                         imagePullPolicy:
                           type: string
+                          enum:
+                          - Always
+                          - IfNotPresent
+                          - Never
                         livenessProbe:
                           type: object
                           properties:
@@ -7455,6 +7815,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -7462,6 +7831,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -7493,6 +7865,9 @@ spec:
                           type: boolean
                         terminationMessagePolicy:
                           type: string
+                          enum:
+                          - FallbackToLogsOnError
+                          - File
                         terminationMessagePath:
                           type: string
                         workingDir:
@@ -7544,6 +7919,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -7607,6 +7986,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -7614,6 +8002,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -7713,6 +8104,10 @@ spec:
                             properties:
                               protocol:
                                 type: string
+                                enum:
+                                - SCTP
+                                - TCP
+                                - UDP
                               hostIP:
                                 type: string
                               name:
@@ -7789,6 +8184,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -7851,6 +8249,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -7922,6 +8323,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -7929,6 +8339,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -8004,6 +8417,10 @@ spec:
                           type: string
                         imagePullPolicy:
                           type: string
+                          enum:
+                          - Always
+                          - IfNotPresent
+                          - Never
                         livenessProbe:
                           type: object
                           properties:
@@ -8044,6 +8461,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8051,6 +8477,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -8082,6 +8511,9 @@ spec:
                           type: boolean
                         terminationMessagePolicy:
                           type: string
+                          enum:
+                          - FallbackToLogsOnError
+                          - File
                         terminationMessagePath:
                           type: string
                         workingDir:
@@ -8133,6 +8565,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -8196,6 +8632,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8203,6 +8648,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -8302,6 +8750,10 @@ spec:
                             properties:
                               protocol:
                                 type: string
+                                enum:
+                                - SCTP
+                                - TCP
+                                - UDP
                               hostIP:
                                 type: string
                               name:
@@ -8378,6 +8830,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -8440,6 +8895,9 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
+                                      enum:
+                                      - HTTP
+                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -8511,6 +8969,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8518,6 +8985,9 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
+                                  enum:
+                                  - HTTP
+                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -8624,6 +9094,13 @@ spec:
                                             type: string
                                           operator:
                                             type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -8640,6 +9117,13 @@ spec:
                                             type: string
                                           operator:
                                             type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -8667,6 +9151,13 @@ spec:
                                             type: string
                                           operator:
                                             type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -8683,6 +9174,13 @@ spec:
                                             type: string
                                           operator:
                                             type: string
+                                            enum:
+                                            - DoesNotExist
+                                            - Exists
+                                            - Gt
+                                            - In
+                                            - Lt
+                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -9022,6 +9520,11 @@ spec:
                             properties:
                               conditionType:
                                 type: string
+                                enum:
+                                - ContainersReady
+                                - Initialized
+                                - PodScheduled
+                                - Ready
                             required:
                             - conditionType
                         serviceAccountName:
@@ -9057,6 +9560,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -9171,6 +9678,10 @@ spec:
                             properties:
                               effect:
                                 type: string
+                                enum:
+                                - NoExecute
+                                - NoSchedule
+                                - PreferNoSchedule
                               tolerationSeconds:
                                 type: number
                               value:
@@ -9179,6 +9690,9 @@ spec:
                                 type: string
                               operator:
                                 type: string
+                                enum:
+                                - Equal
+                                - Exists
                         readinessProbe:
                           description: Settings for the readiness probe associated
                             with a WebLogic Server instance.
@@ -9249,6 +9763,10 @@ spec:
                                   type: string
                                 type:
                                   type: string
+                                  enum:
+                                  - Localhost
+                                  - RuntimeDefault
+                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -10156,6 +10674,10 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
+                          enum:
+                          - Always
+                          - Never
+                          - OnFailure
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
@@ -10185,6 +10707,10 @@ spec:
                                 type: string
                               imagePullPolicy:
                                 type: string
+                                enum:
+                                - Always
+                                - IfNotPresent
+                                - Never
                               livenessProbe:
                                 type: object
                                 properties:
@@ -10225,6 +10751,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10232,6 +10767,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -10263,6 +10801,9 @@ spec:
                                 type: boolean
                               terminationMessagePolicy:
                                 type: string
+                                enum:
+                                - FallbackToLogsOnError
+                                - File
                               terminationMessagePath:
                                 type: string
                               workingDir:
@@ -10314,6 +10855,10 @@ spec:
                                         type: string
                                       type:
                                         type: string
+                                        enum:
+                                        - Localhost
+                                        - RuntimeDefault
+                                        - Unconfined
                                     required:
                                     - type
                                   windowsOptions:
@@ -10377,6 +10922,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10384,6 +10938,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -10483,6 +11040,10 @@ spec:
                                   properties:
                                     protocol:
                                       type: string
+                                      enum:
+                                      - SCTP
+                                      - TCP
+                                      - UDP
                                     hostIP:
                                       type: string
                                     name:
@@ -10559,6 +11120,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -10621,6 +11185,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -10692,6 +11259,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10699,6 +11275,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -10774,6 +11353,10 @@ spec:
                                 type: string
                               imagePullPolicy:
                                 type: string
+                                enum:
+                                - Always
+                                - IfNotPresent
+                                - Never
                               livenessProbe:
                                 type: object
                                 properties:
@@ -10814,6 +11397,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10821,6 +11413,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -10852,6 +11447,9 @@ spec:
                                 type: boolean
                               terminationMessagePolicy:
                                 type: string
+                                enum:
+                                - FallbackToLogsOnError
+                                - File
                               terminationMessagePath:
                                 type: string
                               workingDir:
@@ -10903,6 +11501,10 @@ spec:
                                         type: string
                                       type:
                                         type: string
+                                        enum:
+                                        - Localhost
+                                        - RuntimeDefault
+                                        - Unconfined
                                     required:
                                     - type
                                   windowsOptions:
@@ -10966,6 +11568,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10973,6 +11584,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -11072,6 +11686,10 @@ spec:
                                   properties:
                                     protocol:
                                       type: string
+                                      enum:
+                                      - SCTP
+                                      - TCP
+                                      - UDP
                                     hostIP:
                                       type: string
                                     name:
@@ -11148,6 +11766,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -11210,6 +11831,9 @@ spec:
                                             type: string
                                           scheme:
                                             type: string
+                                            enum:
+                                            - HTTP
+                                            - HTTPS
                                           port:
                                             type: object
                                             properties:
@@ -11281,6 +11905,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -11288,6 +11921,9 @@ spec:
                                         type: string
                                       scheme:
                                         type: string
+                                        enum:
+                                        - HTTP
+                                        - HTTPS
                                       port:
                                         type: object
                                         properties:
@@ -11397,6 +12033,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -11413,6 +12056,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -11439,6 +12089,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -11455,6 +12112,13 @@ spec:
                                                   type: string
                                                 operator:
                                                   type: string
+                                                  enum:
+                                                  - DoesNotExist
+                                                  - Exists
+                                                  - Gt
+                                                  - In
+                                                  - Lt
+                                                  - NotIn
                                               required:
                                               - key
                                               - operator
@@ -11768,6 +12432,12 @@ spec:
                       description: 'Phase of the WebLogic Server pod. Possible values
                         are: Pending, Succeeded, Failed, Running, or Unknown.'
                       type: string
+                      enum:
+                      - Failed
+                      - Pending
+                      - Running
+                      - Succeeded
+                      - Unknown
                     clusterName:
                       description: WebLogic cluster name, if the server is a member
                         of a cluster.
@@ -11853,7 +12523,7 @@ spec:
                       type: string
                     type:
                       description: The type of the condition. Valid types are Completed,
-                        Available, Failed, and ConfigChangesPendingRestart.
+                        Available, Failed, Rolling, and ConfigChangesPendingRestart.
                       type: string
                       enum:
                       - Failed

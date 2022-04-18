@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -245,7 +246,7 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  String getWdtDomainType() {
+  ModelInImageDomainType getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }
 
@@ -414,7 +415,7 @@ public class JobStepContext extends BasePodStepContext {
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = super.createPodSpec(tuningParameters)
             .activeDeadlineSeconds(getActiveDeadlineSeconds(tuningParameters.getPodTuning()))
-            .restartPolicy("Never")
+            .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
@@ -664,7 +665,7 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
-    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
+    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
     addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
