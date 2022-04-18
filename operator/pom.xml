@@ -12,17 +12,8 @@
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
 
-  <description>Oracle WebLogic Server Kubernetes Operator</description>
+  <description>WebLogic Kubernetes Operator</description>
   <name>operator-runtime</name>
-
-  <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
-  <inceptionYear>2017</inceptionYear>
-  <licenses>
-    <license>
-      <name>The Universal Permissive License (UPL), Version 1.0</name>
-      <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-    </license>
-  </licenses>
 
   <build>
     <finalName>weblogic-kubernetes-operator</finalName>
@@ -118,19 +109,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>
@@ -281,7 +259,10 @@
           </execution>
         </executions>
       </plugin>
-
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
 
@@ -427,9 +408,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-  </properties>
-
 </project>

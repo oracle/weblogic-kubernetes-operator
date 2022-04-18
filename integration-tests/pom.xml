@@ -12,14 +12,11 @@
 
     <artifactId>integration-tests</artifactId>
 
-    <description>Oracle WebLogic Server Kubernetes Operator</description>
+    <description>WebLogic Kubernetes Operator Integration Tests</description>
     <name>integration-tests</name>
-    <packaging>jar</packaging>
 
     <properties>
         <skipITs>false</skipITs>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-
         <!-- integration tests configuration -->
         <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
         <wko.it.domain.version>${env.DOMAIN_VERSION}</wko.it.domain.version>
@@ -133,7 +130,7 @@
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
-                            <skip>${wko.it.skip.enforcer.rules}</skip>
+                            <skip>${skipITs}</skip>
                             <rules>
                                 <requireEnvironmentVariable>
                                     <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
@@ -169,7 +166,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
+                    <skipTests>${skipITs}</skipTests>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
@@ -189,7 +186,6 @@
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
-                            <skipTests>${skipITs}</skipTests>
                             <systemPropertyVariables>
                                 <java.util.logging.SimpleFormatter.format>
                                     &lt;%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS&gt; &lt;%4$s&gt; &lt;%2$s&gt; &lt;%5$s%6$s&gt;%n
@@ -346,6 +342,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+          </plugin>
         </plugins>
     </build>
 
@@ -587,13 +587,7 @@
             <id>wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItKubernetesEvents,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMultiDomainModels,
-                    **/ItPodsRestart,
-                    **/ItTwoDomainsManagedByTwoOperators
-                </includes-failsafe>
+                <groups>gate,samples-gate</groups>
             </properties>
         </profile>
         <profile>

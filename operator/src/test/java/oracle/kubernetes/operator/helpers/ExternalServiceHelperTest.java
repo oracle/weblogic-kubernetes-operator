@@ -98,8 +98,8 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
     }
 
     @Override
-    public ServiceType getExpectedServiceType() {
-      return ServiceType.NodePort;
+    public V1ServiceSpec.TypeEnum getExpectedServiceType() {
+      return V1ServiceSpec.TypeEnum.NODEPORT;
     }
 
     @Override

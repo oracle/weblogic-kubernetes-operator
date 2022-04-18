@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -514,7 +514,7 @@ class ServicePresenceTest {
                 createMetadata()
                     .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                     .putLabelsItem(SERVERNAME_LABEL, SERVER))
-            .spec(new V1ServiceSpec().type(ServiceHelper.NODE_PORT_TYPE));
+            .spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);

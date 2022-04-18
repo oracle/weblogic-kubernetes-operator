@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -23,7 +24,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 public interface ServerSpec {
   String getImage();
 
-  String getImagePullPolicy();
+  V1Container.ImagePullPolicyEnum getImagePullPolicy();
 
   /**
    * The secrets used to authenticate to a docker repository when pulling an image.
@@ -138,7 +139,7 @@ public interface ServerSpec {
 
   List<V1PodReadinessGate> getReadinessGates();
 
-  String getRestartPolicy();
+  V1PodSpec.RestartPolicyEnum getRestartPolicy();
 
   String getRuntimeClassName();
 

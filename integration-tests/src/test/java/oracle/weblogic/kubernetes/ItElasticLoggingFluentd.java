@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -94,7 +95,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -266,6 +266,20 @@ class ItElasticLoggingFluentd {
   @Test
   @DisplayName("Use Fluentd to send log information to Elasticsearch and verify")
   void testFluentdQuery() {
+    // verify Fluentd query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(queryAndVerify(),
+            String.format("Query logs of serverName=%s failed", adminServerPodName)));
+
+    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
+  }
+
+  private boolean queryAndVerify() {
+    //debug
+    String queryCriteria0 = "/_search?q=serverName:" + adminServerPodName;
+    String results0 = execSearchQuery(queryCriteria0, FLUENTD_INDEX_KEY);
+    logger.info("_search?q=serverName:{0} result ===> {1}", adminServerPodName, results0);
+
     // Verify that number of logs is not zero and failed if count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
@@ -280,15 +294,13 @@ class ItElasticLoggingFluentd {
     }
 
     logger.info("Total count of logs: " + count);
-    assertTrue(count > 0, "Total count of logs should be more than 0!");
-    assertEquals(0, failedCount, "Total failed count should be 0!");
     logger.info("Total failed count: " + failedCount);
 
-    logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
+    return count > 0 && failedCount == 0;
   }
 
   private static void configFluentd() {
-    Class thisClass = new Object(){}.getClass();
+    Class<?> thisClass = new Object(){}.getClass();
     String srcFluentdYamlFile =  MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML;
     String destFluentdYamlFile =
         RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName() + "/" + FLUENTD_CONFIGMAP_YAML;
@@ -312,7 +324,7 @@ class ItElasticLoggingFluentd {
         "Could not modify namespace in fluentd.configmap.elk.yaml");
 
     // create fluentd configuration
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command("kubectl create -f " + destFluentdYamlFile))
         .execute(), "kubectl create failed");
@@ -464,7 +476,7 @@ class ItElasticLoggingFluentd {
                                     .name("weblogic-credentials"))))
                         .name(FLUENTD_NAME)
                         .image(FLUENTD_IMAGE)
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .resources(new V1ResourceRequirements())
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -505,11 +517,11 @@ class ItElasticLoggingFluentd {
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
-    String indexName = (String) testVarMap.get(index);
-    StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
-        .append(" --max-time " + waittime)
+    String indexName = testVarMap.get(index);
+    StringBuilder curlOptions = new StringBuilder(" --connect-timeout " + waittime)
+        .append(" --max-time ").append(waittime)
         .append(" -X GET ");
-    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
+    StringBuilder k8sExecCmdPrefixBuff = new StringBuilder(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String cmd = k8sExecCmdPrefixBuff

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -24,6 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -278,6 +280,7 @@ class ItMiiAuxiliaryImage {
    */
   @Test
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
+  @Tag("gate")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     // create stage dir for auxiliary image
@@ -342,7 +345,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Found the DataResource configuration");
 
     // get the map with server pods and their original creation timestamps
-    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1,
@@ -374,7 +377,7 @@ class ItMiiAuxiliaryImage {
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
-    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
     //print out the original image name
@@ -614,7 +617,8 @@ class ItMiiAuxiliaryImage {
 
     // add the sourceWDTInstallHome and sourceModelHome for both aux images.
     for (String cmImageName : images) {
-      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       auxImage.sourceWDTInstallHome(auxiliaryImagePathCustom + "/weblogic-deploy")
           .sourceModelHome(auxiliaryImagePathCustom + "/models");
       domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
@@ -696,7 +700,7 @@ class ItMiiAuxiliaryImage {
   void testCreateDomainWithConfigMapAndEmptryModelFileDir() {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
-    String domainUid = "domain8";
+    String domainUid = "testdomain8";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -783,20 +787,14 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
-   * 1.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
    * where the wdtModelHome ("/aux/y/models") is placed
    * under the wdtInstallHome (/aux") directory. Verify domain creation.
-   * 2.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
-   * where the wdtInstallHome is ("/aux") and wdtModelHome is (/aux/models")
-   * Verify domain creation.
-   * 3.Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
-   * where the wdtInstallHome is ("/aux/y") and wdtInstallHome is (/aux/models")
-   * Verify domain creation.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with"
           + " custom wdtModelHome and wdtInstallHome"
-          + " where the wdtModelHome is placed under or same wdtInstallHome directory or vice-versa")
+          + " where the wdtModelHome is placed under wdtInstallHome directory")
   void testCreateDomainUseWdtModelHomeDirUnderWdtInstallHome() {
 
     String wdtInstallPath = "/aux";
@@ -806,25 +804,47 @@ class ItMiiAuxiliaryImage {
     // creating image13 with wdtModelHome dir located under wdtInstallHome dir, verify domain is started
     createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
             wdtModelHomePath,domainUid,miiAuxiliaryImage13Tag);
+  }
 
-
-    // create image14 with same wdtModelHome and wdtInstallHome dir, verify error message
-    wdtInstallPath = "/aux";
-    wdtModelHomePath = "/aux";
-    domainUid = "testdomain14";
-    createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
-            wdtModelHomePath,domainUid,miiAuxiliaryImage14Tag);
+  /**
+   * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtInstallHome dir located under wdtModelHome
+   * Verify domain creation.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with"
+          + " custom wdtModelHome and wdtInstallHome"
+          + " where the wdtInstallHome is placed under wdtModelHome directory or vice-versa")
+  void testCreateDomainUseWdtInstallHomeDirUnderWdtModelHome() {
 
     // create image15 with wdtInstallHome under wdtModelHome dir,verify error message
-    wdtInstallPath = "/aux/y";
-    wdtModelHomePath = "/aux";
-    domainUid = "testdomain15";
+    String wdtInstallPath = "/aux/y";
+    String wdtModelHomePath = "/aux";
+    String domainUid = "testdomain15";
 
     createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
             wdtModelHomePath,domainUid,miiAuxiliaryImage15Tag);
   }
 
+  /**
+   * Create a domain using auxiliary image with custom wdtModelHome and wdtInstallHome
+   * where the wdtInstallHome dir and  wdtModelHome dir are the same
+   * Verify domain creation.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with"
+          + " custom wdtModelHome and wdtInstallHome"
+          + " where the wdtModelHome is same as wdtInstallHome directory")
+  void testCreateDomainUseWdtInstallHomeDirSameAsWdtModelHome() {
 
+    // create image14 with same wdtModelHome and wdtInstallHome dir, verify error message
+    String wdtInstallPath = "/aux";
+    String wdtModelHomePath = "/aux";
+    String domainUid = "testdomain14";
+    createDomainUsingAuxImageWithCustomWdtModelHomeInstallHome(wdtInstallPath,
+            wdtModelHomePath,domainUid,miiAuxiliaryImage14Tag);
+  }
+  
   /**
    * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
    * another auxiliary image with JMS system resource but with sourceModelHome set to none,
@@ -1358,7 +1378,8 @@ class ItMiiAuxiliaryImage {
             encryptionSecretName, replicaCount, clusterNames);
     int index = 0;
     for (String cmImageName: auxiliaryImageName) {
-      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      AuxiliaryImage auxImage = new AuxiliaryImage()
+          .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
         auxImage.sourceWDTInstallHome(sourceWDTInstallHome + "/weblogic-deploy")

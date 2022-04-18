@@ -186,25 +186,26 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous step to remove selected failure conditions.
    */
-  public static Step createRemoveSelectedFailuresStep(DomainFailureReason... selectedReasons) {
-    return new RemoveSelectedFailuresStep(Arrays.asList(selectedReasons));
+  public static Step createRemoveSelectedFailuresStep(Step next, DomainFailureReason... selectedReasons) {
+    return new RemoveSelectedFailuresStep(next, Arrays.asList(selectedReasons));
   }
 
   /**
    * Asynchronous step to remove failure conditions other than those specified.
+   * @param next the next step to execute after this one.
    * @param excludedReasons the failure reasons not to be removed; others will be.
    */
-  public static Step createRemoveUnSelectedFailuresStep(DomainFailureReason... excludedReasons) {
-    List<DomainFailureReason> selectedReaons = new ArrayList<>(Arrays.asList(DomainFailureReason.values()));
-    Arrays.stream(excludedReasons).forEach(selectedReaons::remove);
-    return new RemoveSelectedFailuresStep(selectedReaons);
+  public static Step createRemoveUnSelectedFailuresStep(Step next, DomainFailureReason... excludedReasons) {
+    List<DomainFailureReason> selectedReasons = new ArrayList<>(Arrays.asList(DomainFailureReason.values()));
+    Arrays.stream(excludedReasons).forEach(selectedReasons::remove);
+    return new RemoveSelectedFailuresStep(next, selectedReasons);
   }
 
   /**
    * Asynchronous step to remove any current failure conditions.
    */
-  public static Step createRemoveFailuresStep() {
-    return createRemoveUnSelectedFailuresStep(TOPOLOGY_MISMATCH);
+  public static Step createRemoveFailuresStep(Step next) {
+    return createRemoveUnSelectedFailuresStep(next, TOPOLOGY_MISMATCH);
   }
 
   /**
@@ -249,7 +250,7 @@ public class DomainStatusUpdater {
    * @param message a fuller description of the problem
    */
   public static Step createDomainInvalidFailureSteps(String message) {
-    return new FailureStep(DOMAIN_INVALID, message);
+    return new FailureStep(DOMAIN_INVALID, message).removingOldFailures(DOMAIN_INVALID);
   }
 
   /**
@@ -416,10 +417,6 @@ public class DomainStatusUpdater {
     private DomainStatus createNewStatus() {
       DomainStatus cloneStatus = cloneStatus();
       modifyStatus(cloneStatus);
-
-      if (cloneStatus.getMessage() == null) {
-        cloneStatus.setMessage(info.getValidationWarningsAsString());
-      }
       return cloneStatus;
     }
 
@@ -617,7 +614,7 @@ public class DomainStatusUpdater {
         } else if (hasPodNotReadyInTime()) {
           addFailure(status, SERVER_POD, formatPodNotReadyMessage());
         } else {
-          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD.label().equals(c.getReason()));
+          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD.toString().equals(c.getReason()));
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
             status.removeConditionsWithType(CONFIG_CHANGES_PENDING_RESTART);
           }
@@ -646,7 +643,7 @@ public class DomainStatusUpdater {
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
           this.status.removeConditionsMatching(c -> c.hasType(FAILED)
-              && REPLICAS_TOO_HIGH.label().equals(c.getReason()));
+              && REPLICAS_TOO_HIGH.toString().equals(c.getReason()));
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
           conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
@@ -913,11 +910,12 @@ public class DomainStatusUpdater {
         }
 
         private boolean isReadyCondition(Object condition) {
-          return (condition instanceof V1PodCondition) && "Ready".equals(((V1PodCondition)condition).getType());
+          return (condition instanceof V1PodCondition)
+              && V1PodCondition.TypeEnum.READY.equals(((V1PodCondition)condition).getType());
         }
 
         private boolean isPhaseRunning(V1PodStatus status) {
-          return "Running".equals(status.getPhase());
+          return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {
@@ -1131,7 +1129,8 @@ public class DomainStatusUpdater {
 
     private final List<DomainFailureReason> selectedReasons;
 
-    private RemoveSelectedFailuresStep(List<DomainFailureReason> selectedReasons) {
+    private RemoveSelectedFailuresStep(Step next, List<DomainFailureReason> selectedReasons) {
+      super(next);
       this.selectedReasons = selectedReasons;
     }
 
@@ -1256,7 +1255,7 @@ public class DomainStatusUpdater {
 
     @Override
     protected String getDetail() {
-      return reason.label();
+      return reason.toString();
     }
 
     @Override

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
@@ -50,10 +51,12 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.jetbrains.annotations.NotNull;
 
 import static java.io.File.createTempFile;
 import static java.nio.file.Files.copy;
@@ -101,6 +104,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
@@ -480,8 +484,8 @@ public class DomainUtils {
 
     int t3ChannelPort = getNextFreePort();
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = getUniqueName(domainUid + "-pv-"); // name of the persistent volume
+    final String pvcName = getUniqueName(domainUid + "-pvc-"); // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -499,7 +503,7 @@ public class DomainUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle"))
+            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RECYCLE))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .build()
@@ -596,7 +600,7 @@ public class DomainUtils {
             .domainHome("/u01/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET)))
@@ -763,11 +767,11 @@ public class DomainUtils {
                                       V1Container jobContainer) {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy("Never")
+        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
         .addContainersItem(jobContainer  // container containing WLST or WDT details
                .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(7001))
                         .volumeMounts(Arrays.asList(
@@ -813,7 +817,7 @@ public class DomainUtils {
         "Getting the job failed");
     if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
@@ -988,5 +992,28 @@ public class DomainUtils {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
       checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
     }
+  }
+
+  /**
+   * Obtains the specified domain, validates that it has a spec and no rolling condition.
+   * @param domainNamespace the namespace
+   * @param domainUid the UID
+   */
+  @NotNull
+  public static Domain getAndValidateInitialDomain(String domainNamespace, String domainUid) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+
+    assertNotNull(domain, "Got null domain resource");
+    assertNotNull(domain.getSpec(), domain + "/spec is null");
+    assertFalse(domainHasRollingCondition(domain), "Found rolling condition at start of test");
+    return domain;
+  }
+
+  private static boolean domainHasRollingCondition(Domain domain) {
+    return Optional.ofNullable(domain.getStatus())
+          .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
+          .map(DomainCondition::getType).anyMatch("Rolling"::equals);
   }
 }

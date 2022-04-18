@@ -12,9 +12,8 @@
 
   <artifactId>domain-upgrader</artifactId>
 
-  <description>Domain Upgrader for Oracle WebLogic Server Kubernetes Operator</description>
+  <description>Domain Upgrader for WebLogic Kubernetes Operator</description>
   <name>domain-upgrader</name>
-  <packaging>jar</packaging>
 
   <build>
     <finalName>domain-upgrader</finalName>
@@ -53,6 +52,10 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
 
@@ -60,12 +63,12 @@
     <dependency>
       <groupId>oracle.kubernetes</groupId>
       <artifactId>common</artifactId>
-      <version>${version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>oracle.kubernetes</groupId>
       <artifactId>common</artifactId>
-      <version>${version}</version>
+      <version>${project.version}</version>
       <type>test-jar</type>
     </dependency>
     <dependency>
@@ -87,8 +90,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <properties>
-    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-  </properties>
 </project>

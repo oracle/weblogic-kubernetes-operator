@@ -67,7 +67,7 @@ public final class RequestParams {
    * Creates a message to describe a Kubernetes-reported failure.
    * @param apiException the exception from Kubernetes
    */
-  String createFailureMessage(ApiException apiException) {
+  public String createFailureMessage(ApiException apiException) {
     return LOGGER.formatMessage(
           MessageKeys.K8S_REQUEST_FAILURE,
           getOperationName(),

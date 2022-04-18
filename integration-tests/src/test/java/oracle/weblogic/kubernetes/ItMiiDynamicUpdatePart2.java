@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -109,6 +110,7 @@ class ItMiiDynamicUpdatePart2 {
   @Test
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
+  @Tag("gate")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -135,7 +137,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.update2.yaml", pathToUndeployAppYaml.toString()),
         withStandardRetryPolicy);
 
@@ -202,8 +204,8 @@ class ItMiiDynamicUpdatePart2 {
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     // Replace contents of an existing configMap with cm config
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
+        List.of(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
@@ -252,7 +254,7 @@ class ItMiiDynamicUpdatePart2 {
     LinkedHashMap<String, OffsetDateTime> pods = helper.addDataSourceAndVerify(false);
 
     // make two non-dynamic changes, add  datasource JDBC driver params and change scatteredreadenabled
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+    replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString()),
         withStandardRetryPolicy);
 

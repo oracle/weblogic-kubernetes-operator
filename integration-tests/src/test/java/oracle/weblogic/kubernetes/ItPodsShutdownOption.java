@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -174,6 +175,7 @@ class ItPodsShutdownOption {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
+  @Tag("gate")
   void testShutdownPropsAllLevels() {
 
 

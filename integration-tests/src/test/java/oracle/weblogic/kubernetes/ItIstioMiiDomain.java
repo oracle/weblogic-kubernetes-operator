@@ -31,6 +31,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -113,7 +114,7 @@ class ItIstioMiiDomain {
     domainNamespace = namespaces.get(1);
 
     // Label the domain/operator namespace with istio-injection=enabled
-    Map<String, String> labelMap = new HashMap();
+    Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
@@ -144,6 +145,7 @@ class ItIstioMiiDomain {
    */
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
+  @Tag("gate")
   void testIstioModelInImageDomain() {
 
     // Create the repo secret to pull the image
@@ -171,7 +173,7 @@ class ItIstioMiiDomain {
                     String.format("createSecret failed for %s", encryptionSecretName));
 
     // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
     // create the domain object
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
@@ -197,7 +199,7 @@ class ItIstioMiiDomain {
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
-    Map<String, String> templateMap  = new HashMap();
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);

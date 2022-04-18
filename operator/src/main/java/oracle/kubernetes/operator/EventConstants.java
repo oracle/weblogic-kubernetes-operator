@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,6 +12,7 @@ public interface EventConstants {
   String DOMAIN_AVAILABLE_EVENT = "Available";
   String DOMAIN_COMPLETED_EVENT = "Completed";
   String DOMAIN_FAILED_EVENT = "Failed";
+  String CONVERSION_WEBHOOK_FAILED_EVENT = "ConversionWebhookFailed";
   String DOMAIN_ROLL_COMPLETED_EVENT = "RollCompleted";
   String DOMAIN_ROLL_STARTING_EVENT = "RollStarting";
   String POD_CYCLE_STARTING_EVENT = "PodCycleStarting";
@@ -21,6 +22,7 @@ public interface EventConstants {
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
+  String CONVERSION_WEBHOOK_COMPONENT = "weblogic.conversion.webhook";
 
   String DOMAIN_AVAILABLE_PATTERN
       = "Domain %s is available: a sufficient number of its servers have reached the ready state.";

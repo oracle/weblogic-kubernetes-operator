@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2022, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -14,17 +14,8 @@
 
     <artifactId>installation-tests</artifactId>
 
-    <description>WebLogic Kubernetes Operator</description>
+    <description>WebLogic Kubernetes Operator installation tests</description>
     <name>installation-tests</name>
-
-    <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
-    <inceptionYear>2017</inceptionYear>
-    <licenses>
-        <license>
-            <name>The Universal Permissive License (UPL), Version 1.0</name>
-            <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-        </license>
-    </licenses>
 
     <build>
         <plugins>
@@ -39,7 +30,7 @@
                 <configuration>
                     <!-- Disable surefire test run, as we want all Helm tests to run with
                          the failsafe plugin as part of the helm-installation-test profile -->
-                    <groups>none</groups>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
 
@@ -133,7 +124,6 @@
                                 <include>**/*IT.java</include>
                                 <include>**/*AT.java</include>
                             </includes>
-                            <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
                         </configuration>
                         <executions>
                             <execution>
@@ -148,9 +138,4 @@
             </build>
         </profile>
     </profiles>
-
-    <properties>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
-
 </project>

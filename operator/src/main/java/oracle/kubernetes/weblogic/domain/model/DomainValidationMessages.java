@@ -130,23 +130,6 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
-  public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH, domainUid, clusterName, result, limit);
-  }
-
-  public static String exceedMaxServerServiceName(String domainUid, String serverName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_SERVER_SERVICE_NAME_LENGTH, domainUid, serverName, result, limit);
-  }
-
-  public static String exceedMaxExternalServiceName(
-      String domainUid, String adminServerName, String result, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, domainUid, adminServerName, result, limit);
-  }
-
-  public static String noAvailablePortToUse(String domainUid, String serverName) {
-    return getMessage(MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, serverName);
-  }
-
   public static String invalidLivenessProbeSuccessThresholdValue(int value, String prefix) {
     return getMessage(MessageKeys.INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE, value, prefix);
   }

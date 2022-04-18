@@ -1,0 +1,13 @@
+The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.
+
+```shell
+The following Azure resources have been created:
+  Resource groups: ejb8191resourcegroup1597641911, MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
+```
+
+Given the above output, the following Azure CLI commands will delete the resource groups.
+
+```shell
+$ az group delete --yes --no-wait --name ejb8191resourcegroup1597641911
+$ az group delete --yes --no-wait --name MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
+```

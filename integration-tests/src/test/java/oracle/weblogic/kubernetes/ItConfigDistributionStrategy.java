@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -133,8 +134,8 @@ class ItConfigDistributionStrategy {
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
   int t3ChannelPort;
-  final String pvName = domainUid + "-pv"; // name of the persistent volume
-  final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;
@@ -814,8 +815,8 @@ class ItConfigDistributionStrategy {
   private void verifyPodsStateNotChanged() {
     logger.info("Verifying the WebLogic server pod states are not changed");
     for (Map.Entry<String, OffsetDateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      OffsetDateTime creationTimestamp = (OffsetDateTime) entry.getValue();
+      String podName = entry.getKey();
+      OffsetDateTime creationTimestamp = entry.getValue();
       assertTrue(podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }
@@ -888,7 +889,7 @@ class ItConfigDistributionStrategy {
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster

@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
+import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -130,7 +131,7 @@ public class CommonTestUtils {
       LoggingFacade logger, String msg, Object... params) {
     return new ConditionEvaluationListener<T>() {
       @Override
-      public void conditionEvaluated(EvaluatedCondition condition) {
+      public void conditionEvaluated(EvaluatedCondition<T> condition) {
         int paramsSize = params != null ? params.length : 0;
         String preamble;
         String timeInfo;
@@ -241,7 +242,7 @@ public class CommonTestUtils {
    * @param namespace - namespace to which the service account belongs
    */
   public static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command("oc adm policy add-scc-to-user privileged -z " + serviceAccount + " -n " + namespace))
         .execute(), "oc expose service failed");
@@ -581,7 +582,7 @@ public class CommonTestUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedStatusCode);
@@ -651,7 +652,7 @@ public class CommonTestUtils {
         .append("/");
 
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedValue);
@@ -665,7 +666,7 @@ public class CommonTestUtils {
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort, 
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort,
                                             String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
 
@@ -681,7 +682,7 @@ public class CommonTestUtils {
         .append("/");
 
     logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedValue);
@@ -713,7 +714,7 @@ public class CommonTestUtils {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   /**
@@ -906,27 +907,7 @@ public class CommonTestUtils {
         "Waiting until each managed server can see other cluster members");
   }
 
-  /**
-   * Get the next free port between from and to.
-   *
-   * @param from range starting point
-   * @param to range ending point
-   * @return the next free port number, if there is no free port between the range, return the ending point
-   */
-  public static synchronized int getNextFreePort(int from, int to) {
-    LoggingFacade logger = getLogger();
-    int port;
-    for (port = from; port < to; port++) {
-      if (isLocalPortFree(port)) {
-        logger.info("next free port is: {0}", port);
-        return port;
-      }
-    }
-    logger.info("Can not find free port between {0} and {1}", from, to);
-    return port;
-  }
-
-  private static int port = 30000;
+  private static int port = 32000;
   private static final int END_PORT = 32767;
 
   /**
@@ -939,13 +920,27 @@ public class CommonTestUtils {
     int freePort = 0;
     while (port <= END_PORT) {
       freePort = port++;
-      if (isLocalPortFree(freePort)) {
-        logger.info("next free port is: {0}", freePort);
+      try {
+        isLocalPortFree(freePort);
+      } catch (IOException ex) {
         return freePort;
       }
     }
     logger.warning("Could not get free port below " + END_PORT);
     return -1;
+  }
+
+  /**
+   * Check if the given port is free. Tries to connect to the given port, if it succeeds it means that
+   * the given port is already in use by an another process.
+   *
+   * @param port port to check
+   * @throws java.io.IOException when the port is not used by any socket
+   */
+  private static void isLocalPortFree(int port) throws IOException {
+    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
+      getLogger().info("Port {0} is already in use", port);
+    }
   }
 
   /**
@@ -956,31 +951,6 @@ public class CommonTestUtils {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     return dateFormat.format(date) + "-" + System.currentTimeMillis();
-  }
-
-  /**
-   * Check if the given port number is free.
-   *
-   * @param port port number to check
-   * @return true if the port is free, false otherwise
-   */
-  private static boolean isLocalPortFree(int port) {
-    LoggingFacade logger = getLogger();
-    Socket socket = null;
-    try {
-      socket = new Socket(K8S_NODEPORT_HOST, port);
-      return false;
-    } catch (IOException ignored) {
-      return true;
-    } finally {
-      if (socket != null) {
-        try {
-          socket.close();
-        } catch (IOException ex) {
-          logger.severe("can not close Socket {0}", ex.getMessage());
-        }
-      }
-    }
   }
 
   /**
@@ -997,7 +967,7 @@ public class CommonTestUtils {
     return hostAndPort;
   }
 
-  /** 
+  /**
    * Verify the command result contains expected message.
    *
    * @param command the command to execute
@@ -1086,8 +1056,8 @@ public class CommonTestUtils {
                                        int port) {
     LoggingFacade logger = getLogger();
     // Create a unique stdout file for kubectl port-forward command
-    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace 
-                    + "-" + port + ".out"; 
+    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace
+                    + "-" + port + ".out";
 
     logger.info("Start port forward process");
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -1109,14 +1079,14 @@ public class CommonTestUtils {
         String.format("Failed to forward port by running command %s", cmd));
     assertEquals(0, result.exitValue(),
         String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
-    assertNotNull(getForwardedPort(pfFileName), 
+    assertNotNull(getForwardedPort(pfFileName),
           "port-forward command fails to assign a local port");
     return getForwardedPort(pfFileName);
   }
 
   /**
    * Stop port-forward process(es) started through startPortForwardProcess.
-   * @param domainNamespace namespace where port-forward procees were started 
+   * @param domainNamespace namespace where port-forward procees were started
    */
   public static void stopPortForwardProcess(String domainNamespace) {
     LoggingFacade logger = getLogger();
@@ -1293,5 +1263,24 @@ public class CommonTestUtils {
       propertyValue += "/";
     }
     return propertyValue;
+  }
+
+  /**
+   * Get a unique name.
+   * @param prefix prefix of the name
+   * @param suffix suffix of the name
+   * @return the full name
+   */
+  public static String getUniqueName(String prefix, String... suffix) {
+    char[] name = new char[6];
+    for (int i = 0; i < name.length; i++) {
+      name[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+    String cmName = prefix + new String(name);
+    for (String s : suffix) {
+      cmName += s;
+    }
+    getLogger().info("Creating unique name {0}", cmName);
+    return cmName;
   }
 }

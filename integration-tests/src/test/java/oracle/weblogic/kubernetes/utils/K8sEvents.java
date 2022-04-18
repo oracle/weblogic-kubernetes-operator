@@ -222,12 +222,12 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))) {
+        if (isDomainEvent(domainUid, event) && reason.equals(event.getReason()) && isEqualOrAfter(timestamp, event)) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
           logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
-              type, reason, domainUid, domainNamespace);
+                  type, reason, domainUid, domainNamespace);
           assertEquals(event.getType(), type);
           return true;
         }
@@ -238,6 +238,14 @@ public class K8sEvents {
               type, reason, domainUid, domainNamespace), ex);
     }
     return false;
+  }
+
+  private static boolean isDomainEvent(String domainUid, CoreV1Event event) {
+    return domainUid == null || isEventForSpecifiedDomain(domainUid, event);
+  }
+
+  private static boolean isEventForSpecifiedDomain(String domainUid, CoreV1Event event) {
+    return event.getMetadata().getLabels() != null && event.getMetadata().getLabels().containsValue(domainUid);
   }
 
   /**
@@ -286,12 +294,14 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          if (((domainUid != null && event.getMetadata().getLabels().containsValue(domainUid))
+                  || domainUid == null)
+                  && event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
             logger.info("Verifying domain event type {0}", type);
-            assertTrue(event.getType().equals(type));
+            assertEquals(type, event.getType());
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
             return (countAfter >= countBefore + 1);
           }
@@ -435,14 +445,14 @@ public class K8sEvents {
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
     if (domainUid != null) {
-      assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
+      assertEquals(TestConstants.DOMAIN_API_VERSION, event.getInvolvedObject().getApiVersion(),
           "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
     }
     //verify reporting component to be operator release
-    assertTrue(event.getReportingComponent().equals("weblogic.operator"),
+    assertEquals("weblogic.operator", event.getReportingComponent(),
         "Didn't get reporting component as " + "weblogic.operator");
     //verify reporting instance to be operator instance
-    assertTrue(event.getReportingInstance().equals(operatorPodName),
+    assertEquals(operatorPodName, event.getReportingInstance(),
         "Didn't get reporting instance as " + operatorPodName);
     //verify the event was created by operator
     Map<String, String> labels = event.getMetadata().getLabels();

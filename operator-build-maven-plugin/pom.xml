@@ -12,7 +12,8 @@
 
     <artifactId>operator-build-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <name>Operator Build Maven Plugin</name>
+    <name>operator-build-maven-plugin</name>
+    <description>WebLogic Kubernetes Operator Build Maven Plugin</description>
 
     <dependencies>
         <dependency>
@@ -68,6 +69,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

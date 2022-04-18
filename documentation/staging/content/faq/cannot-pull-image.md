@@ -13,7 +13,7 @@ The most common causes are:
 
 * The `image` value in your Domain is set incorrectly, meaning Kubernetes will be
   trying to pull the wrong image.
-* The image requires authentication or permission in order to pull it and you have not
+* The image requires authentication or permission to pull it and you have not
   configured Kubernetes with the necessary credentials, for example in an `imagePullSecret`.
 * You built the image on a machine that is not where your `kubelet` is running and Kubernetes
   cannot see the image, meaning you need to copy the image to the worker nodes or put it in

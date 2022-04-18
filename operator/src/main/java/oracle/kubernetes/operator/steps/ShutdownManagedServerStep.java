@@ -168,10 +168,10 @@ public class ShutdownManagedServerStep extends Step {
       String shutdownType = getEnvValue(envVarList, "SHUTDOWN_TYPE");
 
       shutdownType = shutdownType == null ? Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
-          .orElse(ShutdownType.GRACEFUL.label()) : shutdownType;
+          .orElse(ShutdownType.GRACEFUL).toString() : shutdownType;
 
 
-      return shutdownType.equalsIgnoreCase(ShutdownType.GRACEFUL.label());
+      return shutdownType.equalsIgnoreCase(ShutdownType.GRACEFUL.toString());
     }
 
     private Boolean getWaitForAllSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {
@@ -231,7 +231,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     boolean isTCPProtocol(V1ContainerPort port) {
-      return "TCP".equals(port.getProtocol());
+      return V1ContainerPort.ProtocolEnum.TCP.equals(port.getProtocol());
     }
 
     private WlsServerConfig getWlsServerConfig() {

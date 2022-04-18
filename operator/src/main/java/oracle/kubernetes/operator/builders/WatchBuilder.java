@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -10,14 +10,14 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
+import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
@@ -59,8 +59,8 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public Watchable<V1beta1PodDisruptionBudget> createPodDisruptionBudgetWatch(String namespace) throws ApiException {
-    return factory.createWatch(callParams, V1beta1PodDisruptionBudget.class,
+  public Watchable<V1PodDisruptionBudget> createPodDisruptionBudgetWatch(String namespace) throws ApiException {
+    return factory.createWatch(callParams, V1PodDisruptionBudget.class,
         new ListPodDisruptionBudgetCall(namespace));
   }
 
@@ -345,7 +345,7 @@ public class WatchBuilder {
       configureClient(client);
 
       try {
-        return new PolicyV1beta1Api(client)
+        return new PolicyV1Api(client)
             .listNamespacedPodDisruptionBudgetCall(
                 namespace,
                 callParams.getPretty(),
