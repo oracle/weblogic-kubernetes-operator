@@ -406,7 +406,7 @@ class ItCrossDomainTransaction {
   /**
    * This test verifies a cross-domain transaction with re-connection.
    * It makes sure the distributed transaction is completed successfully
-   * when a coordinator server is re-started after writing to transation log
+   * when a coordinator server is re-started after writing to transaction log
    * A servlet is deployed to the admin server of domain1.
    * The servlet starts a transaction with TMAfterTLogBeforeCommitExit
    * transaction property set. The servlet inserts data into an Oracle DB
