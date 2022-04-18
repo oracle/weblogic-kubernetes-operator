@@ -119,9 +119,15 @@ pipeline {
                description: 'Helm version',
                defaultValue: '3.7.2'
         )
-        string(name: 'ISTIO_VERSION',
-               description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
-               defaultValue: '1.10.4'
+        choice(name: 'ISTIO_VERSION',
+               description: 'Istio version',
+               choices: [
+                   '1.13.2',
+                   '1.12.6',
+                   '1.11.1',
+                   '1.10.4',
+                   '1.9.9'
+               ]
         )
         booleanParam(name: 'PARALLEL_RUN',
                      description: 'Runs tests in parallel. Default is true, test classes run in parallel.',

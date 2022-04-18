@@ -302,9 +302,8 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // Default ISTIO version is 1.11.1
   public static final String ISTIO_VERSION =
-      getNonEmptySystemProperty("wko.it.istio.version", "1.11.1");
+      getNonEmptySystemProperty("wko.it.istio.version", "1.13.2");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
@@ -345,6 +344,7 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
+  public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";

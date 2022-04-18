@@ -293,7 +293,7 @@
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart.",
+          "description": "The type of the condition. Valid types are Completed, Available, Failed, Rolling, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
             "Failed",
