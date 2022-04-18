@@ -1,7 +1,5 @@
 // Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
-// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -260,7 +258,6 @@ public class ConfigMapHelper {
       return model;
     }
 
-
     protected final V1ConfigMap createModel(Map<String, String> data) {
       return AnnotationHelper.withSha256Hash(
           new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data), data);
@@ -351,7 +348,6 @@ public class ConfigMapHelper {
         return new CallBuilder()
             .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
       }
-
 
       private void logConfigMapExists() {
         LOGGER.fine(MessageKeys.CM_EXISTS, getResourceName(), namespace);
@@ -854,6 +850,7 @@ public class ConfigMapHelper {
   }
 
   private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
+
     ReadIntrospectorConfigMapStep() {
     }
 
@@ -933,7 +930,6 @@ public class ConfigMapHelper {
     String configMapName = getIntrospectorConfigMapName(domainUid);
     return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
-  
 
   /**
    * Create or replace fluentd configuration map.

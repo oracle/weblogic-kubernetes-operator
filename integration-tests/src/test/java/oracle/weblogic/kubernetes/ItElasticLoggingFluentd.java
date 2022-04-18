@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,8 +31,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -44,7 +41,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -64,7 +60,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -73,7 +68,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -169,29 +163,29 @@ class ItElasticLoggingFluentd {
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
-            String.format("Failed to install Kibana"));
+        String.format("Failed to install Kibana"));
     assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
-            false, 0, true, domainNamespace);
+        false, 0, true, domainNamespace);
 
     elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
-            .releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
 
     // build operator chart values
     OperatorParams opParams = new OperatorParams()
-            .helmParams(upgradeHelmParams)
-            .elkIntegrationEnabled(true)
-            .elasticSearchHost(elasticSearchHost);
+        .helmParams(upgradeHelmParams)
+        .elkIntegrationEnabled(true)
+        .elasticSearchHost(elasticSearchHost);
 
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
-            String.format("Failed to upgrade operator in namespace %s", opNamespace));
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
     //configFluentd();
@@ -206,7 +200,7 @@ class ItElasticLoggingFluentd {
     testVarMap = new HashMap<>();
 
     String elasticsearchUrlBuff =
-            "curl http://" + elasticSearchHost + ":" + ELASTICSEARCH_HTTP_PORT;
+        "curl http://" + elasticSearchHost + ":" + ELASTICSEARCH_HTTP_PORT;
     k8sExecCmdPrefix = elasticsearchUrlBuff;
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
@@ -226,27 +220,27 @@ class ItElasticLoggingFluentd {
     if (!SKIP_CLEANUP) {
 
       elasticsearchParams = new LoggingExporterParams()
-              .elasticsearchName(ELASTICSEARCH_NAME)
-              .elasticsearchImage(ELASTICSEARCH_IMAGE)
-              .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
-              .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-              .loggingExporterNamespace(elasticSearchNs);
+          .elasticsearchName(ELASTICSEARCH_NAME)
+          .elasticsearchImage(ELASTICSEARCH_IMAGE)
+          .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+          .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+          .loggingExporterNamespace(elasticSearchNs);
 
       kibanaParams = new LoggingExporterParams()
-              .kibanaName(KIBANA_NAME)
-              .kibanaImage(KIBANA_IMAGE)
-              .kibanaType(KIBANA_TYPE)
-              .loggingExporterNamespace(elasticSearchNs)
-              .kibanaContainerPort(KIBANA_PORT);
+          .kibanaName(KIBANA_NAME)
+          .kibanaImage(KIBANA_IMAGE)
+          .kibanaType(KIBANA_TYPE)
+          .loggingExporterNamespace(elasticSearchNs)
+          .kibanaContainerPort(KIBANA_PORT);
 
       // uninstall ELK Stack
       logger.info("Uninstall Elasticsearch pod");
       assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
-              "uninstallAndVerifyElasticsearch failed with ApiException");
+          "uninstallAndVerifyElasticsearch failed with ApiException");
 
       logger.info("Uninstall Kibana pod");
       assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
-              "uninstallAndVerifyKibana failed with ApiException");
+          "uninstallAndVerifyKibana failed with ApiException");
     }
   }
 
@@ -294,42 +288,11 @@ class ItElasticLoggingFluentd {
     return count > 0 && failedCount == 0;
   }
 
-  private static void configFluentd() {
-    Class<?> thisClass = new Object(){}.getClass();
-    String srcFluentdYamlFile =  MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML;
-    String destFluentdYamlFile =
-            RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName() + "/" + FLUENTD_CONFIGMAP_YAML;
-    Path srcFluentdYamlPath = Paths.get(srcFluentdYamlFile);
-    Path destFluentdYamlPath = Paths.get(destFluentdYamlFile);
-
-    // create dest dir
-    assertDoesNotThrow(() -> Files.createDirectories(
-                    Paths.get(RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName())),
-            String.format("Could not create directory under %s", RESULTS_ROOT
-                    + "/" + thisClass.getClass().getSimpleName()));
-
-    // copy fluentd.configmap.elk.yaml to results dir
-    assertDoesNotThrow(() -> Files.copy(srcFluentdYamlPath, destFluentdYamlPath, REPLACE_EXISTING),
-            "Failed to copy fluentd.configmap.elk.yaml");
-
-    // replace weblogic.domainUID, namespace in fluentd.configmap.elk.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-domain", domainUid),
-            "Could not modify weblogic.domainUID in fluentd.configmap.elk.yaml");;
-    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-namespace", domainNamespace),
-            "Could not modify namespace in fluentd.configmap.elk.yaml");
-
-    // create fluentd configuration
-    assertTrue(Command
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destFluentdYamlFile))
-        .execute(), "kubectl create failed");
-  }
-
   private static String createAndVerifyDomainImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
     String miiImage =
-            createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME);
+        createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -348,29 +311,29 @@ class ItElasticLoggingFluentd {
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
-            String.format("create secret for admin credentials failed for %s", adminSecretName));
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
+        String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     final String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(encryptionSecretName, domainNamespace,
-            "weblogicenc", "weblogicenc", elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
-            String.format("create encryption secret failed for %s", encryptionSecretName));
+        "weblogicenc", "weblogicenc", elasticSearchHost, String.valueOf(ELASTICSEARCH_HTTP_PORT)),
+        String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-            domainUid, domainNamespace, miiImage);
+        domainUid, domainNamespace, miiImage);
     createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
 
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
 
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-            adminServerPodName, domainNamespace);
+        adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
@@ -379,12 +342,12 @@ class ItElasticLoggingFluentd {
 
       // check that the managed server service exists in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
-              managedServerPodName, domainNamespace);
+          managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
 
       // check that the managed server pod is ready
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-              managedServerPodName, domainNamespace);
+          managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
     }
   }
@@ -403,8 +366,8 @@ class ItElasticLoggingFluentd {
     fluentdSpecification.setImagePullPolicy("IfNotPresent");
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
-            .name(volumeName)
-            .mountPath(logHomeRootPath)));
+        .name(volumeName)
+        .mountPath(logHomeRootPath)));
 
     try {
       Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
@@ -414,66 +377,66 @@ class ItElasticLoggingFluentd {
     }
 
     Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(miiImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domainNamespace))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .withFluentdConfiguration(fluentdSpecification)
-                    .serverPod(new ServerPod()
-                            .volumes(Arrays.asList(
-                                    new V1Volume()
-                                            .name(volumeName)
-                                            .emptyDir(new V1EmptyDirVolumeSource())))
-                            .volumeMounts(Arrays.asList(
-                                    new V1VolumeMount()
-                                            .name(volumeName)
-                                            .mountPath(logHomeRootPath)))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                    )
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster()
-                            .clusterName(clusterName)
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
-                    .logHome("/scratch/logs/" + domainUid)
-                    .logHomeEnabled(true)
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                    .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))
-                            .introspectorJobActiveDeadlineSeconds(300L)));
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .withFluentdConfiguration(fluentdSpecification)
+            .serverPod(new ServerPod()
+                .volumes(Arrays.asList(
+                    new V1Volume()
+                        .name(volumeName)
+                        .emptyDir(new V1EmptyDirVolumeSource())))
+                .volumeMounts(Arrays.asList(
+                    new V1VolumeMount()
+                        .name(volumeName)
+                        .mountPath(logHomeRootPath)))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+            )
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                    .adminService(new AdminService()
+                        .addChannelsItem(new Channel()
+                            .channelName("default")
+                            .nodePort(getNextFreePort()))))
+            .addClustersItem(new Cluster()
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .logHome("/scratch/logs/" + domainUid)
+            .logHomeEnabled(true)
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-            domainUid, domainNamespace, miiImage);
+        domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
     String operatorPodName = assertDoesNotThrow(
-            () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
     logger.info("Operator pod name " + operatorPodName);
 
@@ -486,15 +449,15 @@ class ItElasticLoggingFluentd {
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String cmd = k8sExecCmdPrefixBuff
-            .append("/")
-            .append(indexName)
-            .append(queryCriteria)
-            .toString();
+        .append("/")
+        .append(indexName)
+        .append(queryCriteria)
+        .toString();
     logger.info("Exec command {0} in Operator pod {1}", cmd, operatorPodName);
 
     ExecResult execResult = assertDoesNotThrow(
-            () -> execCommand(opNamespace, operatorPodName, null, true,
-                    "/bin/sh", "-c", cmd));
+        () -> execCommand(opNamespace, operatorPodName, null, true,
+            "/bin/sh", "-c", cmd));
     assertNotNull(execResult, "curl command returns null");
     logger.info("Search query returns " + execResult.stdout());
 
