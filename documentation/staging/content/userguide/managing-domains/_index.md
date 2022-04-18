@@ -165,6 +165,8 @@ The operator can automatically override WebLogic Server, domain, and introspecto
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
 and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
 
+By default, all the log files are located follow the server layout subdirectories when of `logHome` and `logHomeEnabled` is setup.  If you want all the files to locate at a single level at the root of the `logHome`, you can specify `logHomeLayout` as `flat`.
+
 If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
 Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
