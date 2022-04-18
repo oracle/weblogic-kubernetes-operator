@@ -225,8 +225,6 @@ class ItCrossDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    //props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    //props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.setProperty("K8S_NODEPORT_HOST", dbPodIP);
     props.setProperty("DBPORT", Integer.toString(dbPort));
     props.store(out, null);
