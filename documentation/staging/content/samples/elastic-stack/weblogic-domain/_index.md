@@ -6,7 +6,7 @@ description: "Sample for using Fluentd for WebLogic domain and operator's logs."
 ---
 
 
-#### Overview
+
 This document describes to how to configure a WebLogic domain to use Fluentd to send log information to Elasticsearch.
 
 Here's the general mechanism for how this works:
@@ -14,13 +14,13 @@ Here's the general mechanism for how this works:
 * `fluentd` runs as a separate container in the Administration Server and Managed Server pods.
 * The log files reside on a volume that is shared between the `weblogic-server` and `fluentd` containers.
 * `fluentd` tails the domain logs files and exports them to Elasticsearch.
-* A `ConfigMap` contains the filter and format rules for exporting log records.
+* A ConfigMap contains the filter and format rules for exporting log records.
 
-##### Sample code
+#### Sample code
 
-The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML file can be performed before the domain is created.
+The samples in this document assume that an existing domain is being edited.  However, you can make all the changes to the domain YAML file before the domain is created.
 
-For sample purposes, this document will assume a domain with the following attributes is being configured:
+For sample purposes, this document assumes that a domain with the following attributes is being configured:
 
 * Domain name is `bobs-bookstore`
 * Kubernetes Namespace is `bob`
@@ -44,7 +44,7 @@ The domain log files must be written to a volume that can be shared between the 
 
 **NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 
-Example: `kubectl edit domain bobs-bookstore -n bob` and make the following edits:
+Example: `$ kubectl edit domain bobs-bookstore -n bob` and make the following edits:
 
 ```yaml
 spec:
@@ -60,14 +60,14 @@ spec:
 ```
 
 #### Create Elasticsearch secrets
-The `fluentd` container will be configured to look for Elasticsearch parameters in a Kubernetes secret.  Create a secret with following keys.
+The `fluentd` container will be configured to look for Elasticsearch parameters in a Kubernetes secret.  Create a secret with following keys:
 
-Example: 
+Example:
 ```text
-kubectl -n bob create secret generic fluentd-credential 
-  --from-literal elasticsearchhost=quickstart-es-http.default 
-  --from-literal elasticsearchport=9200 
-  --from-literal elasticsearchuser=elastic 
+$ kubectl -n bob create secret generic fluentd-credential
+  --from-literal elasticsearchhost=quickstart-es-http.default
+  --from-literal elasticsearchport=9200
+  --from-literal elasticsearchuser=elastic
   --from-literal elasticsearchpassword=xyz
 ```
 
@@ -83,25 +83,23 @@ kubectl -n bob create secret generic fluentd-credential
         name: weblogic-domain-storage-volume
 ```
 
-The `Operator` will automatically
+The operator will:
 
-1. Creates a config map `fluentd-config` with a default `Fluentd` configuration. See ...
-2. Set up the `Fluentd` container in each pod to use the `Elasticsearch` secrets.
+1. Create a ConfigMap `webogic-fluentd-configmap` with a default `fluentd` configuration. See [Fluentd configuration](#fluentd-configuration).
+2. Set up the `fluentd` container in each pod to use the Elasticsearch secrets.
 
-You can also customize the `Fluentd` configuration to fit your use case.  
-
-`fluentdSpecification`  options:
+You can customize the `fluentd` configuration to fit your use case. See the following `fluentdSpecification`  options:
 
 |Option|Description|Notes|
 |-|-|-|
-|elasticSearchCredentials|Kubernetes secret name for the `Fluentd` container to communicate with `Elasticsearch` engine. ||
-|watchIntrospectorLogs|If set to true, Operator will also setup a `fluentd` container to watch the introspector job output. Default is false|Operator automatically added a volume mount referencing the Configmap volume containing the `Fluentd` configuration|
-|volumeMounts|Additional list of volumeMounts for the `fluentd` container|It should contain at least the logHome shared volume|
-|image|`fluentd` container image name. Default: ||
-|imagePullPolicy|ImagePull policy for the `fluentd` container||
-|env|Additional list of environment variables for `fluentd` container|See below|
-|resources|resources for the `fluentd` container||
-|fluentdConfiguration|Text for `fluentd` configuration instead of the Operator's defaults |See below|
+|`elasticSearchCredentials`|Kubernetes secret name for the `fluentd` container to communicate with the `Elasticsearch` engine. ||
+|`watchIntrospectorLogs`|If set to `true`, the operator also will set up a `fluentd` container to watch the introspector job output. Default is `false`.| The operator automatically added a volume mount referencing the ConfigMap volume containing the `fluentd` configuration.|
+|`volumeMounts`|Additional list of `volumeMounts` for the `fluentd` container.| It should contain at least the `logHome` shared volume.|
+|`image`|`fluentd` container image name. Default: ||
+|`imagePullPolicy`|The `ImagePull` policy for the `fluentd` container.||
+|`env`|Additional list of environment variables for the `fluentd` container.| See [Environment variables in the `fluentd` container](#environment-variables-in-the-fluentd-container).|
+|`resources`|Resources for the `fluentd` container.||
+|`fluentdConfiguration`|Text for the `fluentd` configuration instead of the operator's defaults. |See [Fluentd configuration](#fluentd-configuration).|
 
 For example:
 
@@ -186,7 +184,7 @@ For example:
 
 #### Environment variables in the `fluentd` container
 
-Operator automatically set up the `fluentd` container with the following:
+The operator sets up the `fluentd` container with the following:
 
 ```text
     env:
@@ -236,9 +234,9 @@ Operator automatically set up the `fluentd` container with the following:
 ```
 
 #### Fluentd configuration
-Operator automatically creates a `ConfigMap` named `webogic-fluentd-configmap` in the namespace of the domain.  The `ConfigMap` contains the parsing rules and Elasticsearch configuration.
+The operator creates a ConfigMap named `webogic-fluentd-configmap` in the namespace of the domain.  The ConfigMap contains the parsing rules and Elasticsearch configuration.
 
-Here's an explanation of some elements defined in the `ConfigMap`:
+Here's an explanation of some elements defined in the ConfigMap:
 
 * The `@type tail` indicates that `tail` will be used to obtain updates to the log file.
 * The `path` of the log file is obtained from the `LOG_PATH` environment variable that is defined in the `fluentd` container.
@@ -246,7 +244,7 @@ Here's an explanation of some elements defined in the `ConfigMap`:
 * The `<parse>` section defines how to interpret and tag each element of a log record.
 * The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`.
 
-The following is the default `Fluentd` configuration if `fluentdConfiguration` is not specified:
+The following is the default `fluentd` configuration if `fluentdConfiguration` is not specified:
 ```text
       <match fluent.**>
           @type null
@@ -319,9 +317,9 @@ The following is the default `Fluentd` configuration if `fluentdConfiguration` i
 
 #### Verify logs are exported to Elasticsearch
 
-After the Administration Server and Managed Server pods have started with all the changes described above, the logs should now be sent to Elasticsearch.
+After the Administration Server and Managed Server pods have started with all the changes described previously, the logs will be sent to Elasticsearch.
 
-You can check if the `fluentd` container is successfully tailing the log by executing a command like `kubectl logs -f bobs-bookstore-admin-server -n bob fluentd`.  The log output should look similar to this:
+You can check if the `fluentd` container is successfully tailing the log by executing a command like `$ kubectl logs -f bobs-bookstore-admin-server -n bob fluentd`.  The log output will look similar to this:
 ```text
 2019-10-01 16:23:44 +0000 [info]: #0 starting fluentd worker pid=13 ppid=9 worker=0
 2019-10-01 16:23:44 +0000 [warn]: #0 /scratch/logs/bobs-bookstore/managed-server1.log not found. Continuing without tailing it.
@@ -338,4 +336,3 @@ threadName:Thread-8 info1: info2: info3: sequenceNumber:1569946687111 severity:[
 messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:39:49 PDT 2017 1882952
 _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 ```
-
