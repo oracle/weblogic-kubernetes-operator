@@ -18,21 +18,23 @@ description: "Conversion Webhook for upgrading the domain resource schema."
    - [Conversion failure due to runtime errors](#conversion-failure-due-to-runtime-errors)
 
 #### Introduction
-The WebLogic Domain custom resource conversion webhook automatically and transparently upgrades the domain resource from the 3.x schema to the 4.0 schema by using the [Webhook Conversion](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion) strategy.  The Domain CustomResourceDefinition in Operator version 4.0 has changed significantly from previous Operator releases. The default Kubernetes conversion strategy (None) cannot resolve these changes automatically. For example, we have greatly enhanced the [Auxiliary images]({{<relref "userguide/managing-domains/model-in-image/auxiliary-images">}}) feature in Operator version 4.0, and its configuration has changed as a result. When Kubernetes conversion strategy is `Webhook`, the Kubernetes API server invokes an external REST service which pulls out the configuration of the auxiliary images defined in the WKO 3.x domain resource and converts it to the equivalent configuration in the WKO 4.0.
+The WebLogic Domain resource conversion webhook automatically and transparently upgrades the domain resource from the 3.x schema to the 4.0 schema by using the [Webhook Conversion](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion) strategy.  The Domain CustomResourceDefinition in Operator version 4.0 has changed significantly from previous Operator releases. The default Kubernetes conversion strategy (None) cannot resolve these changes automatically. For example, we have enhanced the [Auxiliary images]({{<relref "userguide/managing-domains/model-in-image/auxiliary-images">}}) feature in Operator version 4.0, and its configuration has changed as a result. With the `Webhook` conversion strategy, the Kubernetes API server invokes an external REST service which pulls out the configuration of the auxiliary images defined in the WKO 3.x domain resource and converts it to the equivalent configuration in the WKO 4.0.
 
 #### Conversion webhook components
 The table below lists different components of the WebLogic Domain resource conversion webhook and their purpose.
 | Component Type | Component Name | Purpose |
 | --- | --- | -- |
-| Deployment | `webLogic-operator-webhook` | Manages the runtime Pod of the WebLogic Domain custom resource conversion webhook. |
+| Deployment | `webLogic-operator-webhook` | Manages the runtime Pod of the WebLogic Domain resource conversion webhook. |
 | Service | `webLogic-operator-webhook-svc` | The Kubernetes API server uses this service to reach the conversion webhook runtime defined in the WebLogic Domain CRD. |
-| Secret | `webLogic-webhook-secrets` | Contains the CA certificate and key used to secure the communication between the Kubernetes API server and the REST endpoint of WebLogic domain custom resource conversion webhook. |
+| Secret | `webLogic-webhook-secrets` | Contains the CA certificate and key used to secure the communication between the Kubernetes API server and the REST endpoint of WebLogic domain resource conversion webhook. |
 | The `spec.conversion` stanza in the Domain CRD | | Used by the Kubernetes API server to call an external service when a Domain conversion is required. |
 
 **Notes:**
 - The conversion webhook Deployment `webLogic-operator-webhook` uses the same image as the Operator image, and you should not change this image. You can scale the Deployment by increasing the number of replicas for high availability.
  
-- The WebLogic Domain conversion webhook runtime sets the conversion strategy to `Webhook` at the time of Domain CRD creation. It also adds the webhook client configuration details such as service name, namespace, path, port, and the self-signed CA certificate used for authentication. If the CRD already exists, it updates the existing CRD with the conversion details.
+- The conversion webhook runtime sets the conversion strategy to `Webhook` at the time of Domain CRD creation. It also adds the webhook client configuration details such as service name, namespace, path, port, and the self-signed CA certificate used for authentication. 
+
+- If the conversion strategy in the existing Domain CRD is `None`, it updates the existing CRD with the `Webhook` conversion strategy and conversion definition.
 
 Here is an example of a webhook configuration in the Domain CRD updated by the WebLogic Domain conversion webhook runtime. This webhook calls `weblogic-operator-webhook-svc` service on port `8084` at the subpath `/webhook`, and verifies the TLS connection against the ServerName `weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc` using a self-signed CA bundle.
 ```
@@ -107,7 +109,7 @@ Use the below command to manually patch the Domain CRD to set the conversion str
  kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "None", "webhook": null}}}'
 ```
 
-When you run the `helm install` command again to install a new WebLogic Domain custom resource conversion webhook, the conversion webhook runtime updates the CRD conversion strategy to `Webhook`. It also updates the necessary webhook client configuration details.
+When you run the `helm install` command again to install a new WebLogic Domain resource conversion webhook, the conversion webhook runtime updates the CRD conversion strategy to `Webhook`. It also updates the necessary webhook client configuration details.
 
 #### Troubleshooting the conversion webhook
 Below are some common mistakes and solutions for the conversion webhook.
