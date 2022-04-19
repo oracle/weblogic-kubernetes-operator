@@ -562,7 +562,7 @@ class ItKubernetesDomainEvents {
         + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
+    assertTrue(patchDomainResource(domainUid, domainNamespace3, new StringBuffer(patchStr)),
         "patchDomainCustomResource(logHome) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace3),
