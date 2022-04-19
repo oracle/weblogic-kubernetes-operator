@@ -102,6 +102,10 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
+  static String missingRequiredFluentdSecret(String secret) {
+    return getMessage(MessageKeys.MISSING_ELASTIC_SEARCH_SECRET, secret);
+  }
+
   static String illegalSecretNamespace(String namespace) {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
   }
