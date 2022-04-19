@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -118,6 +118,10 @@ class DomainValidationMessages {
 
   static String missingRequiredOpssSecret(String secret) {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
+  }
+
+  static String missingRequiredFluentdSecret(String secret) {
+    return getMessage(MessageKeys.MISSING_ELASTIC_SEARCH_SECRET, secret);
   }
 
   static String illegalSecretNamespace(String namespace) {

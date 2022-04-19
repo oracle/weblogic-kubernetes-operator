@@ -20,7 +20,6 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-
     if (hasNotCompleted(domainIntrospectorJob)) {
       JobAwaiterStepFactory jw = packet.getSpi(JobAwaiterStepFactory.class);
       return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);

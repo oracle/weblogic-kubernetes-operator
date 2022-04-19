@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -309,6 +310,13 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   @Test
+  void whenJobWithFluentdInProcessOnFirstRead_performNextStep() {
+    startWaitForReadyWithJobPodFluentdThenReadJob(this::dontChangeJob);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
   void whenJobTimedOutOnFirstRead_terminateWithException() {
     startWaitForReadyThenReadJob(this::markJobTimedOut);
 
@@ -330,6 +338,24 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
     V1Job persistedJob = jobFunction.apply(createJob());
     testSupport.defineResources(persistedJob);
+
+    try {
+      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  private void startWaitForReadyWithJobPodFluentdThenReadJob(Function<V1Job,V1Job> jobFunction) {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    JobWatcher watcher = createWatcher(stopping);
+
+    V1Job persistedJob = jobFunction.apply(createJob());
+    testSupport.defineResources(persistedJob);
+    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(persistedJob.getMetadata().getName()));
+    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, persistedJob.getMetadata().getName(),
+        true, true);
+    testSupport.defineResources(jobPod);
 
     try {
       testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));

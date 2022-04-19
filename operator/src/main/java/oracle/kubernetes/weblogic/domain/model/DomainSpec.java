@@ -1006,7 +1006,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("monitoringExporter", monitoringExporter)
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
-            .append("webLogicCredentialsSecret", webLogicCredentialsSecret);
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -1039,7 +1040,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(monitoringExporter)
             .append(replicas)
             .append(serverStartPolicy)
-            .append(webLogicCredentialsSecret);
+            .append(webLogicCredentialsSecret)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -1080,7 +1082,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
-            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
+            .append(fluentdSpecification, rhs.fluentdSpecification);
     return builder.isEquals();
   }
 

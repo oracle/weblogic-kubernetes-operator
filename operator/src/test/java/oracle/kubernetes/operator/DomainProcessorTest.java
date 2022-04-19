@@ -101,6 +101,8 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
@@ -825,6 +827,41 @@ class DomainProcessorTest {
     makeRight.execute();
 
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
+  }
+
+  @Test
+  void whenFluentdSpecified_verifyConfigMap() {
+    domainConfigurator
+        .withFluentdConfiguration(true, "fluentd-cred",
+            null)
+        .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+        .map(V1ConfigMap::getData)
+        .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
+
+  }
+
+  @Test
+  void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
+    domainConfigurator
+        .withFluentdConfiguration(true, "fluentd-cred",
+            "<match>me</match>")
+        .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+        .map(V1ConfigMap::getData)
+        .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
+        .orElse(null), equalTo("<match>me</match>"));
   }
 
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
