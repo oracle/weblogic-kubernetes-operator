@@ -39,7 +39,7 @@ spec:
                   properties:
                     image:
                       description: The WebLogic Monitoring Exporter sidecar container
-                        image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.4
+                        image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5
                       type: string
                     imagePullPolicy:
                       description: The image pull policy for the WebLogic Monitoring
