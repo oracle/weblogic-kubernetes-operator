@@ -143,6 +143,10 @@ public class MessageKeys {
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
+  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0222";
+  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0223";
+  public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
+  public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
