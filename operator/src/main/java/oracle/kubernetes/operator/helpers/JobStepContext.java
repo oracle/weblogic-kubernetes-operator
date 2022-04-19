@@ -553,7 +553,27 @@ public class JobStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     // Returning an empty array since introspector pod does not start with any additional containers
     // configured in the ServerPod configuration
-    return new ArrayList<>();
+    List<V1Container> containers = new ArrayList<>();
+
+    Optional.ofNullable(getDomain().getFluentdSpecification())
+        .ifPresent(fluentd -> {
+          if (Boolean.TRUE.equals(fluentd.getWatchIntrospectorLogs())) {
+            FluentdHelper.addFluentdContainer(fluentd,
+                    containers, getDomain(), true);
+          }
+        });
+
+    return containers;
+
+  }
+
+  protected List<V1Volume> getFluentdVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(Domain::getFluentdSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+    return volumes;
   }
 
   protected String getDomainHome() {

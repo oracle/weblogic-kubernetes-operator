@@ -45,6 +45,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
@@ -61,6 +62,8 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 
 public class ConfigMapHelper {
 
@@ -763,7 +766,7 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
-      final List<String> configMapNames = getIntrospectorConfigMapNames(callResponse.getResult());
+      final List<String> configMapNames = getIntrospectorOrFluentdConfigMapNames(callResponse.getResult());
       if (configMapNames.isEmpty()) {
         return doNext(packet);
       } else {
@@ -777,15 +780,16 @@ public class ConfigMapHelper {
     }
 
     @Nonnull
-    protected List<String> getIntrospectorConfigMapNames(V1ConfigMapList list) {
+    protected List<String> getIntrospectorOrFluentdConfigMapNames(V1ConfigMapList list) {
       return list.getItems().stream()
             .map(this::getName)
-            .filter(this::isIntrospectorConfigMapName)
+            .filter(this::isIntrospectorOrFluentdConfigMapName)
             .collect(Collectors.toList());
     }
 
-    private boolean isIntrospectorConfigMapName(String name) {
-      return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid));
+    private boolean isIntrospectorOrFluentdConfigMapName(String name) {
+      return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
+              || FLUENTD_CONFIGMAP_NAME.equals(name);
     }
 
     @Nonnull
@@ -927,6 +931,22 @@ public class ConfigMapHelper {
     return new CallBuilder().readConfigMapAsync(configMapName, ns, domainUid, new ReadIntrospectionVersionStep());
   }
 
+  /**
+   * Create or replace fluentd configuration map.
+   * @param info domain presence info
+   * @return next step
+   */
+  public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
+    FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+    if (fluentdSpecification != null) {
+      return new CallBuilder().readConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
+              info.getDomainUid(), new ReadFluentdConfigMapResponseStep(info, next));
+    } else {
+      return next;
+    }
+  }
+
+
   private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {
 
     @Override
@@ -940,6 +960,85 @@ public class ConfigMapHelper {
                 () -> packet.remove(INTROSPECTION_STATE_LABEL));
 
       return doNext(packet);
+    }
+  }
+
+  private static class CreateFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    CreateFluentdConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTD_CONFIGMAP_CREATED);
+      return doNext(packet);
+    }
+
+  }
+
+  private static class ReplaceFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+
+    ReplaceFluentdConfigMapResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      LOGGER.info(MessageKeys.FLUENTD_CONFIGMAP_REPLACED);
+      return doNext(packet);
+    }
+
+  }
+
+  private static class ReadFluentdConfigMapResponseStep extends DefaultResponseStep<V1ConfigMap> {
+    private DomainPresenceInfo info;
+
+    ReadFluentdConfigMapResponseStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    private static Step createFluentdConfigMap(DomainPresenceInfo info, Step next) {
+      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+      if (fluentdSpecification != null) {
+        return new CallBuilder()
+                .createConfigMapAsync(info.getNamespace(), FluentdHelper.getFluentdConfigMap(info),
+                        new CreateFluentdConfigMapResponseStep(next));
+      } else {
+        return next;
+      }
+    }
+
+    private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
+      FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+      if (fluentdSpecification != null) {
+        return new CallBuilder()
+                .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
+                        FluentdHelper.getFluentdConfigMap(info),
+                        new ReplaceFluentdConfigMapResponseStep(next));
+      } else {
+        return next;
+      }
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      String existingConfigMapData = Optional.ofNullable(callResponse.getResult())
+              .map(V1ConfigMap::getData)
+              .map(c -> c.get(FLUENTD_CONFIG_DATA_NAME))
+              .orElse(null);
+
+      if (existingConfigMapData == null) {
+        return doNext(createFluentdConfigMap(info, getNext()), packet);
+      } else if (isOutdated(existingConfigMapData)) {
+        return doNext(replaceFluentdConfigMap(info, getNext()), packet);
+      }
+      return doNext(packet);
+    }
+
+    private boolean isOutdated(String existingConfigData) {
+      return !existingConfigData.equals(info.getDomain().getFluentdSpecification().getFluentdConfiguration());
     }
   }
 
