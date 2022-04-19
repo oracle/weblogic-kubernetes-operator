@@ -148,7 +148,7 @@ class ItIntrospectVersion {
   private static final String cluster1ManagedServerPodNamePrefix = domainUid + "-" + cluster1ManagedServerNameBase;
 
   private static final String cluster2Name = "cl2";
-  private static final String cluster2ManagedServerNameBase = "ms";
+  private static final String cluster2ManagedServerNameBase = cluster2Name + "ms";
   private static final String cluster2ManagedServerPodNamePrefix = domainUid + "-" + cluster2ManagedServerNameBase;
 
   private static int cluster1ReplicaCount = 2;
