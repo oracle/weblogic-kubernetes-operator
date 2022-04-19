@@ -148,7 +148,7 @@ class ItIntrospectVersion {
   private static final String cluster1ManagedServerPodNamePrefix = domainUid + "-" + cluster1ManagedServerNameBase;
 
   private static final String cluster2Name = "cl2";
-  private static final String cluster2ManagedServerNameBase = "";
+  private static final String cluster2ManagedServerNameBase = "ms";
   private static final String cluster2ManagedServerPodNamePrefix = domainUid + "-" + cluster2ManagedServerNameBase;
 
   private static int cluster1ReplicaCount = 2;
@@ -815,11 +815,13 @@ class ItIntrospectVersion {
     // check the managed server pod is deleted
     checkPodDoesNotExist(cluster1ManagedServerPodNamePrefix + cluster1ReplicaCount,
         domainUid, introDomainNamespace);
-    cluster1ReplicaCount -= cluster1ReplicaCount;
 
-    // scale up the cluster to cluster1ReplicaCount
+    //decrement the cluster1 replica count by 1
+    cluster1ReplicaCount--;
+
+    // scale up the cluster to cluster1ReplicaCount + 1
     scalingSuccess = assertDoesNotThrow(()
-        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount),
+        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount + 1),
         String.format("Scaling up the cluster cluster-1 of domain %s in namespace %s failed",
             domainUid, introDomainNamespace));
     assertTrue(scalingSuccess,
@@ -840,7 +842,7 @@ class ItIntrospectVersion {
     // verify when a domain resource has spec.introspectVersion configured,
     // after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
     verifyIntrospectVersionLabelInPod();
-    cluster1ReplicaCount += cluster1ReplicaCount;
+    cluster1ReplicaCount++;
   }
 
   /**
