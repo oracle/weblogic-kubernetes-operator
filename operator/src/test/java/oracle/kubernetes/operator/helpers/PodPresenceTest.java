@@ -460,6 +460,24 @@ class PodPresenceTest {
   }
 
   @Test
+  void onModifyEventWithEvictedServerPod_notCycleServerPod_ifConfiguredNotTo() {
+    TuningParametersStub.setParameter("restartEvictedPods", "false");
+    V1Pod currentPod = createServerPod();
+    V1Pod modifiedPod = withEvictedStatus(createServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+
+    info.setServerPod(SERVER, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(0));
+    assertThat(createdPodNames, not(hasItem(SERVER)));
+  }
+
+  @Test
   void onModifyEventWithEvictedAdminServerPod_cycleServerPod() {
     V1Pod currentPod = createAdminServerPod();
     V1Pod modifiedPod = withEvictedStatus(createAdminServerPod());

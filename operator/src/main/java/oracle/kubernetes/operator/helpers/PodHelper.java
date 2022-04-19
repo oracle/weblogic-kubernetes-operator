@@ -247,6 +247,16 @@ public class PodHelper {
   }
 
   /**
+   * Return true if pod was evicted and operator is configured to restart evicted pods.
+   * @param pod pod
+   * @return true, if pod was evicted and operator is configured to restart evicted pods
+   *
+   */
+  public static boolean shouldRestartEvictedPod(V1Pod pod) {
+    return isEvicted(pod) && TuningParameters.getInstance().getPodTuning().restartEvictedPods;
+  }
+
+  /**
    * Returns the domain UID associated with the specified pod.
    * @param pod the pod
    */

@@ -82,6 +82,16 @@ public class ConfigMapConsumer implements Map<String, String> {
     return defaultValue;
   }
 
+  /**
+   * read boolean tuning parameter.
+   * @param parameter parameter
+   * @param defaultValue default value
+   * @return parameter value
+   */
+  public boolean readBooleanTuningParameter(String parameter, boolean defaultValue) {
+    return Optional.ofNullable(get(parameter)).map(Boolean::parseBoolean).orElse(defaultValue);
+  }
+
   @Override
   public int size() {
     return Optional.ofNullable(mountPointDir.list()).map(list -> list.length).orElse(0);

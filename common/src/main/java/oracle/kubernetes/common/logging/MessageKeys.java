@@ -176,6 +176,7 @@ public class MessageKeys {
   public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
   public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
   public static final String POD_EVICTED = "WLSKO-0226";
+  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

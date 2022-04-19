@@ -408,8 +408,12 @@ public class DomainProcessorImpl implements DomainProcessor {
       case MODIFIED:
         boolean podAlreadyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
         if (PodHelper.isEvicted(pod) && !podAlreadyEvicted) {
-          LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
-          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+          if (PodHelper.shouldRestartEvictedPod(pod)) {
+            LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
+            createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+          } else {
+            LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
+          }
         }
         break;
       case DELETED:
