@@ -147,8 +147,12 @@ class ItKubernetesDomainEvents {
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
 
-  static final String pvName = getUniqueName(domainUid + "-pv-");
-  static final String pvcName = getUniqueName(domainUid + "-pvc-");
+  static final String pvName1 = getUniqueName(domainUid + "-pv-");
+  static final String pvcName1 = getUniqueName(domainUid + "-pvc-");
+  static final String pvName2 = getUniqueName(domainUid + "-pv-");
+  static final String pvcName2 = getUniqueName(domainUid + "-pvc-");
+  static final String pvName3 = getUniqueName(domainUid + "-pv-");
+  static final String pvcName3 = getUniqueName(domainUid + "-pvc-");
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
@@ -202,7 +206,8 @@ class ItKubernetesDomainEvents {
     createSecretForBaseImages(domainNamespace1);
     createSecretForBaseImages(domainNamespace2);
     createSecretForBaseImages(domainNamespace3);
-    createDomain(domainNamespace3, domainUid);
+    createDomain(domainNamespace3, domainUid,pvName3, pvcName3);
+    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
   }
 
   /**
@@ -216,7 +221,7 @@ class ItKubernetesDomainEvents {
   void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");
-    createDomain(domainNamespace1, domainUid);
+    createDomain(domainNamespace1, domainUid, pvName1, pvcName1);
 
     logger.info("verify the DomainCreated event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
@@ -513,10 +518,10 @@ class ItKubernetesDomainEvents {
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/name\", \"value\": \"" + pvName + "\"},"
-          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"" + pvName + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/name\", \"value\": \"" + pvName3 + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"" + pvName3 + "\"},"
           + "{\"op\": \"replace\", \"path\": "
-          + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"" + pvcName + "\"},"
+          + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"" + pvcName3 + "\"},"
           + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
           + "]";
       logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
@@ -666,7 +671,6 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   void testDomainK8SEventsDelete() {
-    createDomain(domainNamespace2, domainUid);
     OffsetDateTime timestamp = now();
 
     deleteDomainCustomResource(domainUid, domainNamespace2);
@@ -724,7 +728,7 @@ class ItKubernetesDomainEvents {
   }
 
   // Create and start a WebLogic domain in PV
-  private static void createDomain(String domainNamespace, String domainUid) {
+  private static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,

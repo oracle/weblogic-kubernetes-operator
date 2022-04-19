@@ -63,6 +63,7 @@ class ItKubernetesNameSpaceWatchingEvents {
   private static String opServiceAccount = null;
   private static OperatorParams opParams = null;
   private static LoggingFacade logger = null;
+  private static OperatorParams opParamsOriginal = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -94,7 +95,7 @@ class ItKubernetesNameSpaceWatchingEvents {
 
     // install and verify operator with REST API
     opParams = installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
-
+    opParamsOriginal = opParams;
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
     // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
@@ -136,8 +137,9 @@ class ItKubernetesNameSpaceWatchingEvents {
     List<String> domainNamespaces = new ArrayList<>();
     domainNamespaces.add(domainNamespace1);
     domainNamespaces.add(domainNamespace2);
-    opParams = opParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    OperatorParams opTestParams = opParamsOriginal;
+    opTestParams = opTestParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
@@ -147,8 +149,8 @@ class ItKubernetesNameSpaceWatchingEvents {
     logger.info("Removing domain namespace {0} in the operator watch list", domainNamespace2);
     domainNamespaces.clear();
     domainNamespaces.add(domainNamespace1);
-    opParams = opParams.domainNamespaces(domainNamespaces);
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    opTestParams = opTestParams.domainNamespaces(domainNamespaces);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
@@ -188,13 +190,13 @@ class ItKubernetesNameSpaceWatchingEvents {
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
-
+    OperatorParams opTestParams = opParamsOriginal;
     // Helm upgrade parameters
-    opParams = opParams
+    opTestParams = opTestParams
         .domainNamespaceSelectionStrategy("LabelSelector")
         .domainNamespaceLabelSelector("weblogic-operator=enabled")
         .enableClusterRoleBinding(enableClusterRoleBinding);
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace3);
     checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
@@ -273,12 +275,13 @@ class ItKubernetesNameSpaceWatchingEvents {
     OffsetDateTime timestamp = now();
     logger.info("Adding a new domain namespace {0} in the operator watch list", domainNamespace5);
     // Helm upgrade parameters
-    opParams = opParams
+    OperatorParams opTestParams = opParamsOriginal;
+    opTestParams = opTestParams
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp(domainNamespace5.substring(3))
         .enableClusterRoleBinding(enableClusterRoleBinding);
 
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in {0}", domainNamespace5);
     checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
@@ -293,11 +296,11 @@ class ItKubernetesNameSpaceWatchingEvents {
     logger.info("Setting the domainNamesoaceRegExp to a new value {0}", domainNamespace4.substring(3));
 
     // Helm upgrade parameters
-    opParams = opParams
+    opTestParams = opTestParams
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp(domainNamespace4.substring(3));
 
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace5);
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
@@ -321,10 +324,11 @@ class ItKubernetesNameSpaceWatchingEvents {
     OffsetDateTime timestamp = now();
 
     // Helm upgrade parameters
-    opParams = opParams.domainNamespaceSelectionStrategy("Dedicated")
+    OperatorParams opTestParams = opParamsOriginal;
+    opTestParams = opTestParams.domainNamespaceSelectionStrategy("Dedicated")
                 .enableClusterRoleBinding(false);
 
-    upgradeAndVerifyOperator(opNamespace, opParams);
+    upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in {0}", opNamespace);
     checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
