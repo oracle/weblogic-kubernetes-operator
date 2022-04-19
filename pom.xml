@@ -431,26 +431,6 @@
         <version>${client-java-version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib</artifactId>
-        <version>${kotlin-stdlib-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-common</artifactId>
-        <version>${kotlin-stdlib-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-jdk7</artifactId>
-        <version>${kotlin-stdlib-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-jdk8</artifactId>
-        <version>${kotlin-stdlib-version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
         <version>${hamcrest-junit-version}</version>
@@ -652,7 +632,6 @@
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>15.0.0</client-java-version>
-    <kotlin-stdlib-version>1.6.10</kotlin-stdlib-version>
     <junit.jupiter.version>5.8.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
@@ -660,7 +639,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.0.4</jersey-version>
     <jackson-version>2.13.2</jackson-version>
-    <jackson-databind-version>2.13.2.1</jackson-databind-version>
+    <jackson-databind-version>2.13.2.2</jackson-databind-version>
     <snakeyaml-version>1.30</snakeyaml-version>
     <gson-version>2.9.0</gson-version>
     <dependency-check-version>7.0.0</dependency-check-version>
