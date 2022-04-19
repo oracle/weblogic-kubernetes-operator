@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.INTROSPECTOR_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
@@ -206,7 +207,12 @@ class ItElasticLoggingFluentd {
 
     // Verify that ELK Stack is ready to use
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
+    logger.info("testVarMap contains " + testVarMap.size());
+    testVarMap.putAll(verifyLoggingExporterReady(opNamespace, elasticSearchNs, null,
+        INTROSPECTOR_INDEX_KEY));
+    logger.info("testVarMap now contains " + testVarMap.size());
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null,
+        KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -285,7 +291,14 @@ class ItElasticLoggingFluentd {
     logger.info("Total count of logs: " + count);
     logger.info("Total failed count: " + failedCount);
 
-    return count > 0 && failedCount == 0;
+    // search for introspector indexed entries
+    String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
+    String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
+    logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
+    boolean jobCompeted = results1.contains("Domain introspection complete");
+    logger.info("found completed job " + jobCompeted);
+
+    return count > 0 && failedCount == 0 && jobCompeted;
   }
 
   private static String createAndVerifyDomainImage() {
@@ -362,7 +375,7 @@ class ItElasticLoggingFluentd {
 
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
     fluentdSpecification.setImage(FLUENTD_IMAGE);
-    fluentdSpecification.setWatchIntrospectorLogs(false);
+    fluentdSpecification.setWatchIntrospectorLogs(true);
     fluentdSpecification.setImagePullPolicy("IfNotPresent");
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()

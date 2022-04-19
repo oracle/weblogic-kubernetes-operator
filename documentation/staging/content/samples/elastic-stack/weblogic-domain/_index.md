@@ -99,7 +99,7 @@ You can customize the `fluentd` configuration to fit your use case. See the foll
 |`imagePullPolicy`|The `ImagePull` policy for the `fluentd` container.||
 |`env`|Additional list of environment variables for the `fluentd` container.| See [Environment variables in the `fluentd` container](#environment-variables-in-the-fluentd-container).|
 |`resources`|Resources for the `fluentd` container.||
-|`fluentdConfiguration`|Text for the `fluentd` configuration instead of the operator's defaults. |See [Fluentd configuration](#fluentd-configuration).|
+|`fluentdConfiguration`|Text for the `fluentd` configuration instead of the operator's defaults. |See [Fluentd configuration](#fluentd-configuration). Note: When you specify the configuration, you are responsible for the entire `fluentd` configuration, the Operator will not add or modify any part of it.|
 
 For example:
 
@@ -182,9 +182,20 @@ For example:
       </match>
 ```
 
+Note:  When you set up `watchIntrospectorLogs` to watch the introspector job pod log. You may see briefly the status of the job pod transition from `Running` to `NotReady` and then `Terminating`, this is normal behavior.
+
+```text
+
+NAME                                READY   STATUS     RESTARTS   AGE
+sample-domain1-introspector-kndk7    2/2     Running     0          57
+sample-domain1-introspector-kndk7    1/2     NotReady    0          60s
+sample-domain1-introspector-kndk7    0/2     Terminating 0          63s
+
+```
+
 #### Environment variables in the `fluentd` container
 
-The operator sets up the `fluentd` container with the following:
+The operator sets up the `fluentd` container with the following environment variables, they are referenced by the `fluentd` configuration:
 
 ```text
     env:
@@ -246,7 +257,7 @@ Here's an explanation of some elements defined in the ConfigMap:
 
 The following is the default `fluentd` configuration if `fluentdConfiguration` is not specified:
 ```text
-      <match fluent.**>
+       <match fluent.**>
           @type null
         </match>
         <source>
@@ -295,7 +306,23 @@ The following is the default `fluentd` configuration if `fluentdConfiguration` i
             keep_time_key true
           </parse>
          </source>
-        <match **>
+        <match "#{ENV['DOMAIN_UID']}-introspector">
+          @type elasticsearch
+          host "#{ENV['ELASTICSEARCH_HOST']}"
+          port "#{ENV['ELASTICSEARCH_PORT']}"
+          user "#{ENV['ELASTICSEARCH_USER']}"
+          password "#{ENV['ELASTICSEARCH_PASSWORD']}"
+          index_name "#{ENV['DOMAIN_UID']}"
+          suppress_type_name true
+          type_name introspectord
+          logstash_format true
+          logstash_prefix introspectord
+          # inject the @timestamp special field (as type time) into the record
+          # so you will be able to do time based queries.
+          # not to be confused with timestamp which is of type string!!!
+          include_timestamp true
+        </match>
+        <match "#{ENV['DOMAIN_UID']}">
           @type elasticsearch
           host "#{ENV['ELASTICSEARCH_HOST']}"
           port "#{ENV['ELASTICSEARCH_PORT']}"

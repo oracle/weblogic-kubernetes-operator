@@ -69,6 +69,8 @@ public class FluentdHelper {
     String domainUid = info.getDomainUid();
     String namespace = info.getNamespace();
     FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
+
+    // Make sure every line has a next line character, otherwise fluentd will fail.
     if (fluentdSpecification.getFluentdConfiguration() != null) {
       fluentdConfBuilder.append(fluentdSpecification.getFluentdConfiguration());
     } else {
@@ -125,10 +127,27 @@ public class FluentdHelper {
         fluentdConfBuilder.append("        keep_time_key true\n");
         fluentdConfBuilder.append("      </parse>\n");
         fluentdConfBuilder.append("     </source>\n");
+        fluentdConfBuilder.append("    <match \"#{ENV['DOMAIN_UID']}-introspector\">\n");
+        fluentdConfBuilder.append("      @type elasticsearch\n");
+        fluentdConfBuilder.append("      host \"#{ENV['ELASTICSEARCH_HOST']}\"\n");
+        fluentdConfBuilder.append("      port \"#{ENV['ELASTICSEARCH_PORT']}\"\n");
+        fluentdConfBuilder.append("      user \"#{ENV['ELASTICSEARCH_USER']}\"\n");
+        fluentdConfBuilder.append("      password \"#{ENV['ELASTICSEARCH_PASSWORD']}\"\n");
+        fluentdConfBuilder.append("      index_name \"#{ENV['DOMAIN_UID']}\"\n");
+        fluentdConfBuilder.append("      suppress_type_name true\n");
+        fluentdConfBuilder.append("      type_name introspectord\n");
+        fluentdConfBuilder.append("      logstash_format true\n");
+        fluentdConfBuilder.append("      logstash_prefix introspectord\n");
+        fluentdConfBuilder.append("      # inject the @timestamp special field (as type time) into the record\n");
+        fluentdConfBuilder.append("      # so you will be able to do time based queries.\n");
+        fluentdConfBuilder.append("      # not to be confused with timestamp which is of type string!!!\n");
+        fluentdConfBuilder.append("      include_timestamp true\n");
+        fluentdConfBuilder.append("    </match>\n");
+
 
       }
 
-      fluentdConfBuilder.append("    <match **>\n");
+      fluentdConfBuilder.append("    <match \"#{ENV['DOMAIN_UID']}\">\n");
       fluentdConfBuilder.append("      @type elasticsearch\n");
       fluentdConfBuilder.append("      host \"#{ENV['ELASTICSEARCH_HOST']}\"\n");
       fluentdConfBuilder.append("      port \"#{ENV['ELASTICSEARCH_PORT']}\"\n");
