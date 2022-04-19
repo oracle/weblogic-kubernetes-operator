@@ -1041,8 +1041,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private Step createCyclePodEventStep(Step next) {
       LOGGER.info(MessageKeys.CYCLING_POD, Objects.requireNonNull(pod.getMetadata()).getName());
-      return Step.chain(EventHelper.createEventStep(
-          new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
+      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
           next);
     }
   }
