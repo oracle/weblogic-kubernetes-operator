@@ -72,8 +72,8 @@ class PodPresenceTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private OffsetDateTime clock = SystemClock.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
@@ -111,6 +111,7 @@ class PodPresenceTest {
     packet.put(SERVER_NAME, SERVER);
     packet.put(SERVER_SCAN, configSupport.createDomainConfig().getServerConfig(SERVER));
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(processorDelegate);
 
     numPodsDeleted = 0;
   }
@@ -458,6 +459,24 @@ class PodPresenceTest {
     assertThat(createdPodNames, not(hasItem(SERVER)));
   }
 
+  @Test
+  void onModifyEventWithEvictedAdminServerPod_cycleServerPod() {
+    V1Pod currentPod = createAdminServerPod();
+    V1Pod modifiedPod = withEvictedStatus(createAdminServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+
+    packet.put(SERVER_NAME, ADMIN_SERVER_NAME);
+    info.setServerPod(ADMIN_SERVER_NAME, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(1));
+    assertThat(createdPodNames, hasItem(ADMIN_SERVER_NAME));
+  }
+
   private void recordPodCreation(V1Pod pod, List<String> createdPodNames) {
     Optional.of(pod)
         .map(V1Pod::getMetadata)
@@ -476,6 +495,10 @@ class PodPresenceTest {
 
   private V1Pod createServerPod() {
     return withTimeAndVersion(PodHelper.createManagedServerPodModel(packet));
+  }
+
+  private V1Pod createAdminServerPod() {
+    return withTimeAndVersion(PodHelper.createAdminServerPodModel(packet));
   }
 
   @SuppressWarnings("ConstantConditions")
