@@ -6,30 +6,52 @@ package oracle.kubernetes.operator.helpers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import com.google.common.base.Strings;
 import com.google.gson.GsonBuilder;
 import com.meterware.pseudoserver.PseudoServer;
 import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
@@ -40,6 +62,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +79,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
@@ -66,12 +90,19 @@ class CallBuilderTest {
       "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
       NAMESPACE);
   private static final String SERVICE_RESOURCE = String.format("/api/v1/namespaces/%s/services", NAMESPACE);
+  private static final String POD_RESOURCE = String.format("/api/v1/namespaces/%s/pods", NAMESPACE);
+  private static final String JOB_RESOURCE = String.format("/apis/batch/v1/namespaces/%s/jobs", NAMESPACE);
+  private static final String PDB_RESOURCE = String.format(
+      "/apis/policy/v1/namespaces/%s/poddisruptionbudgets", NAMESPACE);
   private static final String CM_RESOURCE = String.format("/api/v1/namespaces/%s/configmaps", NAMESPACE);
+  private static final String SECRET_RESOURCE = String.format("/api/v1/namespaces/%s/secrets", NAMESPACE);
+  private static final String EVENT_RESOURCE = String.format("/api/v1/namespaces/%s/events", NAMESPACE);
   private static final String SAR_RESOURCE = "/apis/authorization.k8s.io/v1/subjectaccessreviews";
   private static final String SSAR_RESOURCE = "/apis/authorization.k8s.io/v1/selfsubjectaccessreviews";
   private static final String SSRR_RESOURCE = "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews";
   private static final String TR_RESOURCE = "/apis/authentication.k8s.io/v1/tokenreviews";
   private static final String CRD_RESOURCE = "/apis/apiextensions.k8s.io/v1/customresourcedefinitions";
+  private static final String NAMESPACE_RESOURCE = "/api/v1/namespaces";
 
   private static final ApiClient apiClient = new ApiClient();
   private final List<Memento> mementos = new ArrayList<>();
@@ -149,6 +180,21 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void readDomain_returnsResource() throws InterruptedException {
+    Domain resource = new Domain().withMetadata(createMetadata());
+    defineHttpGetResponse(DOMAIN_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readDomainAsync(UID, NAMESPACE, responseStep));
+
+    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void replaceDomain_sendsNewDomain() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
     Domain domain = new Domain().withMetadata(createMetadata());
@@ -156,6 +202,19 @@ class CallBuilderTest {
         DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
+
+    assertThat(requestBody.get(), equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceDomainStatus_sendsNewDomain() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    Domain domain = new Domain().withMetadata(createMetadata());
+    defineHttpPutResponse(
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+
+    callBuilder.replaceDomainStatus(UID, NAMESPACE, domain);
 
     assertThat(requestBody.get(), equalTo(domain));
   }
@@ -176,6 +235,61 @@ class CallBuilderTest {
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceDomainAsync_returnsUpdatedDomain() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    Domain domain = new Domain().withMetadata(createMetadata());
+    defineHttpPutResponse(
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+
+    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().replaceDomainAsync(UID, NAMESPACE, domain, responseStep));
+
+    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceDomainStatusAsync_returnsUpdatedDomain() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    Domain domain = new Domain().withMetadata(createMetadata());
+    defineHttpPutResponse(
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+
+    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().replaceDomainStatusAsync(UID, NAMESPACE, domain, responseStep));
+
+    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(domain));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchDomainAsync_returnsUpdatedDomain() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    Domain domain = new Domain().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
+    defineHttpPatchResponse(
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+    testSupport.runSteps(new CallBuilder().patchDomainAsync(UID, NAMESPACE,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(domain));
   }
 
   @Test
@@ -212,15 +326,30 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void listServices_returnsListAsJson() throws InterruptedException {
     V1ServiceList list = new V1ServiceList().items(Arrays.asList(new V1Service(), new V1Service()));
-    defineHttpGetResponse(SERVICE_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+    defineHttpGetResponse(SERVICE_RESOURCE, list).expectingParameter("labelSelector", "yyy");
 
     KubernetesTestSupportTest.TestResponseStep<V1ServiceList> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
-    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx").listServiceAsync(NAMESPACE, responseStep));
+    testSupport.runSteps(new CallBuilder().withLabelSelectors("yyy").listServiceAsync(NAMESPACE, responseStep));
 
     V1ServiceList received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readService_returnsResource() throws InterruptedException {
+    V1Service resource = new V1Service().metadata(createMetadata());
+    defineHttpGetResponse(SERVICE_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Service> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readServiceAsync(UID, NAMESPACE, UID, responseStep));
+
+    V1Service received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
   }
 
   @Test
@@ -258,10 +387,361 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void listSecrets_returnsListAsJson() throws InterruptedException {
+    V1SecretList list = new V1SecretList().items(Arrays.asList(new V1Secret(), new V1Secret()));
+    defineHttpGetResponse(SECRET_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1SecretList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx").listSecretsAsync(NAMESPACE, responseStep));
+
+    V1SecretList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readSecret_returnsResource() throws InterruptedException {
+    V1Secret resource = new V1Secret().metadata(createMetadata());
+    defineHttpGetResponse(SECRET_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Secret> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readSecretAsync(UID, NAMESPACE, responseStep));
+
+    V1Secret received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createSecret_returnsNewSecret() throws InterruptedException {
+    V1Secret secret = new V1Secret().metadata(createMetadata());
+    defineHttpPostResponse(
+        SECRET_RESOURCE, secret, (json) -> fromJson(json, V1Secret.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1Secret> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createSecretAsync(NAMESPACE, secret, responseStep));
+
+    V1Secret received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(secret));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceSecret_returnsUpdatedResource() throws InterruptedException {
+    V1Secret secret = new V1Secret().metadata(createMetadata());
+    defineHttpPutResponse(
+        SECRET_RESOURCE, UID, secret, (json) -> fromJson(json, V1Secret.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1Secret> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .replaceSecretAsync(secret.getMetadata().getName(), NAMESPACE, secret, responseStep));
+
+    V1Secret received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(secret));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createPod_returnsNewResource() throws InterruptedException {
+    V1Pod resource = new V1Pod().metadata(createMetadata());
+    defineHttpPostResponse(
+        POD_RESOURCE, resource, (json) -> fromJson(json, V1Pod.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1Pod> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createPodAsync(NAMESPACE, resource, responseStep));
+
+    V1Pod received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listPods_returnsList() throws InterruptedException {
+    V1PodList list = new V1PodList()
+        .items(Arrays.asList(new V1Pod(), new V1Pod()));
+    defineHttpGetResponse(POD_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1PodList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listPodAsync(NAMESPACE, responseStep));
+
+    V1PodList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readPod_returnsResource() throws InterruptedException {
+    V1Pod resource = new V1Pod().metadata(createMetadata());
+    defineHttpGetResponse(POD_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Pod> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readPodAsync(UID, NAMESPACE, UID, responseStep));
+
+    V1Pod received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readPodLog_returnsLog() throws InterruptedException {
+    String log = "Runtime log";
+    defineHttpGetResponse(
+        POD_RESOURCE, UID + "/log", log);
+
+    KubernetesTestSupportTest.TestResponseStep<String> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readPodLogAsync(UID, NAMESPACE, UID, responseStep));
+
+    String received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(log));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchPodAsync_returnsUpdatedResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1Pod resource = new V1Pod().metadata(createMetadata());
+    defineHttpPatchResponse(
+        POD_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<V1Pod> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+    testSupport.runSteps(new CallBuilder().patchPodAsync(UID, NAMESPACE, UID,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    V1Pod received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchPod_returnsUpdatedResource() throws ApiException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1Pod resource = new V1Pod().metadata(createMetadata());
+    defineHttpPatchResponse(
+        POD_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+
+    V1Pod received = callBuilder.patchPod(UID, NAMESPACE, UID, new V1Patch(patchBuilder.build().toString()));
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deletePod_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1Pod resource = new V1Pod().metadata(createMetadata());
+    defineHttpDeleteResponse(POD_RESOURCE, UID, response, (Consumer<String>) null);
+
+    KubernetesTestSupportTest.TestResponseStep<Object> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .deletePodAsync(resource.getMetadata().getName(),
+            NAMESPACE, UID, new DeleteOptions(), responseStep));
+
+    Object received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertNotNull(received);
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deletePodCollection_returnsStatus() throws InterruptedException {
+    V1Status response = new V1Status();
+    defineHttpDeleteResponse(POD_RESOURCE, null, response, (Consumer<String>) null);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .deleteCollectionPodAsync(NAMESPACE, responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listJobs_returnsList() throws InterruptedException {
+    V1JobList list = new V1JobList()
+        .items(Arrays.asList(new V1Job(), new V1Job()));
+    defineHttpGetResponse(JOB_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1JobList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listJobAsync(NAMESPACE, responseStep));
+
+    V1JobList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createJob_returnsNewResource() throws InterruptedException {
+    V1Job resource = new V1Job().metadata(createMetadata());
+    defineHttpPostResponse(
+        JOB_RESOURCE, resource, (json) -> fromJson(json, V1Job.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1Job> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createJobAsync(NAMESPACE, UID, resource, responseStep));
+
+    V1Job received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readJob_returnsResource() throws InterruptedException {
+    V1Job resource = new V1Job().metadata(createMetadata());
+    defineHttpGetResponse(JOB_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Job> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readJobAsync(UID, NAMESPACE, UID, responseStep));
+
+    V1Job received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deleteJob_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1Job resource = new V1Job().metadata(createMetadata());
+    defineHttpDeleteResponse(JOB_RESOURCE, UID, response, (Consumer<String>) null);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .deleteJobAsync(resource.getMetadata().getName(),
+            NAMESPACE, UID, new DeleteOptions(), responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listPodDisruptionBudgets_returnsList() throws InterruptedException {
+    V1PodDisruptionBudgetList list = new V1PodDisruptionBudgetList()
+        .items(Arrays.asList(new V1PodDisruptionBudget(), new V1PodDisruptionBudget()));
+    defineHttpGetResponse(PDB_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1PodDisruptionBudgetList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listPodDisruptionBudgetAsync(NAMESPACE, responseStep));
+
+    V1PodDisruptionBudgetList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readPodDisruptionBudget_returnsResource() throws InterruptedException {
+    V1PodDisruptionBudget resource = new V1PodDisruptionBudget().metadata(createMetadata());
+    defineHttpGetResponse(PDB_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1PodDisruptionBudget> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readPodDisruptionBudgetAsync(UID, NAMESPACE, responseStep));
+
+    V1PodDisruptionBudget received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createPodDisruptionBudget_returnsNewResource() throws InterruptedException {
+    V1PodDisruptionBudget resource = new V1PodDisruptionBudget().metadata(createMetadata());
+    defineHttpPostResponse(
+        PDB_RESOURCE, resource, (json) -> fromJson(json, V1PodDisruptionBudget.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1PodDisruptionBudget> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createPodDisruptionBudgetAsync(NAMESPACE, resource, responseStep));
+
+    V1PodDisruptionBudget received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchPodDisruptionBudgetAsync_returnsUpdatedResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1PodDisruptionBudget resource = new V1PodDisruptionBudget().metadata(createMetadata());
+    defineHttpPatchResponse(
+        PDB_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<V1PodDisruptionBudget> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+    testSupport.runSteps(new CallBuilder().patchPodDisruptionBudgetAsync(UID, NAMESPACE,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    V1PodDisruptionBudget received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deletePodDisruptionBudget_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1PodDisruptionBudget resource = new V1PodDisruptionBudget().metadata(createMetadata());
+    defineHttpDeleteResponse(PDB_RESOURCE, UID, response, (Consumer<String>) null);
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .deletePodDisruptionBudgetAsync(resource.getMetadata().getName(),
+            NAMESPACE, UID, new DeleteOptions(), responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void createSubjectAccessReview_returnsNewResource() throws ApiException {
     V1SubjectAccessReview resource = new V1SubjectAccessReview().metadata(createMetadata());
     defineHttpPostResponse(
-        SAR_RESOURCE, resource, (json) -> fromJson(json, V1Service.class));
+        SAR_RESOURCE, resource, (json) -> fromJson(json, V1SubjectAccessReview.class));
 
     V1SubjectAccessReview received = callBuilder.createSubjectAccessReview(resource);
 
@@ -322,6 +802,21 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void readCRD_returnsResource() throws InterruptedException {
+    V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
+    defineHttpGetResponse(CRD_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1CustomResourceDefinition> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readCustomResourceDefinitionAsync(UID, responseStep));
+
+    V1CustomResourceDefinition received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void replaceCRD_returnsUpdatedResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPutResponse(
@@ -333,6 +828,36 @@ class CallBuilderTest {
         .replaceCustomResourceDefinitionAsync(resource.getMetadata().getName(), resource, responseStep));
 
     V1CustomResourceDefinition received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listConfigMaps_returnsList() throws InterruptedException {
+    V1ConfigMapList list = new V1ConfigMapList().items(Arrays.asList(new V1ConfigMap(), new V1ConfigMap()));
+    defineHttpGetResponse(CM_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1ConfigMapList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx").listConfigMapsAsync(NAMESPACE, responseStep));
+
+    V1ConfigMapList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readConfigMap_returnsResource() throws InterruptedException {
+    V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
+    defineHttpGetResponse(CM_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readConfigMapAsync(UID, NAMESPACE, UID, responseStep));
+
+    V1ConfigMap received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(resource));
   }
@@ -370,6 +895,138 @@ class CallBuilderTest {
     assertThat(received, equalTo(resource));
   }
 
+  @Test
+  @ResourceLock(value = "server")
+  void patchConfigMapAsync_returnsUpdatedResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
+    defineHttpPatchResponse(
+        CM_RESOURCE, UID, resource, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ConfigMap> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.add("/spec/replicas", 5);
+    testSupport.runSteps(new CallBuilder().patchConfigMapAsync(UID, NAMESPACE, UID,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    V1ConfigMap received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deleteConfigMap_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1ConfigMap resource = new V1ConfigMap().metadata(createMetadata());
+    defineHttpDeleteResponse(CM_RESOURCE, UID, response, (Consumer<String>) null)
+        .expectingParameter("gracePeriodSeconds", "5");
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withGracePeriodSeconds(5)
+        .deleteConfigMapAsync(resource.getMetadata().getName(),
+            NAMESPACE, UID, new DeleteOptions(), responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listEvents_returnsList() throws InterruptedException {
+    CoreV1EventList list = new CoreV1EventList().items(Arrays.asList(new CoreV1Event(), new CoreV1Event()));
+    defineHttpGetResponse(EVENT_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<CoreV1EventList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx").listEventAsync(NAMESPACE, responseStep));
+
+    CoreV1EventList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readEvent_returnsResource() throws InterruptedException {
+    CoreV1Event resource = new CoreV1Event().metadata(createMetadata());
+    defineHttpGetResponse(EVENT_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<CoreV1Event> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readEventAsync(UID, NAMESPACE, responseStep));
+
+    CoreV1Event received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createEvent_returnsNewResource() throws InterruptedException {
+    CoreV1Event resource = new CoreV1Event().metadata(createMetadata());
+    defineHttpPostResponse(
+        EVENT_RESOURCE, resource, (json) -> fromJson(json, CoreV1Event.class));
+
+    KubernetesTestSupportTest.TestResponseStep<CoreV1Event> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createEventAsync(NAMESPACE, resource, responseStep));
+
+    CoreV1Event received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createEventSync_returnsNewResource() throws ApiException {
+    CoreV1Event resource = new CoreV1Event().metadata(createMetadata());
+    defineHttpPostResponse(
+        EVENT_RESOURCE, resource, (json) -> fromJson(json, CoreV1Event.class));
+
+    CoreV1Event received = callBuilder.createEvent(NAMESPACE, resource);
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceEvent_returnsUpdatedResource() throws InterruptedException {
+    CoreV1Event resource = new CoreV1Event().metadata(createMetadata());
+    defineHttpPutResponse(
+        EVENT_RESOURCE, UID, resource, (json) -> fromJson(json, CoreV1Event.class));
+
+    KubernetesTestSupportTest.TestResponseStep<CoreV1Event> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .replaceEventAsync(resource.getMetadata().getName(), NAMESPACE, resource, responseStep));
+
+    CoreV1Event received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void listNamespaces_returnsList() throws InterruptedException {
+    V1NamespaceList list = new V1NamespaceList()
+        .items(Arrays.asList(new V1Namespace(), new V1Namespace()));
+    defineHttpGetResponse(NAMESPACE_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1NamespaceList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listNamespaceAsync(responseStep));
+
+    V1NamespaceList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
+
   private Object fromJson(String json, Class<?> aaClass) {
     return new GsonBuilder().create().fromJson(json, aaClass);
   }
@@ -382,6 +1039,13 @@ class CallBuilderTest {
   private JsonServlet defineHttpGetResponse(String resourceName, Object response) {
     JsonGetServlet servlet = new JsonGetServlet(response);
     defineResource(resourceName, servlet);
+    return servlet;
+  }
+
+  private JsonServlet defineHttpGetResponse(
+      String resourceName, String name, Object response) {
+    JsonServlet servlet = new JsonGetServlet(response);
+    defineResource(resourceName + "/" + name, servlet);
     return servlet;
   }
 
@@ -420,13 +1084,30 @@ class CallBuilderTest {
     defineResource(resourceName + "/" + name, pseudoServlet);
   }
 
-  private void defineHttpDeleteResponse(
+  private JsonServlet defineHttpDeleteResponse(
       String resourceName, String name, Object response, Consumer<String> bodyValidation) {
-    defineResource(resourceName + "/" + name, new JsonDeleteServlet(response, bodyValidation));
+    StringBuilder compositeName = new StringBuilder(resourceName);
+    if (name != null) {
+      compositeName.append("/").append(name);
+    }
+    JsonServlet servlet = new JsonDeleteServlet(response, bodyValidation);
+    defineResource(compositeName.toString(), servlet);
+    return servlet;
   }
 
   @SuppressWarnings("unused")
   private void defineHttpDeleteResponse(
+      String resourceName, String name, Object response, PseudoServlet pseudoServlet) {
+    defineResource(resourceName + "/" + name, pseudoServlet);
+  }
+
+  private void defineHttpPatchResponse(
+      String resourceName, String name, Object response, Consumer<String> bodyValidation) {
+    defineResource(resourceName + "/" + name, new JsonPatchServlet(response, bodyValidation));
+  }
+
+  @SuppressWarnings("unused")
+  private void defineHttpPatchResponse(
       String resourceName, String name, Object response, PseudoServlet pseudoServlet) {
     defineResource(resourceName + "/" + name, pseudoServlet);
   }
@@ -519,9 +1200,65 @@ class CallBuilderTest {
       response = new WebResource(toJson(returnValue), "application/json");
     }
 
+    protected String[] getParameter(String name) {
+      return splitQuery(getRequest().getURI()).get(name);
+    }
+
+    private Map<String, String[]> splitQuery(String uri) {
+      if (Strings.isNullOrEmpty(uri)) {
+        return Collections.emptyMap();
+      }
+      String query = uri.substring(uri.indexOf('?') + 1);
+      if (Strings.isNullOrEmpty(query)) {
+        return Collections.emptyMap();
+      }
+      Map<String, String[]> parameters = new HashMap<>();
+      for (String s : query.split("&")) {
+        Pair<String, String> p = splitQueryParameter(s);
+        if (!parameters.containsKey(p.getLeft())) {
+          parameters.put(p.getLeft(), new String[] { p.getRight() });
+        } else {
+          String[] current = parameters.get(p.getLeft());
+          String[] updated = new String[current.length + 1];
+          System.arraycopy(current, 0, updated, 0, current.length);
+          updated[current.length] = p.getRight();
+          parameters.put(p.getLeft(), updated);
+        }
+      }
+      return parameters;
+    }
+
+    public Pair<String, String> splitQueryParameter(String it) {
+      final int idx = it.indexOf("=");
+      final String key = idx > 0 ? it.substring(0, idx) : it;
+      final String value = idx > 0 && it.length() > idx + 1 ? it.substring(idx + 1) : null;
+      return new Pair<>(key, value);
+    }
+
+    public WebResource getPatchResponse() throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
     WebResource getResponse() throws IOException {
       validateParameters();
       return response;
+    }
+
+    @Override
+    public WebResource getResponse(String methodType) throws IOException {
+      if (methodType.equalsIgnoreCase("GET")) {
+        return getGetResponse();
+      } else if (methodType.equalsIgnoreCase("PUT")) {
+        return getPutResponse();
+      } else if (methodType.equalsIgnoreCase("POST")) {
+        return getPostResponse();
+      } else if (methodType.equalsIgnoreCase("DELETE")) {
+        return getDeleteResponse();
+      } else if (methodType.equalsIgnoreCase("PATCH")) {
+        return getPatchResponse();
+      } else {
+        throw new IllegalArgumentException(methodType);
+      }
     }
 
     private void validateParameters() throws IOException {
@@ -625,6 +1362,18 @@ class CallBuilderTest {
 
     @Override
     public WebResource getDeleteResponse() throws IOException {
+      return getResponse();
+    }
+  }
+
+  static class JsonPatchServlet extends JsonBodyServlet {
+
+    private JsonPatchServlet(Object returnValue, Consumer<String> bodyValidation) {
+      super(returnValue, bodyValidation);
+    }
+
+    @Override
+    public WebResource getPatchResponse() throws IOException {
       return getResponse();
     }
   }
