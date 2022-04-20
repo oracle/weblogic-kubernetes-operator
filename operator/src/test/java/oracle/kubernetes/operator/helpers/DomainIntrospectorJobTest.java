@@ -526,49 +526,6 @@ class DomainIntrospectorJobTest {
         .filter(c -> "/fluentd/etc/fluentd.conf".equals(c.getMountPath())), notNullValue());
   }
 
-  //  @Test
-  //  void whenJobCreatedWithFluentdTerminatedDuringIntropsection_checkExpectedMessage() {
-  //    String jobName = UID + "-introspector";
-  //    DomainConfiguratorFactory.forDomain(domain)
-  //        .withFluentdConfiguration(true, "elastic-cred", null);
-  //    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-  //    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-  //        true, true);
-  //    testSupport.defineResources(jobPod);
-  //    defineFailedFluentdContainerInIntrospection();
-  //    testSupport.runSteps(getStepFactory(), terminalStep);
-  //
-  //    //testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(terminalStep));
-  //    logRecords.clear();
-  //    String expectedDetail = LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED,
-  //        jobPod.getMetadata().getName(),
-  //        jobPod.getMetadata().getNamespace(), 1, null, null);
-  //
-  //    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
-  //        LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, expectedDetail, 1, 2)));
-  //
-  //  }
-  //
-  //  @Test
-  //  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() {
-  //    String jobName = UID + "-introspector";
-  //    DomainConfiguratorFactory.forDomain(domain)
-  //        .withFluentdConfiguration(true, "elastic-cred", null);
-  //    V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-  //    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-  //        true, false);
-  //    testSupport.defineResources(jobPod);
-  //    defineNormalFluentdContainerInIntrospection();
-  //    Packet packet = testSupport.runSteps(getStepFactory(), terminalStep);
-  //
-  //    //Packet packet = testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
-  //    logRecords.clear();
-  //    assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
-  //        equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
-  //    assertThat(terminalStep.wasRun(), is(false));
-  //
-  //  }
-
   Domain getDomain() {
     return testSupport.getResourceWithName(DOMAIN, UID);
   }

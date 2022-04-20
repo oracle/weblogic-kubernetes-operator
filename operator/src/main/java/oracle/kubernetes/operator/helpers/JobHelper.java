@@ -736,12 +736,8 @@ public class JobHelper {
         nextStep = Step.chain(recordLastIntrospectJobProcessedUid(
                 getLastIntrospectJobProcessedId(domainIntrospectorJob)), nextStep);
 
-        // Note: fluentd container log can be huge, may not be a good idea to read the container log.
-        //  Just set a flag and let the user know they can check the container log to determine unlikely
-        //  starting error, most likely a very bad formatted configuration.
-
-        if (packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED) != null) {
-          severeStatuses.add(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED).toString());
+        if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+          severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
         }
 
         if (!severeStatuses.isEmpty()) {
@@ -754,6 +750,23 @@ public class JobHelper {
                         onSeparateLines(severeStatuses),
                         nextStep),
                 packet);
+      }
+
+      // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+      //  Just set a flag and let the user know they can check the container log to determine unlikely
+      //  starting error, most likely a very bad formatted configuration.
+
+      if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+        severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
+        Step nextStep = null;
+        nextStep = Step.chain(DomainStatusUpdater.createFailureCountStep(), nextStep);
+        List<String> jobConditionsReason = new ArrayList<>();
+        return doNext(
+            DomainStatusUpdater.createFailureRelatedSteps(
+                onSeparateLines(jobConditionsReason),
+                onSeparateLines(severeStatuses),
+                nextStep),
+            packet);
       }
 
       Step nextSteps = Step.chain(recordLastIntrospectJobProcessedUid(
