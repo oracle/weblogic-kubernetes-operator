@@ -78,6 +78,8 @@ import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
+import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
+import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
@@ -458,12 +460,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   abstract String getPodReplacedMessageKey();
 
   Step cycleEvictedPodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next, LOGGER.formatMessage("podEvicted"));
+    return new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_EVICTED));
   }
 
   Step createCyclePodStep(V1Pod pod, Step next) {
     return Step.chain(DomainStatusUpdater.createStartRollStep(),
-        new CyclePodStep(pod, next, LOGGER.formatMessage("podSpecChanged")));
+        new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_SPEC_CHANGED)));
   }
 
   private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
@@ -1017,12 +1019,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   public class CyclePodStep extends BaseStep {
     private final V1Pod pod;
-    private final String reason;
+    private final String message;
 
-    CyclePodStep(V1Pod pod, Step next, String reason) {
+    CyclePodStep(V1Pod pod, Step next, String message) {
       super(next);
       this.pod = pod;
-      this.reason = reason;
+      this.message = message;
     }
 
     private ResponseStep<Object> deleteResponse(V1Pod pod, Step next) {
@@ -1056,7 +1058,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private Step createCyclePodEventStep(Step next) {
       LOGGER.info(MessageKeys.CYCLING_POD, Objects.requireNonNull(pod.getMetadata()).getName());
-      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
+      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, message).podName(getPodName())),
           next);
     }
   }
