@@ -98,6 +98,7 @@ public class JobHelper {
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(Step next) {
+
     return new DomainIntrospectorJobStep(next);
   }
 
