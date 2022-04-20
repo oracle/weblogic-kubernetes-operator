@@ -133,6 +133,7 @@ class ItKubernetesDomainEvents {
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
   private static String domainNamespace3 = null;
+  private static String domainNamespace4 = null;
   private static String opServiceAccount = null;
   private static int externalRestHttpsPort = 0;
   private static OperatorParams opParams = null;
@@ -153,6 +154,8 @@ class ItKubernetesDomainEvents {
   static final String pvcName2 = getUniqueName(domainUid + "-pvc-");
   static final String pvName3 = getUniqueName(domainUid + "-pv-");
   static final String pvcName3 = getUniqueName(domainUid + "-pvc-");
+  static final String pvName4 = getUniqueName(domainUid + "-pv-");
+  static final String pvcName4 = getUniqueName(domainUid + "-pvc-");
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
@@ -171,7 +174,7 @@ class ItKubernetesDomainEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -184,6 +187,8 @@ class ItKubernetesDomainEvents {
     assertNotNull(namespaces.get(3), "Namespace is null");
     domainNamespace3 = namespaces.get(4);
     assertNotNull(namespaces.get(4), "Namespace is null");
+    domainNamespace4 = namespaces.get(5);
+    assertNotNull(namespaces.get(5), "Namespace is null");
 
 
     // set the service account name for the operator
@@ -191,7 +196,7 @@ class ItKubernetesDomainEvents {
 
     // install and verify operator with REST API
     opParams = installAndVerifyOperator(opNamespace, opServiceAccount,
-            true, 0, domainNamespace1, domainNamespace2,domainNamespace3);
+            true, 0, domainNamespace1, domainNamespace2,domainNamespace3,domainNamespace4);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
@@ -206,8 +211,10 @@ class ItKubernetesDomainEvents {
     createSecretForBaseImages(domainNamespace1);
     createSecretForBaseImages(domainNamespace2);
     createSecretForBaseImages(domainNamespace3);
+    createSecretForBaseImages(domainNamespace4);
     createDomain(domainNamespace3, domainUid,pvName3, pvcName3);
     createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
+    createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
   }
 
   /**
@@ -444,10 +451,11 @@ class ItKubernetesDomainEvents {
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
     try {
-      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true);
-      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true);
+      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
+      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
     } finally {
-      scaleDomain(2);
+      //TODO check if needed
+      scaleDomain(2, domainNamespace4);
     }
   }
 
@@ -933,26 +941,26 @@ class ItKubernetesDomainEvents {
     }
   }
 
-  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType, boolean verify) {
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType, boolean verify, String namespace) {
     OffsetDateTime timestamp = now();
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
-    int countBefore = getDomainEventCount(domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal");
+    int countBefore = getDomainEventCount(namespace, domainUid, DOMAIN_COMPLETED, "Normal");
     V1Patch patch = new V1Patch("["
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     int serverNumber = replicaCount + 1;
 
     switch (testType) {
       case scaleUp:
-        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace3);
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, namespace);
         break;
       case scaleDown:
-        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace3);
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, namespace);
         break;
       case reset:
-        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace3);
-        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace3);
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, namespace);
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, namespace);
         break;
       default:
     }
@@ -960,12 +968,12 @@ class ItKubernetesDomainEvents {
     if (verify) {
       logger.info("Verify the DomainCompleted event is generated after " + testType);
       checkEventWithCount(
-          opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
+          opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
 
-  private void scaleDomain(int replicaCount) {
-    scaleDomainAndVerifyCompletedEvent(replicaCount, ScaleAction.reset, false);
+  private void scaleDomain(int replicaCount, String namespace) {
+    scaleDomainAndVerifyCompletedEvent(replicaCount, ScaleAction.reset, false, namespace);
   }
 
 }

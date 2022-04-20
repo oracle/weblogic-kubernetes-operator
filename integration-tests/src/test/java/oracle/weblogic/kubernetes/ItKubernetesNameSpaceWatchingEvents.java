@@ -138,7 +138,8 @@ class ItKubernetesNameSpaceWatchingEvents {
     domainNamespaces.add(domainNamespace1);
     domainNamespaces.add(domainNamespace2);
     OperatorParams opTestParams = opParamsOriginal;
-    opTestParams = opTestParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
+    opTestParams = opTestParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding)
+    .domainNamespaceSelectionStrategy("List");
     upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
@@ -149,7 +150,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     logger.info("Removing domain namespace {0} in the operator watch list", domainNamespace2);
     domainNamespaces.clear();
     domainNamespaces.add(domainNamespace1);
-    opTestParams = opTestParams.domainNamespaces(domainNamespaces);
+    opTestParams = opTestParams.domainNamespaces(domainNamespaces).domainNamespaceSelectionStrategy("List");
     upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
