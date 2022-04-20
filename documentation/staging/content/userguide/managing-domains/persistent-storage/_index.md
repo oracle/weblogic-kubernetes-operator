@@ -87,10 +87,10 @@ $ kubectl create -f pvc.yaml
 To confirm that the PersistentVolume was created, use these commands:
 
 ```shell
-$ kubectl describe pv [persistent volume name]
+$ kubectl describe pv <persistent volume name>
 ```
 ```shell
-$ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
+$ kubectl describe pvc -n NAMESPACE <persistent volume claim name>
 ```
 
 ### Common problems
