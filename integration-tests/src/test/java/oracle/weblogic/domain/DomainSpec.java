@@ -814,7 +814,8 @@ public class DomainSpec {
             .append("serverPod", serverPod)
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
-            .append("monitoringExporter", monitoringExporter);
+            .append("monitoringExporter", monitoringExporter)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -851,7 +852,8 @@ public class DomainSpec {
             .append(serverService)
             .append(serverStartState)
             .append(restartVersion)
-            .append(monitoringExporter);
+            .append(monitoringExporter)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -896,7 +898,8 @@ public class DomainSpec {
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)
             .append(restartVersion, rhs.restartVersion)
-            .append(monitoringExporter, rhs.monitoringExporter);
+            .append(monitoringExporter, rhs.monitoringExporter)
+            .append(fluentdSpecification, rhs.fluentdSpecification);
     return builder.isEquals();
   }
 }
