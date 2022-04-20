@@ -941,7 +941,8 @@ class ItKubernetesDomainEvents {
     }
   }
 
-  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType, boolean verify, String namespace) {
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType,
+                                                  boolean verify, String namespace) {
     OffsetDateTime timestamp = now();
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
     int countBefore = getDomainEventCount(namespace, domainUid, DOMAIN_COMPLETED, "Normal");
