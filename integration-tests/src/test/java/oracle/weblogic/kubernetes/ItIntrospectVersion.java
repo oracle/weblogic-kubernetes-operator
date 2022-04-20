@@ -1287,9 +1287,9 @@ class ItIntrospectVersion {
     String podName = domainUid + "-" + serverName;
     final String command = String.format(
         "kubectl exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
-            + ADMIN_USERNAME_DEFAULT
+            + wlsUserName
             + ":"
-            + ADMIN_PASSWORD_DEFAULT
+            + wlsPassword
             + "@" + podName + ":%s/clusterview/ClusterViewServlet"
             + "\"?user=" + wlsUserName
             + "&password=" + wlsPassword + "\"",managedServerPort);
