@@ -18,8 +18,8 @@ description = "Auxiliary images are an alternative approach for supplying a doma
      - [Configuration example 1: Basic configuration](#configuration-example-1-basic-configuration)
      - [Configuration example 2: Source locations](#configuration-example-2-source-locations)
      - [Configuration example 3: Multiple images](#configuration-example-3-multiple-images)
-   - [Automated upgrade of WKO 3.x auxiliary images configuration](#automated-upgrade-of-wko-3x-auxiliary-images-configuration)
-   - [Domain upgrade tool to manually upgrade the WKO 3.x domain resource](#domain-upgrade-tool-to-manually-upgrade-the-wko-3x-domain-resource)
+ - [Automated upgrade of WKO 3.x auxiliary images configuration](#automated-upgrade-of-wko-3x-auxiliary-images-configuration)
+ - [Domain upgrade tool to manually upgrade the WKO 3.x domain resource](#domain-upgrade-tool-to-manually-upgrade-the-wko-3x-domain-resource)
  - [Sample](#sample)
    - [Step 1: Prerequisites](#step-1-prerequisites)
    - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
@@ -229,7 +229,7 @@ spec:
 ```
 
 ### Domain upgrade tool to manually upgrade the WKO 3.x domain resource
-To manually upgrade the domain resource from the 3.x schema to the 4.0 schema, refer to [upgrade the WKO 3.x domain resource manually]({{< relref "/userguide/managing-domains/upgrade-domain-resource#upgrade-the-wko-3x-domain-resource-manually" >}}) section in the [installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}) guide.
+To manually upgrade the domain resource from the 3.x schema to the 4.0 schema, refer to [upgrade the WKO 3.x domain resource manually]({{< relref "/userguide/managing-domains/upgrade-domain-resource#upgrade-the-wko-3x-domain-resource-manually" >}}) section in the [domain resource upgrade]({{< relref "/userguide/managing-domains/upgrade-domain-resource" >}}) document.
 
 ### Sample
 

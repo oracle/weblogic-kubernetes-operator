@@ -158,7 +158,7 @@ see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting#c
   as shown in the previous example.
 
 ### Install the WebLogic domain resource conversion webhook
-See [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) for details about the conversion webhook installation. 
+Refer to [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) section for the conversion webhook installation details. 
 
 ### Set up domain namespaces
 
@@ -215,8 +215,8 @@ during the upgrade.
 
 When you upgrade a 3.x operator to 4.0, it will also create a 
 [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}})
-deployment in the same namespace. If the conversion webhook deployment already exists in some other namespace, 
-then a new conversion webhook deployment is not created.
+deployment and its associated resources in the same namespace. If the conversion webhook deployment already exists in
+ some other namespace, then a new conversion webhook deployment is not created.
 The [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}})
  automatically and transparently upgrades the existing Domains from the 3.x schema to the 4.0 schema.
 
@@ -228,13 +228,6 @@ however, any changes to a domain resource that was managed by the operator
 will not be detected or automatically handled, and, if you
 want to clean up such a domain, then you will need to manually delete
 all of the domain's resources (domain, pods, services, and such).
-{{% /notice %}}
-
-{{% notice note %}}
-Beginning with Operator version 4.0, uninstalling an operator also removes the conversion webhook
- deployment and its associated resources in the same namespace.
-If you want to prevent the removal of the conversion webhook and its associated resources, 
-use `preserveWebhook=true` helm custom value during installation with the `helm install` command.
 {{% /notice %}}
 
 The `helm uninstall` command is used to remove an operator release
@@ -264,8 +257,16 @@ Note that the Domain custom resource definition is shared.
 Do not delete the CRD if there are other operators in the same cluster
 or you have running domain resources.
 
+Beginning with Operator version 4.0, uninstalling an operator also removes the conversion webhook
+ deployment and associated resources in the same namespace.
+Therefore, if you have multiple operators running in the Kubernetes cluster and want to prevent the removal of the 
+conversion webhook and its associated resources, use one of the two options listed below:
+- [Install the conversion webhook]({{< relref "userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}})
+ in a separate namespace using `webhookOnly=true` helm custom value.
+- Use the `preserveWebhook=true` helm custom value during installation with the `helm install` command.
+
 ### Uninstall the WebLogic domain resource conversion webhook
-See [uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}) for details about the conversion webhook installation.
+See [uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}) for the conversion webhook uninstallation details.
 
 ### Installation sample
 

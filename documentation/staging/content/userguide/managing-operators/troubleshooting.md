@@ -12,15 +12,15 @@ description: "General advice for debugging and monitoring the operator."
 - [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
 - [Check the operator deployment](#check-the-operator-deployment)
 - [Check the conversion webhook deployment](#check-the-conversion-webhook-deployment)
-- [Check common issues for the operator](#check-common-issues-for-the-operator)
-- [Check common issues for the conversion webhook](#check-common-issues-for-the-conversion-webhook)
+- [Check common operator issues](#check-common-operator-issues)
+- [Check common conversion webhook issues](#check-common-conversion-webhook-issues)
 - [Check for the operator events](#check-for-the-operator-events)
 - [Check for the conversion webhook events](#check-for-the-conversion-webhook-events)
 - [Check the operator log](#check-the-operator-log)
 - [Check the conversion webhook log](#check-the-conversion-webhook-log)
 - [Operator ConfigMap](#operator-configmap)
 - [Force the operator to restart](#force-the-operator-to-restart)
-- [Operator and conversion webhook logging levels](#operator-and-conversion-webhook-logging-levels)
+- [Operator and conversion webhook logging level](#operator-and-conversion-webhook-logging-level)
 - [See also](#see-also)
 
 ### Troubleshooting a particular domain resource
@@ -132,12 +132,12 @@ $ kubectl -n WH_NAMESPACE describe pod weblogic-operator-webhook-UNIQUESUFFIX
 ```
 A pod `describe` usefully includes any events that might be associated with the conversion webhook.
 
-### Check common issues for the Operator
+### Check common operator issues
 
 - See [Common mistakes and solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 - Check the [FAQs]({{<relref "/faq/_index.md">}}).
 
-### Check common issues for the conversion webhook
+### Check common conversion webhook issues
 
 - See [Troubleshooting the conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook#troubleshooting-the-conversion-webhook" >}}).
 
@@ -238,7 +238,7 @@ There are several approaches for restarting an operator:
 
      ```
 
-### Operator and conversion webhook logging levels
+### Operator and conversion webhook logging level
 
 {{% notice warning %}}
 It should rarely be necessary to change the operator and conversion webhook to use a finer-grained logging level,

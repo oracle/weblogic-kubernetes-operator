@@ -14,7 +14,7 @@ pre = "<b> </b>"
 The 4.0 Operator provides a seamless upgrade of the Domains with 3.x (V8 schema) domain resources. When you create a Domain using WKO 3.x (V8 schema) domain resource in a namespace managed by the WKO 4.0, the [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}) performs an automated upgrade of the domain resource to 4.0 schema. The conversion webhook runtime converts the WKO 3.x configuration to the equivalent configuration in WKO 4.0. Similarly, when [upgrading the Operator version from 3.x to 4.0]({{< relref "/userguide/managing-operators/installation#upgrade-the-operator" >}}), Domains resources are seamlessly upgraded.
 
 ### Upgrade the WKO 3.x domain resource manually
-Beginning with Operator version 4.0, the Operator team provides a standalone command-line tool for manually upgrading the WKO 3.x/V8 domain resource YAML to the WKO 4.0/V9 domain resource YAML. Use this tool to generate the upgraded V9 Domain resource YAML file so that it can be kept in the source code control repository. 
+Beginning with Operator version 4.0, the Operator team provides a standalone command-line tool for manually upgrading the WKO 3.x (V8 schema) domain resource YAML to the WKO 4.0 domain resource YAML. If you are required to keep the upgraded Domain resource YAML file in the source control repository, then you can use this tool to generate the upgraded file. 
 
 ##### Setup
 - Download the Domain upgrade tool jar file to the desired location.
@@ -26,7 +26,7 @@ Beginning with Operator version 4.0, the Operator team provides a standalone com
  - OPTIONALLY: You may build the project (mvn clean package) to create the jar file in ./weblogic-kubernetes-operator/target (see Build From Source).
  - Set the JAVA_HOME environment variable to the location of the Java install (see Prerequisites).
 
-The Domain upgrader tool upgrades the V8 schema domain resource YAML as input and writes the upgraded domain resource YAML file to the 
+The Domain upgrader tool upgrades the provided V8 schema domain resource input file and writes the upgraded domain resource YAML file to the 
 directory specified using the `-d` parameter.
 
 ```
