@@ -293,7 +293,7 @@ class ItElasticLoggingFluentd {
     String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
     String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
     logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
-    boolean jobCompeted = results1.contains("Domain introspection complete");
+    boolean jobCompeted = results1.contains("introspectDomain.sh");
     logger.info("found completed job " + jobCompeted);
 
     return count > 0 && failedCount == 0 && jobCompeted;
