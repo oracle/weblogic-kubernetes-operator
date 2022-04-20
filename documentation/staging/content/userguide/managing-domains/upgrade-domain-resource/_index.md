@@ -24,7 +24,7 @@ Beginning with Operator version 4.0, the Operator team provides a standalone com
    curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/releases/latest/download/domain-upgrader.jar -o ./domain-upgrader.jar
    ```
  - OPTIONALLY: You may build the project (mvn clean package) to create the jar file in ./weblogic-kubernetes-operator/target (see Build From Source).
- - Set the JAVA_HOME environment variable to the location of the Java install (see Prerequisites).
+ - Set the JAVA_HOME environment variable to the location of the Java install (Java version 11+).
 
 The Domain upgrader tool upgrades the provided V8 schema domain resource input file and writes the upgraded domain resource YAML file to the 
 directory specified using the `-d` parameter.
@@ -47,7 +47,10 @@ base name of the input file name. For example, assuming the name of the V8 domai
 ```
 $ java -jar /tmp/domain-upgrader.jar domain-v8.yaml -d /tmp -f domain-v9.yaml
 {"timestamp":"2022-04-18T23:11:09.182227Z","thread":1,"level":"INFO","class":"oracle.kubernetes.operator.DomainUpgrader","method":"main","timeInMillis":1650323469182,"message":"Successfully generated upgraded domain custom resource file 'domain-v9.yaml'.","exception":"","code":"","headers":{},"body":""}
+```
+
+In the above example, the tool writes the upgraded file to the `/tmp` directory with the name `domain-v9.yaml`.
+```
 $ ls -ltr /tmp/domain-v9.yaml
 -rw-r----- 1 user dba 2818 Apr 18 23:11 /tmp/domain-v9.yaml
 ```
-
