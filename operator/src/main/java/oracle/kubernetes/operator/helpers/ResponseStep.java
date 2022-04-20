@@ -26,9 +26,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.FIBER_TIMEOUT;
@@ -184,21 +184,21 @@ public abstract class ResponseStep<T> extends Step {
         LOGGER.warning(
             MessageKeys.ASYNC_NO_RETRY,
             Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.call).orElse("--no call--"),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
             callResponse.getExceptionString(),
             callResponse.getStatusCode(),
             callResponse.getHeadersString(),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.namespace).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.name).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.body)
+            Optional.of(callResponse.getRequestParams()).map(r -> r.namespace).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.name).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.body)
                 .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
                 .map(CallParams::getFieldSelector).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
                 .map(CallParams::getLabelSelector).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
                 .map(CallParams::getResourceVersion).orElse(""),
-            Optional.of(callResponse).map(CallResponse::getE).map(ApiException::getResponseBody).orElse(""));
+            Optional.of(callResponse.getE()).map(ApiException::getResponseBody).orElse(""));
       }
     }
     return null;
