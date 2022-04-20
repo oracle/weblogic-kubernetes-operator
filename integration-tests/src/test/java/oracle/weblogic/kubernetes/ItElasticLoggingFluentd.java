@@ -292,10 +292,18 @@ class ItElasticLoggingFluentd {
     String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
     String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
     logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
-    boolean jobCompeted = results1.contains("introspectDomain.sh");
-    logger.info("found completed job " + jobCompeted);
 
-    return count > 0 && failedCount == 0 && jobCompeted;
+    matcher = pattern.matcher(results1);
+    int count1 = -1;
+    int failedCount1 = -1;
+    if (matcher.find()) {
+      count1 = Integer.parseInt(matcher.group(1));
+      failedCount1 = Integer.parseInt(matcher.group(2));
+    }
+    logger.info("Total count of introspector logs: " + count1);
+    logger.info("Total failed  introspector count: " + failedCount1);
+
+    return count > 0 && failedCount == 0 && count1 > 0;
   }
 
   private static String createAndVerifyDomainImage() {
