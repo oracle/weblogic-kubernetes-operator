@@ -23,7 +23,7 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 Be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
 * _Domain Home Location:_ The WebLogic domain home location is determined by the Domain YAML file `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting.
-  - If the Domain `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/`, and report an error if no domain is found or more than one domain is found.  
+  - If the Domain `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/`, and report an error if no domain is found or more than one domain is found.
   - If the Domain `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`.
   - Finally, if the Domain `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
 
@@ -33,7 +33,7 @@ Be aware of the following important considerations for WebLogic domains running 
   A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
@@ -42,7 +42,7 @@ Be aware of the following important considerations for WebLogic domains running 
   For additional log file tuning information, see [Log files](#log-files).
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
-  SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
+  SSL, admin, or custom channel listen addresses (using [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})).  These will become `domainUID` followed by a
   hyphen and then the server name, all lowercase, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
   the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
@@ -60,7 +60,7 @@ Be aware of the following important considerations for WebLogic domains running 
   Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
-  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
+  For more information, see [WebLogic T3 and administrative channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-and-administrative-channels">}}).
   {{% /notice %}}
 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -70,12 +70,12 @@ Be aware of the following important considerations for WebLogic domains running 
 
 * _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Server Managed Servers and Node Manager instances:
 
-    * `JAVA_OPTIONS` - Java options for starting WebLogic Server
-    * `USER_MEM_ARGS` - JVM memory arguments for starting WebLogic Server
-    * `NODEMGR_JAVA_OPTIONS` - Java options for starting a Node Manager instance
-    * `NODEMGR_MEM_ARGS` - JVM memory arguments for starting a Node Manager instance
+  * `JAVA_OPTIONS` - Java options for starting WebLogic Server
+  * `USER_MEM_ARGS` - JVM memory arguments for starting WebLogic Server
+  * `NODEMGR_JAVA_OPTIONS` - Java options for starting a Node Manager instance
+  * `NODEMGR_MEM_ARGS` - JVM memory arguments for starting a Node Manager instance
 
-    For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+  For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
 The following features are **not** certified or supported in this release:
 
@@ -109,7 +109,8 @@ When a domain resource or WebLogic domain configuration violates the limits, the
 
 ### Creating and managing WebLogic domains
 
-You can locate a WebLogic domain either in a persistent volume (PV) or in an image.
+You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
+For an explanation of each, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
@@ -123,13 +124,13 @@ You can modify the WebLogic domain configuration for Domain in PV, Domain in Ima
 
 When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 
-For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+For Domain in Image and Domain in PV, you can use [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret.
+and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{< relref "/userguide/managing-domains/configoverrides#unsupported-overrides" >}}).
 
-For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+For Model in Image, you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ### About the Domain resource
 
@@ -157,6 +158,7 @@ For more information, see [Domain events]({{< relref "/userguide/managing-domain
 ### Monitoring a domain
 
 The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, [Use the Monitoring Exporter with WebLogic Kubernetes Operator](https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator).
+
 
 ### Log files
 
@@ -203,14 +205,14 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 - Here are the defaults for commonly tuned Log MBean attributes:
 
   | Log MBean Attribute | Production Mode Default | Development Mode Default |
-  | --------- | ----------------------- | ------------------------ |
+    | --------- | ----------------------- | ------------------------ |
   | FileMinSize (in kilobytes) | 5000 | 500 |
   | FileCount | 100 | 7 |
   | RotateLogOnStartup | false | true |
 
 - For WebLogic Server `.log` and `.out` files (including both dynamic and configured servers), you can alternatively
-set logging attributes using system properties that start with `weblogic.log.`
-and that end with the corresponding Log MBean attribute name.
+  set logging attributes using system properties that start with `weblogic.log.`
+  and that end with the corresponding Log MBean attribute name.
 
   For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
 

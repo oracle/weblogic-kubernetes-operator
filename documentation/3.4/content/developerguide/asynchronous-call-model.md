@@ -2,6 +2,7 @@
 title: "Asynchronous call model"
 date: 2019-02-23T17:20:00-05:00
 draft: false
+description: "The operator employs an efficient, user-level threads pattern to implement an asynchronous call model for Kubernetes API requests."
 weight: 7
 ---
 

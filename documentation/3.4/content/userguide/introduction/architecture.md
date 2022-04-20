@@ -28,11 +28,9 @@ The operator consists of the following parts:
 * A Kubernetes custom resource definition (CRD) that,
   when installed, enables the Kubernetes API server
   and the operator to monitor and manage domain resource instances.
-* Domain resources that reference WebLogic 
+* Domain resources that reference WebLogic
   domain configuration, a WebLogic install, and
   anything else necessary to run the domain.
-* A variety of samples for preparing or packaging
-  WebLogic domains for running in Kubernetes.
 
 The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
@@ -62,10 +60,10 @@ The Kubernetes cluster has several namespaces. Components may be deployed into n
       its own namespace.
   * There is no limit on the number of domains or namespaces that an operator can manage.  
   * If the Elastic Stack integration option is configured to monitor the operator,
-    then a Logstash pod will also be deployed in the operator’s namespace.
-* WebLogic domain resources deployed into various namespaces. 
+    then a Logstash container will also be created in the operator’s pod.
+* WebLogic domain resources deployed into various namespaces.
   * There can be more than one domain in a namespace, if desired.
-  * Every domain resource must be configured with a [domain unique identifier](domain-uid).
+  * Every domain resource must be configured with a [domain unique identifier](#domain-uid).
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.
 * Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.
 
@@ -76,17 +74,17 @@ which is a string and may also be called a `Domain UID`,
 `domainUID`, or `DOMAIN_UID` depending on the context.
 This value is distinct and need not match the domain name from
 the WebLogic domain configuration. The operator will
-use this as a name prefix for the domain related resources 
+use this as a name prefix for the domain related resources
 that it creates for you (such as services and pods).
 
 A Domain UID is set on a domain resource using `spec.domainUID`,
 and defaults to the value of `metadata.name`. The
-`spec.domainUID` domain resource field is usually 
-left unset in order to take advantage of this default.
+`spec.domainUID` domain resource field is usually
+left unset to take advantage of this default.
 
-It is recommended that a Domain UID be configured to be unique 
+It is recommended that a Domain UID be configured to be unique
 across all Kubernetes namespaces and even across different Kubernetes
-clusters in order to assist in future work to identify 
+clusters to assist in future work to identify
 related domains in active-passive scenarios across data centers;
 however, it is only required that this value
 be unique within a namespace, similarly to the names of Kubernetes
@@ -95,7 +93,7 @@ resources.
 As a convention, any resource that is associated with a particular Domain UID
 is typically given a Kubernetes label named `weblogic.domainUID` that
 is assigned to that UID. If the operator creates a resource for
-you on behalf of a particular domain, it will follow this 
+you on behalf of a particular domain, it will follow this
 convention. For example, to see all pods created with
 the `weblogic.domainUID` label in a Kubernetes cluster try:
 `kubectl get pods -l weblogic.domainUID --all-namespaces=true --show-labels=true`.
@@ -130,7 +128,12 @@ The diagram below shows the components inside the containers running WebLogic Se
 
 {{< img "Inside a container" "images/inside-a-container.png" >}}
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}).
+
+{{% notice warning %}}
+The default image is a General Availability image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+{{% /notice %}}
+
 {{% notice note %}}
 During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}
@@ -149,7 +152,7 @@ and the name of a WebLogic server cluster is `DOMAIN_UID-cluster-wlclustername`,
 all in lowercase, with underscores `_` converted to hyphens `-`.
 
 The operator also automatically overrides the `ListenAddress` fields in each
-running WebLogic Server to match its service name in order 
+running WebLogic Server to match its service name in order
 to ensure that the servers will always be able to find each other.
 
 For details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
@@ -163,8 +166,8 @@ The external state approach allows the operator to treat the images as essential
 
 This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
 
-When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers.
+When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image. If desired, any domains that are running may be updated to this new patched image with a rolling restart. See the [WebLogic Server images]({{< relref "/userguide/base-images/patch-images.md" >}}) and [Domain life cycle]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
 
-It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
+It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 
 The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.

@@ -104,7 +104,7 @@ elkIntegrationEnabled: false
 
 # logStashImage specifies the container image containing logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
-logStashImage: "logstash:6.6.0"
+logStashImage: "logstash:6.8.23"
 
 # elasticSearchHost specifies the hostname of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
@@ -222,3 +222,9 @@ clusterSizePaddingValidationEnabled: true
 # to the Domain resource so that it is done using the caller's privileges.
 # The default value is false.
 #tokenReviewAuthentication: false
+
+# domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds specify the number of introspector job
+# retries for a Domain and the interval in seconds between these retries, respectively.
+# Defaults to 5 retries and 10 seconds between each retry.
+# domainPresenceFailureRetryMaxCount: 5
+# domainPresenceFailureRetrySeconds: 10

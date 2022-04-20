@@ -10,7 +10,6 @@ pre = "<b> </b>"
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
-- [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
@@ -67,22 +66,6 @@ Or this command:
 $ kubectl get domain [domain name] -n [namespace] -o yaml
 ```
 
-#### Domain resource custom resource definition (CRD)
-
-The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
-
-The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
-
-```shell
-$ kubectl create -f kubernetes/crd/domain-crd.yaml
-```
-
-After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:
-
-```shell
-$ kubectl get crd domains.weblogic.oracle
-```
-
 #### Domain resource attribute references
 
 The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domainUID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the `domainUID` should be unique across the cluster.  The `domainUID`, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
@@ -96,7 +79,7 @@ Here are some references you can use for the fields in these sections:
 - See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
-- Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
+- Use [kubectl explain](#using-kubectl-explain) from the command line.
 
 #### Using `kubectl explain`
 
@@ -125,11 +108,11 @@ DESCRIPTION:
 
 The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
 
-> Note: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
+**NOTE**: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
 
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
+* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
@@ -214,11 +197,13 @@ Elements related to specifying and overriding WebLogic domain configuration:
     where the WebLogic cluster configuration already
     defines a `replication-channel` attribute. Defaults to 4564.
   * `localhostBindingsEnabled`:
-    This setting was added in operator version 3.3.3;
-    it defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled`,
-    which in turn defaults to `true`. When `true`, the operator creates a WebLogic
+    This setting was added in operator version 3.3.3,
+    defaults to `true`.
+    When `true`, the operator
+    creates a WebLogic
     network access point with a `localhost` binding for each existing channel and protocol.
-    Use `true` for Istio versions prior to 1.10 and set to `false` for versions 1.10 and later.
+    Use `true` for Istio versions prior to 1.10
+    and set to `false` for version 1.10 and later.
 
 Elements related to Kubernetes Pod and Service generation:
 
@@ -261,7 +246,7 @@ You can use the following environment variables to specify JVM memory and JVM op
   * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
-* For a detailed discussion of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
+* For a detailed description of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
 This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.
