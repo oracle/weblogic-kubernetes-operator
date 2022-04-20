@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -54,9 +54,14 @@ class VersionCheckTest {
           Arguments.of(LOG_MSG_TEST, "1", "12", "2", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
           Arguments.of(LOG_MSG_TEST, "1", "14", "8", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
           Arguments.of(LOG_MSG_TEST, "1", "15", "7", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
-          Arguments.of(VERSION_TEST, "1", "16", "15", returnsVersion(1, 16), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(VERSION_TEST, "1", "17", "13", returnsVersion(1, 17), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(VERSION_TEST, "1", "18", "10", returnsVersion(1, 18), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(LOG_MSG_TEST, "1", "16", "15", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
+          Arguments.of(LOG_MSG_TEST, "1", "17", "13", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
+          Arguments.of(LOG_MSG_TEST, "1", "18", "10", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
+          Arguments.of(VERSION_TEST, "1", "19", "15", returnsVersion(1, 19), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "20", "13", returnsVersion(1, 20), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "21", "10", returnsVersion(1, 21), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "22", "5", returnsVersion(1, 22), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "23", "7", returnsVersion(1, 23), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(VERSION_TEST, "2", "7", "", returnsVersion(2, 7), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(LOG_MSG_TEST, "2", "", "", containsInfo(K8S_VERSION_CHECK), noIgnores())
         );
