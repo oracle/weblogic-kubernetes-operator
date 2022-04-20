@@ -960,7 +960,7 @@ class ItKubernetesDomainEvents {
     if (verify) {
       logger.info("Verify the DomainCompleted event is generated after " + testType);
       checkEventWithCount(
-          opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
+          opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
 
