@@ -189,7 +189,6 @@ class ItElasticLoggingFluentd {
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
-    //configFluentd();
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
