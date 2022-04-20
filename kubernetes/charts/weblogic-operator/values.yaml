@@ -104,7 +104,7 @@ elkIntegrationEnabled: false
 
 # logStashImage specifies the container image containing Logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
-logStashImage: "logstash:6.6.0"
+logStashImage: "logstash:6.8.23"
 
 # elasticSearchHost specifies the hostname of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
