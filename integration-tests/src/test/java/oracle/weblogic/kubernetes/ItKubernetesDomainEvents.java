@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -120,7 +120,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests related to Domain events logged by operator.
  * The tests checks for the following events in the domain name space.
  * DomainCreated, DomainChanged, DomainDeleted, DomainCompleted,
- * DomainFailed, NamespaceWatchingStarted, and NamespaceWatchingStopped.
+ * DomainFailed.
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
  */
