@@ -97,7 +97,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE
 import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD_EVICTED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -577,7 +576,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_SPEC_CHANGED));
+    return new CyclePodStep(pod, next, null);
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
@@ -1203,7 +1202,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = Optional.ofNullable(getReasonToRecycle(pod, CompatibilityScope.POD)).orElse(message);
+      String reason = Optional.ofNullable(message).orElse(getReasonToRecycle(pod, CompatibilityScope.POD));
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),
