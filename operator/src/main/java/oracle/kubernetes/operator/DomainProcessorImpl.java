@@ -87,6 +87,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -415,7 +417,15 @@ public class DomainProcessorImpl implements DomainProcessor {
         info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
         // fall through
       case "MODIFIED":
-        info.setServerPodFromEvent(serverName, pod);
+        boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
+        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
+          if (PodHelper.shouldRestartEvictedPod(pod)) {
+            LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
+            createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+          } else {
+            LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
+          }
+        }
         break;
       case "DELETED":
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);

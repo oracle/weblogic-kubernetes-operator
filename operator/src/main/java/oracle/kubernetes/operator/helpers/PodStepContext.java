@@ -96,6 +96,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD_EVICTED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -570,8 +572,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
+  Step cycleEvictedPodStep(V1Pod pod, Step next) {
+    return new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_EVICTED));
+  }
+
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next);
+    return new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_SPEC_CHANGED));
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
@@ -1181,10 +1187,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   public class CyclePodStep extends BaseStep {
     private final V1Pod pod;
+    private final String message;
 
-    CyclePodStep(V1Pod pod, Step next) {
+    CyclePodStep(V1Pod pod, Step next, String message) {
       super(next);
       this.pod = pod;
+      this.message = message;
     }
 
     @Override
@@ -1195,7 +1203,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = getReasonToRecycle(pod, CompatibilityScope.POD);
+      String reason = Optional.ofNullable(getReasonToRecycle(pod, CompatibilityScope.POD)).orElse(message);
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),
@@ -1224,6 +1232,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
+      } else if (PodHelper.shouldRestartEvictedPod(currentPod)) {
+        return doNext(cycleEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {
