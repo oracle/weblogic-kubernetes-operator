@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -338,6 +338,9 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
 
   public abstract DomainConfigurator withMonitoringExporterPort(Integer port);
+
+  public abstract DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
+                                                              String credentialName, String fluentdConfig);
 
   /**
    * Adds a default server configuration to the domain, if not already present.

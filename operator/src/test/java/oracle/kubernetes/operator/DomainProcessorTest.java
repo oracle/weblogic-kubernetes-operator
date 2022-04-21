@@ -57,6 +57,8 @@ import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -101,6 +103,9 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
@@ -119,6 +124,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainProcessorTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final String CLUSTER2 = "cluster-2";
@@ -827,6 +833,41 @@ class DomainProcessorTest {
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
   }
 
+  @Test
+  void whenFluentdSpecified_verifyConfigMap() {
+    domainConfigurator
+        .withFluentdConfiguration(true, "fluentd-cred",
+            null)
+        .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+        .map(V1ConfigMap::getData)
+        .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
+
+  }
+
+  @Test
+  void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
+    domainConfigurator
+        .withFluentdConfiguration(true, "fluentd-cred",
+            "<match>me</match>")
+        .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+        .map(V1ConfigMap::getData)
+        .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
+        .orElse(null), equalTo("<match>me</match>"));
+  }
+
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
     establishPreviousIntrospection(domainSetup, Arrays.asList(1,2));
   }
@@ -1434,6 +1475,47 @@ class DomainProcessorTest {
     assertThat(isDomainConditionFailed(), is(false));
   }
 
+  @Test
+  void whenFluentdContainerCrashed_verifyDomainStatusMessage() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatus = createBackoffStatus();
+    establishPreviousIntrospection(null);
+    defineFluentdIntrospectionFailedJob();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createFluentdJobPodAndSetCompletedStatus(job,
+        true, true));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, newDomain.getDomainUid());
+
+    String expectedDetail = LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED,
+        getJobName(),
+        NS, 1, null, null);
+
+    String inDomainStatus = updatedDomain.getStatus().getMessage();
+    assertThat(inDomainStatus.contains(expectedDetail), is(true));
+
+  }
+
+
+  @Test
+  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatus = createBackoffStatus();
+    establishPreviousIntrospection(null);
+    defineFluentdIntrospectionFailedJob();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createFluentdJobPodAndSetCompletedStatus(job,
+        true, false));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, newDomain.getDomainUid());
+    assertThat(isDomainConditionFailed(), is(false));
+
+  }
+
   V1JobStatus createBackoffStatus() {
     return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded"));
@@ -1441,6 +1523,13 @@ class DomainProcessorTest {
 
   private void defineIntrospectionWithInitContainerImagePullError() {
     V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    setJobPodInitContainerStatusImagePullError();
+  }
+
+  private void defineFluentdIntrospectionFailedJob() {
+    V1Job job = asFailedJob(createIntrospectorJob("BackOffLimitExceeded"));
     testSupport.defineResources(job);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
     setJobPodInitContainerStatusImagePullError();
@@ -1479,6 +1568,16 @@ class DomainProcessorTest {
     labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
     testSupport.defineResources(POD,
             new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS)));
+    job.setStatus(createCompletedStatus());
+  }
+
+  private void createFluentdJobPodAndSetCompletedStatus(V1Job job, boolean jobContainerTerminated,
+                                                        boolean fluentdTerminated) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
+    V1Pod pod = new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS));
+    testSupport.defineFluentdJobContainersCompleteStatus(pod, getJobName(), jobContainerTerminated, fluentdTerminated);
+    testSupport.defineResources(POD, pod);
     job.setStatus(createCompletedStatus());
   }
 

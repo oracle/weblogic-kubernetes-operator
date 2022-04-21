@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -29,6 +29,9 @@ public interface ProcessingConstants {
   String JOB_POD_NAME = "jobPodName";
   String JOB_POD_CONTAINER_WAITING_REASON = "jobPodContainerWaitingReason";
   String JOB_POD_INIT_CONTAINER_WAITING_REASON = "jobPodInitContainerWaitingReason";
+  String JOB_POD_INTROSPECT_CONTAINER_TERMINATED = "JOB_POD_CONTAINER_TERMINATED";
+  String JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER = "done";
+  String JOB_POD_FLUENTD_CONTAINER_TERMINATED = "JOB_POD_FLUENTD_CONTAINER_TERMINATED";
   String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";

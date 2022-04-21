@@ -368,6 +368,10 @@
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
+        "fluentdSpecification": {
+          "description": "Automatic fluentd sidecar injection. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. WebLogic Server instances that are already running when the `fluentdSpecification` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod  will have the fluentd sidecar or not, as appropriate",
+          "$ref": "#/definitions/FluentdSpecification"
+        },
         "domainUID": {
           "pattern": "^[a-z0-9-.]{1,45}$",
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
@@ -565,6 +569,54 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/ClusterStatus"
+          }
+        }
+      }
+    },
+    "FluentdSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "fluentdConfiguration": {
+          "description": "The fluentd configuration text, specify your own custom fluentd configuration.",
+          "type": "string"
+        },
+        "elasticSearchCredentials": {
+          "description": "Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "watchIntrospectorLogs": {
+          "description": "Fluentd will watch introspector logs",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "volumeMounts": {
+          "description": "Volume mounts for fluentd container",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         }
       }
