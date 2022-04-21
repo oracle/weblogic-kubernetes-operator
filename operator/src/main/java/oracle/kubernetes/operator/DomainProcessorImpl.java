@@ -406,8 +406,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
         // fall through
       case MODIFIED:
-        boolean podAlreadyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
-        if (PodHelper.isEvicted(pod) && !podAlreadyEvicted) {
+        boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
+        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
             LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
             createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
