@@ -500,17 +500,17 @@ public class PodHelper {
         removeFromServersMarkedForRollMap();
         return doNext(packet);
       }
-    }
 
-    private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
-      return DomainPresenceInfo.fromPacket(packet)
-          .map(DomainPresenceInfo::getServersToRoll)
-          .orElse(Collections.emptyMap());
-    }
+      private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
+        return DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getServersToRoll)
+            .orElse(Collections.emptyMap());
+      }
 
-    private void removeFromServersMarkedForRollMap() {
-      synchronized (packet) {
-        Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
+      private void removeFromServersMarkedForRollMap() {
+        synchronized (packet) {
+          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
+        }
       }
     }
 
