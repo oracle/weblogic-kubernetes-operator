@@ -42,6 +42,7 @@ public interface KubernetesConstants {
   String WEBHOOK_POD_UID_ENV = "WEBHOOK_POD_UID";
   String NAMESPACE = "Namespace";
   String POD = "Pod";
+  String EVICTED_REASON = "Evicted";
 
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 
