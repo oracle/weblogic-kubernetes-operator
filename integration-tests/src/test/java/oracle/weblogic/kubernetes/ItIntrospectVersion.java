@@ -1212,49 +1212,58 @@ class ItIntrospectVersion {
   }
 
   private void verifyIntrospectVersionLabelInPod() {
-
     String introspectVersion
         = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
 
     // verify admin server pods
     logger.info("Verify weblogic.introspectVersion in admin server pod {0}", adminServerPodName);
-    verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion);
+    testUntil(
+        verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion),
+        logger, "waiting for introspectVersion to change to {0} in pod {1}",
+        introspectVersion, adminServerPodName);
+    //verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion);
 
     // verify managed server pods
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       logger.info("Verify weblogic.introspectVersion in cluster1 managed server pod {0}",
           cluster1ManagedServerPodNamePrefix + i);
-      verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion);
+      testUntil(
+          verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion),
+          logger, "waiting for introspectVersion to change to {0} in pod {1}",
+          introspectVersion, cluster1ManagedServerPodNamePrefix + i);
+      //verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion);
     }
 
-    Domain cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
-    if (cr.getSpec().getClusters().size() > 1) {
+    if (cluster2Created) {
       // verify new cluster managed server pods are ready
       for (int i = 1; i <= cluster2ReplicaCount; i++) {
         logger.info("Verify weblogic.introspectVersion in cluster2 managed server pod {0}",
             cluster2ManagedServerPodNamePrefix + i);
-        verifyIntrospectVersionLabelValue(cluster2ManagedServerPodNamePrefix + i, introspectVersion);
+        testUntil(
+            verifyIntrospectVersionLabelValue(cluster2ManagedServerPodNamePrefix + i, introspectVersion),
+            logger, "waiting for introspectVersion to change to {0} in pod {1}",
+            introspectVersion, cluster2ManagedServerPodNamePrefix + i);
+        //verifyIntrospectVersionLabelValue(cluster2ManagedServerPodNamePrefix + i, introspectVersion);
       }
     }
   }
 
-  private void verifyIntrospectVersionLabelValue(String podName, String introspectVersion) {
-    final String wlsIntroVersion = "weblogic.introspectVersion";
-    V1Pod myPod = assertDoesNotThrow(() ->
-        getPod(introDomainNamespace, "", podName),
-        "Get pod " + podName);
-
-    Map<String, String> myLabels = myPod.getMetadata().getLabels();
-
-    for (Map.Entry<String, String> entry : myLabels.entrySet()) {
-      if (entry.getKey().equals(wlsIntroVersion)) {
-        logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
-        logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
-
-        assertTrue(entry.getValue().equals(introspectVersion),
-            "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
+  private Callable<Boolean> verifyIntrospectVersionLabelValue(String podName, String introspectVersion) {
+    return (() -> {
+      final String wlsIntroVersion = "weblogic.introspectVersion";
+      V1Pod myPod = assertDoesNotThrow(() -> getPod(introDomainNamespace, "", podName), "Get pod " + podName);
+      Map<String, String> myLabels = myPod.getMetadata().getLabels();
+      for (Map.Entry<String, String> entry : myLabels.entrySet()) {
+        if (entry.getKey().equals(wlsIntroVersion)) {
+          logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
+          logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
+          if (entry.getValue().equals(introspectVersion)) {
+            return true;
+          }
+        }
       }
-    }
+      return false;
+    });
   }
 
   // copy samples directory to a temporary location
