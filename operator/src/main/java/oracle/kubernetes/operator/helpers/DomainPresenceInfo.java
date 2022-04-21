@@ -290,12 +290,12 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param serverName the name of the server associated with the event
    * @param event the pod associated with the event
-   * @param podFunction function to be applied to the original pod
+   * @param podPredicate predicate to be applied to the original pod
    * @return boolean result from applying the original pod to the podFunction provided
    */
-  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Function<V1Pod, Boolean> podFunction) {
+  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Predicate<V1Pod> podPredicate) {
     updateStatus(serverName, event);
-    return podFunction.apply(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
+    return podPredicate.test(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
   }
 
   private void updateStatus(String serverName, V1Pod event) {
