@@ -678,8 +678,8 @@ class ItIntrospectVersion {
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
+    // set the cluster2Created flag to true.
     cluster2Created = true;
-
   }
 
   /**
