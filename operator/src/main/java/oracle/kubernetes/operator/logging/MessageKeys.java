@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -143,6 +143,11 @@ public class MessageKeys {
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
+  public static final String NON_FATAL_INTROSPECTOR_ERROR = "WLSKO-0197";
+  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0222";
+  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0223";
+  public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
+  public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
