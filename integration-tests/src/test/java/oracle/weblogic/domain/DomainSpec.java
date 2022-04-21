@@ -135,12 +135,13 @@ public class DomainSpec {
    *
    */
   @ApiModelProperty("Automatic fluentd sidecar injection. If "
-          + "specified, the operator "
-          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
-          + "WebLogic Server instances that are already running when the `monitoringExporter` field is created "
-          + "or deleted, will not be affected until they are restarted. When any given server "
-          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
-          + " will have the fluentd sidecar or not, as appropriate")
+      + "specified, the operator "
+      + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, "
+      + "Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. "
+      + "WebLogic Server instances that are already running when the `fluentdSpecification` field is created "
+      + "or deleted, will not be affected until they are restarted. When any given server "
+      + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+      + " will have the fluentd sidecar or not, as appropriate")
   private FluentdSpecification fluentdSpecification;
 
   public FluentdSpecification getFluentdSpecification() {
@@ -816,7 +817,8 @@ public class DomainSpec {
             .append("serverPod", serverPod)
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
-            .append("monitoringExporter", monitoringExporter);
+            .append("monitoringExporter", monitoringExporter)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -853,7 +855,8 @@ public class DomainSpec {
             .append(serverService)
             .append(serverStartState)
             .append(restartVersion)
-            .append(monitoringExporter);
+            .append(monitoringExporter)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -898,7 +901,8 @@ public class DomainSpec {
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)
             .append(restartVersion, rhs.restartVersion)
-            .append(monitoringExporter, rhs.monitoringExporter);
+            .append(monitoringExporter, rhs.monitoringExporter)
+            .append(fluentdSpecification, rhs.fluentdSpecification);
     return builder.isEquals();
   }
 }

@@ -283,6 +283,20 @@ public class DomainPresenceInfo implements PacketComponent {
     getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
   }
 
+  /**
+   * Applies an add or modify event for a server pod. If the current pod is newer than the one
+   * associated with the event, ignores the event.
+   *
+   * @param serverName the name of the server associated with the event
+   * @param event the pod associated with the event
+   * @param podPredicate predicate to be applied to the original pod
+   * @return boolean result from applying the original pod to the podFunction provided
+   */
+  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Predicate<V1Pod> podPredicate) {
+    updateStatus(serverName, event);
+    return podPredicate.test(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
+  }
+
   private void updateStatus(String serverName, V1Pod event) {
     getSko(serverName)
         .getLastKnownStatus()
