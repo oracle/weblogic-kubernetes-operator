@@ -15,7 +15,7 @@ public class ThreadFactorySingleton {
   private static final ThreadFactory DEFAULT_FACTORY = Executors.defaultThreadFactory();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static ThreadFactory instance =
-      (r) -> {
+      r -> {
         Thread t = DEFAULT_FACTORY.newThread(r);
         if (!t.isDaemon()) {
           t.setDaemon(true);

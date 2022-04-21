@@ -611,11 +611,11 @@ class ServerPod extends KubernetesResource {
     this.env = env;
   }
 
-  void addEnvVar(V1EnvVar var) {
+  void addEnvVar(V1EnvVar envVar) {
     if (this.env == null) {
       setEnv(new ArrayList<>());
     }
-    this.env.add(var);
+    this.env.add(envVar);
   }
 
   Map<String, String> getNodeSelector() {
@@ -683,8 +683,8 @@ class ServerPod extends KubernetesResource {
         new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
-  private void addAdditionalVolume(V1Volume var) {
-    volumes.add(var);
+  private void addAdditionalVolume(V1Volume volume) {
+    volumes.add(volume);
   }
 
   void addAdditionalPvClaimVolume(String name, String claimName) {
@@ -698,8 +698,8 @@ class ServerPod extends KubernetesResource {
     addAdditionalVolumeMount(new V1VolumeMount().name(name).mountPath(path));
   }
 
-  private void addAdditionalVolumeMount(V1VolumeMount var) {
-    volumeMounts.add(var);
+  private void addAdditionalVolumeMount(V1VolumeMount volumeMount) {
+    volumeMounts.add(volumeMount);
   }
 
   List<V1Volume> getAdditionalVolumes() {
