@@ -125,20 +125,22 @@ public final class HealthCheckHelper {
    * @param namespace Namespace
    * @param isDomainNamespace if true, verify domain namespace access; otherwise, verify operator-only namespaces access
    */
-  public static void verifyAccess(@Nonnull V1SubjectRulesReviewStatus status, @Nonnull String namespace,
+  public static void verifyAccess(V1SubjectRulesReviewStatus status, @Nonnull String namespace,
                                   boolean isDomainNamespace) {
-    // Validate policies allow service account to perform required operations
-    LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
+    if (status != null) {
+      // Validate policies allow service account to perform required operations
+      LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
 
-    List<V1ResourceRule> rules = status.getResourceRules();
+      List<V1ResourceRule> rules = status.getResourceRules();
 
-    if (isDomainNamespace) {
-      domainNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
-    } else {
-      operatorNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
+      if (isDomainNamespace) {
+        domainNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
+      } else {
+        operatorNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
 
-      if (!OperatorMain.isDedicated()) {
-        clusterAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
+        if (!OperatorMain.isDedicated()) {
+          clusterAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
+        }
       }
     }
   }

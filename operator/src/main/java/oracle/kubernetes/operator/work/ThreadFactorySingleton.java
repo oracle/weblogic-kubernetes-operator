@@ -11,6 +11,7 @@ public class ThreadFactorySingleton {
   private ThreadFactorySingleton() {
     // no-op
   }
+  
   private static final ThreadFactory DEFAULT_FACTORY = Executors.defaultThreadFactory();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static ThreadFactory instance =
