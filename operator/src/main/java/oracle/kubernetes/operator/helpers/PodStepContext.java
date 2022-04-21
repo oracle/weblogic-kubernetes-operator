@@ -456,7 +456,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   abstract String getPodReplacedMessageKey();
 
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, next));
+    return Step.chain(DomainStatusUpdater.createStartRollStep(), new CyclePodStep(pod, createCycleEndStep(next)));
   }
 
   abstract Step createCycleEndStep(Step next);
@@ -1330,8 +1330,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       return doNext(
-          packet.getSpi(PodAwaiterStepFactory.class)
-              .waitForReady(processResponse(callResponse), createCycleEndStep(getNext())),
+          packet.getSpi(PodAwaiterStepFactory.class).waitForReady(processResponse(callResponse), getNext()),
           packet);
     }
   }
