@@ -189,7 +189,6 @@ class ItElasticLoggingFluentd {
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
-    //configFluentd();
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -293,7 +292,8 @@ class ItElasticLoggingFluentd {
     String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
     String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
     logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
-    boolean jobCompeted = results1.contains("Domain introspection complete");
+    // as long as there is something returned
+    boolean jobCompeted = results1.contains("introspectDomain.sh");
     logger.info("found completed job " + jobCompeted);
 
     return count > 0 && failedCount == 0 && jobCompeted;
