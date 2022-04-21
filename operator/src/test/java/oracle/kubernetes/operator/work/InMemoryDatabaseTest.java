@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InMemoryDatabaseTest {
@@ -36,26 +35,22 @@ class InMemoryDatabaseTest {
 
   @Test
   void whenItemAbsent_readThrowsException() {
-    try {
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
       database.read(keys().name(NAME1).namespace(NS1).map());
-      fail("Should have thrown an InMemoryDatabaseException");
-    } catch (InMemoryDatabaseException e) {
-      assertThat(e.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
-    }
+    });
+    assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
   @Test
   void whenItemPresent_createThrowsException() {
     createItem(NAME1, NS1);
 
-    try {
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
       database.create(
           new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
-      fail("Should have thrown an InMemoryDatabaseException");
-    } catch (InMemoryDatabaseException e) {
-      assertThat(e.getCode(), equalTo(HttpURLConnection.HTTP_CONFLICT));
-    }
+    });
+    assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_CONFLICT));
   }
 
   private V1Ingress createItem(String name, String namespace) {
@@ -74,14 +69,12 @@ class InMemoryDatabaseTest {
 
   @Test
   void whenItemAbsent_replaceThrowsException() {
-    try {
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
       database.replace(
           new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
           keys().namespace(NS1).map());
-      fail("Should have thrown an InMemoryDatabaseException");
-    } catch (InMemoryDatabaseException e) {
-      assertThat(e.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
-    }
+    });
+    assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
   @Test
@@ -108,12 +101,10 @@ class InMemoryDatabaseTest {
 
   @Test
   void whenItemToDeletedAbsent_throwException() {
-    try {
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
       database.delete(keys().name(NAME1).namespace(NS1).map());
-      fail("Should have thrown an InMemoryDatabaseException");
-    } catch (InMemoryDatabaseException e) {
-      assertThat(e.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
-    }
+    });
+    assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
   @Test

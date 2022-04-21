@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 
 import com.meterware.simplestub.Memento;
@@ -43,7 +44,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query
@@ -139,13 +140,10 @@ class WatchBuilderTest {
 
   @Test
   void afterWatchError_closeDoesNotReturnClientToPool() {
-
-    try (Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
+    assertThrows(NoSuchElementException.class, () -> {
+      Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
       domainWatch.next();
-      fail("Should have thrown an exception");
-    } catch (Throwable ignore) {
-      // no-op
-    }
+    });
 
     assertThat(ClientPoolStub.getPooledClients(), is(empty()));
   }
