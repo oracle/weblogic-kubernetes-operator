@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -183,6 +183,14 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withMonitoringExporterPort(Integer port) {
     getDomainSpec().setMonitoringExporterPort(port);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
+                                                     String credentialName, String fluendConfig) {
+    getDomainSpec().withFluentdConfiguration(watchIntrospectorLog, credentialName,
+            fluendConfig);
     return this;
   }
 

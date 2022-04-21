@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -491,7 +491,27 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     // Returning an empty array since introspector pod does not start with any additional containers
     // configured in the ServerPod configuration
-    return new ArrayList<>();
+    List<V1Container> containers = new ArrayList<>();
+
+    Optional.ofNullable(getDomain().getFluentdSpecification())
+        .ifPresent(fluentd -> {
+          if (Boolean.TRUE.equals(fluentd.getWatchIntrospectorLogs())) {
+            FluentdHelper.addFluentdContainer(fluentd,
+                    containers, getDomain(), true);
+          }
+        });
+
+    return containers;
+
+  }
+
+  protected List<V1Volume> getFluentdVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(Domain::getFluentdSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+    return volumes;
   }
 
   protected String getDomainHome() {
