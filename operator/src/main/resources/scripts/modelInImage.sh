@@ -1047,6 +1047,7 @@ wdtHandleOnlineUpdate() {
       trace "Exiting wdtHandleOnlineUpdate"
       return
   fi
+  local ret=0
 
   # We need to extract all the archives, WDT online checks for file existence
   # even for delete
@@ -1057,7 +1058,8 @@ wdtHandleOnlineUpdate() {
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1067,7 +1069,8 @@ wdtHandleOnlineUpdate() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1109,7 +1112,7 @@ wdtHandleOnlineUpdate() {
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${archive_list} \
    -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT} 2>&1
 
-  local ret=$?
+  ret=$?
 
   trace "Completed online update="${ret}
   if [ ${ret} -eq ${PROG_RESTART_REQUIRED} ] ; then
@@ -1300,7 +1303,8 @@ prepareMIIServer() {
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1310,7 +1314,8 @@ prepareMIIServer() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
