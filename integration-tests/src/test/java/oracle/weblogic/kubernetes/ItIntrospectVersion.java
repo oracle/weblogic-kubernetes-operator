@@ -788,18 +788,6 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    // use introspectDomain.sh to initiate introspection
-    logger.info("Initiate introspection with string (v1.0)");
-    String introspectVersion = "v1.0";
-    String extraParam = " -i " + introspectVersion;
-    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam),
-        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
-
-    //verify the introspector pod is created and runs
-    String introspectPodNameBase = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
-
     // scale down the cluster by 1
     boolean scalingSuccess = assertDoesNotThrow(()
         -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount - 1),
@@ -1229,6 +1217,9 @@ class ItIntrospectVersion {
   private void verifyIntrospectVersionLabelInPod() {
     String introspectVersion
         = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    if (introspectVersion == null) {
+      return;
+    }
 
     // verify admin server pods
     logger.info("Verify weblogic.introspectVersion in admin server pod {0}", adminServerPodName);
