@@ -143,7 +143,7 @@ image: ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 javaLoggingLevel: INFO
-logStashImage: logstash:6.6.0
+logStashImage: logstash:6.8.23
 remoteDebugNodePortEnabled: false
 serviceAccount: default
 suspendOnDebugStartup: false
