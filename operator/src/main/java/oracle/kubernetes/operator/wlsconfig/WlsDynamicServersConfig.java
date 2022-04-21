@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,8 +15,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * Contains values from a WLS dynamic servers configuration, which configures a WLS dynamic cluster.
  */
 public class WlsDynamicServersConfig {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   String name;
   String serverTemplateName;

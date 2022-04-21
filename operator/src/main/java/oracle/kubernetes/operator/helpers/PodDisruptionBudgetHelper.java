@@ -42,6 +42,11 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
  * Operations for dealing with namespaces.
  */
 public class PodDisruptionBudgetHelper {
+
+  private PodDisruptionBudgetHelper() {
+    // no-op
+  }
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   public static final String PDB_API_VERSION = "policy/v1";
 

@@ -465,17 +465,17 @@ class ServerPod extends KubernetesResource {
   }
 
   void fillInFrom(ServerPod serverPod1) {
-    for (V1EnvVar var : serverPod1.getV1EnvVars()) {
-      addIfMissing(var);
+    for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
+      addIfMissing(envVar);
     }
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
-    for (V1Volume var : serverPod1.getAdditionalVolumes()) {
-      addIfMissing(new V1VolumeBuilder(var).build());
+    for (V1Volume volume : serverPod1.getAdditionalVolumes()) {
+      addIfMissing(new V1VolumeBuilder(volume).build());
     }
-    for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
-      addIfMissing(new V1VolumeMountBuilder(var).build());
+    for (V1VolumeMount volumeMount : serverPod1.getAdditionalVolumeMounts()) {
+      addIfMissing(new V1VolumeMountBuilder(volumeMount).build());
     }
     for (V1Container c : serverPod1.getInitContainers()) {
       addInitContainerIfMissing(createWithEnvCopy(c));
@@ -521,21 +521,21 @@ class ServerPod extends KubernetesResource {
     return new V1ContainerBuilder(c).withEnv(createCopy(c.getEnv())).build();
   }
 
-  private void addIfMissing(V1Volume var) {
-    if (!hasVolumeName(var.getName())) {
-      addAdditionalVolume(var);
+  private void addIfMissing(V1Volume volume) {
+    if (!hasVolumeName(volume.getName())) {
+      addAdditionalVolume(volume);
     }
   }
 
-  private void addIfMissing(V1EnvVar var) {
-    if (!hasEnvVar(var.getName())) {
-      addEnvVar(var);
+  private void addIfMissing(V1EnvVar envVar) {
+    if (!hasEnvVar(envVar.getName())) {
+      addEnvVar(envVar);
     }
   }
 
-  private void addIfMissing(V1VolumeMount var) {
-    if (!hasVolumeMountName(var.getName())) {
-      addAdditionalVolumeMount(var);
+  private void addIfMissing(V1VolumeMount volumeMount) {
+    if (!hasVolumeMountName(volumeMount.getName())) {
+      addAdditionalVolumeMount(volumeMount);
     }
   }
 
@@ -559,8 +559,8 @@ class ServerPod extends KubernetesResource {
     if (env == null) {
       return false;
     }
-    for (V1EnvVar var : env) {
-      if (var.getName().equals(name)) {
+    for (V1EnvVar envVar : env) {
+      if (envVar.getName().equals(name)) {
         return true;
       }
     }
@@ -568,8 +568,8 @@ class ServerPod extends KubernetesResource {
   }
 
   private boolean hasVolumeName(String name) {
-    for (V1Volume var : volumes) {
-      if (var.getName().equals(name)) {
+    for (V1Volume volume : volumes) {
+      if (volume.getName().equals(name)) {
         return true;
       }
     }
@@ -577,8 +577,8 @@ class ServerPod extends KubernetesResource {
   }
 
   private boolean hasVolumeMountName(String name) {
-    for (V1VolumeMount var : volumeMounts) {
-      if (var.getName().equals(name)) {
+    for (V1VolumeMount volumeMount : volumeMounts) {
+      if (volumeMount.getName().equals(name)) {
         return true;
       }
     }

@@ -8,8 +8,6 @@ import java.util.List;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceAttributes;
-import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
-import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReviewSpec;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReviewSpec;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
@@ -86,17 +84,6 @@ public class AuthorizationProxy {
     return result;
   }
 
-  private Boolean createSelfSubjectAccessReview(V1SelfSubjectAccessReview subjectAccessReview) {
-    try {
-      subjectAccessReview = new CallBuilder().createSelfSubjectAccessReview(subjectAccessReview);
-      V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
-      return subjectAccessReviewStatus.getAllowed();
-    } catch (ApiException e) {
-      LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW, e);
-      return false;
-    }
-  }
-
   /**
    * Prepares an instance of SubjectAccessReview and returns same.
    *
@@ -135,27 +122,6 @@ public class AuthorizationProxy {
     return subjectAccessReview;
   }
 
-  private V1SelfSubjectAccessReview prepareSelfSubjectAccessReview(
-      Operation operation,
-      Resource resource,
-      String resourceName,
-      Scope scope,
-      String namespaceName) {
-    LOGGER.entering();
-    V1SelfSubjectAccessReviewSpec subjectAccessReviewSpec = new V1SelfSubjectAccessReviewSpec();
-
-    subjectAccessReviewSpec.setResourceAttributes(
-        prepareResourceAttributes(operation, resource, resourceName, scope, namespaceName));
-
-    V1SelfSubjectAccessReview subjectAccessReview = new V1SelfSubjectAccessReview();
-    subjectAccessReview.setApiVersion("authorization.k8s.io/v1");
-    subjectAccessReview.setKind("SelfSubjectAccessReview");
-    subjectAccessReview.setMetadata(new V1ObjectMeta());
-    subjectAccessReview.setSpec(subjectAccessReviewSpec);
-    LOGGER.exiting(subjectAccessReview);
-    return subjectAccessReview;
-  }
-
   /**
    * Prepares an instance of ResourceAttributes and returns same.
    *
@@ -179,7 +145,7 @@ public class AuthorizationProxy {
       resourceAttributes.setVerb(operation.toString());
     }
     if (null != resource) {
-      resourceAttributes.setResource(resource.resource);
+      resourceAttributes.setResource(resource.resourceName);
       resourceAttributes.setSubresource(resource.subResource);
       resourceAttributes.setGroup(resource.apiGroup);
     }
@@ -246,22 +212,22 @@ public class AuthorizationProxy {
     TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
     SECRETS("secrets", "");
 
-    private final String resource;
+    private final String resourceName;
     private final String subResource;
     private final String apiGroup;
 
-    Resource(String resource, String apiGroup) {
-      this(resource, "", apiGroup);
+    Resource(String resourceName, String apiGroup) {
+      this(resourceName, "", apiGroup);
     }
 
-    Resource(String resource, String subResource, String apiGroup) {
-      this.resource = resource;
+    Resource(String resourceName, String subResource, String apiGroup) {
+      this.resourceName = resourceName;
       this.subResource = subResource;
       this.apiGroup = apiGroup;
     }
 
-    public String getResource() {
-      return resource;
+    public String getResourceName() {
+      return resourceName;
     }
 
     public String getSubResource() {
@@ -274,7 +240,7 @@ public class AuthorizationProxy {
 
     @Override
     public String toString() {
-      return String.valueOf(this.resource);
+      return String.valueOf(this.resourceName);
     }
   }
 
