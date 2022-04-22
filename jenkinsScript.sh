@@ -113,7 +113,6 @@ curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud
 chmod +x "${WORKSPACE}/bin/kind"
 kind version
 
-export TWO_CLUSTERS=false
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}
 
