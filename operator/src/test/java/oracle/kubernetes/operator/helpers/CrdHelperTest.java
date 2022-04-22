@@ -52,6 +52,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class CrdHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
@@ -200,13 +201,15 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt() {
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
-    existing.getSpec().addVersionsItem(
-            new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
-            .conversion(new V1CustomResourceConversion().strategy("Webhook"));
-    testSupport.defineResources(existing);
+    assertDoesNotThrow(() -> {
+      V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+      existing.getSpec().addVersionsItem(
+              new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+          .conversion(new V1CustomResourceConversion().strategy("Webhook"));
+      testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+      testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    });
   }
 
   @Test

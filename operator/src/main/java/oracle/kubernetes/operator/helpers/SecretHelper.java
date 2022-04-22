@@ -21,6 +21,11 @@ import static oracle.kubernetes.operator.helpers.SecretType.WEBLOGIC_CREDENTIALS
 
 /** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator. */
 public class SecretHelper {
+
+  private SecretHelper() {
+    // no-op
+  }
+
   // Admin Server Credentials Type Secret
   // has 2 fields (username and password)
   public static final String USERNAME_KEY = "username";

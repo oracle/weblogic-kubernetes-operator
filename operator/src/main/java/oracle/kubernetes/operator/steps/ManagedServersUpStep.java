@@ -198,7 +198,7 @@ public class ManagedServersUpStep extends Step {
      *         otherwise.
      */
     boolean shouldPrecreateServerService(ServerSpec server) {
-      if (server.isPrecreateServerService()) {
+      if (Boolean.TRUE.equals(server.isPrecreateServerService())) {
         // skip pre-create if admin server and managed server are both shutting down
         return ! (domain.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
       }

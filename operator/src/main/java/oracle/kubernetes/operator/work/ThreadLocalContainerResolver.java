@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -74,8 +74,8 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
       return null;
     }
 
-    Function<Runnable, Runnable> wrap =
-        (x) -> () -> {
+    UnaryOperator<Runnable> wrap =
+        x -> () -> {
           Container old = enterContainer(container);
           try {
             x.run();
@@ -90,8 +90,8 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
           }
         };
 
-    Function<Callable<?>, Callable<?>> wrap2 =
-        (x) -> () -> {
+    UnaryOperator<Callable<?>> wrap2 =
+        x -> () -> {
           Container old = enterContainer(container);
           try {
             return x.call();
@@ -106,8 +106,8 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
           }
         };
 
-    Function<Collection<? extends Callable<?>>, Collection<? extends Callable<?>>> wrap2c =
-        (x) -> x.stream().map(wrap2).collect(Collectors.toList());
+    UnaryOperator<Collection<? extends Callable<?>>> wrap2c =
+        x -> x.stream().map(wrap2).collect(Collectors.toList());
 
     return new ScheduledExecutorService() {
 

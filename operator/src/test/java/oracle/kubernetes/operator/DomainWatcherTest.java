@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /** This test class verifies the behavior of the DomainWatcher. */
 class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
@@ -47,6 +48,7 @@ class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain>
 
   @Test
   void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
+
     Watcher<?> watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
 
     assertThat(watcher.getResourceVersion(), is(BOOKMARK_RESOURCE_VERSION));
@@ -54,7 +56,9 @@ class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain>
 
   @Test
   void whenDomainAdded_createPersistentVolumeClaim() {
-    scheduleAddResponse(domain);
+    assertDoesNotThrow(() -> {
+      scheduleAddResponse(domain);
+    });
   }
 
   @SuppressWarnings("unchecked")

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -50,22 +51,22 @@ public abstract class BaseDebugLoggingFilter {
 
     // Note: the header names are case-insensitive
     final String atz = HttpHeaders.AUTHORIZATION.toLowerCase();
-    for (String key : loggableHeaders.keySet()) {
-      if (atz.equals(key.toLowerCase())) {
+    for (Map.Entry<String, List<String>> entry : loggableHeaders.entrySet()) {
+      if (atz.equals(entry.getKey().toLowerCase())) {
         // make a copy of all the atz header values
-        List<String> vals = new ArrayList<>(loggableHeaders.get(key));
+        List<String> vals = new ArrayList<>(entry.getValue());
         // hide the sensitive data in the atz header values
-        for (int i = 0; i < vals.size(); i++) {
-          // By definition, the value of an Authorization header should be in the form
-          // "<type> <credential>".  Ideally, we'd change the <credential> part of the
-          // value to something like "*****" so that the log would at least show what
-          // types of Authorization headers are in the request.  But then we'd need to
-          // worry about malformed Authorization headers.
-          // For now, keep it simple and set the each value to "*****".
-          vals.set(i, "*****");
-        }
+        vals.replaceAll(ignored ->
+            // By definition, the value of an Authorization header should be in the form
+            // "<type> <credential>".  Ideally, we'd change the <credential> part of the
+            // value to something like "*****" so that the log would at least show what
+            // types of Authorization headers are in the request.  But then we'd need to
+            // worry about malformed Authorization headers.
+            // For now, keep it simple and set the each value to "*****".
+            "*****"
+        );
         // replace the original atz header values with ones that hide the credentials
-        loggableHeaders.put(key, vals);
+        loggableHeaders.put(entry.getKey(), vals);
       }
     }
 
