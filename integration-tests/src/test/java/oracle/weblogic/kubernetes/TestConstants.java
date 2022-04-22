@@ -23,8 +23,6 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.collect.logs.on.success", "false"));
   public static final int SLEEP_SECONDS_AFTER_FAILURE =
       Integer.parseInt(getNonEmptySystemProperty("wko.it.sleep.seconds.after.failure", "0"));
-  public static boolean TWO_CLUSTERS =
-      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.two.clusters", "false"));
   public static final String K8S_NODEPORT_HOST1 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host1");
   public static final String K8S_NODEPORT_HOST2 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host2");
   public static final String OPDEMO = getNonEmptySystemProperty("wko.it.opdemo");
