@@ -24,14 +24,14 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
     ```shell
     $ kubectl -n domain-namespace-1 \
             create secret generic domain1-weblogic-credentials \
-            --from-literal=username=username \
-            --from-literal=password=password
+            --from-literal=username=<the user name> \
+            --from-literal=password=<the actual password>
     ```
 
     * Replace `domain-namespace-1` with the namespace that the domain will be in.
     * Replace `domain1-weblogic-credentials` with the name of the secret. It is a recommended best practice to name the secret using the domain's `domainUID` followed by the literal string `-weblogic-credentials` where `domainUID` is a unique identifier for the domain. Many of the samples follow this practice and use a `domainUID` of `domain1` or `sample-domain1`.
-    * Replace the string `username` in the third line with the user name for the administrative user.
-    * Replace the string `password` in the fourth line with the password.
+    * In the third line, enter the user name for the administrative user.
+    * In the fourth line, enter the password.
 
 1. Optionally, [create a PV & PersistentVolumeClaim (PVC)]({{< relref "/samples/storage/_index.md" >}}) which can hold the domain home, logs, and application binaries.
    Even if you put your domain in an image, you may want to put the logs on a persistent volume so that they are available after the pods terminate.
