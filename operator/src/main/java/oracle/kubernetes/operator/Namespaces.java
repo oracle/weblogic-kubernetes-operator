@@ -216,9 +216,7 @@ public class Namespaces {
      */
     @SuppressWarnings("unchecked")
     Collection<String> getFoundDomainNamespaces(Packet packet) {
-      if (!packet.containsKey(ALL_DOMAIN_NAMESPACES)) {
-        packet.put(ALL_DOMAIN_NAMESPACES, new HashSet<>());
-      }
+      packet.putIfAbsent(ALL_DOMAIN_NAMESPACES, new HashSet<>());
       return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
     }
 

@@ -4,8 +4,8 @@
 package oracle.kubernetes.operator.rest;
 
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import javax.annotation.Priority;
 
 import jakarta.ws.rs.WebApplicationException;
@@ -88,14 +88,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
   }
 
   private ResourceBundle getResourceBundle(Locale locale) {
-    // TODO - use the resource bundle for the client's locale, not the server's locale
-    for (Logger l = LOGGER.getUnderlyingLogger(); l != null; l = l.getParent()) {
-      ResourceBundle rb = l.getResourceBundle();
-      if (rb != null) {
-        return rb;
-      }
-    }
-    throw new AssertionError("Could not find the resource bundle");
+    return ResourceBundle.getBundle("Operator", Optional.ofNullable(locale).orElse(Locale.getDefault()));
   }
 
   private void authenticationFailure(Throwable cause) {

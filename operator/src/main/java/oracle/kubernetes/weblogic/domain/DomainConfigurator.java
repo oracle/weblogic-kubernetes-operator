@@ -37,7 +37,8 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
-  public DomainConfigurator() {
+  protected DomainConfigurator() {
+    // no-op
   }
 
   protected DomainConfigurator(Domain domain) {

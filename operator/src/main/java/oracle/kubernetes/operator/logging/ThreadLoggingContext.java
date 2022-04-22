@@ -47,7 +47,7 @@ public class ThreadLoggingContext extends LoggingContext implements AutoCloseabl
     return Optional.ofNullable(currentContext.get());
   }
 
-
+  @Override
   public void close() {
     currentContext.remove();
   }
