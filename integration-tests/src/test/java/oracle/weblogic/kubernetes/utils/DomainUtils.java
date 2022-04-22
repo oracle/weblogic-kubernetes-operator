@@ -662,7 +662,7 @@ public class DomainUtils {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
-            .dataHome("/u01/mydata")
+            .dataHome("/u01/oracle/mydata")
             .domainHomeSourceType("Image")
             .image(imageName)
             .addImagePullSecretsItem(new V1LocalObjectReference()
