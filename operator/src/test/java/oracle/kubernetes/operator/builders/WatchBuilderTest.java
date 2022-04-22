@@ -14,6 +14,7 @@ import java.util.Queue;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -139,9 +140,9 @@ class WatchBuilderTest {
   }
 
   @Test
-  void afterWatchError_closeDoesNotReturnClientToPool() {
+  void afterWatchError_closeDoesNotReturnClientToPool() throws ApiException {
+    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
     assertThrows(NoSuchElementException.class, () -> {
-      Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
       domainWatch.next();
     });
 

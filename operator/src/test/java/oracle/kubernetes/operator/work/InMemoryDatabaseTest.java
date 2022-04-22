@@ -35,8 +35,9 @@ class InMemoryDatabaseTest {
 
   @Test
   void whenItemAbsent_readThrowsException() {
+    Map<String, String> keys = keys().name(NAME1).namespace(NS1).map();
     InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.read(keys().name(NAME1).namespace(NS1).map());
+      database.read(keys);
     });
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
@@ -45,10 +46,10 @@ class InMemoryDatabaseTest {
   void whenItemPresent_createThrowsException() {
     createItem(NAME1, NS1);
 
+    V1Ingress item = new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1));
+    Map<String, String> keys = keys().namespace(NS1).map();
     InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.create(
-          new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
-          keys().namespace(NS1).map());
+      database.create(item, keys);
     });
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_CONFLICT));
   }
@@ -69,10 +70,10 @@ class InMemoryDatabaseTest {
 
   @Test
   void whenItemAbsent_replaceThrowsException() {
+    V1Ingress item = new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1));
+    Map<String, String> keys = keys().namespace(NS1).map();
     InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.replace(
-          new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
-          keys().namespace(NS1).map());
+      database.replace(item, keys);
     });
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
@@ -95,14 +96,16 @@ class InMemoryDatabaseTest {
     createItem(NAME1, NS1);
     database.delete(keys().name(NAME1).namespace(NS1).map());
 
+    Map<String, String> keys = keys().name(NAME1).namespace(NS1).map();
     assertThrows(InMemoryDatabaseException.class,
-          () -> database.read(keys().name(NAME1).namespace(NS1).map()));
+          () -> database.read(keys));
   }
 
   @Test
   void whenItemToDeletedAbsent_throwException() {
+    Map<String, String> keys = keys().name(NAME1).namespace(NS1).map();
     InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.delete(keys().name(NAME1).namespace(NS1).map());
+      database.delete(keys);
     });
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
