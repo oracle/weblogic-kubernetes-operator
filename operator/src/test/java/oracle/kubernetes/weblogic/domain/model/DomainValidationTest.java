@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -1406,6 +1406,17 @@ class DomainValidationTest extends DomainValidationBaseTest {
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
         "DomainUID", domainUID, "server", msName,
         "does not have a port available for the operator to send REST calls.")));
+  }
+
+  @Test
+  void whenDomainConfiguredWithFluentdWithoutCredentials_reportError() {
+    configureDomain(domain)
+        .withFluentdConfiguration(false, null, null);
+    domain.getValidationFailures(resourceLookup);
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "
+                + "spec, a secret containing elastic search credentials must be specified in",
+            "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

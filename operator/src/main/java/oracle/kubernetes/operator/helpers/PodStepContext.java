@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -93,7 +94,9 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.FluentdHelper.addFluentdContainer;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -568,8 +571,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
+  Step cycleEvictedPodStep(V1Pod pod, Step next) {
+    return new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_EVICTED));
+  }
+
   Step createCyclePodStep(V1Pod pod, Step next) {
-    return new CyclePodStep(pod, next);
+    return new CyclePodStep(pod, next, null);
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
@@ -923,7 +930,18 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Container> getContainers() {
     List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
     exporterContext.addContainer(containers);
+    Optional.ofNullable(getDomain().getFluentdSpecification())
+        .ifPresent(fluentd -> addFluentdContainer(fluentd, containers, getDomain(), false));
     return containers;
+  }
+
+  protected List<V1Volume> getFluentdVolumes() {
+    List<V1Volume> volumes = new ArrayList<>();
+    Optional.ofNullable(getDomain())
+            .map(Domain::getFluentdSpecification)
+            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+    return volumes;
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
@@ -1168,10 +1186,12 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   public class CyclePodStep extends BaseStep {
     private final V1Pod pod;
+    private final String message;
 
-    CyclePodStep(V1Pod pod, Step next) {
+    CyclePodStep(V1Pod pod, Step next, String message) {
       super(next);
       this.pod = pod;
+      this.message = message;
     }
 
     @Override
@@ -1182,7 +1202,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private Step createCyclePodEventStep(Step next) {
-      String reason = getReasonToRecycle(pod, CompatibilityScope.POD);
+      String reason = Optional.ofNullable(message).orElse(getReasonToRecycle(pod, CompatibilityScope.POD));
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),
@@ -1211,6 +1231,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
+      } else if (PodHelper.shouldRestartEvictedPod(currentPod)) {
+        return doNext(cycleEvictedPodStep(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else {

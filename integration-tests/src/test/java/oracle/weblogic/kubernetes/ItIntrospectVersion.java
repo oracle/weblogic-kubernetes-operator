@@ -32,6 +32,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterStatus;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
@@ -44,13 +45,10 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
-import org.awaitility.core.EvaluatedCondition;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -72,15 +70,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -89,13 +84,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -105,6 +99,9 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -112,7 +109,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
@@ -143,14 +139,35 @@ class ItIntrospectVersion {
   private static String introDomainNamespace = null;
 
   private static final String domainUid = "myintrodomain";
+  private static final String cluster1Name = "mycluster";
+  private static final String adminServerName = "admin-server";
+  private static final String adminServerPodName = domainUid + "-" + adminServerName;
+  private static final String cluster1ManagedServerNameBase = "managed-server";
+  private static final String cluster1ManagedServerPodNamePrefix = domainUid + "-" + cluster1ManagedServerNameBase;
 
-  private final String wlSecretName = "weblogic-credentials";
+  private static final String cluster2Name = "cl2";
+  private static final String cluster2ManagedServerNameBase = cluster2Name + "ms";
+  private static final String cluster2ManagedServerPodNamePrefix = domainUid + "-" + cluster2ManagedServerNameBase;
+
+
+  private static int cluster1ReplicaCount = 2;
+  private static int cluster2ReplicaCount = 2;
+  private static boolean cluster2Created = false;
+
+  private static final int t3ChannelPort = getNextFreePort();
+
+  private static final String pvName = getUniqueName(domainUid + "-pv-");
+  private static final String pvcName = getUniqueName(domainUid + "-pvc-");
+
+  private static final String wlSecretName = "weblogic-credentials";
+  private static String wlsUserName = ADMIN_USERNAME_DEFAULT;
+  private static String wlsPassword = ADMIN_PASSWORD_DEFAULT;
 
   private static String adminSvcExtHost = null;
   private static String clusterRouteHost = null;
 
+  private Map<String, OffsetDateTime> cl1podsWithTimeStamps = null;
   private Map<String, OffsetDateTime> cl2podsWithTimeStamps = null;
-  private Map<String, OffsetDateTime> myclusterpodsWithTimeStamps = null;
 
   private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
@@ -165,7 +182,7 @@ class ItIntrospectVersion {
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
-  private final int managedServerPort = 7100;
+  private static final int managedServerPort = 7100;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -192,14 +209,17 @@ class ItIntrospectVersion {
     createSecretForBaseImages(introDomainNamespace);
 
     // build the clusterview application
+    Path targetDir = Paths.get(WORK_DIR,
+         ItIntrospectVersion.class.getName() + "/clusterviewapp");
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", introDomainNamespace);
+        "dist", introDomainNamespace, targetDir);
     assertTrue(Paths.get(distDir.toString(),
         "clusterview.war").toFile().exists(),
         "Application archive is not available");
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
     setupSample();
+    createDomain();
   }
 
   /**
@@ -211,171 +231,23 @@ class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
-  @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   @Tag("gate")
   void testDomainIntrospectVersionNotRolling() {
 
-    final String clusterName = "mycluster";
+    // get the pod creation time stamps
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
 
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String clusterServiceName = domainUid + "-cluster-" + clusterName;
-
-    final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    int replicaCount = 2;
-
-    final int t3ChannelPort = getNextFreePort();
-
-    final String pvName = getUniqueName(domainUid + "-pv-");
-    final String pvcName = getUniqueName(domainUid + "-pvc-");
-
-    // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
-    // delete the PV first in case it exists
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    deletePersistentVolumeClaim(pvcName, introDomainNamespace);
-    deletePersistentVolume(pvName);
-    // wait until the pv is deleted
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume {0} deleted "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                pvName,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvNotExists(pvName, labelSelector),
-            String.format("pvNotExists failed with ApiException when checking pv %s", pvName)));
-
-    createPV(pvName, domainUid, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
-
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", "properties"),
-        "Failed to create domain properties file");
-    Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
-    p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
-    p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
-    p.setProperty("number_of_ms", "2");
-    p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", "/shared/logs");
-    p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(() ->
-            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-        "Failed to write domain properties file");
-
-    // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
-
-    // create configmap and domain on persistent volume using the WLST script and property file
-    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, introDomainNamespace);
-
-    // create a domain custom resource configuration object
-    logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(introDomainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(Arrays.asList(
-                new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only in non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(introDomainNamespace))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
-            .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.kernel.debug=true "
-                        + "-Dweblogic.debug.DebugMessaging=true "
-                        + "-Dweblogic.debug.DebugConnection=true "
-                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
-                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
-                        + "-Dweblogic.debug.DebugJNDI=true "
-                        + "-Dweblogic.debug.DebugJNDIResolution=true "
-                        + "-Dweblogic.debug.DebugCluster=true "
-                        + "-Dweblogic.ResolveDNSName=true "
-                        + "-Dweblogic.MaxMessageSize=20000000"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addVolumesItem(new V1Volume()
-                    .name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .mountPath("/shared")
-                    .name(pvName)))
-            .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
-    setPodAntiAffinity(domain);
-    // verify the domain custom resource is created
-    createDomainAndVerify(domain, introDomainNamespace);
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, introDomainNamespace);
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      pods.put(cluster1ManagedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, cluster1ManagedServerPodNamePrefix + i));
     }
 
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
-
-    if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
-    }
-
-    // deploy application and verify all servers functions normally
     logger.info("Getting port for default channel");
     int defaultChannelPort = assertDoesNotThrow(()
         -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
@@ -383,62 +255,16 @@ class ItIntrospectVersion {
     logger.info("default channel port: {0}", defaultChannelPort);
     assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
-    int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-    logger.info("Admin Server default node port : {0}", serviceNodePort);
-    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        clusterViewAppPath, clusterName);
-    //ExecResult result = null;
-    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
-
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Deploying the application using Rest"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
-                       ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-                       targets, clusterViewAppPath, null, "clusterview"));
-          return result.stdout().equals("202");
-        });
-
-    List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
-    }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    logger.info("change the cluster size to 3 and verify the introspector runs and updates the domain status");
+    logger.info("change the cluster1 size to 3 and verify the introspector runs and updates the domain status");
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
     p1.setProperty("admin_host", adminServerPodName);
     p1.setProperty("admin_port", Integer.toString(defaultChannelPort));
-    p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p1.setProperty("cluster_name", clusterName);
+    p1.setProperty("admin_username", wlsUserName);
+    p1.setProperty("admin_password", wlsPassword);
+    p1.setProperty("cluster_name", cluster1Name);
     p1.setProperty("max_cluster_size", Integer.toString(3));
     p1.setProperty("test_name", "change_server_count");
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
@@ -450,13 +276,13 @@ class ItIntrospectVersion {
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
-    String patchStr =
-        "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
-            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-            + "]";
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
 
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
@@ -468,51 +294,41 @@ class ItIntrospectVersion {
     checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the maximum cluster size is updated to expected value
-    withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
-      @Override
-      public void conditionEvaluated(EvaluatedCondition condition) {
-        logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
-            clusterName, 3);
+    testUntil(() -> {
+      Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
+      for (ClusterStatus clusterStatus : res.getStatus().getClusters()) {
+        if (clusterStatus.clusterName().equals(cluster1Name)) {
+          return clusterStatus.getMaximumReplicas() == 3;
+        }
       }
-    })
-        .until((Callable<Boolean>) () -> {
-              Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
-              return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
-            }
-        );
+      return false;
+    }, logger, "Domain.status.clusters.{0}.maximumReplicas to be {1}", cluster1Name, 3);
 
     // verify the 3rd server pod comes up
-    checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
-    checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
+    checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
 
-    // verify existing managed server services are not affected
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-    }
-
-    // verify existing managed server pods are not affected
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    // verify existing managed server services and pods are not affected
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     // verify existing pods are not restarted
     podStateNotChanged(adminServerPodName, domainUid, introDomainNamespace, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      podStateNotChanged(managedServerPodNamePrefix + i,
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      podStateNotChanged(cluster1ManagedServerPodNamePrefix + i,
           domainUid, introDomainNamespace, pods.get(i));
     }
 
+    List<String> managedServerNames = new ArrayList<String>();
     managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+    for (int i = 1; i <= cluster1ReplicaCount + 1; i++) {
+      managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
     // verify each managed server can see other member in the cluster
 
@@ -520,10 +336,13 @@ class ItIntrospectVersion {
       verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
     }
 
+    //update the global replica count since the test changed the replica count of cluster1 to 3
+    cluster1ReplicaCount = 3;
+
     // verify when a domain resource has spec.introspectVersion configured,
     // all WebLogic server pods will have a label "weblogic.introspectVersion"
     // set to the value of spec.introspectVersion.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    verifyIntrospectVersionLabelInPod();
   }
 
   /**
@@ -536,29 +355,10 @@ class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
-  @Order(2)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   void testDomainIntrospectVersionRolling() {
-
-    final String clusterName = "mycluster";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    final int replicaCount = 3;
     final int newAdminPort = 7005;
-
-    checkServiceExists(adminServerPodName, introDomainNamespace);
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
 
     // get the pod creation time stamps
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -566,16 +366,16 @@ class ItIntrospectVersion {
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      pods.put(cluster1ManagedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, cluster1ManagedServerPodNamePrefix + i));
     }
 
     //change admin port from 7001 to 7005
     String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
 
     String curlCmd = "curl -v -m 60"
-        + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -u " + wlsUserName + ":" + wlsPassword
         + " -H X-Requested-By:MyClient "
         + " -H Accept:application/json "
         + " -H Content-Type:application/json -d \"{listenPort: " + newAdminPort + "}\" "
@@ -602,49 +402,27 @@ class ItIntrospectVersion {
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, introDomainNamespace);
+    // verify the admin server service and pod created
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    // verify managed server services and pods are created
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
-
-    /* commented due to bug Bugs - OWLS-89879
     //verify the introspectVersion change causes the domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
-
-    CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the domain resource changed message");
-    assertTrue(event.getMessage().contains("resource changed"));
-
-    event = getEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the property changed in domain resource");
-    assertTrue(event.getMessage().contains("ADMIN_PORT"));
-
+    // The following event is not genereted in release/3.4 Bug - OWLS-89879
+    /*
     checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
     */
-
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
@@ -653,12 +431,12 @@ class ItIntrospectVersion {
         "Updated admin server port is not equal to expected value");
 
     List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
     // verify each managed server can see other member in the cluster
     for (String managedServerName : managedServerNames) {
@@ -667,7 +445,7 @@ class ItIntrospectVersion {
 
     // verify when a domain/cluster is rolling restarted without changing the spec.introspectVersion,
     // all server pods' weblogic.introspectVersion label stay unchanged after the pods are restarted.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    verifyIntrospectVersionLabelInPod();
   }
 
   /**
@@ -679,18 +457,9 @@ class ItIntrospectVersion {
    * e. Make a REST api call to access management console using new password.
    * f. Make a REST api call to access management console using old password.
    */
-  @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   void testCredentialChange() {
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    int replicaCount = 3;
 
     logger.info("Getting port for default channel");
     int adminServerPort
@@ -703,9 +472,9 @@ class ItIntrospectVersion {
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      pods.put(cluster1ManagedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, cluster1ManagedServerPodNamePrefix + i));
     }
 
     // create a temporary WebLogic WLST property file
@@ -771,24 +540,24 @@ class ItIntrospectVersion {
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, introDomainNamespace);
+    // verify the admin server service and pod created
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
-    // verify new cluster managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    // verify managed server services and pods are created
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    // verify new cluster managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    Domain cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
+    if (cluster2Created) {
+      // verify new cluster managed server pods are ready
+      for (int i = 1; i <= cluster2ReplicaCount; i++) {
+        logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+            cluster2ManagedServerPodNamePrefix + i, introDomainNamespace);
+        checkPodReadyAndServiceExists(cluster2ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+      }
     }
 
     logger.info("Getting node port for default channel");
@@ -800,16 +569,15 @@ class ItIntrospectVersion {
     // Make a REST API call to access management console
     // So that the test will also work with WebLogic slim image
     final boolean VALID = true;
-    final boolean INVALID = false;
     logger.info("Check that after patching current credentials are not valid and new credentials are");
     verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
-         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, !VALID);
     verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
     List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
 
     //verify admin server accessibility and the health of cluster members
@@ -817,7 +585,9 @@ class ItIntrospectVersion {
 
     // verify when the spec.introspectVersion is changed,
     // all running server pods' weblogic.introspectVersion label is updated to the new value.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    verifyIntrospectVersionLabelInPod();
+    wlsUserName = ADMIN_USERNAME_PATCH;
+    wlsPassword = ADMIN_PASSWORD_PATCH;
   }
 
   /**
@@ -828,20 +598,9 @@ class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
-  @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
   void testCreateNewCluster() {
-
-    final String clusterName = "cl2";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "cl2-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    final int replicaCount = 2;
 
     logger.info("Getting port for default channel");
     int adminServerPort
@@ -853,11 +612,11 @@ class ItIntrospectVersion {
     Properties p = new Properties();
     p.setProperty("admin_host", adminServerPodName);
     p.setProperty("admin_port", Integer.toString(adminServerPort));
-    p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
-    p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
+    p.setProperty("admin_username", wlsUserName);
+    p.setProperty("admin_password", wlsPassword);
     p.setProperty("test_name", "create_cluster");
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("server_prefix", managedServerNameBase);
+    p.setProperty("cluster_name", cluster2Name);
+    p.setProperty("server_prefix", cluster2ManagedServerNameBase);
     p.setProperty("server_count", "3");
     assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
@@ -872,7 +631,7 @@ class ItIntrospectVersion {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
@@ -887,28 +646,23 @@ class ItIntrospectVersion {
     checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
-    // verify new cluster managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-    }
-
-    // verify new cluster managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    // verify managed server services and pods are created
+    for (int i = 1; i <= cluster2ReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster2ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster2ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+    for (int i = 1; i <= cluster2ReplicaCount; i++) {
+      managedServerNames.add(cluster2ManagedServerNameBase + i);
     }
 
     //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
 
+    // set the cluster2Created flag to true.
+    cluster2Created = true;
   }
 
   /**
@@ -920,57 +674,32 @@ class ItIntrospectVersion {
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
-  @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
 
-    final String domainNamespace = introDomainNamespace;
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String cl2managedServerNameBase = "cl2-ms-";
-    String cl2managedServerPodNamePrefix = domainUid + "-" + cl2managedServerNameBase;
-    final String myclustermanagedServerNameBase = "managed-server";
-    String myclustermanagedServerPodNamePrefix = domainUid + "-" + myclustermanagedServerNameBase;
-
-    final int replicaCount = 2;
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(cl2managedServerNameBase + i);
-    }
-
     // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid, introDomainNamespace));
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
-
-    logger.info("Getting timestamps for the following pods");
-    for (int i = 1; i <= 3; i++) {
-      String managedServerPodName = cl2managedServerPodNamePrefix + i;
-      logger.info(managedServerPodName);
+    List<String> cluster1ManagedServerNames = new ArrayList<>();
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      cluster1ManagedServerNames.add(cluster1ManagedServerNameBase + i);
     }
     // get the map with server pods and their original creation timestamps
-    cl2podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, cl2managedServerPodNamePrefix,
-        replicaCount);
+    cl1podsWithTimeStamps = getPodsWithTimeStamps(introDomainNamespace, adminServerPodName,
+        cluster1ManagedServerPodNamePrefix, cluster1ReplicaCount);
 
-
-    logger.info("Getting timestamps for the following pods");
-    for (int i = 1; i <= 3; i++) {
-      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
-      logger.info(managedServerPodName);
-    }
-    // get the map with server pods and their original creation timestamps
-    myclusterpodsWithTimeStamps = new LinkedHashMap<>();
-    for (int i = 1; i <= 3; i++) {
-      String managedServerPodName = myclustermanagedServerPodNamePrefix + i;
-      myclusterpodsWithTimeStamps.put(managedServerPodName,
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
+    List<String> cluster2ManagedServerNames = new ArrayList<>();
+    if (cluster2Created) {
+      for (int i = 1; i <= cluster2ReplicaCount; i++) {
+        cluster2ManagedServerNames.add(cluster2ManagedServerNameBase + i);
+      }
+      cl2podsWithTimeStamps = getPodsWithTimeStamps(introDomainNamespace, adminServerPodName,
+          cluster2ManagedServerPodNamePrefix, cluster2ReplicaCount);
     }
 
     //print out the original image name
@@ -994,12 +723,12 @@ class ItIntrospectVersion {
         .append("\"}]");
     logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),
+    assertTrue(patchDomainResource(domainUid, introDomainNamespace, patchStr),
         "patchDomainCustomResource(imageUpdate) failed");
 
-    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUid, introDomainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
 
@@ -1008,23 +737,36 @@ class ItIntrospectVersion {
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
-    assertTrue(verifyRollingRestartOccurred(myclusterpodsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
-
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          cl2managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(cl2managedServerPodNamePrefix + i, domainUid, domainNamespace);
+        domainUid, introDomainNamespace);
+    assertTrue(verifyRollingRestartOccurred(cl1podsWithTimeStamps, 1, introDomainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, introDomainNamespace));
+    if (cluster2Created) {
+      assertTrue(verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, introDomainNamespace),
+          String.format("Rolling restart failed for domain %s in namespace %s", domainUid, introDomainNamespace));
     }
 
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
 
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    if (cluster2Created) {
+      for (int i = 1; i <= cluster2ReplicaCount; i++) {
+        logger.info("Checking managed server service {0} is created in namespace {1}",
+            cluster2ManagedServerPodNamePrefix + i, introDomainNamespace);
+        checkPodReadyAndServiceExists(cluster2ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+      }
+    }
+
+    //verify admin server accessibility and the health of cluster1 members
+    verifyMemberHealth(adminServerPodName, cluster1ManagedServerNames, wlsUserName, wlsPassword);
+    if (cluster2Created) {
+      //verify admin server accessibility and the health of cluster2 members
+      verifyMemberHealth(adminServerPodName, cluster2ManagedServerNames, wlsUserName, wlsPassword);
+    }
   }
 
   /**
@@ -1032,22 +774,42 @@ class ItIntrospectVersion {
    * after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
    */
   @Test
-  @Order(6)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
   void testDedicatedModeSameNamespaceScale() {
-    final String adminServerName = "admin-server";
-    final String managedServerNameBase = "managed-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    // verify the admin server and cluster is running
+    logger.info("Check admin service and pod {0} is created in namespace {1}",
+        adminServerPodName, introDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
 
-    // scale up the domain by increasing replica count
-    int replicaCount = 3;
-    boolean scalingSuccess = assertDoesNotThrow(() ->
-        scaleCluster(domainUid, introDomainNamespace, "cluster-1", replicaCount),
-        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed",
-        domainUid, introDomainNamespace));
+    // check managed server services and pods are ready
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    // scale down the cluster by 1
+    boolean scalingSuccess = assertDoesNotThrow(()
+        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount - 1),
+        String.format("Scaling down the cluster cluster-1 of domain %s in namespace %s failed",
+            domainUid, introDomainNamespace));
     assertTrue(scalingSuccess,
-        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, introDomainNamespace));
+        String.format("Cluster scaling down failed for domain %s in namespace %s", domainUid, introDomainNamespace));
+
+    // check the managed server pod is deleted
+    checkPodDoesNotExist(cluster1ManagedServerPodNamePrefix + cluster1ReplicaCount,
+        domainUid, introDomainNamespace);
+
+    //decrement the cluster1 replica count by 1
+    cluster1ReplicaCount--;
+
+    // scale up the cluster to cluster1ReplicaCount + 1
+    scalingSuccess = assertDoesNotThrow(()
+        -> scaleCluster(domainUid, introDomainNamespace, "cluster-1", cluster1ReplicaCount + 1),
+        String.format("Scaling up the cluster cluster-1 of domain %s in namespace %s failed",
+            domainUid, introDomainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling up failed for domain %s in namespace %s", domainUid, introDomainNamespace));
 
     // check new server is started and existing servers are running
     logger.info("Check admin service and pod {0} is created in namespace {1}",
@@ -1055,15 +817,16 @@ class ItIntrospectVersion {
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
 
     // check managed server services and pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= cluster1ReplicaCount + 1; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     // verify when a domain resource has spec.introspectVersion configured,
     // after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    verifyIntrospectVersionLabelInPod();
+    cluster1ReplicaCount++;
   }
 
   /**
@@ -1077,22 +840,16 @@ class ItIntrospectVersion {
    * server pod is rolled since there is no change to resource configuration.
    */
   @Test
-  @Order(7)
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
   void testIntrospectDomainScript() {
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 3;
 
     // verify admin server pods are ready
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
     // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
     // get the pod creation time stamps
@@ -1101,9 +858,9 @@ class ItIntrospectVersion {
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      pods.put(cluster1ManagedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, cluster1ManagedServerPodNamePrefix + i));
     }
 
     // get introspectVersion before running introspectDomain.sh
@@ -1137,7 +894,7 @@ class ItIntrospectVersion {
     // verify when a domain resource has spec.introspectVersion configured,
     // after a introspectVersion is modified, new server pods have the label
     // "weblogic.introspectVersion" set as well.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    verifyIntrospectVersionLabelInPod();
 
     // use introspectDomain.sh to initiate introspection
     logger.info("Initiate introspection with non numeric string with space");
@@ -1215,6 +972,168 @@ class ItIntrospectVersion {
     verifyPodsNotRolled(introDomainNamespace, pods);
   }
 
+  private static void createDomain() {
+
+    // create WebLogic domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
+        wlsUserName, wlsPassword);
+    createPV(pvName, domainUid, ItIntrospectVersion.class.getSimpleName());
+    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
+
+    // create a temporary WebLogic domain property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+            File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
+    Properties p = new Properties();
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", domainUid);
+    p.setProperty("cluster_name", cluster1Name);
+    p.setProperty("admin_server_name", adminServerName);
+    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
+    p.setProperty("admin_server_port", "7001");
+    p.setProperty("admin_username", wlsUserName);
+    p.setProperty("admin_password", wlsPassword);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
+    p.setProperty("number_of_ms", "2"); // maximum number of servers in cluster
+    p.setProperty("managed_server_name_base", cluster1ManagedServerNameBase);
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+    assertDoesNotThrow(() ->
+            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+        "Failed to write domain properties file");
+
+    // WLST script for creating domain
+    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+
+    // create configmap and domain on persistent volume using the WLST script and property file
+    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
+        pvName, pvcName, introDomainNamespace);
+
+    // create a domain custom resource configuration object
+    logger.info("Creating domain custom resource");
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(introDomainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy("IfNotPresent")
+            .imagePullSecrets(Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only in non-kind cluster
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(introDomainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
+                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
+                        + "-Dweblogic.debug.DebugJNDI=true "
+                        + "-Dweblogic.debug.DebugJNDIResolution=true "
+                        + "-Dweblogic.debug.DebugCluster=true "
+                        + "-Dweblogic.ResolveDNSName=true "
+                        + "-Dweblogic.MaxMessageSize=20000000"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .addClustersItem(new Cluster() //cluster
+                .clusterName(cluster1Name)
+                .replicas(cluster1ReplicaCount)
+                .serverStartState("RUNNING")));
+    setPodAntiAffinity(domain);
+    // verify the domain custom resource is created
+    createDomainAndVerify(domain, introDomainNamespace);
+
+    // verify the admin server service and pod created
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
+
+    // verify managed server services created
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+          cluster1ManagedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    if (OKD) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
+    // deploy application and verify all servers functions normally
+    logger.info("Getting port for default channel");
+    int defaultChannelPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server default port failed");
+    logger.info("default channel port: {0}", defaultChannelPort);
+    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+
+    int serviceNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        clusterViewAppPath, cluster1Name);
+    //ExecResult result = null;
+    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Deploying the application using Rest"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+                       wlsUserName, wlsPassword,
+                       targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        });
+
+    List<String> managedServerNames = new ArrayList<String>();
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      managedServerNames.add(cluster1ManagedServerNameBase + i);
+    }
+
+    //verify admin server accessibility and the health of cluster members
+    verifyMemberHealth(adminServerPodName, managedServerNames, wlsUserName, wlsPassword);
+
+  }
+
+
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
    * Create a configmap containing WLST script and property file.
@@ -1226,7 +1145,7 @@ class ItIntrospectVersion {
    * @param pvcName              name of the persistent volume claim
    * @param namespace            name of the domain namespace in which the job is created
    */
-  private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
+  private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                          String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
@@ -1238,7 +1157,7 @@ class ItIntrospectVersion {
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
         () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, this.getClass().getSimpleName()),
+            domainScriptConfigMapName, domainScriptFiles, namespace, ItIntrospectVersion.class.getSimpleName()),
         "Create configmap for domain creation failed");
 
     // create a V1Container with specific scripts and properties for creating domain
@@ -1295,44 +1214,62 @@ class ItIntrospectVersion {
         });
   }
 
-  private void verifyIntrospectVersionLabelInPod(int replicaCount) {
-    final String adminServerName = "admin-server";
-    final String managedServerNameBase = "managed-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    String introspectVersion =
-        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+  private void verifyIntrospectVersionLabelInPod() {
+    String introspectVersion
+        = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    if (introspectVersion == null) {
+      return;
+    }
 
     // verify admin server pods
     logger.info("Verify weblogic.introspectVersion in admin server pod {0}", adminServerPodName);
-    verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion);
+    testUntil(
+        verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion),
+        logger, "waiting for introspectVersion to change to {0} in pod {1}",
+        introspectVersion, adminServerPodName);
+    //verifyIntrospectVersionLabelValue(adminServerPodName, introspectVersion);
 
     // verify managed server pods
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Verify weblogic.introspectVersion in managed server pod {0}",
-          managedServerPodNamePrefix + i);
-      verifyIntrospectVersionLabelValue(managedServerPodNamePrefix + i, introspectVersion);
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      logger.info("Verify weblogic.introspectVersion in cluster1 managed server pod {0}",
+          cluster1ManagedServerPodNamePrefix + i);
+      testUntil(
+          verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion),
+          logger, "waiting for introspectVersion to change to {0} in pod {1}",
+          introspectVersion, cluster1ManagedServerPodNamePrefix + i);
+      //verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion);
+    }
+
+    if (cluster2Created) {
+      // verify new cluster managed server pods are ready
+      for (int i = 1; i <= cluster2ReplicaCount; i++) {
+        logger.info("Verify weblogic.introspectVersion in cluster2 managed server pod {0}",
+            cluster2ManagedServerPodNamePrefix + i);
+        testUntil(
+            verifyIntrospectVersionLabelValue(cluster2ManagedServerPodNamePrefix + i, introspectVersion),
+            logger, "waiting for introspectVersion to change to {0} in pod {1}",
+            introspectVersion, cluster2ManagedServerPodNamePrefix + i);
+        //verifyIntrospectVersionLabelValue(cluster2ManagedServerPodNamePrefix + i, introspectVersion);
+      }
     }
   }
 
-  private void verifyIntrospectVersionLabelValue(String podName, String introspectVersion) {
-    final String wlsIntroVersion = "weblogic.introspectVersion";
-    V1Pod myPod = assertDoesNotThrow(() ->
-        getPod(introDomainNamespace, "", podName),
-        "Get pod " + podName);
-
-    Map<String, String> myLabels = myPod.getMetadata().getLabels();
-
-    for (Map.Entry<String, String> entry : myLabels.entrySet()) {
-      if (entry.getKey().equals(wlsIntroVersion)) {
-        logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
-        logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
-
-        assertTrue(entry.getValue().equals(introspectVersion),
-            "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
+  private Callable<Boolean> verifyIntrospectVersionLabelValue(String podName, String introspectVersion) {
+    return (() -> {
+      final String wlsIntroVersion = "weblogic.introspectVersion";
+      V1Pod myPod = assertDoesNotThrow(() -> getPod(introDomainNamespace, "", podName), "Get pod " + podName);
+      Map<String, String> myLabels = myPod.getMetadata().getLabels();
+      for (Map.Entry<String, String> entry : myLabels.entrySet()) {
+        if (entry.getKey().equals(wlsIntroVersion)) {
+          logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
+          logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
+          if (entry.getValue().equals(introspectVersion)) {
+            return true;
+          }
+        }
       }
-    }
+      return false;
+    });
   }
 
   // copy samples directory to a temporary location
@@ -1367,12 +1304,12 @@ class ItIntrospectVersion {
     String podName = domainUid + "-" + serverName;
     final String command = String.format(
         "kubectl exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
-            + ADMIN_USERNAME_DEFAULT
+            + wlsUserName
             + ":"
-            + ADMIN_PASSWORD_DEFAULT
+            + wlsPassword
             + "@" + podName + ":%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",managedServerPort);
+            + "\"?user=" + wlsUserName
+            + "&password=" + wlsPassword + "\"",managedServerPort);
     verifyServerCommunication(command, serverName, managedServerNames);
   }
 }

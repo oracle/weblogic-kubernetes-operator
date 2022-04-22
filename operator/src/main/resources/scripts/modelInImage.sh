@@ -1253,7 +1253,7 @@ function encrypt_decrypt_domain_secret() {
 function prepareMIIServer() {
 
   trace "Model-in-Image: Creating domain home."
-
+  local ret=0
   # primordial domain contain the basic structures, security and other fmwconfig templated info
   # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
   # Both are needed for the complete domain reconstruction
@@ -1304,7 +1304,8 @@ function prepareMIIServer() {
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1314,7 +1315,8 @@ function prepareMIIServer() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        if [ $? -ne 0 && $? -ne 11 ] ; then
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
           "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop

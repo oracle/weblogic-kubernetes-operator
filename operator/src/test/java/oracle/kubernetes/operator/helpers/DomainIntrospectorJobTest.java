@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -19,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -29,6 +31,8 @@ import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -75,6 +79,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
@@ -100,6 +105,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String OVERRIDES_CM = "overrides-config-map";
   private static final String OVERRIDE_SECRET_1 = "override-secret-1";
@@ -120,6 +127,7 @@ class DomainIntrospectorJobTest {
   public static final String TEST_VOLUME_NAME = "test";
   public static final String JOB_UID = "some-unique-id";
   public static final String INFO_MESSAGE_1 = "informational message";
+  private static final String INFO_MESSAGE = "@[INFO] just letting you know";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -495,8 +503,47 @@ class DomainIntrospectorJobTest {
         "testcall in namespace junit, for testName: Test this failure"));
   }
 
+  @Test
+  void whenJobCreatedWithFluentd_mustHaveFluentdContainerAndMountPathIsCorrect() {
+    DomainConfiguratorFactory.forDomain(domain)
+        .withFluentdConfiguration(true, "elastic-cred", null);
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+
+    V1Container fluentdContainer = Optional.ofNullable(getCreatedPodSpecContainers(jobs))
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .filter(c -> c.getName().equals(FLUENTD_CONTAINER_NAME))
+        .findFirst()
+        .orElse(null);
+
+    assertThat(fluentdContainer, notNullValue());
+
+    assertThat(Optional.ofNullable(fluentdContainer)
+        .map(V1Container::getVolumeMounts)
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .filter(c -> "/fluentd/etc/fluentd.conf".equals(c.getMountPath())), notNullValue());
+  }
+
   Domain getDomain() {
     return testSupport.getResourceWithName(DOMAIN, UID);
+  }
+
+  private void defineFailedFluentdContainerInIntrospection() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
+  }
+
+  private void defineNormalFluentdContainerInIntrospection() {
+    testSupport.defineResources(createIntrospectorJob());
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
+  }
+
+  private V1Job asFailedJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type("FAILED")));
+    return job;
   }
 
   @Test
