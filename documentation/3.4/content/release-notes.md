@@ -58,6 +58,7 @@ draft: false
 * Support for injecting [Fluentd sidecar containers]({{< relref "/samples/elastic-stack/weblogic-domain/_index.md" >}}) for WebLogic Server pods and the introspector.
 * Resolved an issue where operator Services caused warnings in the Kiali console because of missing protocol designations ([#2957](https://github.com/oracle/weblogic-kubernetes-operator/pull/2957)).
 * Updated multiple dependencies, including updating the default WebLogic Monitoring Exporter injection to version 2.0.5.
+* Resolved [issue #2794](https://github.com/oracle/weblogic-kubernetes-operator/issues/2794) related to restarting evicted pods ([#2979](https://github.com/oracle/weblogic-kubernetes-operator/pull/2979)).
 
 #### Operator 3.3.8
 
