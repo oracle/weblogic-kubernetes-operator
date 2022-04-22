@@ -74,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
@@ -100,7 +101,6 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HO
 
 @SuppressWarnings("ConstantConditions")
 public abstract class PodStepContext extends BasePodStepContext {
-
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String STOP_SERVER = "/weblogic-operator/scripts/stopServer.sh";
@@ -1010,6 +1010,16 @@ public abstract class PodStepContext extends BasePodStepContext {
       }
       ConflictStep rhs = ((ConflictStep) other);
       return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder =
+          new HashCodeBuilder()
+              .appendSuper(super.hashCode())
+              .append(conflictStep);
+
+      return builder.toHashCode();
     }
 
     private Step getConflictStep() {
