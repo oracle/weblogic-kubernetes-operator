@@ -129,11 +129,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItKubernetesDomainEvents {
 
+  private static Class<?> thisClass = new Object(){}.getClass();
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
   private static String domainNamespace3 = null;
   private static String domainNamespace4 = null;
+  private static String domainNamespace5 = null;
   private static String opServiceAccount = null;
   private static int externalRestHttpsPort = 0;
   private static OperatorParams opParams = null;
@@ -156,6 +158,8 @@ class ItKubernetesDomainEvents {
   static final String pvcName3 = getUniqueName(domainUid + "-pvc-");
   static final String pvName4 = getUniqueName(domainUid + "-pv-");
   static final String pvcName4 = getUniqueName(domainUid + "-pvc-");
+  static final String pvName5 = getUniqueName(domainUid + "-pv-");
+  static final String pvcName5 = getUniqueName(domainUid + "-pvc-");
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
@@ -185,18 +189,19 @@ class ItKubernetesDomainEvents {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace2 = namespaces.get(2);
     assertNotNull(namespaces.get(3), "Namespace is null");
-    domainNamespace3 = namespaces.get(4);
+    domainNamespace3 = namespaces.get(3);
     assertNotNull(namespaces.get(4), "Namespace is null");
-    domainNamespace4 = namespaces.get(5);
+    domainNamespace4 = namespaces.get(4);
     assertNotNull(namespaces.get(5), "Namespace is null");
-
+    domainNamespace5 = namespaces.get(5);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
     opParams = installAndVerifyOperator(opNamespace, opServiceAccount,
-            true, 0, domainNamespace1, domainNamespace2,domainNamespace3,domainNamespace4);
+            true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
+            domainNamespace4, domainNamespace5);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
@@ -208,13 +213,8 @@ class ItKubernetesDomainEvents {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace1);
-    createSecretForBaseImages(domainNamespace2);
-    createSecretForBaseImages(domainNamespace3);
-    createSecretForBaseImages(domainNamespace4);
-    createDomain(domainNamespace3, domainUid,pvName3, pvcName3);
-    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
+
+    createDomain(domainNamespace3, domainUid, pvName3, pvcName3);
   }
 
   /**
@@ -319,69 +319,45 @@ class ItKubernetesDomainEvents {
   void testDomainK8SEventsFailed() {
     V1Patch patch;
     String patchStr;
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace3));
+    Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER");
+    assertNotNull(domain, " Can't create domain resource");
+
     String originalDomainHome = domain.getSpec().getDomainHome();
 
     OffsetDateTime timestamp = now();
-    try {
-      logger.info("Shutting down all servers in domain with serverStartPolicy : NEVER");
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
-      patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
 
-      logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
-              adminServerPodName, domainNamespace3);
-      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace3);
+    /*
+    logger.info("Shutting down all servers in domain with serverStartPolicy : NEVER");
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "patchDomainCustomResource failed");
+    */
+    logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
+            adminServerPodName, domainNamespace5);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
 
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
-                managedServerPodNamePrefix + i, domainNamespace3);
-        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
-      }
-
-      logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-              + " DomainChanged and DomainFailed events are logged");
-      patchStr = "[{\"op\": \"replace\", "
-              + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
-      logger.info("PatchStr for domainHome: {0}", patchStr);
-
-      patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
-
-      logger.info("verify domain changed event is logged");
-      checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-      logger.info("verify domain failed event");
-      checkFailedEvent(opNamespace, domainNamespace3, domainUid, ABORTED_ERROR, "Warning", timestamp);
-    } finally {
-      logger.info("Restoring the domain with valid location and bringing up all servers");
-      timestamp = now();
-      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
-      // add back the original domain home
-      patchStr = "["
-              + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "\"},"
-              + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-              + "]";
-      logger.info("PatchStr for domainHome: {0}", patchStr);
-
-      patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
-
-      logger.info("verify domain changed event is logged");
-      checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-      logger.info("verifying the admin server is created and started");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
-
-      // verify managed server services created
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking managed server service/pod {0} is created in namespace {1}",
-                managedServerPodNamePrefix + i, domainNamespace3);
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
-      }
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
+              managedServerPodNamePrefix + i, domainNamespace5);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
     }
+
+    logger.info("Replace the domainHome to a nonexisting location to verify the following events"
+            + " DomainChanged and DomainFailed events are logged");
+    patchStr = "[{\"op\": \"replace\", "
+            + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+            + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+    logger.info("PatchStr for domainHome: {0}", patchStr);
+
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "patchDomainCustomResource failed");
+
+    logger.info("verify domain changed event is logged");
+    checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+    logger.info("verify domain failed event");
+    checkFailedEvent(opNamespace, domainNamespace5, domainUid, ABORTED_ERROR, "Warning", timestamp);
   }
 
   /**
@@ -450,7 +426,7 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
-
+    createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
   }
@@ -676,7 +652,7 @@ class ItKubernetesDomainEvents {
   @DisplayName("Test domain events for various domain life cycle changes")
   void testDomainK8SEventsDelete() {
     OffsetDateTime timestamp = now();
-
+    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
     deleteDomainCustomResource(domainUid, domainNamespace2);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
@@ -732,21 +708,42 @@ class ItKubernetesDomainEvents {
   }
 
   // Create and start a WebLogic domain in PV
-  private static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
+  private  static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
+
+    assertDoesNotThrow(() -> createDomain(domainNamespace, domainUid, pvName, pvcName,
+            "IF_NEEDED"),
+            "Failed to create domain custom resource");
+
+    // verify the admin server service created
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service/pod {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+  }
+
+  // Create and start a WebLogic domain in PV
+  private static Domain createDomain(String domainNamespace, String domainUid,
+                                     String pvName, String pvcName, String serverStartupPolicy) {
+
+    createSecretForBaseImages(domainNamespace);
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid, "ItKubernetesDomainEvents");
+    createPV(pvName, domainUid, thisClass.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-        -> File.createTempFile("domain", "properties"),
-        "Failed to create domain properties file");
+                    -> File.createTempFile("domain", "properties"),
+            "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
@@ -763,76 +760,66 @@ class ItKubernetesDomainEvents {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
-        -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-        "Failed to write domain properties file");
+                    -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+            "Failed to write domain properties file");
 
     // WLST script for creating domain
     Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, domainNamespace);
+            pvName, pvcName, domainNamespace);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
-            .imagePullSecrets(Arrays.asList(
-                new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
-            .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addVolumesItem(new V1Volume()
-                    .name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .mountPath("/shared")
-                    .name(pvName)))
-            .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(cluster1Name)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUid)
+                    .namespace(domainNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUid)
+                    .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+                    .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullSecrets(Arrays.asList(
+                            new V1LocalObjectReference()
+                                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(wlSecretName)
+                            .namespace(domainNamespace))
+                    .includeServerOutInPodLog(true)
+                    .logHomeEnabled(Boolean.TRUE)
+                    .logHome("/shared/logs/" + domainUid)
+                    .dataHome("")
+                    .serverStartPolicy(serverStartupPolicy)
+                    .serverPod(new ServerPod() //serverpod
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                            .addVolumesItem(new V1Volume()
+                                    .name(pvName)
+                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                                            .claimName(pvcName)))
+                            .addVolumeMountsItem(new V1VolumeMount()
+                                    .mountPath("/shared")
+                                    .name(pvName)))
+                    .adminServer(new AdminServer() //admin server
+                            .serverStartState("RUNNING")
+                            .adminService(new AdminService()
+                                    .addChannelsItem(new Channel()
+                                            .channelName("default")
+                                            .nodePort(getNextFreePort()))))
+                    .addClustersItem(new Cluster() //cluster
+                            .clusterName(cluster1Name)
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
-
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
-
-    // verify the admin server service created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service/pod {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
+    return domain;
   }
 
   /**
@@ -857,7 +844,7 @@ class ItKubernetesDomainEvents {
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
         () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, "ItKubernetesDomainEvents"),
+            domainScriptConfigMapName, domainScriptFiles, namespace, thisClass.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
     // create a V1Container with specific scripts and properties for creating domain
