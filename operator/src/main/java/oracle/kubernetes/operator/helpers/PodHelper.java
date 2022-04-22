@@ -115,7 +115,8 @@ public class PodHelper {
   }
 
   static boolean hasClusterNameOrNull(@Nullable V1Pod pod, String clusterName) {
-    return getClusterName(pod) == null || getClusterName(pod).equals(clusterName);
+    String actualName = getClusterName(pod);
+    return actualName == null || actualName.equals(clusterName);
   }
 
   private static String getClusterName(@Nullable V1Pod pod) {
