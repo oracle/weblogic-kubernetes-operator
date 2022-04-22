@@ -65,7 +65,11 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
    * @param old Container returned from enterContainer
    */
   public void exitContainer(Container old) {
-    containerThreadLocal.set(old);
+    if (old == null) {
+      containerThreadLocal.remove();
+    } else {
+      containerThreadLocal.set(old);
+    }
   }
 
   ScheduledExecutorService wrapExecutor(
