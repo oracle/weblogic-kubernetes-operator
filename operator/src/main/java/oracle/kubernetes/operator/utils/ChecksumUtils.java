@@ -11,6 +11,11 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
 public class ChecksumUtils {
+
+  private ChecksumUtils() {
+    // no-op
+  }
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**

@@ -152,7 +152,7 @@ public abstract class BaseRestServer {
         ThreadFactory x = t.getThreadFactory();
         ThreadFactory tf = x != null ? x : Executors.defaultThreadFactory();
         t.setThreadFactory(
-            (r) -> {
+            r -> {
               Thread n =
                   tf.newThread(
                       () -> {
@@ -174,7 +174,7 @@ public abstract class BaseRestServer {
         x = t.getThreadFactory();
         ThreadFactory tf2 = x != null ? x : Executors.defaultThreadFactory();
         t.setThreadFactory(
-            (r) -> {
+            r -> {
               Thread n =
                   tf2.newThread(
                       () -> {

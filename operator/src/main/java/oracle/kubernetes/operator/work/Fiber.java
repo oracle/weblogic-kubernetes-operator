@@ -424,7 +424,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         }
       }
     } finally {
-      if (isRequireUnlock.value) {
+      if (Boolean.TRUE.equals(isRequireUnlock.value)) {
         synchronized (this) {
           currentThread = null;
           triggerExitCallback();

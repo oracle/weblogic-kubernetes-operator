@@ -276,10 +276,6 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
       return true;
     }
 
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
     if (!(o instanceof ServerSpecCommonImpl)) {
       return false;
     }

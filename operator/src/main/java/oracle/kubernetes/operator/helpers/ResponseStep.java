@@ -49,7 +49,7 @@ public abstract class ResponseStep<T> extends Step {
   private Step previousStep = null;
 
   /** Constructor specifying no next step. */
-  public ResponseStep() {
+  protected ResponseStep() {
     this(null);
   }
 
@@ -58,7 +58,7 @@ public abstract class ResponseStep<T> extends Step {
    *
    * @param nextStep Next step
    */
-  public ResponseStep(Step nextStep) {
+  protected ResponseStep(Step nextStep) {
     this(null, nextStep);
   }
 
@@ -68,7 +68,7 @@ public abstract class ResponseStep<T> extends Step {
    * @param conflictStep Conflict step
    * @param nextStep Next step
    */
-  public ResponseStep(Step conflictStep, Step nextStep) {
+  protected ResponseStep(Step conflictStep, Step nextStep) {
     super(nextStep);
     this.conflictStep = conflictStep;
   }

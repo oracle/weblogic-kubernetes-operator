@@ -137,8 +137,9 @@ class FiberTest {
 
   @Test
   void whenSuspendActionThrowsRuntimeException_rethrowFromFiber() {
+    Step step = new SuspendingStep(this::throwException);
     assertThrows(RuntimeException.class,
-          () -> runSteps(step1, new SuspendingStep(this::throwException), step3));
+          () -> runSteps(step1, step, step3));
   }
 
   void throwException(Packet packet, AsyncFiber fiber) {
@@ -147,8 +148,9 @@ class FiberTest {
 
   @Test
   void whenSuspendActionThrowsError_rethrowFromFiber() {
+    Step step = new SuspendingStep(this::throwError);
     assertThrows(Error.class,
-          () -> runSteps(step1, new SuspendingStep(this::throwError), step3));
+          () -> runSteps(step1, step, step3));
   }
 
   void throwError(Packet packet, AsyncFiber fiber) {

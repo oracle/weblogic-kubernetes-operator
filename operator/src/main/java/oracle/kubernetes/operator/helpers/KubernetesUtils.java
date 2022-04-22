@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,6 +21,10 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 public class KubernetesUtils {
+
+  private KubernetesUtils() {
+    // no-op
+  }
 
   /**
    * Returns true if the two maps of values match. A null map is considered to match an empty map.
@@ -46,8 +50,8 @@ public class KubernetesUtils {
     if (!hasAllRequiredNames(current, required)) {
       return true;
     }
-    for (String name : required.keySet()) {
-      if (!Objects.equals(current.get(name), required.get(name))) {
+    for (Map.Entry<String, String> entry : required.entrySet()) {
+      if (!Objects.equals(current.get(entry.getKey()), entry.getValue())) {
         return true;
       }
     }
@@ -74,15 +78,16 @@ public class KubernetesUtils {
         Map<String, String> current,
         Map<String, String> required) {
 
-    for (String name : required.keySet()) {
+    for (Map.Entry<String, String> entry : required.entrySet()) {
+      String name = entry.getKey();
       // We must encode each '/' and '~' in a JSON patch token using '~1' and '~0', otherwise
       // the JSON patch will incorrectly treat '/' and '~' as special delimiters. (RFC 6901).
       // The resulting patched JSON will have '/' and '~' within the token (not ~0 or ~1).
       String encodedPath = basePath + name.replace("~","~0").replace("/","~1");
       if (!current.containsKey(name)) {
-        patchBuilder.add(encodedPath, required.get(name));
+        patchBuilder.add(encodedPath, entry.getValue());
       } else {
-        patchBuilder.replace(encodedPath, required.get(name));
+        patchBuilder.replace(encodedPath, entry.getValue());
       }
     }
   }
