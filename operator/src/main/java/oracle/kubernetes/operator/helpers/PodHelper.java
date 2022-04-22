@@ -39,6 +39,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -193,6 +194,38 @@ public class PodHelper {
   }
 
   /**
+   * Check if pod is in failed state with "Evicted" as the reason.
+   * @param pod pod
+   * @return true, if pod is in failed state with "Evicted" as the reason.
+   */
+  public static boolean isEvicted(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(PodHelper::isEvicted)
+        .orElse(false);
+  }
+
+  /**
+   * Chcek if the pod status shows that the pod is evicted.
+   * @param status Pod status to be checked
+   * @return True if the pod status shows that the pod is evicted, false otherwise
+   */
+  public static boolean isEvicted(@Nonnull V1PodStatus status) {
+    return "Failed".equals(status.getPhase())
+        && EVICTED_REASON.equals(status.getReason());
+  }
+
+  /**
+   * Return true if pod was evicted and operator is configured to restart evicted pods.
+   * @param pod pod
+   * @return true, if pod was evicted and operator is configured to restart evicted pods
+   *
+   */
+  public static boolean shouldRestartEvictedPod(V1Pod pod) {
+    return isEvicted(pod) && TuningParameters.getInstance().getPodTuning().restartEvictedPods;
+  }
+
+  /**
    * get pod domain UID.
    * @param pod pod
    * @return domain UID
@@ -216,6 +249,25 @@ public class PodHelper {
     return null;
   }
 
+  /**
+   * Returns the Kubernetes name of the specified pod.
+   * @param pod the pod
+   */
+  public static String getPodName(@Nonnull V1Pod pod) {
+    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+  }
+
+  /**
+   * Get the message from the pod's status.
+   * @param pod pod
+   * @return Message string from the pod's status
+   */
+  public static String getPodStatusMessage(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(V1PodStatus::getMessage)
+        .orElse(null);
+  }
 
   /**
    * Factory for {@link Step} that creates admin server pod.
