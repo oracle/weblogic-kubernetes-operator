@@ -594,6 +594,13 @@
             <properties>
                 <skipITs>false</skipITs>
                 <groups>gate,samples-gate</groups>
+                <includes-failsafe>
+                    **/ItKubernetesEvents,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMultiDomainModels,
+                    **/ItPodsRestart,
+                    **/ItTwoDomainsManagedByTwoOperators
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
