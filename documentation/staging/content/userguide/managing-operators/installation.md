@@ -141,6 +141,12 @@ in the `sample-weblogic-operator-ns` namespace,
 configures a deployment and supporting resources for the operator,
 and deploys the operator.
 
+In addition, it also configures a deployment and supporting resources for the 
+[conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook">}})
+and deploys the conversion webhook. 
+See [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook">}}) 
+for more details.
+
 You can verify the operator installation by examining the output from the `helm install` command.
 
 To check if the operator is deployed and running,
@@ -258,12 +264,15 @@ Do not delete the CRD if there are other operators in the same cluster
 or you have running domain resources.
 
 Beginning with Operator version 4.0, uninstalling an operator also removes the conversion webhook
- deployment and associated resources in the same namespace.
-Therefore, if you have multiple operators running in the Kubernetes cluster and want to prevent the removal of the 
-conversion webhook and its associated resources, use one of the two options listed below:
+ deployment and its associated resources by default.
+Therefore, if you have multiple operators running, then, by default, an uninstall 
+of one operator will affect the other operators. The uninstall will not delete the conversion definition 
+in the domain CRD so you will be unable to create domains using `weblogic.oracle/v8` schema.
+If you want to prevent the uninstall of an operator  
+from having these side effects, then use one of the following two options:
 - [Install the conversion webhook]({{< relref "userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}})
- in a separate namespace using `webhookOnly=true` helm custom value.
-- Use the `preserveWebhook=true` helm custom value during installation with the `helm install` command.
+ in a separate namespace using `webhookOnly=true` helm configuration value.
+- Use the `preserveWebhook=true` helm configuration value during operator installation with the `helm install` command.
 
 ### Uninstall the WebLogic domain resource conversion webhook
 See [uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}) for the conversion webhook uninstallation details.

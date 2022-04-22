@@ -13,7 +13,6 @@ description: "General advice for debugging and monitoring the operator."
 - [Check the operator deployment](#check-the-operator-deployment)
 - [Check the conversion webhook deployment](#check-the-conversion-webhook-deployment)
 - [Check common operator issues](#check-common-operator-issues)
-- [Check common conversion webhook issues](#check-common-conversion-webhook-issues)
 - [Check for the operator events](#check-for-the-operator-events)
 - [Check for the conversion webhook events](#check-for-the-conversion-webhook-events)
 - [Check the operator log](#check-the-operator-log)
@@ -21,6 +20,10 @@ description: "General advice for debugging and monitoring the operator."
 - [Operator ConfigMap](#operator-configmap)
 - [Force the operator to restart](#force-the-operator-to-restart)
 - [Operator and conversion webhook logging level](#operator-and-conversion-webhook-logging-level)
+- [Troubleshooting the conversion webhook](#troubleshooting-the-conversion-webhook)
+  - [Ensure the conversion webhook is deployed and running](#ensure-the-conversion-webhook-is-deployed-and-running)
+  - [Ensure that the conversion definition in Domain CRD has the latest CA certificate](#ensure-that-the-conversion-definition-in-domain-crd-has-the-latest-ca-certificate)
+  - [Check for runtime errors during conversion](#check-for-runtime-errors-during-conversion)
 - [See also](#see-also)
 
 ### Troubleshooting a particular domain resource
@@ -136,10 +139,6 @@ A pod `describe` usefully includes any events that might be associated with the 
 
 - See [Common mistakes and solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 - Check the [FAQs]({{<relref "/faq/_index.md">}}).
-
-### Check common conversion webhook issues
-
-- See [Troubleshooting the conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook#troubleshooting-the-conversion-webhook" >}}).
 
 ### Check for the operator events
 
@@ -283,6 +282,69 @@ $ helm upgrade \
 
 For more information, see the
 [javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) documentation.
+
+#### Troubleshooting the conversion webhook
+Below are some common mistakes and solutions for the conversion webhook.
+
+##### Ensure the conversion webhook is deployed and running
+Verify that the conversion webhook's deployment is deployed and running by following steps in [check the conversion webhook deployment](#check-the-conversion-webhook-deployment).
+If it is not deployed, then you will see below `conversion webhook not found` 
+error when creating a Domain with `weblogic.oracle/v8` schema Domain resource. 
+
+```
+Error from server: error when creating "k8s-domain.yaml": conversion webhook for weblogic.oracle/v9, Kind=Domain failed: Post "https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s": service "weblogic-operator-webhook-svc" not found
+```
+
+The conversion webhook can be deployed stand-alone or as part of an operator install. Note that if the conversion webhook was installed as part 
+of an operator install, then it is implicitly removed by default when the operator is uninstalled.  If the deployment is not deployed or running, 
+then install the conversion webhook by following steps in 
+[installing the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) section.
+
+If the conversion webhook Deployment is deployed but is not in ready status, then you will see `connection refused` error when creating a Domain using `weblogic.oracle/v8` schema Domain resource. 
+
+The POST URL in the error message has the name of the conversion webhook service and the namespace. For e.g., if the POST URL is `https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s`, then the service name is `weblogic-operator-webhook-svc` and namespaces is `sample-weblogic-operator-ns`. In this case, run the below commands to ensure that the Deployment is running and the webhook service exists in the `sample-weblogic-operator-ns` namespace.
+
+```
+$  kubectl get deployment weblogic-operator-webhook -n sample-weblogic-operator-ns
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+weblogic-operator-webhook   1/1     1            1           87m
+
+$  kubectl get service weblogic-operator-webhook-svc -n sample-weblogic-operator-ns
+NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+weblogic-operator-webhook-svc   ClusterIP   10.106.89.198   <none>        8084/TCP   88m
+```
+If the conversion webhook Deployment status is not ready, then [check the conversion webhook log]({{<relref "/userguide/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and the [conversion webhook events]({{<relref "/userguide/managing-operators/troubleshooting#check-for-the-conversion-webhook-events">}}) in the conversion webhook namespace. If the conversion webhook service doesn't exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.
+
+##### Ensure that the conversion definition in Domain CRD has the latest CA certificate
+The conversion webhook runtime generates a self-signed CA certificate and uses that certificate to update the `caBundle` field of the conversion definition in Domain CRD. If this certificate in the conversion definition is incorrect for some reason, then you will see  below `x509: certificate signed by unknown authority` error.
+
+```
+Error from server: error when retrieving current configuration of:
+Resource: "weblogic.oracle/v8, Resource=domains", GroupVersionKind: "weblogic.oracle/v8, Kind=Domain"
+Name: "sample-domain1", Namespace: "sample-domain1-ns"
+from server for: "domain-v8.yaml": conversion webhook for weblogic.oracle/v9, Kind=Domain failed: Post "https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s": x509: certificate signed by unknown authority (possibly because of "crypto/rsa: verification error" while trying to verify candidate authority certificate "weblogic-webhook")
+```
+
+The certificate in the conversion definition might be incorrect if you uninstalled and reinstalled the webhook. The conversion definition in Domain CRD might still be using the stale CA certificate generated by the previous conversion webhook Deployment. In this case, run the below patch command to remove the `Webhook` conversion definition from the Domain CRD. Then, the conversion webhook runtime will automatically update the Domain CRD with the latest conversion definition. 
+
+```
+ kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "None", "webhook": null}}}'
+```
+
+If you don't have any WebLogic Domains deployed or WebLogic Server Pod running, then you can delete the Domain CRD instead of patching the CRD. Then, the conversion webhook runtime will create a new CRD with the latest conversion definition.
+
+{{% notice warning %}}
+Deleting the Domain CRD will delete all the deployed WebLogic Domains and terminate all running WebLogic Server Pods.
+{{% /notice %}}
+
+##### Check for runtime errors during conversion
+If you see a `WebLogic Domain custom resource conversion webhook failed` error when creating a Domain with `weblogic.oracle/v8` schema domain resource, then [check the conversion webhook runtime Pod logs]({{<relref "/userguide/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and [check for the generated events]({{<relref "/userguide/managing-operators/troubleshooting#check-for-the-conversion-webhook-events">}}) in the conversion webhook namespace. Assuming the conversion webhook is deployed in the `sample-weblogic-operator-ns` namespace, run the below commands to check for logs and events.
+
+```
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator-webhook deployments/weblogic-operator-webhook
+
+$ kubectl get events -n sample-weblogic-operator-ns
+```
 
 ### See also
 

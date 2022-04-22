@@ -7,14 +7,18 @@ pre = "<b> </b>"
 
 ### Contents
 
- - [Automated upgrade of WKO 3.x domain resource](#automated-upgrade-of-wko-3.x-domain-resource)
- - [Upgrade the WKO 3.x domain resource manually](#upgrade-the-wko-3.x-domain-resource-manually)
+ - [Introduction](#introduction)
+ - [Automated upgrade of WKO 3.x domain resource](#automated-upgrade-of-weblogicoraclev8-schema-domain-resource)
+ - [Upgrade the WKO 3.x domain resource manually](#upgrade-the-weblogicoraclev8-schema-domain-resource-manually)
 
-### Automated upgrade of WKO 3.x domain resource
-The 4.0 Operator provides a seamless upgrade of the Domains with 3.x (V8 schema) domain resources. When you create a Domain using WKO 3.x (V8 schema) domain resource in a namespace managed by the WKO 4.0, the [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}) performs an automated upgrade of the domain resource to 4.0 schema. The conversion webhook runtime converts the WKO 3.x configuration to the equivalent configuration in WKO 4.0. Similarly, when [upgrading the Operator version from 3.x to 4.0]({{< relref "/userguide/managing-operators/installation#upgrade-the-operator" >}}), Domains resources are seamlessly upgraded.
+### Introduction
+The Domain CustomResourceDefinition in Operator version 4.0 has changed significantly from previous Operator releases. For this reason, we have updated the API version of the Domain custom resource in CRD to `weblogic.oracle/v9` from `weblogic.oracle/v8`. We continue to support the Domains with API version `weblogic.oracle/v8` and provide full backward compatibility. If you want to use new fields introduced in the latest `weblogic.oracle/v9` schema, then you will need to update the API version in your Domain resource YAML. 
 
-### Upgrade the WKO 3.x domain resource manually
-Beginning with Operator version 4.0, the Operator team provides a standalone command-line tool for manually upgrading the WKO 3.x (V8 schema) domain resource YAML to the WKO 4.0 domain resource YAML. If you are required to keep the upgraded Domain resource YAML file in the source control repository, then you can use this tool to generate the upgraded file. 
+### Automated upgrade of `weblogic.oracle/v8` schema domain resource
+The 4.0 Operator provides a seamless upgrade of the Domain resources with `weblogic.oracle/v8` version of the schema. When you create a Domain using a domain resource YAML with `weblogic.oracle/v8` schema in a namespace managed by the WKO 4.0, the [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}) performs an automated upgrade of the domain resource to the `weblogic.oracle/v9` schema. The conversion webhook runtime converts the `weblogic.oracle/v8` configuration to the equivalent configuration in WKO 4.0. Similarly, when [upgrading the Operator version from 3.x to 4.0]({{< relref "/userguide/managing-operators/installation#upgrade-the-operator" >}}), Domains resources are seamlessly upgraded.
+
+### Upgrade the `weblogic.oracle/v8` schema domain resource manually
+Beginning with Operator version 4.0, the Operator team provides a standalone command-line tool for manually upgrading the domain resource YAML file with `weblogic.oracle/v8` schema to the `weblogic.oracle/v9` schema. If you are required to keep the upgraded Domain resource YAML file in the source control repository, then you can use this tool to generate the upgraded Domain resource YAML file. 
 
 ##### Setup
 - Download the Domain upgrade tool jar file to the desired location.
