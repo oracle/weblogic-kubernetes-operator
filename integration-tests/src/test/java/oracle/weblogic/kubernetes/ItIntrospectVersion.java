@@ -1238,6 +1238,9 @@ class ItIntrospectVersion {
 
     String introspectVersion
         = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    if (introspectVersion == null) {
+      return;
+    }
 
     // verify admin server pods
     logger.info("Verify weblogic.introspectVersion in admin server pod {0}", adminServerPodName);
