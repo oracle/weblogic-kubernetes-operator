@@ -88,6 +88,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
@@ -106,7 +107,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -156,8 +156,8 @@ class ItIntrospectVersion {
 
   private static final int t3ChannelPort = getNextFreePort();
 
-  private static final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  private static final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
+  private static final String pvName = getUniqueName(domainUid + "-pv-");
+  private static final String pvcName = getUniqueName(domainUid + "-pvc-");
 
   private static final String wlSecretName = "weblogic-credentials";
   private static String wlsUserName = ADMIN_USERNAME_DEFAULT;

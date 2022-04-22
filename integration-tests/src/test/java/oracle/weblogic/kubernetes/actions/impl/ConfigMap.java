@@ -3,8 +3,12 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class ConfigMap {
@@ -31,4 +35,28 @@ public class ConfigMap {
     return Kubernetes.deleteConfigMap(name, namespace);
   }
 
+  /**
+   * Check whether the configmap exists.
+   * @param name name of the config map
+   * @param namespace namespace where config map exists
+   * @return true if the config map exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean doesCMExist(String name, String namespace) throws ApiException {
+    List<V1ConfigMap> configMaps = new ArrayList<>();
+    V1ConfigMapList configMapList = Kubernetes.listConfigMaps(namespace);
+
+    if (configMapList != null) {
+      configMaps = configMapList.getItems();
+    }
+
+    for (V1ConfigMap configMap : configMaps) {
+      if (configMap.getMetadata() != null && configMap.getMetadata().getName() != null
+          && configMap.getMetadata().getName().equals(name)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
