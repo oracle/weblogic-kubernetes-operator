@@ -3,7 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -40,17 +43,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.nio.file.Files.createDirectories;
-import static java.nio.file.Files.write;
-import static java.nio.file.Paths.get;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -80,11 +77,15 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -95,16 +96,13 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
 
 /**
  * Simple JUnit test file used for testing operator usability.
@@ -139,14 +137,11 @@ class ItUsabilityOperatorHelmChart {
   private boolean isDomain2Running = false;
   private int replicaCountDomain1 = 2;
   private int replicaCountDomain2 = 2;
+  private String adminSvcExtRouteHost = null;
 
   // ingress host list
   private List<String> ingressHostList;
   private static LoggingFacade logger = null;
-  private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator, domain.
@@ -240,6 +235,7 @@ class ItUsabilityOperatorHelmChart {
           assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", adminServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   adminServerPodName, domain1Namespace));
+      adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domain1Namespace);
 
       // get the managed server pods original creation timestamps
       logger.info("Getting managed server pods original creation timestamps");
@@ -345,8 +341,10 @@ class ItUsabilityOperatorHelmChart {
           null,"deployed", 0, opHelmParams, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
+      String opExtRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       //check if can still manage domain1
@@ -396,7 +394,7 @@ class ItUsabilityOperatorHelmChart {
           0, op1HelmParams, domain2Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
       if (!isDomain2Running) {
@@ -485,7 +483,6 @@ class ItUsabilityOperatorHelmChart {
     }
   }
 
-
   /**
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
@@ -497,29 +494,26 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Negative test to install two operators sharing the same namespace")
   void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() {
-    HelmParams opHelmParams = null;
-    HelmParams op2HelmParams = null;
+    HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
+    if (!isDomain1Running) {
+      logger.info("Installing and verifying domain");
+      assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
+          "can't start or verify domain in namespace " + domain1Namespace);
+      isDomain1Running = true;
+    }
+    String opReleaseName = OPERATOR_RELEASE_NAME + "2";
+    String opServiceAccount = opNamespace + "-sa2";
+    HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);;
+
+    // install and verify operator will fail with expected error message
+    logger.info("Installing and verifying operator will fail with expected error message");
     try {
-      opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
-      if (!isDomain1Running) {
-        logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
-            "can't start or verify domain in namespace " + domain1Namespace);
-        isDomain1Running = true;
-      }
-      String opReleaseName = OPERATOR_RELEASE_NAME + "2";
-      String opServiceAccount = opNamespace + "-sa2";
-      op2HelmParams = new HelmParams().releaseName(opReleaseName)
-          .namespace(opNamespace)
-          .chartDir(OPERATOR_CHART_DIR);;
-
-      // install and verify operator will fail with expected error message
-      logger.info("Installing and verifying operator will fail with expected error message");
-
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
-          false,expectedError,"failed", 0,
+          false, expectedError,"failed", 0,
           op2HelmParams, domain2Namespace);
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
@@ -545,28 +539,24 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Negative test to install two operators sharing the same domain namespace")
   void testSecondOpSharingSameDomainNamespacesNegativeInstall() {
-    HelmParams opHelmParams = null;
-    HelmParams op2HelmParams = null;
+    // install and verify operator1
+    logger.info("Installing and verifying operator1");
+    HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain2Namespace).getHelmParams();
+    if (!isDomain2Running) {
+      logger.info("Installing and verifying domain");
+      assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
+          "can't start or verify domain in namespace " + domain2Namespace);
+      isDomain2Running = true;
+    }
+    String opReleaseName = OPERATOR_RELEASE_NAME + "2";
+    HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
+        .namespace(op2Namespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // install and verify operator2 will fail
+    logger.info("Installing and verifying operator2 will fail with expected error message");
+    String opServiceAccount = op2Namespace + "-sa2";
     try {
-      // install and verify operator1
-      logger.info("Installing and verifying operator1");
-      opHelmParams = installAndVerifyOperator(opNamespace, domain2Namespace).getHelmParams();
-      if (!isDomain2Running) {
-        logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
-            "can't start or verify domain in namespace " + domain2Namespace);
-        isDomain2Running = true;
-      }
-      String opReleaseName = OPERATOR_RELEASE_NAME + "2";
-      op2HelmParams = new HelmParams().releaseName(opReleaseName)
-          .namespace(op2Namespace)
-          .chartDir(OPERATOR_CHART_DIR);
-
-      // install and verify operator2 will fail
-      logger.info("Installing and verifying operator2 will fail with expected error message");
-      String opServiceAccount = op2Namespace + "-sa2";
-
-
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
@@ -602,7 +592,7 @@ class ItUsabilityOperatorHelmChart {
     HelmParams opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true, true,
         true,null,"deployed", 0, op1HelmParams,  domain1Namespace);
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    assertTrue(externalRestHttpsPort != -1,
+    assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
     String op2ReleaseName = OPERATOR_RELEASE_NAME + "2";
@@ -680,9 +670,13 @@ class ItUsabilityOperatorHelmChart {
       assertNotNull(opHelmParam2, "FAILURE: Helm can't installs operator with empty set for target domainnamespaces ");
 
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+
+      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
+
       //upgrade operator to add domain
       OperatorParams opParams = new OperatorParams()
           .helmParams(opHelmParam2)
@@ -776,15 +770,12 @@ class ItUsabilityOperatorHelmChart {
 
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", op2Namespace);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  op2Namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
-              "operatorIsReady failed with ApiException"));
+      testUntil(
+          assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
+            "operatorIsReady failed with ApiException"),
+          logger,
+          "operator to be running in namespace {0}",
+          op2Namespace);
 
       // Helm reports error message status
       assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
@@ -816,10 +807,14 @@ class ItUsabilityOperatorHelmChart {
       // install operator
       String opServiceAccount = op3Namespace + "-sa";
       HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
-          0, "FINE", op1HelmParams, domain4Namespace).getHelmParams();
+          0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
+
+
+      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
       int externalRestHttpsPort = getServiceNodePort(op3Namespace, "external-weblogic-operator-svc");
-      assertTrue(externalRestHttpsPort != -1,
+      assertNotEquals(-1, externalRestHttpsPort,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
@@ -843,29 +838,30 @@ class ItUsabilityOperatorHelmChart {
 
       assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
           externalRestHttpsPort,op3Namespace, opServiceAccount),
-          "Domain5 " + domain4Namespace + " scaling operation failed");
+          "Domain2 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
           managedServerPodName2, domain4Namespace);
       assertDoesNotThrow(() ->
               checkPodExists(managedServerPodName2, domain5Uid, domain4Namespace),
-          "operator failed to manage domain5, scaling was not succeeded");
+          "operator failed to manage domain2, scaling was not succeeded");
 
-      logger.info("Domain5 scaled to 3 servers");
+      logger.info("Domain4 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain4Namespace,
                   "/u01/domains/" + domain4Uid, "scaleDown", 1,
-                  op3Namespace, opServiceAccount),
+                  op3Namespace,opServiceAccount),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain4Namespace),
           " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
+
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain5Uid, domain4Namespace,
                   "/u01/domains/" + domain5Uid, "scaleDown", 1,
-                  op3Namespace, opServiceAccount),
+                  op3Namespace,opServiceAccount),
           " scaling via scalingAction.sh script was not succeeded for domain5");
 
       assertDoesNotThrow(() ->
@@ -875,25 +871,25 @@ class ItUsabilityOperatorHelmChart {
     } finally {
       try {
         String operatorPodName =
-                assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op3Namespace),
-                        "Can't get operator's pod name");
-        Path logDirPath = get(RESULTS_ROOT, this.getClass().getSimpleName());
-        assertDoesNotThrow(() -> deleteDirectory(logDirPath.toFile()),
-                "Delete directory failed");
-        assertDoesNotThrow(() -> createDirectories(logDirPath),
-                "Create directory failed");
+            assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, op3Namespace),
+                "Can't get operator's pod name");
+        Path logDirPath = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName());
+        assertDoesNotThrow(() -> FileUtils.deleteDirectory(logDirPath.toFile()),
+            "Delete directory failed");
+        assertDoesNotThrow(() -> Files.createDirectories(logDirPath),
+            "Create directory failed");
         String podLog = assertDoesNotThrow(() -> TestActions.getPodLog(operatorPodName, op3Namespace));
         Path pathToLog =
-                get(RESULTS_ROOT, this.getClass().getSimpleName(),
-                        "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op3Namespace + ".log");
+            Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+                "/TwoDomainsInSameNameSpaceOnOperatorOpLog" + op3Namespace + ".log");
 
-        assertDoesNotThrow(() -> write(pathToLog, podLog.getBytes()),
-                "Can't write to file " + pathToLog);
+        assertDoesNotThrow(() -> Files.write(pathToLog, podLog.getBytes()),
+            "Can't write to file " + pathToLog);
       } catch (Exception ex) {
         logger.info("Failed to collect operator log");
       }
       uninstallOperator(op1HelmParams);
-      deleteSecret(OCIR_SECRET_NAME, op3Namespace);
+      deleteSecret(OCIR_SECRET_NAME,op3Namespace);
       cleanUpSA(op3Namespace);
     }
   }
@@ -975,6 +971,7 @@ class ItUsabilityOperatorHelmChart {
                         .nodePort(getNextFreePort()))))
             .clusters(clusters)
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(280L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
@@ -998,6 +995,8 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+    adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + managedServerPrefix + i;
@@ -1117,27 +1116,21 @@ class ItUsabilityOperatorHelmChart {
     if (helmStatus.equalsIgnoreCase("deployed")) {
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  operNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorIsReady(operNamespace),
-              "operatorIsReady failed with ApiException"));
+      testUntil(
+          assertDoesNotThrow(() -> operatorIsReady(operNamespace),
+            "operatorIsReady failed with ApiException"),
+          logger,
+          "operator to be running in namespace {0}",
+          operNamespace);
 
       if (withRestAPI) {
         logger.info("Wait for the operator external service in namespace {0}", operNamespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for operator external service in namespace {0} "
-                        + "(elapsed time {1}ms, remaining time {2}ms)",
-                    operNamespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
-                "operator external service is not running"));
+        testUntil(
+            assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
+              "operator external service is not running"),
+            logger,
+            "operator external service in namespace {0}",
+            operNamespace);
       }
       return opHelmParams;
     }
@@ -1145,9 +1138,9 @@ class ItUsabilityOperatorHelmChart {
   }
 
   private static void checkReleaseStatus(
-      String operNamespace, 
-      String helmStatus, 
-      LoggingFacade logger, 
+      String operNamespace,
+      String helmStatus,
+      LoggingFacade logger,
       String opReleaseName) {
     // list Helm releases matching operator release name in operator namespace
     logger.info("Checking operator release {0} status in namespace {1}",
@@ -1248,12 +1241,13 @@ class ItUsabilityOperatorHelmChart {
     String managedServer = "managed-server1";
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)
         .append(" ")
-        .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append("http://" + hostAndPort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")

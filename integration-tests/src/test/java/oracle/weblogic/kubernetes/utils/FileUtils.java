@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -384,4 +385,17 @@ public class FileUtils {
     return targetFile;
   }
 
+  /**
+   * Check if the required file ls empty.
+   *
+   * @param fileName the name of the file that needs to be checked
+   * @return true if a file is not empty with the given fileName
+   */
+  public static Callable<Boolean> isFileExistAndNotEmpty(String fileName) {
+    File file = new File(fileName);
+    return () -> {
+      boolean fileReady = (file.exists() && file.length() != 0);
+      return fileReady;
+    };
+  }
 }

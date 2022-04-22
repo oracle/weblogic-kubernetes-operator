@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The current class verifies various use cases related to Dedicated 
+ * The current class verifies various use cases related to Dedicated
  * domainNamespaceSelectionStrategy applicable to Operator Helm Chart.
  * For more detail regarding the feature, please refer to
  * https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#weblogic-domain-management
@@ -76,9 +76,9 @@ class ItDedicatedMode {
   private final String domainUid = "dedicated-domain1";
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
-  private final String adminServerPodName = 
+  private final String adminServerPodName =
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private final String managedServerPodPrefix = 
+  private final String managedServerPodPrefix =
        domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
   // operator constants
@@ -89,7 +89,7 @@ class ItDedicatedMode {
   private static LoggingFacade logger = null;
 
   /**
-   * Get namespaces for operator and domain. 
+   * Get namespaces for operator and domain.
    * Create CRD based on the k8s version.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism.
@@ -103,7 +103,7 @@ class ItDedicatedMode {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    // in the dedicated mode, the operator only manages domains in the 
+    // in the dedicated mode, the operator only manages domains in the
     // operator's own namespace
     domain1Namespace = opNamespace;
 
@@ -132,8 +132,8 @@ class ItDedicatedMode {
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
 
-    // Install the Operator in a ns (say op) with helm parameter 
-    // domainNamespaceSelectionStrategy set to Dedicated and set 
+    // Install the Operator in a ns (say op) with helm parameter
+    // domainNamespaceSelectionStrategy set to Dedicated and set
     // domainNamespaces parameter to something other than Operator ns (say wls)
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -144,7 +144,7 @@ class ItDedicatedMode {
   }
 
   /**
-   * Create WebLogic Domain in a namespace (say wls) that is different 
+   * Create WebLogic Domain in a namespace (say wls) that is different
    * from the Operator's namespace. Verify that the domain does not come up.
    */
   @Test
@@ -158,22 +158,22 @@ class ItDedicatedMode {
   }
 
   /**
-   * Create WebLogic Domain in a namespace (say op) that is same as  
-   * Operator's namespace. Verify that the domain does come up and can be 
+   * Create WebLogic Domain in a namespace (say op) that is same as
+   * Operator's namespace. Verify that the domain does come up and can be
    * scaled up using Operator
    */
   @Test
   @DisplayName("Verify in Dedicated NamespaceSelectionStrategy domain on operator namespace gets started")
   void testDedicatedModeSameNamespace() {
 
-    // This test uses the operator restAPI to scale the doamin. 
-    // To do this in OKD cluster, we need to expose the external service as 
-    // route and set tls termination to  passthrough 
-    String opExternalSvc = 
+    // This test uses the operator restAPI to scale the domain.
+    // To do this in OKD cluster, we need to expose the external service as
+    // route and set tls termination to  passthrough
+    String opExternalSvc =
         createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-    
+
     logger.info("Creating a domain in perator namespace {1}", domain1Namespace);
     createDomain(domain1Namespace);
     verifyDomainRunning(domain1Namespace);
