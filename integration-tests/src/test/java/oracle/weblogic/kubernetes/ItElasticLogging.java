@@ -16,15 +16,12 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
@@ -52,6 +49,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -64,8 +62,8 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggin
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -110,7 +108,6 @@ class ItElasticLogging {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -132,10 +129,6 @@ class ItElasticLogging {
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning a unique namespace for Operator");
@@ -261,7 +254,10 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    // verify log level query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
+            String.format("Query logs of level=INFO failed")));
 
     logger.info("Query logs of level=INFO succeeded");
   }
@@ -392,12 +388,14 @@ class ItElasticLogging {
     logger.info("query result is {0}", queryResult);
   }
 
-  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
-                                               String index, boolean checkCount, String... args) {
+  private boolean verifyCountsHitsInSearchResults(String queryCriteria, String regex,
+                                                  String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
+    boolean testResult = false;
     int count = -1;
     int failedCount = -1;
     String hits = "";
+
     String results = execSearchQuery(queryCriteria, index);
     Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(results);
@@ -412,17 +410,21 @@ class ItElasticLogging {
 
     logger.info("Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
-      assertTrue(kibanaParams != null, "Failed to install Kibana");
+      assertNotNull(kibanaParams, "Failed to install Kibana");
       assertTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        assertTrue(failedCount == 0, "Total failed count should be 0!");
         logger.info("Total failed count: " + failedCount);
+        assertEquals(0, failedCount, "Total failed count should be 0!");
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
+
+      testResult = true;
     } else {
       assertTrue(count == 0, "Total count of logs should be zero!");
     }
+
+    return testResult;
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
