@@ -41,7 +41,7 @@ See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes t
 
 #### Operator earlier versions
 
-Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), and [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/).
+Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/), and [3.4.x](https://oracle.github.io/weblogic-kubernetes-operator/3.4/).
 
 #### Backward compatibility guidelines
 
