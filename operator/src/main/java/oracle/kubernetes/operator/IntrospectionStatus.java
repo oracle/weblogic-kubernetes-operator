@@ -34,6 +34,10 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 
 public class IntrospectionStatus {
 
+  private IntrospectionStatus() {
+    // no-op
+  }
+
   private static final String K8S_POD_UNSCHEDULABLE = "Unschedulable";
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

@@ -208,19 +208,21 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           String serverName = (String)packet.get(SERVER_NAME);
           String resource = initialResource == null ? resourceName : getMetadata(initialResource).getName();
-          if ((info != null) && (callResponse != null)) {
-            Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
-                    info.setServerPodFromEvent(getPodLabel(result), result));
-            if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
-              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
-              removeCallback(resource, callback);
-              return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
+          if (callResponse != null) {
+            if (info != null) {
+              Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
+                  info.setServerPodFromEvent(getPodLabel(result), result));
+              if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
+                LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
+                removeCallback(resource, callback);
+                return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
+              }
             }
-          }
 
-          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
-            callback.proceedFromWait(callResponse.getResult());
-            return null;
+            if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+              callback.proceedFromWait(callResponse.getResult());
+              return null;
+            }
           }
 
           if (shouldWait()) {

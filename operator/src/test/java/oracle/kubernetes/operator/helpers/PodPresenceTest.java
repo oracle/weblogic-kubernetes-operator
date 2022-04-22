@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -35,8 +37,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static io.kubernetes.client.openapi.models.V1PodStatus.PhaseEnum.FAILED;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
@@ -47,6 +51,9 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -65,8 +72,8 @@ class PodPresenceTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private OffsetDateTime clock = SystemClock.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
@@ -74,6 +81,7 @@ class PodPresenceTest {
           .metadata(
               KubernetesUtils.withOperatorLabels(
                   "uid", new V1ObjectMeta().name(POD_NAME).namespace(NS)));
+  private int numPodsDeleted;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -82,7 +90,7 @@ class PodPresenceTest {
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
-    mementos.add(UnitTestHash.install());
+    mementos.add(ConstantTestHash.install());
     mementos.add(ScanCacheStub.install());
 
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
@@ -103,6 +111,9 @@ class PodPresenceTest {
     packet.put(SERVER_NAME, SERVER);
     packet.put(SERVER_SCAN, configSupport.createDomainConfig().getServerConfig(SERVER));
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(processorDelegate);
+
+    numPodsDeleted = 0;
   }
 
   private void disableDomainProcessing() {
@@ -182,9 +193,28 @@ class PodPresenceTest {
 
   @Test
   void whenPodPhaseIsFailed_reportFailed() {
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.FAILED));
+    pod.status(new V1PodStatus().phase(FAILED));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(true));
+  }
+
+  @Test
+  void whenPodPhaseIsFailedAndReasonIsEvicted_reportEvicted() {
+    pod.status(new V1PodStatus().phase(FAILED).reason(EVICTED_REASON));
+
+    MatcherAssert.assertThat(PodHelper.isEvicted(pod), is(true));
+  }
+
+  @Test
+  void whenPodHasNoStatus_reportNotEvicted() {
+    MatcherAssert.assertThat(PodHelper.isEvicted(pod), is(false));
+  }
+
+  @Test
+  void whenPodPhaseIsFailedAndReasonIsNotEvicted_reportNotEvicted() {
+    pod.status(new V1PodStatus().phase(FAILED));
+
+    MatcherAssert.assertThat(PodHelper.isEvicted(pod), is(false));
   }
 
   @SuppressWarnings("ConstantConditions")
@@ -396,8 +426,97 @@ class PodPresenceTest {
     assertThat(info.getServerPod(SERVER), notNullValue());
   }
 
+  @Test
+  void onModifyEventWithEvictedServerPod_cycleServerPod() {
+    V1Pod currentPod = createServerPod();
+    V1Pod modifiedPod = withEvictedStatus(createServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+
+    info.setServerPod(SERVER, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(1));
+    assertThat(createdPodNames, hasItem(SERVER));
+  }
+
+  @Test
+  void onModifyEventWithEvictedServerPod_dontCycleAlreadyEvictedServerPod() {
+    V1Pod currentPod = withEvictedStatus(createServerPod());
+    V1Pod modifiedPod = withEvictedStatus(createServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+
+    info.setServerPod(SERVER, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(0));
+    assertThat(createdPodNames, not(hasItem(SERVER)));
+  }
+
+  @Test
+  void onModifyEventWithEvictedServerPod_notCycleServerPod_ifConfiguredNotTo() {
+    TuningParametersStub.setParameter("restartEvictedPods", "false");
+    V1Pod currentPod = createServerPod();
+    V1Pod modifiedPod = withEvictedStatus(createServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+
+    info.setServerPod(SERVER, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(0));
+    assertThat(createdPodNames, not(hasItem(SERVER)));
+  }
+
+  @Test
+  void onModifyEventWithEvictedAdminServerPod_cycleServerPod() {
+    V1Pod currentPod = createAdminServerPod();
+    V1Pod modifiedPod = withEvictedStatus(createAdminServerPod());
+    List<String> createdPodNames = new ArrayList<>();
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
+    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+
+    packet.put(SERVER_NAME, ADMIN_SERVER_NAME);
+    info.setServerPod(ADMIN_SERVER_NAME, currentPod);
+    Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(numPodsDeleted, is(1));
+    assertThat(createdPodNames, hasItem(ADMIN_SERVER_NAME));
+  }
+
+  private void recordPodCreation(V1Pod pod, List<String> createdPodNames) {
+    Optional.of(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(this::getServerName)
+        .map(createdPodNames::add);
+  }
+
+  private void recordPodDeletion(Integer value) {
+    numPodsDeleted++;
+  }
+
+  private String getServerName(Map<String, String> labels) {
+    return labels.get(SERVERNAME_LABEL);
+  }
+
   private V1Pod createServerPod() {
     return withTimeAndVersion(PodHelper.createManagedServerPodModel(packet));
+  }
+
+  private V1Pod createAdminServerPod() {
+    return withTimeAndVersion(PodHelper.createAdminServerPodModel(packet));
   }
 
   @SuppressWarnings("ConstantConditions")
@@ -406,8 +525,24 @@ class PodPresenceTest {
     return pod;
   }
 
+  private V1Pod withEvictedStatus(V1Pod pod) {
+    return pod.status(new V1PodStatus().phase(FAILED).reason(EVICTED_REASON));
+  }
+
   private OffsetDateTime getDateTime() {
     clock = clock.plusSeconds(1);
     return clock;
+  }
+
+  // Returns a constant hash value to make canUseCurrentPod() in VerifyPodStep.apply to return true
+  static class ConstantTestHash implements Function<Object, String> {
+    public static Memento install() throws NoSuchFieldException {
+      return StaticStubSupport.install(AnnotationHelper.class, "hashFunction", new ConstantTestHash());
+    }
+
+    @Override
+    public String apply(Object object) {
+      return "1234567";
+    }
   }
 }

@@ -22,6 +22,11 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
  * Operations for dealing with namespaces.
  */
 public class NamespaceHelper {
+
+  private NamespaceHelper() {
+    // no-op
+  }
+
   public static final String DEFAULT_NAMESPACE = "default";
 
   public static String getOperatorNamespace() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -68,8 +68,7 @@ public class WebhookRestServer extends BaseRestServer {
    */
   @Override
   ResourceConfig createResourceConfig(RestConfig restConfig) {
-    ResourceConfig rc =
-        new ResourceConfig()
+    return new ResourceConfig()
             .register(JacksonFeature.class)
             .register(ErrorFilter.class)
             .register(RequestDebugLoggingFilter.class)
@@ -77,7 +76,6 @@ public class WebhookRestServer extends BaseRestServer {
             .register(ExceptionMapper.class)
             .packages(ConversionWebhookResource.class.getPackageName())
             .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
-    return rc;
   }
 
   /**
