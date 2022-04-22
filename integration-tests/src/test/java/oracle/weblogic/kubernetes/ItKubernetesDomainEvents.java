@@ -38,10 +38,8 @@ import oracle.weblogic.kubernetes.utils.DomainUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -61,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -119,17 +118,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to Domain events logged by operator.
  * The tests checks for the following events in the domain name space.
- * DomainCreated, DomainChanged, DomainDeleted, DomainCompleted,
+ * Created, Changed, Deleted, Completed,
  * DomainFailed.
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
 class ItKubernetesDomainEvents {
 
-  private static Class<?> thisClass = new Object(){}.getClass();
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
@@ -163,6 +160,7 @@ class ItKubernetesDomainEvents {
   private static final String wlSecretName = "weblogic-credentials";
 
   private static LoggingFacade logger = null;
+  private  static String className = new Object(){}.getClass().getEnclosingClass().getSimpleName();
 
   public enum ScaleAction {
     scaleUp,
@@ -211,29 +209,30 @@ class ItKubernetesDomainEvents {
     // Patch the route just created to set tls termination to passthrough
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-
     createDomain(domainNamespace3, domainUid, pvName3, pvcName3);
   }
 
   /**
    * Test domain events are logged when domain resource goes through various life cycle stages.
-   * Verifies DomainCreated is logged when domain resource is created.
-   * Verifies DomainCompleted is logged when the domain resource reaches its completed state.
+   * Verifies Created is logged when domain resource is created.
+   * Verifies Completed is logged when the domain resource reaches its completed state.
    */
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   @Tag("gate")
   void testDomainK8SEventsSuccess() {
-    OffsetDateTime timestamp = now();
-    logger.info("Creating domain");
-    createDomain(domainNamespace1, domainUid, pvName1, pvcName1);
+    try {
+      OffsetDateTime timestamp = now();
+      logger.info("Creating domain");
+      createDomain(domainNamespace1, domainUid, pvName1, pvcName1);
 
-    logger.info("verify the DomainCreated event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
-    logger.info("verify the DomainCompleted event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+      logger.info("verify the Created event is generated");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
+      logger.info("verify the Completed event is generated");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+    } finally {
+      shutdownDomain(domainUid, domainNamespace1);
+    }
   }
 
   /**
@@ -317,55 +316,52 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for failed/retried domain life cycle changes")
   void testDomainK8SEventsFailed() {
-    V1Patch patch;
-    String patchStr;
-    Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER");
-    assertNotNull(domain, " Can't create domain resource");
+    try {
+      V1Patch patch;
+      String patchStr;
+      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER");
+      assertNotNull(domain, " Can't create domain resource");
 
-    String originalDomainHome = domain.getSpec().getDomainHome();
+      String originalDomainHome = domain.getSpec().getDomainHome();
 
-    OffsetDateTime timestamp = now();
+      OffsetDateTime timestamp = now();
 
-    /*
-    logger.info("Shutting down all servers in domain with serverStartPolicy : NEVER");
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-            "patchDomainCustomResource failed");
-    */
-    logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
-            adminServerPodName, domainNamespace5);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
+      logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
+              adminServerPodName, domainNamespace5);
+      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
 
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
-              managedServerPodNamePrefix + i, domainNamespace5);
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
+                managedServerPodNamePrefix + i, domainNamespace5);
+        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
+      }
+
+      logger.info("Replace the domainHome to a nonexisting location to verify the following events"
+              + " DomainChanged and DomainFailed events are logged");
+      patchStr = "[{\"op\": \"replace\", "
+              + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
+
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+              "patchDomainCustomResource failed");
+
+      logger.info("verify domain changed event is logged");
+      checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      logger.info("verify domain failed event");
+      checkFailedEvent(opNamespace, domainNamespace5, domainUid, ABORTED_ERROR, "Warning", timestamp);
+    } finally {
+      shutdownDomain(domainUid, domainNamespace5);
     }
-
-    logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-            + " DomainChanged and DomainFailed events are logged");
-    patchStr = "[{\"op\": \"replace\", "
-            + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-            + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
-    logger.info("PatchStr for domainHome: {0}", patchStr);
-
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-            "patchDomainCustomResource failed");
-
-    logger.info("verify domain changed event is logged");
-    checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-    logger.info("verify domain failed event");
-    checkFailedEvent(opNamespace, domainNamespace5, domainUid, ABORTED_ERROR, "Warning", timestamp);
   }
 
   /**
-   * Test verifies there is only 1 DomainCompleted event is logged
+   * Test verifies there is only 1 Completed event is logged
    * regardless of how many clusters exists in the domain.
    * Test creates a new cluster in the WebLogic domain, patches the domain resource to add the new cluster
    * and starts up the new cluster.
-   * Verifies the scaling operation generates only one DomainCompleted.
+   * Verifies the scaling operation generates only one Completed.
    */
   @Test
   void testK8SEventsMultiClusterEvents() {
@@ -375,9 +371,9 @@ class ItKubernetesDomainEvents {
         externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the Domain_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_AVAILABLE, "Normal", timestamp);
-    logger.info("verify the DomainCompleted event is generated");
+    logger.info("verify the Completed event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
-    logger.info("verify the only 1 DomainCompleted event is generated");
+    logger.info("verify the only 1 Completed event is generated");
     assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid, DOMAIN_COMPLETED, timestamp));
   }
 
@@ -413,7 +409,7 @@ class ItKubernetesDomainEvents {
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
-      logger.info("verify the DomainCompleted event is generated");
+      logger.info("verify the Completed event is generated");
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
 
     }
@@ -421,14 +417,18 @@ class ItKubernetesDomainEvents {
 
   /**
    * Scale down and scale up the domain and verify that
-   * DomainCompleted normal event is generated.
+   * Completed normal event is generated.
    */
   @Test
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
-    createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
-    scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
-    scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
+    try {
+      createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
+      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
+      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
+    } finally {
+      shutdownDomain(domainUid, domainNamespace4);
+    }
   }
 
   /**
@@ -651,15 +651,19 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   void testDomainK8SEventsDelete() {
-    OffsetDateTime timestamp = now();
-    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    deleteDomainCustomResource(domainUid, domainNamespace2);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
+    try {
+      OffsetDateTime timestamp = now();
+      createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
+      deleteDomainCustomResource(domainUid, domainNamespace2);
+      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
+      checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
+      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
 
-    //verify domain deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
+      //verify domain deleted event
+      checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
+    } finally {
+      shutdownDomain(domainUid, domainNamespace2);
+    }
   }
 
   /**
@@ -670,6 +674,7 @@ class ItKubernetesDomainEvents {
     if (!SKIP_CLEANUP) {
       deletePersistentVolumeClaim(domainNamespace3, "sample-pvc");
       deletePersistentVolume("sample-pv");
+      shutdownDomain(domainUid, domainNamespace3);
     }
   }
 
@@ -729,6 +734,8 @@ class ItKubernetesDomainEvents {
   private static Domain createDomain(String domainNamespace, String domainUid,
                                      String pvName, String pvcName, String serverStartupPolicy) {
 
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     // create WebLogic domain credential secret
@@ -737,9 +744,9 @@ class ItKubernetesDomainEvents {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid, thisClass.getClass().getSimpleName());
+    createPV(pvName, domainUid, className);
     createPVC(pvName, pvcName, domainUid, domainNamespace);
-
+    int t3ChannelPort = getNextFreePort();
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
                     -> File.createTempFile("domain", "properties"),
@@ -754,7 +761,7 @@ class ItKubernetesDomainEvents {
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(32000));
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
@@ -844,7 +851,7 @@ class ItKubernetesDomainEvents {
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
         () -> createConfigMapForDomainCreation(
-            domainScriptConfigMapName, domainScriptFiles, namespace, thisClass.getClass().getSimpleName()),
+            domainScriptConfigMapName, domainScriptFiles, namespace, className),
         "Create configmap for domain creation failed");
 
     // create a V1Container with specific scripts and properties for creating domain
@@ -950,14 +957,9 @@ class ItKubernetesDomainEvents {
     }
 
     if (verify) {
-      logger.info("Verify the DomainCompleted event is generated after " + testType);
+      logger.info("Verify the Completed event is generated after " + testType);
       checkEventWithCount(
           opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
-
-  private void scaleDomain(int replicaCount, String namespace) {
-    scaleDomainAndVerifyCompletedEvent(replicaCount, ScaleAction.reset, false, namespace);
-  }
-
 }

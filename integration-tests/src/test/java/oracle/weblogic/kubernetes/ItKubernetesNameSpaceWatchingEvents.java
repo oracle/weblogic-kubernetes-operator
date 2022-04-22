@@ -14,17 +14,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
@@ -46,8 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Tests related to Domain events logged by operator.
  * The tests checks for the following events in the domain name space.
  * NamespaceWatchingStarted, and NamespaceWatchingStopped.
- * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
- * and finally deletes it to generate all the domain related events.
  */
 @DisplayName("Verify the Kubernetes events for watching namespace")
 @IntegrationTest
@@ -335,17 +329,6 @@ class ItKubernetesNameSpaceWatchingEvents {
 
     logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
-  }
-
-  /**
-   * Cleanup the persistent volume and persistent volume claim used by the test.
-   */
-  @AfterAll
-  public static void tearDown() {
-    if (!SKIP_CLEANUP) {
-      deletePersistentVolumeClaim(domainNamespace1, "sample-pvc");
-      deletePersistentVolume("sample-pv");
-    }
   }
 
   // Utility method to check event
