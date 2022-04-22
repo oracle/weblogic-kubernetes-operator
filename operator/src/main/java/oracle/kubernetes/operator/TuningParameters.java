@@ -256,12 +256,13 @@ public interface TuningParameters extends Map<String, String> {
     public final int livenessProbeSuccessThreshold;
     public final int livenessProbeFailureThreshold;
     public final long introspectorJobActiveDeadlineSeconds;
+    public final boolean restartEvictedPods;
 
     /**
      * create pod tuning.
      * @param readinessProbeInitialDelaySeconds readiness probe initial delay
      * @param readinessProbeTimeoutSeconds readiness probe timeout
-     * @param readinessProbePeriodSeconds rediness probe period
+     * @param readinessProbePeriodSeconds readiness probe period
      * @param readinessProbeSuccessThreshold readiness probe success threshold
      * @param readinessProbeFailureThreshold readiness probe failure threshold
      * @param livenessProbeInitialDelaySeconds liveness probe initial delay
@@ -270,6 +271,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param livenessProbeSuccessThreshold liveness probe success threshold
      * @param livenessProbeFailureThreshold liveness probe failure threshold
      * @param introspectorJobActiveDeadlineSeconds introspector job active deadline
+     * @param restartEvictedPods whether evicted server pods should be restarted
      */
     public PodTuning(
         int readinessProbeInitialDelaySeconds,
@@ -282,7 +284,8 @@ public interface TuningParameters extends Map<String, String> {
         int livenessProbePeriodSeconds,
         int livenessProbeSuccessThreshold,
         int livenessProbeFailureThreshold,
-        long introspectorJobActiveDeadlineSeconds) {
+        long introspectorJobActiveDeadlineSeconds,
+        boolean restartEvictedPods) {
       this.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
       this.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
       this.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
@@ -294,6 +297,7 @@ public interface TuningParameters extends Map<String, String> {
       this.livenessProbeSuccessThreshold = livenessProbeSuccessThreshold;
       this.livenessProbeFailureThreshold = livenessProbeFailureThreshold;
       this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
+      this.restartEvictedPods = restartEvictedPods;
     }
 
     @Override
@@ -309,6 +313,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("livenessProbePeriodSeconds", livenessProbePeriodSeconds)
           .append("livenessProbeSuccessThreshold", livenessProbeSuccessThreshold)
           .append("livenessProbeFailureThreshold", livenessProbeFailureThreshold)
+          .append("restartEvictedPods", restartEvictedPods)
           .toString();
     }
 
@@ -325,6 +330,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(livenessProbePeriodSeconds)
           .append(livenessProbeSuccessThreshold)
           .append(livenessProbeFailureThreshold)
+          .append(restartEvictedPods)
           .toHashCode();
     }
 
@@ -348,6 +354,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(livenessProbePeriodSeconds, pt.livenessProbePeriodSeconds)
           .append(livenessProbeSuccessThreshold, pt.livenessProbeSuccessThreshold)
           .append(livenessProbeFailureThreshold, pt.livenessProbeFailureThreshold)
+          .append(restartEvictedPods, pt.restartEvictedPods)
           .isEquals();
     }
   }

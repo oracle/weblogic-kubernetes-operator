@@ -43,6 +43,7 @@ public interface KubernetesConstants {
   String OPERATOR_POD_UID_ENV = "OPERATOR_POD_UID";
   String NAMESPACE = "Namespace";
   String POD = "Pod";
+  String EVICTED_REASON = "Evicted";
 
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 

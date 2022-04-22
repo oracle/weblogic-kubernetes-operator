@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.meterware.simplestub.Memento;
@@ -32,6 +33,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int LIVENESS_SUCCESS_THRESHOLD = 1;
   static final int LIVENESS_FAILURE_THRESHOLD = 1;
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
+  static final boolean RESTART_EVICTED_PODS = true;
 
   // Call builder tuning
   public static final int CALL_REQUEST_LIMIT = 10;
@@ -63,7 +65,12 @@ public abstract class TuningParametersStub implements TuningParameters {
         LIVENESS_PERIOD,
         LIVENESS_SUCCESS_THRESHOLD,
         LIVENESS_FAILURE_THRESHOLD,
-        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS,
+        getBooleanParameter("restartEvictedPods", RESTART_EVICTED_PODS));
+  }
+
+  private boolean getBooleanParameter(String key, boolean defaultValue) {
+    return Optional.ofNullable(get(key)).map(Boolean::parseBoolean).orElse(defaultValue);
   }
 
   /**
