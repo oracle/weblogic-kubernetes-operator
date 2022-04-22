@@ -232,7 +232,7 @@ class ItIntrospectVersion {
   @Tag("gate")
   void testDomainIntrospectVersionNotRolling() {
     // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
@@ -377,7 +377,7 @@ class ItIntrospectVersion {
     }
 
     // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
@@ -489,7 +489,7 @@ class ItIntrospectVersion {
     assertNotEquals(-1, adminServerPort, "Couldn't get valid port for default channel");
 
     // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
@@ -868,7 +868,7 @@ class ItIntrospectVersion {
     }
 
     // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    Map<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
