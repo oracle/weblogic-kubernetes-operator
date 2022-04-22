@@ -13,8 +13,7 @@
       <pubDate>Wed, 06 Mar 2019 21:14:18 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/</guid>
-      <description>Updating operator external certificates If the operator needs to update the external certificate and key currently being used or was installed without an external REST API SSL/TLS identity, the helm upgrade command is used to restart the operator with the new or updated Kubernetes tls secret that contains the desired certificates.
-The operator requires a restart in order to begin using the new or updated external certificate. The Helm --recreate-pods flag is used to cause the existing Kubernetes Pod to be terminated and a new pod to be started with the updated configuration.</description>
+      <description>This document is now located in the operator user guide, see REST Services.</description>
     </item>
     
     <item>
@@ -33,8 +32,7 @@ The introspection job also creates a boot.properties file that is made available
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/</guid>
-      <description>WebLogic Kubernetes Operator ServiceAccounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the Operator Helm configuration values.
-The operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
+      <description>This document is now located in the operator user guide, see Service Accounts.</description>
     </item>
     
     <item>
@@ -43,7 +41,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/rbac/</guid>
-      <description>Contents  Overview Operator RBAC definitions  Role and RoleBinding naming conventions ClusterRole and ClusterRoleBinding naming conventions   RoleBindings ClusterRoleBindings  Overview The operator assumes that certain Kubernetes Roles are created in the Kubernetes cluster. The operator Helm chart creates the required ClusterRoles, ClusterRoleBindings, Roles, and RoleBindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
+      <description>This document is now located in the operator user guide, see RBAC.</description>
     </item>
     
     <item>
@@ -52,7 +50,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/</guid>
-      <description>Contents  Domain credentials secret Domain image pull secret Operator image pull secret Operator configuration override secrets Operator external REST interface secret Operator internal REST interface secret  Domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
+      <description>Contents  Domain credentials secret Domain image pull secret Domain configuration override or runtime update secrets Operator image pull secret Operator external REST interface secret Operator internal REST interface secret  Domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
     <item>
@@ -61,9 +59,8 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>Security requirements to run WebLogic in OpenShift WebLogic Kubernetes Operator images starting with version 3.1 and WebLogic Server images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
-Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
-# Setup filesystem and oracle user# Adjust file permissions, go to /u01 as user &amp;#39;oracle&amp;#39; to proceed with WLS installation# ------------------------------------------------------------RUN mkdir -p /u01 &amp;amp;&amp;amp; \  chmod 775 /u01 &amp;amp;&amp;amp; \  useradd -b /u01 -d /u01/oracle -m -s /bin/bash oracle &amp;amp;&amp;amp; \  chown oracle:root /u01COPY --from=builder --chown=oracle:root /u01 /u01OpenShift, by default, enforces the restricted security context constraint which allocates a high, random UID in the root group for each container.</description>
+      <description>Security requirements to run WebLogic in OpenShift WebLogic Kubernetes Operator images starting with version 3.1 and WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
+Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:</description>
     </item>
     
   </channel>

@@ -13,17 +13,17 @@
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.3.8:
- Kubernetes 1.19.15+, 1.20.11+, and 1.21.5+ (check with kubectl version). Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+      <description>For the current production release 3.4.0:
+ Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, and 1.23.4+ (check with kubectl version). Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
     <item>
-      <title>Supported platforms</title>
+      <title>Supported environments</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</link>
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
-      <description>Contents  Supported environments Kubernetes, WebLogic Server, and operating system prerequisites Pricing and licensing  WebLogic Kubernetes Operator WebLogic Server Oracle Linux and WebLogic Server Images Reference   Important notes about specific environments  Oracle Cloud Infrastructure (OCI) Oracle Linux Cloud Native Environment (OLCNE) Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions    Supported environments WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:</description>
+      <description>Contents  Overview Important notes about specific environments  Oracle Cloud Infrastructure (OCI) Oracle Linux Cloud Native Environment (OLCNE) Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions   Pricing and licensing  WebLogic Kubernetes Operator WebLogic Server Oracle Linux Oracle Java WebLogic Server or Fusion Middleware Infrastructure Images Additional references    Overview The operator supports a wide range of on-premises and cloud Kubernetes offerings where Kubernetes is supplied for you or you set up Kubernetes yourself.</description>
     </item>
     
     <item>
@@ -32,7 +32,7 @@
       <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
-      <description>Contents  Overview Limitations Determining the Istio version Setting up an operator with Istio support Creating a domain with Istio support  Setting up the domain namespace Configuring the domain resource Applying a Domain YAML file Exposing applications in Istio-enabled domains   Traffic management Distributed tracing Automatically added network channels  Added network channels for Istio versions prior to v1.10 Added network channel for Istio versions v1.10 and later Added network channel for WebLogic EJB and servlet session state replication traffic    Overview These instructions assume that you are using a Kubernetes cluster with Istio installed and configured already.</description>
+      <description>Contents  Overview Limitations Determining the Istio version Setting up an operator with Istio support Creating a domain with Istio support  Setting up the domain namespace Configuring the domain resource Applying a Domain YAML file Exposing applications in Istio-enabled domains   Traffic management Distributed tracing Automatically added network channels  Added network channels for Istio versions prior to v1.10 Added network channel for Istio versions v1.10 and later Added network channel for WebLogic EJB and servlet session state replication traffic   Security  Mutual TLS Authorization policy Destination rule Ingress gateway    Overview These instructions assume that you are using a Kubernetes cluster with Istio installed and configured already.</description>
     </item>
     
     <item>

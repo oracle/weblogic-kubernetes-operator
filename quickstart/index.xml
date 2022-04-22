@@ -14,11 +14,11 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.8   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.0   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
-b. Find and then pull the WebLogic 12.2.1.4 install image:
-$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4  The WebLogic Server image, weblogic:12.</description>
+b. Find and then pull the WebLogic 12.2.1.4 General Availability (GA) installation image.
+GA images are suitable for demonstration and development purposes only where the environments are not available from the public Internet; they are not acceptable for production use.</description>
     </item>
     
     <item>
@@ -28,7 +28,7 @@ $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4  The We
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/install/</guid>
       <description>Use Helm to install the operator and Traefik ingress controller. First, set up Helm:
-$ helm repo add traefik https://containous.github.io/traefik-helm-chart/ --force-update Create a Traefik ingress controller. Create a namespace for the ingress controller.
+$ helm repo add traefik https://helm.traefik.io/traefik --force-update Create a Traefik ingress controller. Create a namespace for the ingress controller.
 $ kubectl create namespace traefik Use the values.yaml file in the sample but set kubernetes.namespaces specifically.
 $ helm install traefik-operator traefik/traefik \  --namespace traefik \  --values kubernetes/samples/charts/traefik/values.yaml \  --set &amp;#34;kubernetes.namespaces={traefik}&amp;#34; Install the operator.   Create a namespace for the operator:</description>
     </item>

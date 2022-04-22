@@ -4,28 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="Considerations for managing namespaces while the operator is running.">
+    <meta name="description" content="Considerations for managing an operator&#39;s namespaces.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Managing domain namespaces :: WebLogic Kubernetes Operator</title>
+    <title>Namespace management :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1650628334" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1650628334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1650639402" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1650628334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1650639402"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1650628334"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1650628334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1650639402"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1650639402"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1650628334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1650639402"></script>
 
     
   </div>
@@ -393,9 +393,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported environments" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
-        Supported platforms
+        Supported environments
         
         </a>
     </li>
@@ -446,7 +446,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/managing-operators/">
-          Manage operators
+          <b> </b>Manage operators
           
       </a>
       
@@ -467,9 +467,51 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/overview/" title="Overview" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/overview/">
+        Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/preparation/" title="Prepare for installation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/preparation/">
+        Prepare for installation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Installation and upgrade" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">
-        Install the operator
+        Installation and upgrade
         
         </a>
     </li>
@@ -488,9 +530,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/" title="Configure the operator using Helm" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/" title="Configuration reference" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/">
-        Configure the operator using Helm
+        Configuration reference
         
         </a>
     </li>
@@ -509,9 +551,114 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/" title="Use the operator&#39;s REST services" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/" title="Namespace management" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/">
+        Namespace management
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/" title="REST services" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/">
-        Use the operator&#39;s REST services
+        REST services
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/" title="Common mistakes and solutions" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/">
+        Common mistakes and solutions
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/">
+        Troubleshooting
         
         </a>
     </li>
@@ -539,16 +686,110 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/" title="WebLogic Server images" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/" title="WebLogic images" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/base-images/">
-          WebLogic Server images
+          <b> </b>WebLogic images
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/ocr-images/" title="OCR images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/ocr-images/">
+        OCR images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/custom-images/" title="Create custom images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/custom-images/">
+        Create custom images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/patch-images/" title="Patch running domains" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/patch-images/">
+        Patch running domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/access-images/" title="Access domain images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/access-images/">
+        Access domain images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
       
     </li>
   
@@ -622,7 +863,7 @@
     
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/">
-        <b> </b>Prepare to run a domain
+        Prepare to run a domain
         
         </a>
     </li>
@@ -820,9 +1061,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/" title="Debugging" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/" title="Domain debugging" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">
-        <b> </b>Debugging
+        <b> </b>Domain debugging
         
         </a>
     </li>
@@ -1115,6 +1356,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
         Liveness and readiness probes customization
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scripts/" title="Lifecycle scripts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scripts/">
+        Lifecycle scripts
         
         </a>
     </li>
@@ -2848,9 +3110,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/namespace-management/" title="Managing domain namespaces" class="dd-item active">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/namespace-management/" title="Namespace management" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/faq/namespace-management/">
-        Managing domain namespaces
+        Namespace management
         
         </a>
     </li>
@@ -3193,7 +3455,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/faq/'>Frequently asked questions</a> > Managing domain namespaces
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/faq/'>Frequently asked questions</a> > Namespace management
           
         
           
@@ -3206,15 +3468,7 @@
                 
                     <div class="progress">
     <div class="wrapper">
-<nav id="TableOfContents">
-  <ul>
-    <li>
-      <ul>
-        <li></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
+<nav id="TableOfContents"></nav>
     </div>
 </div>
 
@@ -3230,142 +3484,14 @@
           
             <h1>
               
-              Managing domain namespaces
+              Namespace management
             </h1>
           
 
         
 
 
-<p>Each operator deployment manages a number of Kubernetes namespaces. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>. A number of Kubernetes resources
-must be present in a namespace before any WebLogic Server instances can be successfully
-started.
-Those Kubernetes resources are created either as part of the installation
-of a release of the operator&rsquo;s Helm chart, or created by the operator.</p>
-<p>This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running. For example:</p>
-<ul>
-<li><a href="#check-the-namespaces-that-the-operator-manages">Check the namespaces that the operator manages</a></li>
-<li><a href="#add-a-kubernetes-namespace-to-the-operator">Add a namespace for the operator to manage</a></li>
-<li><a href="#delete-a-kubernetes-namespace-from-the-operator">Delete a namespace from the operator&rsquo;s domain namespace list</a></li>
-<li><a href="#recreate-a-previously-deleted-kubernetes-namespace">Delete and recreate a Kubernetes Namespace that the operator manages</a></li>
-</ul>
-<p>For others, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#common-mistakes-and-solutions">Common Mistakes and Solutions</a>.</p>
-
-<div class="notices note" ><p>There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that the namespaces managed by these operators do not overlap.</p>
-</div>
-
-<h4 id="check-the-namespaces-that-the-operator-manages">Check the namespaces that the operator manages</h4>
-<p>Prior to version 3.1.0, the operator supported specifying the namespaces that it would manage only through a list.
-Now, the operator supports a list of namespaces, a label selector, or a regular expression matching namespace names.</p>
-<p>For operators that specify namespaces by a list, you can find the list of the namespaces using the <code>helm get values</code> command.
-For example, the following command shows all the values of the operator release <code>weblogic-operator</code>; the <code>domainNamespaces</code> list contains <code>default</code> and <code>ns1</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm get values weblogic-operator
-</code></pre></div><pre><code>domainNamespaces:
-- default
-- ns1
-elasticSearchHost: elasticsearch.default.svc.cluster.local
-elasticSearchPort: 9200
-elkIntegrationEnabled: false
-externalDebugHttpPort: 30999
-externalRestEnabled: false
-externalRestHttpsPort: 31001
-image: ghcr.io/oracle/weblogic-kubernetes-operator:3.3.8
-imagePullPolicy: IfNotPresent
-internalDebugHttpPort: 30999
-javaLoggingLevel: INFO
-logStashImage: logstash:6.6.0
-remoteDebugNodePortEnabled: false
-serviceAccount: default
-suspendOnDebugStartup: false
-</code></pre><p>For operators that select namespaces with a selector, simply list namespaces using that selector:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get ns --selector<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;weblogic-operator=enabled&#34;</span>
-</code></pre></div><p>For operators that select namespaces with a regular expression matching the name, you can use a combination of <code>kubectl</code>
-and any command-line tool that can process the regular expression, such as <code>grep</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get ns -o go-template<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{{range .items}}{{.metadata.name}}{{&#34;\n&#34;}}{{end}}&#39;</span> | grep <span style="color:#e6db74">&#34;^weblogic&#34;</span>
-</code></pre></div><p>If you don&rsquo;t know the release name of the operator, you can use <code>helm list</code> to list all the releases for a specified namespace or all namespaces:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm list --namespace &lt;namespace&gt;
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm list --all-namespaces
-</code></pre></div><h4 id="add-a-kubernetes-namespace-to-the-operator">Add a Kubernetes namespace to the operator</h4>
-<p>When the operator is configured to manage a list of namespaces and you want the operator to manage an additional namespace,
-you need to add the namespace to the operator&rsquo;s <code>domainNamespaces</code> list. Note that this namespace has to already exist, for example,
-using the <code>kubectl create</code> command.</p>
-<p>Adding a namespace to the <code>domainNamespaces</code> list tells the operator to initialize the necessary
-Kubernetes resources so that the operator is ready to manage WebLogic Server instances in that namespace.</p>
-<p>When the operator is managing the <code>default</code> namespace, the following example Helm command adds the namespace <code>ns1</code> to the <code>domainNamespaces</code> list, where <code>weblogic-operator</code> is the release name of the operator, and <code>kubernetes/charts/weblogic-operator</code> is the location of the operator&rsquo;s Helm charts:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --reuse-values <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --set <span style="color:#e6db74">&#34;domainNamespaces={default,ns1}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --wait
-</code></pre></div><p>You can verify that the operator has initialized a namespace by confirming the existence of the required <code>configmap</code> resource.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubetctl get cm -n &lt;namespace&gt;
-</code></pre></div><p>For example, the following example shows that the domain <code>configmap</code> resource exists in the namespace <code>ns1</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get cm -n ns1
-</code></pre></div><pre><code>NAME                 DATA      AGE
-
-weblogic-scripts-cm   14        12m
-</code></pre><p>For operators configured to select managed namespaces through the use of a label selector or regular expression,
-you simply need to create a namespace with the appropriate labels or with a name that matches the expression, respectively.</p>
-<p>If you did not choose to enable the value, <code>enableClusterRoleBinding</code>, then the operator will not have the necessary
-permissions to manage the namespace. You can do this by performing a <code>helm upgrade</code> with the values used when installing the
-Helm release:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    kubernetes/charts/weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --reuse-values
-</code></pre></div><h4 id="delete-a-kubernetes-namespace-from-the-operator">Delete a Kubernetes namespace from the operator</h4>
-<p>When the operator is configured to manage a list of namespaces and you no longer want a namespace to be managed by the operator, you need to remove it from
-the operator&rsquo;s <code>domainNamespaces</code> list, so that the resources that are
-associated with the namespace can be cleaned up.</p>
-<p>While the operator is running and managing the <code>default</code> and <code>ns1</code> namespaces, the following example Helm
-command removes the namespace <code>ns1</code> from the <code>domainNamespaces</code> list, where <code>weblogic-operator</code> is the release
-name of the operator, and <code>kubernetes/charts/weblogic-operator</code> is the location of the operator Helm charts:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm upgrade <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --reuse-values <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --set <span style="color:#e6db74">&#34;domainNamespaces={default}&#34;</span> <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --wait <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    --force <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    weblogic-operator <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>    kubernetes/charts/weblogic-operator
-</code></pre></div><p>For operators configured to select managed namespaces through the use of a label selector or regular expression,
-you simply need to delete the namespace. For the label selector option, you can also adjust the labels on the namespace
-so that the namespace no longer matches the selector.</p>
-<h4 id="recreate-a-previously-deleted-kubernetes-namespace">Recreate a previously deleted Kubernetes namespace</h4>
-<p>When the operator is configured to manage a list of namespaces and if you need to delete a namespace (and the resources in it) and then recreate it,
-remember to remove the namespace from the operator&rsquo;s <code>domainNamespaces</code> list
-after you delete the namespace, and add it back to the <code>domainNamespaces</code> list after you recreate the namespace
-using the <code>helm upgrade</code> commands that were illustrated previously.</p>
-<p>If a domain custom resource is created before the namespace is ready, you might see that the introspector job pod
-fails to start, with a warning like the following, when you review the description of the introspector pod.
-Note that <code>domain1</code> is the name of the domain in the following example output.</p>
-<pre><code>Events:
-  Type     Reason                 Age               From               Message
-  ----     ------                 ----              ----               -------
-  Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspector-bz6rw to slc16ffk
-
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &quot;weblogic-credentials-volume&quot;
-
-  Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume &quot;default-token-jzblm&quot;
-
-  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume &quot;weblogic-scripts-cm-volume&quot; : configmaps &quot;weblogic-scripts-cm&quot; not found
-
-</code></pre><p>If you still run into problems after you perform the <code>helm upgrade</code> to re-initialize a namespace
-that is deleted and recreated, you can restart the operator pod as shown
-in the following examples, where the operator itself is running in the
-namespace <code>weblogic-operator-namespace</code> with the release name, <code>weblogic-operator</code>.</p>
-<ul>
-<li>Kill the operator pod, and let Kubernetes restart it.</li>
-</ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
-</code></pre></div><ul>
-<li>Scale the operator deployment to <code>0</code> and then back to <code>1</code> by changing the value of the <code>replicas</code>.</li>
-</ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
-</code></pre></div><p>Note that restarting the operator pod makes the operator temporarily unavailable for managing its namespaces.
-For example, a domain that is created while the operator is restarting will not be started until the
-operator pod is fully up again.</p>
+<p>This document is now located in the operator user guide, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/">Namespace management</a>.</p>
 
 
 <footer class="footline">
@@ -3701,9 +3827,6 @@ operator pod is fully up again.</p>
             
         
                     
-            
-        
-                    
                         
             
             
@@ -3719,98 +3842,6 @@ operator pod is fully up again.</p>
                     
             
         
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
                     
                         
             
@@ -3924,9 +3955,6 @@ operator pod is fully up again.</p>
                     
 
                     
-            
-        
-                    
                         
             
             
@@ -3942,19 +3970,6 @@ operator pod is fully up again.</p>
                     
             
         
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
                     
                         
             
@@ -4017,8 +4032,311 @@ operator pod is fully up again.</p>
 
                     
                     
+                        
+                    
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5475,19 +5793,19 @@ operator pod is fully up again.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1650628334"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1650639402"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1650628334"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1650628334"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1650639402"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1650628334"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1650639402"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

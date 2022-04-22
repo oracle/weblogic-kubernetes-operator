@@ -19,13 +19,12 @@ WebLogic Server is not open source. Licensing is required for each running WebLo
     </item>
     
     <item>
-      <title>Managing domain namespaces</title>
+      <title>Namespace management</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</link>
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started. Those Kubernetes resources are created either as part of the installation of a release of the operator&amp;rsquo;s Helm chart, or created by the operator.
-This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
+      <description>This document is now located in the operator user guide, see Namespace management.</description>
     </item>
     
     <item>
@@ -36,7 +35,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
  When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
- The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
+ The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
     <item>
@@ -46,7 +45,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</guid>
       <description>One or more WebLogic Server instances in my domain will not start and I see errors in the server log like this:
-&amp;lt;Feb 6, 2020 12:05:35,550 AM GMT&amp;gt; &amp;lt;Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password.</description>
+***&amp;lt;Feb 6, 2020 12:05:35,550 AM GMT&amp;gt; &amp;lt;Critical&amp;gt; &amp;lt;Security&amp;gt; &amp;lt;BEA-090402&amp;gt; &amp;lt;Authentication denied: Boot identity not valid. The user name or password or both from the boot identity file (boot.properties) is not valid. The boot identity may have been changed since the boot identity file was created. Please edit and update the boot identity file with the proper values of username and password.</description>
     </item>
     
     <item>
@@ -145,7 +144,7 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/</guid>
-      <description>Contents  Introduction Setting resource requests and limits in a Domain YAML file Determining Pod Quality Of Service Java heap size and memory resource considerations  Importance of setting heap size and memory resources Default heap sizes Configuring heap size   CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References  Introduction The operator creates a container in its own Pod for each WebLogic Server instance.</description>
+      <description>Contents  Introduction Setting resource requests and limits in a Domain resource Determining Pod Quality Of Service Java heap size and memory resource considerations  Importance of setting heap size and memory resources Default heap sizes Configuring heap size   CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References  Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
     </item>
     
     <item>

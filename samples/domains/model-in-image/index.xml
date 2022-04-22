@@ -79,7 +79,7 @@ In the use case, you will:
   Delete the resources associated with the domain.
 $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1 $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2 This deletes the domain and any related resources that are labeled with the domain UID sample-domain1 and sample-domain2.
 It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
- Note: When you delete a domain, the operator will detect your domain deletion and shut down its pods.</description>
+NOTE: When you delete a domain, the operator will detect your domain deletion and shut down its pods.</description>
     </item>
     
   </channel>

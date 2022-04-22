@@ -4,28 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="Debugging a deployed Model in Image domain.">
+    <meta name="description" content="Debugging a deployed domain.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Debugging :: WebLogic Kubernetes Operator</title>
+    <title>Domain debugging :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1650628335" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1650628335" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1650639402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1650639402" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1650628335"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1650639402"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1650628335"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1650628335"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1650639402"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1650639402"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1650628335"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1650639402"></script>
 
     
   </div>
@@ -393,9 +393,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported environments" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
-        Supported platforms
+        Supported environments
         
         </a>
     </li>
@@ -446,7 +446,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/managing-operators/">
-          Manage operators
+          <b> </b>Manage operators
           
       </a>
       
@@ -467,9 +467,51 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/overview/" title="Overview" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/overview/">
+        Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/preparation/" title="Prepare for installation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/preparation/">
+        Prepare for installation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Installation and upgrade" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">
-        Install the operator
+        Installation and upgrade
         
         </a>
     </li>
@@ -488,9 +530,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/" title="Configure the operator using Helm" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/" title="Configuration reference" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/">
-        Configure the operator using Helm
+        Configuration reference
         
         </a>
     </li>
@@ -509,9 +551,114 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/" title="Use the operator&#39;s REST services" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/" title="Namespace management" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/">
+        Namespace management
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/" title="REST services" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/">
-        Use the operator&#39;s REST services
+        REST services
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/" title="Common mistakes and solutions" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/">
+        Common mistakes and solutions
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/">
+        Troubleshooting
         
         </a>
     </li>
@@ -539,16 +686,110 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/" title="WebLogic Server images" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/" title="WebLogic images" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/base-images/">
-          WebLogic Server images
+          <b> </b>WebLogic images
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/ocr-images/" title="OCR images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/ocr-images/">
+        OCR images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/custom-images/" title="Create custom images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/custom-images/">
+        Create custom images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/patch-images/" title="Patch running domains" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/patch-images/">
+        Patch running domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/base-images/access-images/" title="Access domain images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/base-images/access-images/">
+        Access domain images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
       
     </li>
   
@@ -622,7 +863,7 @@
     
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/prepare/">
-        <b> </b>Prepare to run a domain
+        Prepare to run a domain
         
         </a>
     </li>
@@ -820,9 +1061,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/" title="Debugging" class="dd-item active">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/" title="Domain debugging" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">
-        <b> </b>Debugging
+        <b> </b>Domain debugging
         
         </a>
     </li>
@@ -1115,6 +1356,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
         Liveness and readiness probes customization
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scripts/" title="Lifecycle scripts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/scripts/">
+        Lifecycle scripts
         
         </a>
     </li>
@@ -2848,9 +3110,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/namespace-management/" title="Managing domain namespaces" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/namespace-management/" title="Namespace management" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/namespace-management/">
-        Managing domain namespaces
+        Namespace management
         
         </a>
     </li>
@@ -3201,7 +3463,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/'>Manage WebLogic domains</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/'>Model in Image</a> > Debugging
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/'>Manage WebLogic domains</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/'>Model in Image</a> > Domain debugging
           
         
           
@@ -3228,7 +3490,8 @@
         <li><a href="#check-the-introspector-job">Check the introspector job</a></li>
         <li><a href="#check-the-weblogic-server-pods">Check the WebLogic Server pods</a></li>
         <li><a href="#check-the-operator-log">Check the operator log</a></li>
-        <li><a href="#check-the-faq">Check the FAQ</a></li>
+        <li><a href="#check-the-docs">Check the docs</a></li>
+        <li><a href="#check-the-operator">Check the operator</a></li>
       </ul>
     </li>
   </ul>
@@ -3248,14 +3511,14 @@
           
             <h1>
               
-              Debugging
+              Domain debugging
             </h1>
           
 
         
 
 
-<p>Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.</p>
+<p>Here are some suggestions for debugging problems with a domain after your Domain YAML file is deployed.</p>
 <h3 id="contents">Contents</h3>
 <ul>
 <li><a href="#check-the-domain-status">Check the Domain status</a></li>
@@ -3263,7 +3526,8 @@
 <li><a href="#check-the-introspector-job">Check the introspector job</a></li>
 <li><a href="#check-the-weblogic-server-pods">Check the WebLogic Server pods</a></li>
 <li><a href="#check-the-operator-log">Check the operator log</a></li>
-<li><a href="#check-the-faq">Check the FAQ</a></li>
+<li><a href="#check-the-docs">Check the docs</a></li>
+<li><a href="#check-the-operator">Check the operator</a></li>
 </ul>
 <h3 id="check-the-domain-status">Check the Domain status</h3>
 <p>To check the Domain status: <code>kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID</code>.</p>
@@ -3331,12 +3595,21 @@ $ # grep operator log for SEVERE and WARNING level messages
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  | egrep -e <span style="color:#e6db74">&#34;level...(SEVERE|WARNING)&#34;</span> <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  | grep <span style="color:#e6db74">&#34;domainUID...sample-domain1&#34;</span>
-</code></pre></div><h3 id="check-the-faq">Check the FAQ</h3>
-<p>Common issues that have corresponding FAQ entries include:</p>
+</code></pre></div><h3 id="check-the-docs">Check the docs</h3>
+<p>Common issues that have corresponding documentation include:</p>
 <ul>
-<li>When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain&rsquo;s namespace has been set up to be monitored by an operator. See the <a href="/weblogic-kubernetes-operator/faq/namespace-management/">Managing domain namespaces FAQ</a>.</li>
-<li>If a <code>describe</code> of an introspector job or WebLogic Server pod reveals image access errors, see the <a href="/weblogic-kubernetes-operator/faq/cannot-pull-image/">Cannot pull image FAQ</a>.</li>
+<li>When a Domain YAML file is deployed and no introspector or WebLogic Server pods start,
+plus the operator log contains no mention of the domain,
+then check to make sure that the Domain&rsquo;s namespace has been set up to be monitored by an operator.
+See the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/namespace-management/">Namespace management</a>
+and operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/common-mistakes/">Common mistakes and solutions</a> documentation.</li>
+<li>If a <code>describe</code> of an introspector job or WebLogic Server pod reveals image access errors,
+see the <a href="/weblogic-kubernetes-operator/faq/cannot-pull-image/">Cannot pull image</a> FAQ.</li>
 </ul>
+<h3 id="check-the-operator">Check the operator</h3>
+<p>If the problem is specific to the operator itself,
+or its namespace management,
+then consult the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/troubleshooting/">Troubleshooting</a> documentation.</p>
 
 
 <footer class="footline">
@@ -3676,9 +3949,6 @@ $ # grep operator log for SEVERE and WARNING level messages
             
         
                     
-            
-        
-                    
                         
             
             
@@ -3699,106 +3969,6 @@ $ # grep operator log for SEVERE and WARNING level messages
             
             
                 
-                    
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
                     
                 
                 
@@ -3880,6 +4050,285 @@ $ # grep operator log for SEVERE and WARNING level messages
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -4006,6 +4455,22 @@ $ # grep operator log for SEVERE and WARNING level messages
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5454,19 +5919,19 @@ $ # grep operator log for SEVERE and WARNING level messages
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1650628335"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1650639402"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1650628335"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1650628335"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1650639402"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1650639402"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1650628335"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1650639402"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
