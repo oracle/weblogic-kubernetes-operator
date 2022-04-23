@@ -464,14 +464,6 @@ class ItSystemResOverrides {
         },
         logger,
         "Deploying the application using Rest");
-
-    String baseUri = "http://" + hostAndPort + "/sitconfig/";
-    String configUri = "SitconfigServlet";
-
-    testUntil(() -> {
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
-      return 200 == response.statusCode();
-    }, logger, "Waiting for deployment to be ready and return 200");
   }
 
   /**
