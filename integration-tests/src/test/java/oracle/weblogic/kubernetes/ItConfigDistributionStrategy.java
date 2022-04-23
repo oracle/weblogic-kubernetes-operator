@@ -678,14 +678,18 @@ class ItConfigDistributionStrategy {
         + "attributeTest=true"
         + "&serverType=adminserver"
         + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
-    } else {
-      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
-    }
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      if (response.statusCode() != 200) {
+        logger.info("Response code is not 200 retrying...");
+        return false;
+      }
+      if (configUpdated) {
+        return response.body().contains("MaxMessageSize=100000000");
+      } else {
+        return response.body().contains("MaxMessageSize=10000000");
+      }
+    }, logger, "clusterview app in admin server is accessible after restart");
 
   }
 
@@ -735,18 +739,6 @@ class ItConfigDistributionStrategy {
         },
         logger,
         "clusterview app in admin server is accessible after restart");
-    /*
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-      assertTrue(response.body().contains("getInitialCapacity:2"), "Did get getInitialCapacity:2");
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-    }
-    */
 
     //test connection pool in all managed servers of dynamic cluster
     HttpResponse<String> response = null;
