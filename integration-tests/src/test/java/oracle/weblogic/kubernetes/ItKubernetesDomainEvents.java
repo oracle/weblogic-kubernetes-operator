@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests related to Domain events logged by operator.
  * The tests checks for the following events in the domain name space.
  * Created, Changed, Deleted, Completed,
- * DomainFailed.
+ * Failed.
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
  */
@@ -220,7 +220,7 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   @Tag("gate")
-  void testDomainK8SEventsSuccess() {
+  void testK8SEventsSuccess() {
     try {
       OffsetDateTime timestamp = now();
       logger.info("Creating domain");
@@ -237,10 +237,10 @@ class ItKubernetesDomainEvents {
 
   /**
    * Patch a domain resource with a new managed server not existing in actual WebLogic domain and verify
-   * the warning DomainFailed event is logged by the operator in the domain namespace.
+   * the warning Failed event is logged by the operator in the domain namespace.
    */
   @Test
-  @DisplayName("Test domain DomainFailed event with TopologyMismatch for non-existing managed server")
+  @DisplayName("Test domain Failed event with TopologyMismatch for non-existing managed server")
   void testDomainK8sEventsNonExistingManagedServer() {
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with non-existing managed server");
@@ -255,7 +255,7 @@ class ItKubernetesDomainEvents {
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
-    logger.info("verify the DomainFailed event is generated");
+    logger.info("verify the Failed event is generated");
     checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
 
     // remove the managed server from domain resource
@@ -275,10 +275,10 @@ class ItKubernetesDomainEvents {
 
   /**
    * Patch a domain resource with a new cluster not existing in actual WebLogic domain and verify
-   * the warning DomainFailed event is logged by the operator in the domain namespace.
+   * the warning Failed event is logged by the operator in the domain namespace.
    */
   @Test
-  @DisplayName("Test domain DomainFailed event for non-existing cluster")
+  @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with new cluster");
@@ -291,7 +291,7 @@ class ItKubernetesDomainEvents {
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
-    // verify the DomainFailed event is generated
+    // verify the Failed event is generated
     checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
 
     //remove the cluster from domain resource
@@ -310,12 +310,12 @@ class ItKubernetesDomainEvents {
    * Test the following domain events are logged when domain resource goes through introspector failure.
    * Patch the domain resource to shutdown servers.
    * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IF_NEEDED.
-   * Verifies DomainFailed event with Aborted failure reason is logged.
+   * Verifies Failed event with Aborted failure reason is logged.
    * Cleanup by patching the domain resource to a valid location and introspectVersion to bring up all servers again.
    */
   @Test
   @DisplayName("Test domain events for failed/retried domain life cycle changes")
-  void testDomainK8SEventsFailed() {
+  void testK8SEventsFailed() {
     try {
       V1Patch patch;
       String patchStr;
@@ -337,7 +337,7 @@ class ItKubernetesDomainEvents {
       }
 
       logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-              + " DomainChanged and DomainFailed events are logged");
+              + " DomainChanged and Failed events are logged");
       patchStr = "[{\"op\": \"replace\", "
               + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
               + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
@@ -379,7 +379,7 @@ class ItKubernetesDomainEvents {
 
   /**
    * Scale the cluster beyond maximum dynamic cluster size and verify the
-   * DomainFailed warning event is generated.
+   * Failed warning event is generated.
    */
   @Test
   void testDomainK8sEventsScalePastMax() {
@@ -395,7 +395,7 @@ class ItKubernetesDomainEvents {
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
-      logger.info("verify the DomainFailed event is generated");
+      logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
     } finally {
       timestamp = now();
@@ -432,7 +432,7 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Scale the cluster below minimum dynamic cluster size and verify the DomainFailed
+   * Scale the cluster below minimum dynamic cluster size and verify the Failed
    * warning event is generated.
    */
   @Test
@@ -450,7 +450,7 @@ class ItKubernetesDomainEvents {
           "Failed to patch domain");
 
       // No event will be created for this
-      logger.info("verify the DomainFailed event is NOT generated");
+      logger.info("verify the Failed event is NOT generated");
       assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
     } finally {
       timestamp = now();
@@ -468,10 +468,10 @@ class ItKubernetesDomainEvents {
 
   /**
    * Replace the pv and pvc in the domain resource with a pv/pvc not containing any WebLogic domain
-   * and verify the DomainFailed warning event is generated.
+   * and verify the Failed warning event is generated.
    */
   @Test
-  void testDomainK8sEventsFailed() {
+  void testK8sEventsFailed() {
     OffsetDateTime timestamp = now();
     try {
       String pvName = getUniqueName("sample-pv-");
@@ -492,7 +492,7 @@ class ItKubernetesDomainEvents {
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
-      logger.info("verify the DomainFailed event is generated");
+      logger.info("verify the Failed event is generated");
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_FAILED, "Warning", timestamp);
     } finally {
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
@@ -650,20 +650,16 @@ class ItKubernetesDomainEvents {
    */
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
-  void testDomainK8SEventsDelete() {
-    try {
-      OffsetDateTime timestamp = now();
-      createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-      deleteDomainCustomResource(domainUid, domainNamespace2);
-      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
-      checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
-      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
+  void testK8SEventsDelete() {
+    OffsetDateTime timestamp = now();
+    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
+    deleteDomainCustomResource(domainUid, domainNamespace2);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
 
-      //verify domain deleted event
-      checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
-    } finally {
-      shutdownDomain(domainUid, domainNamespace2);
-    }
+    //verify domain deleted event
+    checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
   }
 
   /**
