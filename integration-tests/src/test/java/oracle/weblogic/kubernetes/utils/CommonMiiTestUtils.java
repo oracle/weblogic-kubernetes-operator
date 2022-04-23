@@ -100,7 +100,6 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -1067,7 +1066,7 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodReady(introspectJobName, domainUid, domainNamespace);
 
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName),
