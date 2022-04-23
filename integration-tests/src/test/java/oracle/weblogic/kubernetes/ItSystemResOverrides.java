@@ -37,6 +37,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -52,7 +53,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -63,7 +63,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -152,8 +152,13 @@ class ItSystemResOverrides {
     sitconfigAppPath = Paths.get(distDir.toString(), "sitconfig.war");
     assertTrue(sitconfigAppPath.toFile().exists(), "Application archive is not available");
 
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+
     //deploy application to view server configuration
-    deployApplication(clusterName + "," + adminServerName);
+    deployApplication();
 
   }
 
@@ -217,11 +222,6 @@ class ItSystemResOverrides {
 
     //verify server attribute MaxMessageSize
     String appURI = "/sitconfig/SitconfigServlet";
-
-    if (adminSvcExtHost == null) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    }
-    logger.info("admin svc host = {0}", adminSvcExtHost);
     String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     String url = "http://" + hostAndPort + appURI;
 
@@ -441,19 +441,37 @@ class ItSystemResOverrides {
   }
 
   //deploy application sitconfig.war to domain
-  private void deployApplication(String targets) {
-    logger.info("Getting port for default channel");
-    int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default port failed");
-    logger.info("default channel port: {0}", defaultChannelPort);
-    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+  private void deployApplication() {
 
-    //deploy application
-    logger.info("Deploying webapp {0} to domain", sitconfigAppPath);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, sitconfigAppPath,
-        domainNamespace);
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying sitconfig app {0} to targets {1},{2}", sitconfigAppPath, clusterName, adminServerName);
+    String targets = "{identity:[clusters,'" + clusterName + "']},{identity:[servers,'" + adminServerName + "']}";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    testUntil(
+        () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              targets, sitconfigAppPath, null, "sitconfig"));
+          return result.stdout().equals("202");
+        },
+        logger,
+        "Deploying the application using Rest");
+
+    String baseUri = "http://" + hostAndPort + "/sitconfig/";
+    String configUri = "SitconfigServlet";
+
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      return 200 == response.statusCode();
+    }, logger, "Waiting for deployment to be ready and return 200");
   }
 
   /**
