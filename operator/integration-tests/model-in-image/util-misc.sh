@@ -203,6 +203,12 @@ function getPodInfo() {
   echo "$cur_pods"
 }
 
+getRouteHost() {
+  local routeHost="$( oc -n ${DOMAIN_NAMESPACE} get routes $1 '-o=jsonpath={.spec.host}')"
+
+  echo $routeHost
+}
+
 # dumpInfo
 #
 #   dump pod info to a file (for tracing/debugging purposes)
