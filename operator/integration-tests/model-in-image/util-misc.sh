@@ -120,7 +120,7 @@ EOF
 
     elif [ "$1" = "OKD" ]; then
       echo "In testapp OKD case"
-      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${ROUTE_HOST}/myapp_war/index.jsp"
+      local command="$(get_curl_command) http://${ROUTE_HOST}/myapp_war/index.jsp"
       echo "COMMAND = ${command}"
 
     else
