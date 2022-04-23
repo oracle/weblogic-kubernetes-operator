@@ -92,6 +92,7 @@ function testapp() {
   local target_file_prefix="$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0})"
   local target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
   local start_secs=$SECONDS
+  echo "TARGET_FILE = ${target_file}"
 
   while [ 1 = 1 ] 
   do
@@ -118,7 +119,9 @@ EOF
       local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
 
     elif [ "$1" = "OKD" ]; then
-      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${DOMAIN_UID:-sample-domain1}-cluster-$2/myapp_war/index.jsp"
+      echo "In testapp OKD case"
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${ROUTE_HOST}/myapp_war/index.jsp"
+      echo "COMMAND = ${command}"
 
     else
       echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
