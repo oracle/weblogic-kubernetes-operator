@@ -173,7 +173,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected status");
-    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    helper.verifyDomainStatusConditionNoErrorMsg("Available", "True");
   }
 
   /**
@@ -228,7 +228,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected status
     logger.info("verifying the domain status condition contains the correct type and expected status");
-    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    helper.verifyDomainStatusConditionNoErrorMsg("Available", "True");
   }
 
   /**
