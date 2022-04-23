@@ -978,6 +978,18 @@ class ItConfigDistributionStrategy {
         },
         logger,
         "Deploying the application using Rest");
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
+    //verify server attribute MaxMessageSize
+    String configUri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=adminserver"
+        + "&serverName=" + adminServerName;
+
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      return 200 == response.statusCode();
+    }, logger, "Waiting for deployment to be ready and return 200");
   }
 
   //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
