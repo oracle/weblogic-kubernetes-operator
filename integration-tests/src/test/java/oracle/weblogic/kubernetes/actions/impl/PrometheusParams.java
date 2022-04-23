@@ -47,6 +47,10 @@ public class PrometheusParams {
     return helmParams;
   }
 
+  public int getNodePortServer() {
+    return nodePortServer;
+  }
+
   /**
    * Loads Helm values into a value map.
    *
