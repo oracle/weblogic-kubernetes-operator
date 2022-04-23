@@ -89,7 +89,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -226,7 +226,7 @@ class ItConfigDistributionStrategy {
     createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     //deploy application to view server configuration
-    deployApplication(clusterName + "," + adminServerName);
+    deployApplication();
 
   }
 
@@ -956,19 +956,28 @@ class ItConfigDistributionStrategy {
   }
 
   //deploy application clusterview.war to domain
-  private void deployApplication(String targets) {
-    logger.info("Getting port for default channel");
-    int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default port failed");
-    logger.info("default channel port: {0}", defaultChannelPort);
-    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+  private void deployApplication() {
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
 
-    //deploy application
-    logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
-        domainNamespace);
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to targets {1},{2}", clusterViewAppPath, clusterName, adminServerName);
+    String targets = "{identity:[clusters,'" + clusterName + "']},{identity:[servers,'" + adminServerName + "']}";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    testUntil(
+        () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        },
+        logger,
+        "Deploying the application using Rest");
   }
 
   //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
