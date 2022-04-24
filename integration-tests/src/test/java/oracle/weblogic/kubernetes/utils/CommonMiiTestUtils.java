@@ -944,7 +944,7 @@ public class CommonMiiTestUtils {
               .backoffLimit(0) // try only once
               .template(new V1PodTemplateSpec()
                   .spec(new V1PodSpec()
-                      .restartPolicy("NEVER")
+                      .restartPolicy("Never")
                       .addContainersItem(
                           createfixPVCOwnerContainer(pvName,
                               "/shared")) // mounted under /shared inside pod
