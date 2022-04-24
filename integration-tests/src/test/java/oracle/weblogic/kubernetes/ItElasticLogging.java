@@ -4,14 +4,12 @@
 package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
@@ -60,13 +57,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.replaceConfigMap;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPodUsingK8sExec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.searchStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -141,9 +133,6 @@ class ItElasticLogging {
 
   private static String k8sExecCmdPrefix;
   private static Map<String, String> testVarMap;
-
-  private static String sourceConfigFile = ITTESTS_DIR + "/../kubernetes/charts/weblogic-operator/logstash.conf";
-  private static String destConfigFile = WORK_DIR + "/logstash.conf";
 
   /**
    * Install Elasticsearch, Kibana and Operator.
@@ -369,67 +358,6 @@ class ItElasticLogging {
     verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
 
     logger.info("Query WebLogic log info succeeded");
-  }
-
-  /**
-   * Test when variable createLogStashConfigMap sets to true, a configMap named weblogic-operator-logstash-cm
-   * is created and users can update logstash configuration by updating the configmap
-   * instead of rebuilding operator image.
-   */
-  @Test
-  @DisplayName("Test that configMap weblogic-operator-logstash-cm is created and able to be modified")
-  void testCreateLogStashConfigMapModify() throws Exception {
-    String configMapName = "weblogic-operator-logstash-cm";
-    List<Path> logstashConfigFiles = new ArrayList<>();
-
-    // verify that configMap weblogic-operator-logstash-cm is created when createLogStashConfigMap= = true
-    Callable<Boolean> configMapExist = assertDoesNotThrow(() -> configMapExist(opNamespace, configMapName),
-        "copy logstash.conf failed");
-    assertTrue(configMapExist.call().booleanValue(),
-        String.format("configMap %s in namespace %s DO NOT exist", configMapName, opNamespace));
-
-    // copy the logstash config file to workdir
-    assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(destConfigFile)),
-        "copy logstash.conf failed");
-    logstashConfigFiles.add(Paths.get(destConfigFile));
-
-    // modify the configMape with cusotm logstash config file
-    String replaceStr = "msg";
-    logger.info("edit ConfigMap {0} to change 'message' to {1}", configMapName, replaceStr);
-    assertDoesNotThrow(() -> replaceStringInFile(destConfigFile, "message", replaceStr),
-        "replaceStringInFile failed");
-    assertTrue(replaceConfigMap(opNamespace, configMapName, destConfigFile),
-        String.format("Failed to replace configMap %s in namespace %s", configMapName, opNamespace));
-
-    verifyLogstashConfigMapModifyResult(replaceStr);
-  }
-
-  /**
-   * Test that users are able to use their own configMap weblogic-operator-logstash-cm
-   * to create the Operator when variable createLogStashConfigMap sets to false.
-   */
-  @Test
-  @DisplayName("Test that users can config and create their own configMap "
-      + "when configMapcreateLogStashConfigMap = false")
-  void testCreateLogStashConfigMapFalse() throws Exception {
-    boolean elkIntegrationEnabled = true;
-    boolean createLogStashConfigMap = false;
-    String defaultNamespace = "default";
-    String configMapName = "weblogic-operator-logstash-cm";
-
-    assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(destConfigFile)),
-        "copy logstash.conf failed");
-
-    List<Path> logstashConfigFiles = new ArrayList<>();
-    logstashConfigFiles.add(Paths.get(destConfigFile));
-
-    //create config map for logstash config
-    createConfigMapFromFiles(configMapName, logstashConfigFiles, opNamespace2);
-
-    // install and verify Operator2 up and running with createLogStashConfigMap = false
-    installAndVerifyOperator(opNamespace2, opNamespace2 + "-sa",
-        false, 0, elasticSearchHost, elkIntegrationEnabled,
-        createLogStashConfigMap, defaultNamespace);
   }
 
   private static String createAndVerifyDomainImage() {
