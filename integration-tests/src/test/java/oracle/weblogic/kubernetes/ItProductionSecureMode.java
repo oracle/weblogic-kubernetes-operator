@@ -60,8 +60,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -77,7 +75,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -250,36 +247,6 @@ class ItProductionSecureMode {
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
       logger.info("WebLogic console is accessible thru default-admin service");
-
-      String localhost = "localhost";
-      String forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 9002);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded admin-port is {0}", forwardPort);
-      curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} "
-          + " -o /dev/null";
-      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic console is accessible thru admin port forwarding");
-
-      // When port-forwarding is happening on admin-port, port-forwarding will
-      // not work for SSL port i.e. 7002
-      forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 7002);
-      assertNotNull(forwardPort, "port-forward fails to assign local port");
-      logger.info("Forwarded ssl port is {0}", forwardPort);
-      curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + localhost + ":" + forwardPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} "
-          + " -o /dev/null";
-      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
-      assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic console should not be accessible thru ssl port forwarding");
-      stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
