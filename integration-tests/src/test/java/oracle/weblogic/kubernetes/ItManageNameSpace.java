@@ -64,8 +64,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -79,6 +77,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
+
 /**
  * Simple JUnit test file used for testing operator namespace management,
  * Dedicated usecase is covered by other test class.
@@ -86,6 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
+@Tag("gate")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
@@ -155,18 +156,18 @@ class ItManageNameSpace {
       logger.info("Delete domain1test custom resource in namespace {0}", "test-" + domainNamespaces[0]);
       deleteDomainCustomResource(domainsUid[0] + "test", "test-" + domainNamespaces[0]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[0] + "test from test-" + domainNamespaces[0]);
-
+  
       logger.info("Delete domain2test custom resource in namespace {0}", "test-" + domainNamespaces[1]);
       deleteDomainCustomResource(domainsUid[1] + "test", "test-" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[1] + "test from test-" + domainNamespaces[1]);
-
+  
       logger.info("Delete weblogic custom resource in namespace {0}", "weblogic" + domainNamespaces[1]);
       deleteDomainCustomResource("weblogic", "weblogic" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource weblogic from weblogic" + domainNamespaces[1]);
     } finally {
       deleteSecrets("default");
       deleteSecrets("atest-" + domainNamespaces[0]);
-
+     
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
       for (HelmParams helmParam : opHelmParams) {
@@ -191,7 +192,6 @@ class ItManageNameSpace {
   @Order(1)
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
-  @Tag("gate")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
@@ -394,13 +394,12 @@ class ItManageNameSpace {
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
         selectorValue, true, domainNamespacesValue).getHelmParams();
-    String operExtSVCRouteName = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
           createSecrets(domainNS);
           assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
+
           checkOperatorCanScaleDomain(opNamespace, domainUid);
         }
     );
@@ -430,6 +429,7 @@ class ItManageNameSpace {
           true, externalRestHttpsPort, opNamespace, opServiceAccount,
           false, "", "scaleDown", 1, "", "", null, null);
       return false;
+
     } catch (ConditionTimeoutException ex) {
       logger.info("Received expected error " + ex.getMessage());
       return true;
@@ -534,8 +534,7 @@ class ItManageNameSpace {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
+                    .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
     return domain;
   }
