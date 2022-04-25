@@ -315,7 +315,7 @@ class ItKubernetesDomainEvents {
    */
   @Test
   @DisplayName("Test domain events for failed/retried domain life cycle changes")
-  void testK8SEventsFailed() {
+  void testK8SEventsFailedLifeCycle() {
     try {
       V1Patch patch;
       String patchStr;
