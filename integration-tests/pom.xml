@@ -521,7 +521,6 @@
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
-                  **/ItManageNameSpace,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiCustomSslStore,
                   **/ItMiiSampleWlsAux,

@@ -401,7 +401,6 @@ class ItManageNameSpace {
           createSecrets(domainNS);
           assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
-
           checkOperatorCanScaleDomain(opNamespace, domainUid);
         }
     );
@@ -431,7 +430,6 @@ class ItManageNameSpace {
           true, externalRestHttpsPort, opNamespace, opServiceAccount,
           false, "", "scaleDown", 1, "", "", null, null);
       return false;
-
     } catch (ConditionTimeoutException ex) {
       logger.info("Received expected error " + ex.getMessage());
       return true;
