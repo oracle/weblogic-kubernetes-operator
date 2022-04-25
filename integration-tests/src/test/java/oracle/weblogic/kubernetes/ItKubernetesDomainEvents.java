@@ -269,7 +269,7 @@ class ItKubernetesDomainEvents {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    logger.info("verify the DomainChanged event is generated");
+    logger.info("verify the Changed event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
   }
 
@@ -302,7 +302,7 @@ class ItKubernetesDomainEvents {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    // verify the DomainChanged event is generated
+    // verify the Changed event is generated
     checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
   }
 
@@ -337,7 +337,7 @@ class ItKubernetesDomainEvents {
       }
 
       logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-              + " DomainChanged and Failed events are logged");
+              + " Changed and Failed events are logged");
       patchStr = "[{\"op\": \"replace\", "
               + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
               + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
