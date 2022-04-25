@@ -592,7 +592,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() {
+  void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, "elastic-cred", null);
