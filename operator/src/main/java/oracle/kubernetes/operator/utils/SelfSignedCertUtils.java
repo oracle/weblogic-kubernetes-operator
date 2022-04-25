@@ -50,6 +50,10 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
  */
 public final class SelfSignedCertUtils {
 
+  private SelfSignedCertUtils() {
+    // no-op
+  }
+
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
   public static final String WEBLOGIC_OPERATOR_WEBHOOK_SVC = "weblogic-operator-webhook-svc";
   public static final String WEBHOOK_CERTIFICATE = "webhookCert";

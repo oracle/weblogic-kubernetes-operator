@@ -183,7 +183,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.4'
+               defaultValue: '2.0.5'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -476,7 +476,6 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
-                        TWO_CLUSTERS = "false"
                     }
                     steps {
                         sh '''
@@ -519,7 +518,6 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
 
-                            export TWO_CLUSTERS=${TWO_CLUSTERS}
                             export OCR_USERNAME=${OCR_USERNAME}
                             export OCR_PASSWORD=${OCR_PASSWORD}
                             export OCR_EMAIL=${OCR_EMAIL}

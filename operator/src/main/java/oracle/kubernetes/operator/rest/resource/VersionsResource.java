@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
@@ -65,7 +65,6 @@ public class VersionsResource extends BaseResource {
       LOGGER.throwing(e);
       throw e;
     }
-    VersionResource result = new VersionResource(this, version);
-    return result;
+    return new VersionResource(this, version);
   }
 }

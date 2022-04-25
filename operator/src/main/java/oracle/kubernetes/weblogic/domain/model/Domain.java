@@ -287,6 +287,10 @@ public class Domain implements KubernetesObject {
     return spec.getMonitoringExporterImagePullPolicy();
   }
 
+  public FluentdSpecification getFluentdSpecification() {
+    return spec.getFluentdSpecification();
+  }
+
   /**
    * Returns the specification applicable to a particular server/cluster combination.
    *
@@ -1237,6 +1241,12 @@ public class Domain implements KubernetesObject {
               "spec.configuration.opss.walletPasswordSecret"));
         }
       }
+
+      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
+        failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
+            "spec.fluentdSpecification.elasticSearchCredentials"));
+      }
+
     }
 
     private List<V1LocalObjectReference> getImagePullSecrets() {

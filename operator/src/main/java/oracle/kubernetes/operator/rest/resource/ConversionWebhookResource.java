@@ -80,7 +80,8 @@ public class ConversionWebhookResource extends BaseResource {
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
-    return Optional.ofNullable(conversionReview).map(c -> c.getRequest()).map(cr -> cr.toString()).orElse(null);
+    return Optional.ofNullable(conversionReview).map(ConversionReviewModel::getRequest)
+        .map(ConversionRequest::toString).orElse(null);
   }
 
   private void generateFailedEvent(Exception exception, String conversionRequest) {

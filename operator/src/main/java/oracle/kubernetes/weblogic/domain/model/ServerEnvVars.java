@@ -11,6 +11,10 @@ import java.util.List;
  */
 public class ServerEnvVars {
 
+  private ServerEnvVars() {
+    // no-op
+  }
+  
   public static final String DOMAIN_UID = "DOMAIN_UID";
 
   /** The name of a WebLogic domain. */

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -10,6 +10,11 @@ import java.util.List;
  * Environment variables used in the introspection job.
  */
 public class IntrospectorJobEnvVars {
+
+  private IntrospectorJobEnvVars() {
+    // no-op
+  }
+
   /**
    * The namespace in which the introspection job will run.
    */

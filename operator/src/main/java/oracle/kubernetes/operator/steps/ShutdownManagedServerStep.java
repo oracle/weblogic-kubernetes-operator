@@ -144,7 +144,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private List<V1EnvVar> getEnvVars(V1PodSpec v1PodSpec) {
-      return getContainer(v1PodSpec).map(V1Container::getEnv).get();
+      return getContainer(v1PodSpec).map(V1Container::getEnv).orElse(Collections.emptyList());
     }
 
     Optional<V1Container> getContainer(V1PodSpec v1PodSpec) {
@@ -207,8 +207,9 @@ public class ShutdownManagedServerStep extends Step {
 
     protected PortDetails getPortDetails() {
       Integer port = getWlsServerPort();
-      boolean isSecure = port != null && getWlsServerConfig() != null
-          && !port.equals(getWlsServerConfig().getListenPort());
+      WlsServerConfig serverConfig = getWlsServerConfig();
+      boolean isSecure = port != null && serverConfig != null
+          && !port.equals(serverConfig.getListenPort());
       return new PortDetails(port, isSecure);
     }
 
@@ -226,8 +227,8 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private Integer getListenPortFromPod(V1Pod pod) {
-      return getContainer(pod.getSpec()).map(V1Container::getPorts).get().stream()
-          .filter(this::isTCPProtocol).findFirst().get().getContainerPort();
+      return getContainer(pod.getSpec()).map(V1Container::getPorts).orElse(Collections.emptyList()).stream()
+          .filter(this::isTCPProtocol).findFirst().map(V1ContainerPort::getContainerPort).orElse(0);
     }
 
     boolean isTCPProtocol(V1ContainerPort port) {

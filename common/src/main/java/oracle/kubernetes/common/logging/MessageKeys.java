@@ -171,6 +171,12 @@ public class MessageKeys {
   public static final String OVERWRITE_EXISTING_OUTPUT_FILE = "WLSKO-0219";
   public static final String DOMAIN_UPGRADE_SUCCESS = "WLSKO-0220";
   public static final String DOMAIN_CONVERSION_FAILED = "WLSKO-0221";
+  public static final String INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED = "WLSKO-0222";
+  public static final String MISSING_ELASTIC_SEARCH_SECRET = "WLSKO-0223";
+  public static final String FLUENTD_CONFIGMAP_CREATED = "WLSKO-0224";
+  public static final String FLUENTD_CONFIGMAP_REPLACED = "WLSKO-0225";
+  public static final String POD_EVICTED = "WLSKO-0226";
+  public static final String POD_EVICTED_NO_RESTART = "WLSKO-0227";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -209,6 +215,8 @@ public class MessageKeys {
   public static final String INVALID_MODEL_HOME = "WLSDO-0039";
   public static final String PODS_FAILED = "WLSDO-0040";
   public static final String PODS_NOT_READY = "WLSDO-0041";
+  public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
+  public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
 
   private MessageKeys() {
   }

@@ -286,7 +286,7 @@ public abstract class Step {
       Step step, Packet packet, Collection<StepAndPacket> startDetails) {
     return doSuspend(
         step,
-        (fiber) -> {
+        fiber -> {
           CompletionCallback callback =
               new JoinCompletionCallback(fiber, packet, startDetails.size()) {
                 @Override

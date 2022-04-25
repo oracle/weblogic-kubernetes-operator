@@ -150,6 +150,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
@@ -449,6 +450,12 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
+  protected DomainConfigurator defineFluentdConfiguration(boolean watchIntrospectorLog) {
+    return configureDomain()
+            .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
+                    null);
+  }
+
   @Test
   void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
     defineExporterConfiguration();
@@ -465,8 +472,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return getCreatedPodSpecContainers().stream().filter(this::isMonitoringExporterContainer).findFirst().orElse(null);
   }
 
+  protected V1Container getFluentdContainer() {
+    return getCreatedPodSpecContainers().stream().filter(this::isFluentdContainer).findFirst().orElse(null);
+  }
+
   private boolean isMonitoringExporterContainer(V1Container container) {
     return container.getName().contains(EXPORTER_CONTAINER_NAME);
+  }
+
+  private boolean isFluentdContainer(V1Container container) {
+    return container.getName().contains(FLUENTD_CONTAINER_NAME);
   }
 
   @Test
@@ -537,6 +552,66 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     defineExporterConfiguration();
 
     assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
+  }
+
+  @Test
+  void whenDomainHasFluentdInServerPod_createPodShouldHaveFluentdContainer() {
+    defineFluentdConfiguration(true);
+    
+    assertThat(getFluentdContainer(), notNullValue());
+  }
+
+  @Test
+  void whenDomainHasFluentdInServerPod_podRequiredEnvSet() {
+    defineFluentdConfiguration(true);
+
+    V1Container fluentContainer = getFluentdContainer();
+    assertThat(fluentContainer, notNullValue());
+
+    assertThat(hasContainerEnvName(fluentContainer, "FLUENTD_CONF"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "FLUENT_ELASTICSEARCH_SED_DISABLE"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "DOMAIN_UID"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "SERVER_NAME"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "LOG_PATH"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_HOST"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_PORT"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_USER"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_PASSWORD"), equalTo(true));
+
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+            "ELASTICSEARCH_HOST","fluentd-cred", "elasticsearchhost"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_PORT","fluentd-cred", "elasticsearchport"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_USER","fluentd-cred", "elasticsearchuser"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_PASSWORD","fluentd-cred", "elasticsearchpassword"),
+            equalTo(true));
+  }
+
+  private boolean hasContainerEnvName(V1Container container, String name) {
+
+    return Optional.ofNullable(container)
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .anyMatch(e -> e.getName().equals(name));
+
+  }
+
+  private boolean hasContainerEnvNameReferenceSecretKey(V1Container container, String envName, String secretName,
+                                                        String secretKey) {
+
+    V1SecretKeySelector ref = Optional.ofNullable(container)
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .filter(c -> c.getName().equals(envName))
+            .findFirst()
+            .map(V1EnvVar::getValueFrom)
+            .map(V1EnvVarSource::getSecretKeyRef)
+            .orElse(null);
+
+    return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
   abstract void setServerPort(int port);

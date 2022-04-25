@@ -129,6 +129,81 @@ public class DomainSpec {
           + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets = new ArrayList<>();
 
+
+  /**
+   * The Fluentd configuration.
+   *
+   */
+  @ApiModelProperty("Automatic fluentd sidecar injection. If "
+      + "specified, the operator "
+      + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, "
+      + "Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. "
+      + "WebLogic Server instances that are already running when the `fluentdSpecification` field is created "
+      + "or deleted, will not be affected until they are restarted. When any given server "
+      + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+      + " will have the fluentd sidecar or not, as appropriate")
+  private FluentdSpecification fluentdSpecification;
+
+  public FluentdSpecification getFluentdSpecification() {
+    return fluentdSpecification;
+  }
+
+  /**
+   * Add fluentd specification to the domain spec.
+   * @param fluentdSpecification fluentd specification.
+   * @return domain spec.
+   */
+
+  public DomainSpec withFluentdConfiguration(FluentdSpecification fluentdSpecification) {
+    this.fluentdSpecification = fluentdSpecification;
+    return this;
+  }
+
+  /**
+   * Add fluentd specification to the domain spec.
+   * @param watchIntrospectorLog watch the introspector job pod log also.
+   * @param credentialName k8s secrets containing elastic search credentials.
+   * @param fluentdConfig optional fluentd configuration.
+   * @return domain spec.
+   */
+
+  public DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
+                                String image, String imagePullPolicy,
+                                String fluentdConfig) {
+    if (fluentdSpecification == null) {
+      fluentdSpecification = new FluentdSpecification();
+    }
+    fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
+    fluentdSpecification.setElasticSearchCredentials(credentialName);
+    fluentdSpecification.setFluentdConfiguration(fluentdConfig);
+    fluentdSpecification.setImage(image);
+    fluentdSpecification.setImagePullPolicy(imagePullPolicy);
+    return this;
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param imageName the name of the docker image
+   */
+  public void setFluentdImage(String imageName) {
+    assert fluentdSpecification != null : "May not set image without configuration";
+
+    fluentdSpecification.setImage(imageName);
+  }
+
+  /**
+   * Specifies the pull policy for the fluentd image.
+   * @param pullPolicy a Kubernetes pull policy
+   */
+  public void setFluentdImagePullPolicy(String pullPolicy) {
+    assert fluentdSpecification != null : "May not set image pull policy without configuration";
+
+    fluentdSpecification.setImagePullPolicy(pullPolicy);
+  }
+
+
+
+
   @ApiModelProperty("Configuration for the Administration Server.")
   private AdminServer adminServer;
 
@@ -742,7 +817,8 @@ public class DomainSpec {
             .append("serverPod", serverPod)
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
-            .append("monitoringExporter", monitoringExporter);
+            .append("monitoringExporter", monitoringExporter)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -779,7 +855,8 @@ public class DomainSpec {
             .append(serverService)
             .append(serverStartState)
             .append(restartVersion)
-            .append(monitoringExporter);
+            .append(monitoringExporter)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -824,7 +901,8 @@ public class DomainSpec {
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)
             .append(restartVersion, rhs.restartVersion)
-            .append(monitoringExporter, rhs.monitoringExporter);
+            .append(monitoringExporter, rhs.monitoringExporter)
+            .append(fluentdSpecification, rhs.fluentdSpecification);
     return builder.isEquals();
   }
 }
