@@ -28,7 +28,7 @@ public abstract class ServerSpecBase implements ServerSpec {
 
   protected final DomainSpec domainSpec;
 
-  public ServerSpecBase(DomainSpec domainSpec) {
+  protected ServerSpecBase(DomainSpec domainSpec) {
     this.domainSpec = domainSpec;
   }
 

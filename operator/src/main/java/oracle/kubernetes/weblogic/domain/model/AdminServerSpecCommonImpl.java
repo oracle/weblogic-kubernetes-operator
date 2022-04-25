@@ -3,6 +3,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements AdminServerSpec {
   private final AdminServer adminServer;
 
@@ -14,5 +18,39 @@ public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements A
   @Override
   public AdminService getAdminService() {
     return adminServer.getAdminService();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("adminServer", adminServer)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof AdminServerSpecCommonImpl)) {
+      return false;
+    }
+
+    AdminServerSpecCommonImpl that = (AdminServerSpecCommonImpl) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(adminServer, that.adminServer)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(adminServer)
+        .toHashCode();
   }
 }

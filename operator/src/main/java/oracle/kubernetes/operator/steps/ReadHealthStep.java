@@ -117,11 +117,12 @@ public class ReadHealthStep extends Step {
 
     protected PortDetails getPortDetails() {
       Integer port = getWlsServerAdminProtocolPort();
-      return new PortDetails(port, !port.equals(getWlsServerConfig().getListenPort()));
+      return new PortDetails(port, !port.equals(
+          Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getListenPort).orElse(0)));
     }
 
     private Integer getWlsServerAdminProtocolPort() {
-      return getWlsServerConfig().getLocalAdminProtocolChannelPort();
+      return Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getLocalAdminProtocolChannelPort).orElse(0);
     }
 
     private WlsServerConfig getWlsServerConfig() {
@@ -334,8 +335,8 @@ public class ReadHealthStep extends Step {
 
       void recordStateAndHealth() throws IOException {
         Pair<String, ServerHealth> pair = parseServerHealthJson(getResponse().body());
-        String state = emptyToNull(pair.getLeft());
-        ServerHealth health = pair.getRight();
+        String state = emptyToNull(Optional.ofNullable(pair).map(Pair::getLeft).orElse(null));
+        ServerHealth health = Optional.ofNullable(pair).map(Pair::getRight).orElse(null);
         recordStateAndHealth(state, health);
       }
 

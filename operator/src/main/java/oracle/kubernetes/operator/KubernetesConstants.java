@@ -8,7 +8,8 @@ import java.net.HttpURLConnection;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.4";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5";
+  String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
 
@@ -41,6 +42,7 @@ public interface KubernetesConstants {
   String WEBHOOK_POD_UID_ENV = "WEBHOOK_POD_UID";
   String NAMESPACE = "Namespace";
   String POD = "Pod";
+  String EVICTED_REASON = "Evicted";
 
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 

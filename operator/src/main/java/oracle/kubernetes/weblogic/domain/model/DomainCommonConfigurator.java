@@ -201,6 +201,14 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
+                                                     String credentialName, String fluendConfig) {
+    getDomainSpec().withFluentdConfiguration(watchIntrospectorLog, credentialName,
+            fluendConfig);
+    return this;
+  }
+
   private AdminServer getOrCreateAdminServer() {
     return getDomainSpec().getOrCreateAdminServer();
   }

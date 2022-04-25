@@ -876,6 +876,17 @@ class DomainValidationTest extends DomainValidationTestBase {
     assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
   }
 
+  @Test
+  void whenDomainConfiguredWithFluentdWithoutCredentials_reportError() {
+    configureDomain(domain)
+        .withFluentdConfiguration(false, null, null);
+    domain.getValidationFailures(resourceLookup);
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "
+            + "spec, a secret containing elastic search credentials must be specified in",
+            "spec.fluentdSpecification.elasticSearchCredentials")));
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
   }

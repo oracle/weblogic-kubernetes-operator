@@ -6,6 +6,11 @@ package oracle.kubernetes.operator;
 import java.util.Optional;
 
 public class DomainPresence {
+
+  private DomainPresence() {
+    // no-op
+  }
+
   private static final int DEFAULT_TIMEOUT_SECONDS = 5;
   private static final int DEFAULT_RETRY_MAX_COUNT = 5;
 

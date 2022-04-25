@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -282,6 +281,20 @@ public class DomainPresenceInfo implements PacketComponent {
   public void setServerPodFromEvent(String serverName, V1Pod event) {
     updateStatus(serverName, event);
     getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
+  }
+
+  /**
+   * Applies an add or modify event for a server pod. If the current pod is newer than the one
+   * associated with the event, ignores the event.
+   *
+   * @param serverName the name of the server associated with the event
+   * @param event the pod associated with the event
+   * @param podPredicate predicate to be applied to the original pod
+   * @return boolean result from applying the original pod to the podFunction provided
+   */
+  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Predicate<V1Pod> podPredicate) {
+    updateStatus(serverName, event);
+    return podPredicate.test(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
   }
 
   private void updateStatus(String serverName, V1Pod event) {
@@ -617,16 +630,16 @@ public class DomainPresenceInfo implements PacketComponent {
    * Returns a list of server names whose pods are defined and match the specified criteria.
    * @param criteria a function that returns true for the desired pods.
    */
-  public List<String> getSelectedActiveServerNames(Function<V1Pod,Boolean> criteria) {
+  public List<String> getSelectedActiveServerNames(Predicate<V1Pod> criteria) {
     return servers.entrySet().stream()
           .filter(e -> hasMatchingServer(e, criteria))
           .map(Map.Entry::getKey)
           .collect(Collectors.toList());
   }
 
-  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Function<V1Pod,Boolean> criteria) {
+  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Predicate<V1Pod> criteria) {
     final V1Pod pod = e.getValue().getPod().get();
-    return pod != null && criteria.apply(pod);
+    return pod != null && criteria.test(pod);
   }
 
   /**
