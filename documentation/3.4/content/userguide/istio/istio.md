@@ -22,6 +22,11 @@ description: "Lets you run the operator, and WebLogic domains managed by the ope
   - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
   - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
   - [Added network channel for WebLogic EJB and servlet session state replication traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+- [Security](#security)
+  - [Mutual TLS](#mutual-tls)
+  - [Authorization policy](#authorization-policy)
+  - [Destination rule](#destination-rule)
+  - [Ingress gateway](#ingress-gateway)
 
 #### Overview
 
@@ -45,7 +50,7 @@ see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).
 
 The current support for Istio has these limitations:
 
-* The operator supports Istio versions 1.7 and later,
+* The operator supports Istio versions 1.7 and higher,
   and has been tested with single and multicluster
   Istio installations from 1.7.3 up to 1.11.x.
 
@@ -76,8 +81,9 @@ data plane version: 1.11.1 (1 proxies)
 Istio support requires labeling the operator namespace and
 your domain namespaces to enable Istio automatic
 sidecar injection, plus modifying your domain resource
-configuration. This section describes
-the steps for the operator namespace; the steps for the domain are described in later sections.
+configuration. In this section, we describe
+the steps for the operator namespace; we will describe
+the steps for the domain in later sections.
 
 Before installing the operator,
 create the namespace in which you want to run the operator and label it.
@@ -85,11 +91,20 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
+For non-OpenShift service mesh, label the namespace as follows:
+
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
+
+When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
+annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm, with the `--set` option, as follows:
+
+`--set "annotations.sidecar\.istio\.io/inject=true"`
+
+
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.
 
@@ -160,59 +175,91 @@ See the following description of each `spec.configuration.istio` attribute:
   This setting is ignored for clusters
   where the WebLogic cluster configuration already defines a `replication-channel` attribute.
 * `localhostBindingsEnabled`:
-   This setting was added in operator version 3.3.3;
-   it defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled`,
-   which in turn defaults to `true`. When `true`, the operator creates a WebLogic
-   network access point with a `localhost` binding for each existing channel and protocol.
-   Use `true` for Istio versions prior to 1.10 and set to `false` for versions 1.10 and later.
+  This setting was added in operator version 3.3.3;
+  it defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled`,
+  which in turn defaults to `true`. When `true`, the operator creates a WebLogic
+  network access point with a `localhost` binding for each existing channel and protocol.
+  Use `true` for Istio versions prior to 1.10 and set to `false` for versions 1.10 and later.
 
-   |Istio version|localhostBindingsEnabled|Notes|
-   |----|----|----|
-   |Pre-1.10|`true`|Supported. Note that `true` is the default.|
-   |Pre-1.10|`false`|Not supported.|
-   |1.10 and later|`true`|Not supported.|
-   |1.10 and later|`false`|Supported.|
+  |Istio version|localhostBindingsEnabled|Notes|
+     |----|----|----|
+  |Pre-1.10|`true`|Supported. Note that `true` is the default.|
+  |Pre-1.10|`false`|Not supported.|
+  |1.10 and later|`true`|Not supported.|
+  |1.10 and later|`false`|Supported.|
 
-If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
-then the `weblogic-server` container in the managed server pods will
-fail to reach a `ready` state due to readiness probe failures.
-For example, if the `localhostBindingsEnabled` is set to
-`true` when running Istio versions 1.10 and later,
-then a `kubectl get pods` will have output like this:
+__Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
+then:
 
-```text
-$ kubectl -n sample-domain1-ns get pods
-```
-```text
-NAME                             READY   STATUS    RESTARTS   AGE
-sample-domain1-admin-server      1/2     Running   0          2m
-```
+- The Managed WebLogic Servers that are running in the managed server pods
+  may not be able to contact the WebLogic Administration Server.
+  They will consequently log networking messages about failures communicating
+  with the Administration Server and likely, also a `Boot identity not valid` error.
 
-Using the `kubectl describe pod` command will show a readiness probe event failure:
+- The `weblogic-server` container in the managed server pods will
+  fail to reach a `ready` state due to readiness probe failures.
+  For example, if the `localhostBindingsEnabled` is set to
+  `true` when running Istio versions 1.10 and later,
+  then a `kubectl get pods` will have output like this:
 
-```text
-$ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
-```
-```text
-Events:
+  ```text
+  $ kubectl -n sample-domain1-ns get pods
+  ```
+  ```text
+  NAME                             READY   STATUS    RESTARTS   AGE
+  sample-domain1-admin-server      1/2     Running   0          2m
+  ```
+
+  The `kubectl describe pod` command will show a readiness probe event failure:
+
+  ```text
+  $ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
+  ```
+  ```text
+  Events:
      Type     Reason       Age                  From      Message
      ----     ------       ----                 ----      -------
 
     Warning  Unhealthy    60s (x10 over 105s)  kubelet   Readiness probe failed: HTTP probe failed with statuscode: 500
-```
+  ```
 
-Also, viewing the logging output of the `istio-proxy` container in a managed server pod
-will show that the
-readiness probe was unable to successfully establish
-a connection to the endpoint of the managed server:
+  Also, viewing the logging output of the `istio-proxy` container in a managed server pod
+  will show that the
+  readiness probe was unable to successfully establish
+  a connection to the endpoint of the managed server:
 
-```text
-$ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
-```
-```text
-2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
-app URL path = /weblogic/ready
-```
+  ```text
+  $ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
+  ```
+  ```text
+  2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
+  app URL path = /weblogic/ready
+  ```
+
+__Note:__ When using OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must
+set the annotation for pod-level sidecar injection in the domain resource, as follows:
+
+- ```yaml
+  apiVersion: "weblogic.oracle/v8"
+  kind: Domain
+  metadata:
+   name: domain2
+   namespace: domain1
+   labels:
+     weblogic.domainUID: domain2
+  spec:
+   ... other content ...
+   serverPod:
+      ...
+      annotations:
+        sidecar.istio.io/inject: "true"
+   configuration:
+     istio:
+       enabled: true
+       readinessPort: 8888
+       replicationChannelPort: 4564
+       localhostBindingsEnabled: false
+  ```
 
 ##### Applying a Domain YAML file
 
@@ -337,7 +384,7 @@ To learn more, see [Istio traffic management](https://istio.io/docs/concepts/tra
 #### Distributed tracing
 
 Istio provides distributed tracing capabilities, including the ability to view
-traces in Jaeger.  In order to use distributed tracing though, first you will need to
+traces in Jaeger.  To use distributed tracing though, first you will need to
 instrument your WebLogic application, for example, using the
 [Jaeger Java client](https://github.com/jaegertracing/jaeger-client-java).
 The following image shows an example of a distributed trace
@@ -358,7 +405,7 @@ when Istio is enabled for a domain.
 
 When deploying a domain that is configured to support Istio versions prior to 1.10,
 the operator automatically adds the following network channels
-(also known as network access points) to your
+(also known as Network Access Points) to your
 WebLogic configuration so that Istio is able to route traffic:
 
 For non-SSL traffic:
@@ -398,10 +445,10 @@ so that the Istio network proxy that runs in each Istio sidecar
 (the Envoy proxy) no longer redirects
 network traffic to the current pod's localhost interface,
 but instead directly forwards it to the network interface associated
-with the pod's IP address. This means that the operator
+with the pod's IP. This means that the operator
 does not need to create additional localhost network
 channels on each WebLogic pod except to enable
-the readiness probe.
+readiness probe.
 
 To learn more about changes to Istio networking beginning with Istio 1.10,
 see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
@@ -410,7 +457,7 @@ _Channel behavior_:
 
 When deploying a domain that is configured to support Istio versions 1.10 and later,
 the operator automatically adds an HTTP protocol network channel
-(also known as network access points) to your
+(also known as Network Access Points) to your
 WebLogic configuration for each server so that the pod's
 readiness probe is bound to the server pod's network interface:
 
@@ -444,3 +491,194 @@ alter a cluster's `replication-channel` configuration
 if such a channel is already configured for a WebLogic cluster.
 (This is unnecessary when the channel already exists.)
 {{% /notice %}}
+
+#### Security
+
+Istio provides rich sets of security features that you can use to secure the Istio service mesh environments.  For details, see Istio [Security](https://istio.io/latest/docs/concepts/security/).   The following are some sample scenarios.
+
+##### Mutual TLS
+
+By default, all traffic between the Istio sidecar proxies use mutual TLS within the mesh. However, service within the mesh can still be accessed by other pods outside the mesh.  For example, you have `domain-1`  deployed with sidecar injection, therefore within the mesh, and another domain, `domain-2`, deployed without sidecar injection, therefore outside of the mesh. Services within `domain-2` can still access the services within `domain-1`, however the traffic will be `Plain` unencrypted traffic.   This is because by default, Istio configures the traffic using the `PERMISSIVE` mode, which means it can accept both `Plain` and `mutual TLS` traffic.  You can restrict this behavior by allowing only `mutual TLS` traffic by locking down the entire mesh or by namespace within the mesh.   
+
+For locking down the entire mesh, you can:
+
+```text
+kubectl apply -n istio-system -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+For namespace only, you can:
+
+```text
+kubectl apply -n <your namespace> -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+EOF
+```
+
+See Istio [Mutual TLS Migration](https://istio.io/latest/docs/tasks/security/authentication/mtls-migration).
+
+##### Authorization policy
+
+Istio provides policy-based authorization using `AuthorizationPolicy`.  You can set up policies to deny or allow access to services deployed in the mesh.  For example, if you want to limit access to a particular service in the domain from another namespace only with a service account.
+
+Create a service account for the client namespace.
+
+```text
+kubectl -n domain2-ns create serviceaccount privaccess
+```
+
+Set up the service account in the client deployment pod.  For example, if it is another `WebLogic Domain` in the `Operator`, specify the `ServiceAccountName` in the `domain.spec.serverPod`.
+
+
+```text
+spec:
+  serverPod:
+     serviceAccountName:  privaccess
+```
+
+Create an `AuthorizationPolicy` for the target service.
+
+```
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: privaccess
+  namespace: domain1-ns
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/domain2-ns/sa/privaccess"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/domain1-priv-service"]
+```
+
+
+See Istio [Authorization Policy](https://istio.io/latest/docs/reference/config/security/authorization-policy/).
+
+##### Destination rule
+
+Istio allows you to define traffic management polices applied to the service after the routing has occurred. You can use it to control load balancing, connection pool size from the sidecar, and outlier detection settings to detect and evict unhealthy hosts from the load balancing pool. You can also set up a service-level mutual TLS requirement instead of entire mesh or namespace-based.
+
+For example, to configure service-level mutual TLS:
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sample-domain1-service
+spec:
+  host: sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+```
+
+For example, to configure a sticky session for a service using hashing-based hash key `user_cookie`:
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sample-domain1-service
+spec:
+  host: sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpCookie:
+          name: user_cookie
+          ttl: 0s
+```
+
+
+See Istio [Destination Rule](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
+
+##### Ingress gateway
+
+Ingress gateway provides similar functions to `Kubernetes Ingress` but with more advanced functionality.
+
+For example, to configure an Ingress gateway for SSL termination at the gateway:
+
+1. Create a TLS certificate and secret.
+
+```text
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=secure-domain.org"
+$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+```
+
+2. Create the Ingress gateway.
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-domain1-gateway
+  namespace: sample-domain1-ns
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: domain1-tls-cert
+      hosts:
+      - 'secure-domain.org'
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+      - 'regular-domain.org'
+```
+
+For example, to configure an Ingress gateway for SSL passthrough:
+
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-domain1-gateway
+  namespace: sample-domain1-ns
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+      - 'secure-domain.org'
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+      - 'regular-domain.org'
+```
+
+See Istio [Ingress](https://istio.io/latest/docs/tasks/traffic-management/ingress).

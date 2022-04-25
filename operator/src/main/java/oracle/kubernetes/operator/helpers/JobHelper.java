@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -64,6 +64,11 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPE
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -668,6 +673,7 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
       return new CallBuilder()
+              .withContainerName(domainUid + "-introspector")
               .readPodLogAsync(
                       jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
@@ -699,8 +705,10 @@ public class JobHelper {
 
       V1Job domainIntrospectorJob =
               (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+      boolean jobPodContainerTerminated = JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
+          .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED));
 
-      if (isNotComplete(domainIntrospectorJob)) {
+      if (isNotComplete(domainIntrospectorJob) && !jobPodContainerTerminated) {
         List<String> jobConditionsReason = new ArrayList<>();
         if (domainIntrospectorJob != null) {
           logIntrospectorFailure(packet, domainIntrospectorJob);
@@ -729,6 +737,10 @@ public class JobHelper {
         nextStep = Step.chain(recordLastIntrospectJobProcessedUid(
                 getLastIntrospectJobProcessedId(domainIntrospectorJob)), nextStep);
 
+        if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+          severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
+        }
+
         if (!severeStatuses.isEmpty()) {
           nextStep = Step.chain(DomainStatusUpdater.createFailureCountStep(), nextStep);
         }
@@ -739,6 +751,23 @@ public class JobHelper {
                         onSeparateLines(severeStatuses),
                         nextStep),
                 packet);
+      }
+
+      // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+      //  Just set a flag and let the user know they can check the container log to determine unlikely
+      //  starting error, most likely a very bad formatted configuration.
+
+      if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+        severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
+        Step nextStep = null;
+        nextStep = Step.chain(DomainStatusUpdater.createFailureCountStep(), nextStep);
+        List<String> jobConditionsReason = new ArrayList<>();
+        return doNext(
+            DomainStatusUpdater.createFailureRelatedSteps(
+                onSeparateLines(jobConditionsReason),
+                onSeparateLines(severeStatuses),
+                nextStep),
+            packet);
       }
 
       Step nextSteps = Step.chain(recordLastIntrospectJobProcessedUid(
@@ -951,6 +980,49 @@ public class JobHelper {
       this.domainUid = domainUid;
     }
 
+    private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+      Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
+          .map(V1Pod::getStatus)
+          .map(V1PodStatus::getContainerStatuses)
+          .orElseGet(Collections::emptyList)
+          .stream().filter(v -> v.getState().getTerminated() != null)
+          .filter(c -> FLUENTD_CONTAINER_NAME.equals(c.getName()))
+          .findFirst();
+
+      if (!containerStatus.isEmpty()) {
+        LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+            jobPod.getMetadata().getNamespace(),
+            containerStatus.get().getState().getTerminated().getExitCode(),
+            containerStatus.get().getState().getTerminated().getReason(),
+            containerStatus.get().getState().getTerminated().getMessage());
+
+        packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+            LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                jobPod.getMetadata().getNamespace(),
+                containerStatus.get().getState().getTerminated().getExitCode(),
+                containerStatus.get().getState().getTerminated().getReason(),
+                containerStatus.get().getState().getTerminated().getMessage()));
+
+        return;
+
+      }
+
+      containerStatus = Optional.ofNullable(jobPod)
+          .map(V1Pod::getStatus)
+          .map(V1PodStatus::getContainerStatuses)
+          .orElseGet(Collections::emptyList)
+          .stream().filter(v -> v.getState().getTerminated() != null)
+          .filter(c -> jobName.equals(c.getName()))
+          .filter(c -> c.getState().getTerminated().getExitCode() == 0)
+          .findFirst();
+
+      if (!containerStatus.isEmpty()) {
+        packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+      }
+
+    }
+
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
       return super.onFailure(packet, callResponse);
@@ -958,24 +1030,29 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      Optional.ofNullable(callResponse.getResult())
-            .map(V1PodList::getItems)
-            .orElseGet(Collections::emptyList)
-            .stream()
-            .map(this::getName)
-            .filter(this::isJobPodName)
-            .findFirst()
-            .ifPresent(name -> recordJobPodName(packet, name));
 
+      final V1Pod jobPod
+          = Optional.ofNullable(callResponse.getResult())
+          .map(V1PodList::getItems)
+          .orElseGet(Collections::emptyList)
+          .stream()
+          .filter(p -> p.getMetadata().getName().startsWith(getJobName()))
+          .findFirst()
+          .orElse(null);
+
+      if (jobPod != null) {
+        addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
+        recordJobPodName(packet, getName(jobPod));
+      }
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    private String getJobName() {
+      return domainUid + "-introspector";
     }
 
     private String getName(V1Pod pod) {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
-    }
-
-    private boolean isJobPodName(String podName) {
-      return podName.startsWith(createJobName(domainUid));
     }
 
     private void recordJobPodName(Packet packet, String podName) {

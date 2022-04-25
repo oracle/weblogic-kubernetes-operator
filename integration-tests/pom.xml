@@ -12,9 +12,8 @@
 
     <artifactId>integration-tests</artifactId>
 
-    <description>Oracle WebLogic Server Kubernetes Operator</description>
+    <description>WebLogic Kubernetes Operator Integration Tests</description>
     <name>integration-tests</name>
-    <packaging>jar</packaging>
 
     <properties>
         <skipITs>false</skipITs>
@@ -110,7 +109,6 @@
         <dependency>
           <groupId>net.sourceforge.htmlunit</groupId>
           <artifactId>htmlunit</artifactId>
-          <version>2.59.0</version>
           <scope>test</scope>
         </dependency>
     </dependencies>
@@ -129,10 +127,6 @@
                         <configuration>
                             <skip>${skipITs}</skip>
                             <rules>
-                                <requireEnvironmentVariable>
-                                    <message>Set the TWO_CLUSTERS environment variable to true or false to specify whether to run inter-cluster communication tests.</message>
-                                    <variableName>TWO_CLUSTERS</variableName>
-                                </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
                                     <message>Set the OCIR_USERNAME environment variable to specify the OCIR username to use for pulling/pushing images.</message>
                                     <variableName>OCIR_USERNAME</variableName>

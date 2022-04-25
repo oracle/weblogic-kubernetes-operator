@@ -5,12 +5,22 @@ weight: 1
 description: "Sample for configuring the Elasticsearch and Kibana deployments and services for the operator's logs."
 ---
 
+The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.
 
-When you install the operator Helm chart, you can set
-`elkIntegrationEnabled` to `true` in your `values.yaml` file to direct the operator to send the contents of the operator's logs to Elasticsearch.
+You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
 
-Typically, you would have already configured Elasticsearch and Kibana in the
-Kubernetes cluster, and also would have specified `elasticSearchHost` and `elasticSearchPort` in your `values.yaml` file to point to where Elasticsearch is already running.
+#### Elastic Stack per-operator configuration
+
+As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
+
+* Set `elkIntegrationEnabled` is `true` to enable the integration.
+* Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.8.23`).
+* Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
+* Set `createLogStashConfigMap` to `true` to use the default Logstash configuration, or set it to `false` and create a ConfigMap named `weblogic-operator-logstash-cm` in the operator's namespace with your own Logstash pipeline configuration.
+
+For additional details, see [Elastic Stack integration]({{< relref "/userguide/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
+
+#### Sample to configure Elasticsearch and Kibana
 
 This sample configures the Elasticsearch and Kibana deployments and services.
 It's useful for trying out the operator in a Kubernetes cluster that doesn't already

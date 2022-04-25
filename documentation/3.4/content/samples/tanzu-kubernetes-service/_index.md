@@ -13,13 +13,13 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 #### Contents
 
-- [Prerequisites](#prerequisites)
-    - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
-    - [Oracle Container Registry](#oracle-container-registry)
-- [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
-- [Create an image](#create-an-image)
-- [Create WebLogic domain](#create-weblogic-domain)
-- [Invoke the web application](#invoke-the-web-application)
+ - [Prerequisites](#prerequisites)
+   - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
+   - [Oracle Container Registry](#oracle-container-registry)
+ - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
+ - [Create an image](#create-an-image)
+ - [Create WebLogic domain](#create-weblogic-domain)
+ - [Invoke the web application](#invoke-the-web-application)
 
 #### Prerequisites
 
@@ -32,7 +32,7 @@ This sample assumes the following prerequisite environment setup:
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
-See [Supported platforms]({{< relref "userguide/platforms/environments" >}})
+See [Supported environments]({{< relref "userguide/platforms/environments" >}})
 for general operator prerequisites
 and operator support limitations that are specific to Tanzu.
 
@@ -146,12 +146,12 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 
 #### Create an image
 
-- [Image creation prerequisites](#image-creation-prerequisites)
-- [Image creation - Introduction](#image-creation---introduction)
-- [Understanding your first archive](#understanding-your-first-archive)
-- [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-- [Staging model files](#staging-model-files)
-- [Creating the image with WIT](#creating-the-image-with-wit)
+  - [Image creation prerequisites](#image-creation-prerequisites)
+  - [Image creation - Introduction](#image-creation---introduction)
+  - [Understanding your first archive](#understanding-your-first-archive)
+  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
+  - [Staging model files](#staging-model-files)
+  - [Creating the image with WIT](#creating-the-image-with-wit)
 
 ##### Image creation prerequisites
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
@@ -217,9 +217,9 @@ The following sections contain the steps for creating the image `model-in-image:
 The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an ‘exploded’ sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
-- A model image can contain multiple WDT archives.
-- WDT archives can contain multiple applications, libraries, and other components.
-- WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
+  - A model image can contain multiple WDT archives.
+  - WDT archives can contain multiple applications, libraries, and other components.
+  - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
 
@@ -262,36 +262,36 @@ Here is the WLS `model.10.yaml`:
 
 ```yaml
 domainInfo:
-  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-  ServerStartMode: 'prod'
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
 
 topology:
-  Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
-  AdminServerName: 'admin-server'
-  Cluster:
-    'cluster-1':
-      DynamicServers:
-        ServerTemplate:  'cluster-1-template'
-        ServerNamePrefix: 'managed-server'
-        DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-        MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
-        MinDynamicClusterSize: '0'
-        CalculatedListenPorts: false
-  Server:
-    'admin-server':
-      ListenPort: 7001
-  ServerTemplate:
-    'cluster-1-template':
-      Cluster: 'cluster-1'
-      ListenPort: 8001
+    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
+    AdminServerName: 'admin-server'
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerTemplate:  'cluster-1-template'
+                ServerNamePrefix: 'managed-server'
+                DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MinDynamicClusterSize: '0'
+                CalculatedListenPorts: false
+    Server:
+        'admin-server':
+            ListenPort: 7001
+    ServerTemplate:
+        'cluster-1-template':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
 
 appDeployments:
-  Application:
-    myapp:
-      SourcePath: 'wlsdeploy/applications/myapp-v1'
-      ModuleType: ear
-      Target: 'cluster-1'
+    Application:
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            ModuleType: ear
+            Target: 'cluster-1'
 ```
 
 The model files:
@@ -310,16 +310,16 @@ The model files:
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 
 At this point, you have staged all of the files needed for the image `model-in-image:WLS-v1`; they include:
 
-- `/tmp/mii-sample/model-images/weblogic-deploy.zip`
-- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
-- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
-- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
+  - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
 
 If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
 
@@ -346,11 +346,11 @@ If you don’t see the `imagetool` directory, then you missed a step in the prer
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-- Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
-- Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
-    - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
-    - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
-- Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
+  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
+      - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
+      - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+  - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
 When the command succeeds, it should end with output like the following:
 
@@ -360,7 +360,7 @@ When the command succeeds, it should end with output like the following:
 
 Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
 
-> Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
 
 #### Create WebLogic domain
@@ -368,7 +368,7 @@ Also, if you run the `docker images` command, then you will see an image named `
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
 - Create a namespace for the WebLogic domain.
-- Upgrade the operator to manage the WebLogic domain namespace.
+- Upgrade the operator to manage the WebLogic domain namespace.   
 - Create a Secret containing your WebLogic administrator user name and password.
 - Create a Secret containing your Model in Image runtime encryption password:
     - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
@@ -418,25 +418,25 @@ $ kubectl -n sample-domain1-ns label  secret \
   weblogic.domainUID=sample-domain1
 ```
 
-Some important details about these secrets:
+  Some important details about these secrets:
 
-- The WebLogic credentials secret:
+  - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
     - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain.
     - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your model YAML file.
 
-- The Model WDT runtime secret:
+  - The Model WDT runtime secret:
     - This is a special secret required by Model in Image.
     - It must contain a `password` field.
     - It must be referenced using the `spec.model.runtimeEncryptionSecret` field in its Domain.
     - It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.
     - It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods.
 
-- Deleting and recreating the secrets:
+  - Deleting and recreating the secrets:
     - You delete a secret before creating it, otherwise the create command will fail if the secret already exists.
     - This allows you to change the secret when using the `kubectl create secret` command.
 
-- You name and label secrets using their associated domain UID for two reasons:
+  - You name and label secrets using their associated domain UID for two reasons:
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
@@ -447,12 +447,12 @@ Now, you create a Domain YAML file. A Domain is the key resource that tells the 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
 
-{{%expand "Click here to view the WLS Domain YAML file." %}}
+  {{%expand "Click here to view the WLS Domain YAML file." %}}
   ```yaml
     #
     # This is an example of how to define a Domain resource.
     #
-    apiVersion: "weblogic.oracle/v9"
+    apiVersion: "weblogic.oracle/v8"
     kind: Domain
     metadata:
       name: sample-domain1
@@ -565,17 +565,17 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #secrets:
         #- sample-domain1-datasource-secret
   ```
-{{% /expand %}}
+  {{% /expand %}}
 
 
-> **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
 Run the following command to create the domain custom resource:
 
 ```shell
 $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 ```
-> **Note**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+**NOTE**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Verify the WebLogic Server pods are all running:
 

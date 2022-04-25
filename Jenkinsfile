@@ -2,58 +2,6 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 def kind_k8s_map = [
-     '0.8': [
-         '1.18.2':  'kindest/node:v1.18.2@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f',
-         '1.18':    'kindest/node:v1.18.2@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f',
-         '1.17.5':  'kindest/node:v1.17.5@sha256:ab3f9e6ec5ad8840eeb1f76c89bb7948c77bbf76bcebe1a8b59790b8ae9a283a',
-         '1.17':    'kindest/node:v1.17.5@sha256:ab3f9e6ec5ad8840eeb1f76c89bb7948c77bbf76bcebe1a8b59790b8ae9a283a',
-         '1.16.9':  'kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765',
-         '1.16':    'kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765',
-         '1.15.11': 'kindest/node:v1.15.11@sha256:6cc31f3533deb138792db2c7d1ffc36f7456a06f1db5556ad3b6927641016f50',
-         '1.15':    'kindest/node:v1.15.11@sha256:6cc31f3533deb138792db2c7d1ffc36f7456a06f1db5556ad3b6927641016f50'
-     ],
-     '0.9': [
-         '1.19.1':  'kindest/node:v1.19.1@sha256:98cf5288864662e37115e362b23e4369c8c4a408f99cbc06e58ac30ddc721600',
-         '1.19':    'kindest/node:v1.19.1@sha256:98cf5288864662e37115e362b23e4369c8c4a408f99cbc06e58ac30ddc721600',
-         '1.18.8':  'kindest/node:v1.18.8@sha256:f4bcc97a0ad6e7abaf3f643d890add7efe6ee4ab90baeb374b4f41a4c95567eb',
-         '1.18':    'kindest/node:v1.18.8@sha256:f4bcc97a0ad6e7abaf3f643d890add7efe6ee4ab90baeb374b4f41a4c95567eb',
-         '1.17.11': 'kindest/node:v1.17.11@sha256:5240a7a2c34bf241afb54ac05669f8a46661912eab05705d660971eeb12f6555',
-         '1.17':    'kindest/node:v1.17.11@sha256:5240a7a2c34bf241afb54ac05669f8a46661912eab05705d660971eeb12f6555',
-         '1.16.15': 'kindest/node:v1.16.15@sha256:a89c771f7de234e6547d43695c7ab047809ffc71a0c3b65aa54eda051c45ed20',
-         '1.16':    'kindest/node:v1.16.15@sha256:a89c771f7de234e6547d43695c7ab047809ffc71a0c3b65aa54eda051c45ed20',
-         '1.15.12': 'kindest/node:v1.15.12@sha256:d9b939055c1e852fe3d86955ee24976cab46cba518abcb8b13ba70917e6547a6',
-         '1.15':    'kindest/node:v1.15.12@sha256:d9b939055c1e852fe3d86955ee24976cab46cba518abcb8b13ba70917e6547a6'
-     ],
-     '0.10': [
-         '1.20.2':  'kindest/node:v1.20.2@sha256:8f7ea6e7642c0da54f04a7ee10431549c0257315b3a634f6ef2fecaaedb19bab',
-         '1.20':    'kindest/node:v1.20.2@sha256:8f7ea6e7642c0da54f04a7ee10431549c0257315b3a634f6ef2fecaaedb19bab',
-         '1.19.7':  'kindest/node:v1.19.7@sha256:a70639454e97a4b733f9d9b67e12c01f6b0297449d5b9cbbef87473458e26dca',
-         '1.19':    'kindest/node:v1.19.7@sha256:a70639454e97a4b733f9d9b67e12c01f6b0297449d5b9cbbef87473458e26dca',
-         '1.18.15': 'kindest/node:v1.18.15@sha256:5c1b980c4d0e0e8e7eb9f36f7df525d079a96169c8a8f20d8bd108c0d0889cc4',
-         '1.18':    'kindest/node:v1.18.15@sha256:5c1b980c4d0e0e8e7eb9f36f7df525d079a96169c8a8f20d8bd108c0d0889cc4',
-         '1.17.17': 'kindest/node:v1.17.17@sha256:7b6369d27eee99c7a85c48ffd60e11412dc3f373658bc59b7f4d530b7056823e',
-         '1.17':    'kindest/node:v1.17.17@sha256:7b6369d27eee99c7a85c48ffd60e11412dc3f373658bc59b7f4d530b7056823e',
-         '1.16.15': 'kindest/node:v1.16.15@sha256:c10a63a5bda231c0a379bf91aebf8ad3c79146daca59db816fb963f731852a99',
-         '1.16':    'kindest/node:v1.16.15@sha256:c10a63a5bda231c0a379bf91aebf8ad3c79146daca59db816fb963f731852a99',
-         '1.15.12': 'kindest/node:v1.15.12@sha256:67181f94f0b3072fb56509107b380e38c55e23bf60e6f052fbd8052d26052fb5',
-         '1.15':    'kindest/node:v1.15.12@sha256:67181f94f0b3072fb56509107b380e38c55e23bf60e6f052fbd8052d26052fb5'
-     ],
-    '0.11': [
-        '1.21.1':  'kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad',
-        '1.21':    'kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad',
-        '1.20.7':  'kindest/node:v1.20.7@sha256:e645428988191fc824529fd0bb5c94244c12401cf5f5ea3bd875eb0a787f0fe9',
-        '1.20':    'kindest/node:v1.20.7@sha256:e645428988191fc824529fd0bb5c94244c12401cf5f5ea3bd875eb0a787f0fe9',
-        '1.19.11': 'kindest/node:v1.19.11@sha256:7664f21f9cb6ba2264437de0eb3fe99f201db7a3ac72329547ec4373ba5f5911',
-        '1.19':    'kindest/node:v1.19.11@sha256:7664f21f9cb6ba2264437de0eb3fe99f201db7a3ac72329547ec4373ba5f5911',
-        '1.18.19': 'kindest/node:v1.18.19@sha256:530378628c7c518503ade70b1df698b5de5585dcdba4f349328d986b8849b1ee',
-        '1.18':    'kindest/node:v1.18.19@sha256:530378628c7c518503ade70b1df698b5de5585dcdba4f349328d986b8849b1ee',
-        '1.17.17': 'kindest/node:v1.17.17@sha256:c581fbf67f720f70aaabc74b44c2332cc753df262b6c0bca5d26338492470c17',
-        '1.17':    'kindest/node:v1.17.17@sha256:c581fbf67f720f70aaabc74b44c2332cc753df262b6c0bca5d26338492470c17',
-        '1.16.15': 'kindest/node:v1.16.15@sha256:430c03034cd856c1f1415d3e37faf35a3ea9c5aaa2812117b79e6903d1fc9651',
-        '1.16':    'kindest/node:v1.16.15@sha256:430c03034cd856c1f1415d3e37faf35a3ea9c5aaa2812117b79e6903d1fc9651',
-        '1.15.12': 'kindest/node:v1.15.12@sha256:8d575f056493c7778935dd855ded0e95c48cb2fab90825792e8fc9af61536bf9',
-        '1.15':    'kindest/node:v1.15.12@sha256:8d575f056493c7778935dd855ded0e95c48cb2fab90825792e8fc9af61536bf9'
-    ],
     '0.11.1': [
         '1.23.3':  'kindest/node:v1.23.3@sha256:0cb1a35ccd539118ce38d29a97823bae8fcef22fc94e9e33c0f4fadcdf9d4059',
         '1.23':    'kindest/node:v1.23.3@sha256:0cb1a35ccd539118ce38d29a97823bae8fcef22fc94e9e33c0f4fadcdf9d4059',
@@ -64,15 +12,17 @@ def kind_k8s_map = [
         '1.20.7':  'kindest/node:v1.20.7@sha256:cbeaf907fc78ac97ce7b625e4bf0de16e3ea725daf6b04f930bd14c67c671ff9',
         '1.20':    'kindest/node:v1.20.7@sha256:cbeaf907fc78ac97ce7b625e4bf0de16e3ea725daf6b04f930bd14c67c671ff9',
         '1.19.11': 'kindest/node:v1.19.11@sha256:07db187ae84b4b7de440a73886f008cf903fcf5764ba8106a9fd5243d6f32729',
-        '1.19':    'kindest/node:v1.19.11@sha256:07db187ae84b4b7de440a73886f008cf903fcf5764ba8106a9fd5243d6f32729',
-        '1.18.19': 'kindest/node:v1.18.19@sha256:7af1492e19b3192a79f606e43c35fb741e520d195f96399284515f077b3b622c',
-        '1.18':    'kindest/node:v1.18.19@sha256:7af1492e19b3192a79f606e43c35fb741e520d195f96399284515f077b3b622c',
-        '1.17.17': 'kindest/node:v1.17.17@sha256:66f1d0d91a88b8a001811e2f1054af60eef3b669a9a74f9b6db871f2f1eeed00',
-        '1.17':    'kindest/node:v1.17.17@sha256:66f1d0d91a88b8a001811e2f1054af60eef3b669a9a74f9b6db871f2f1eeed00',
-        '1.16.15': 'kindest/node:v1.16.15@sha256:83067ed51bf2a3395b24687094e283a7c7c865ccc12a8b1d7aa673ba0c5e8861',
-        '1.16':    'kindest/node:v1.16.15@sha256:83067ed51bf2a3395b24687094e283a7c7c865ccc12a8b1d7aa673ba0c5e8861',
-        '1.15.12': 'kindest/node:v1.15.12@sha256:b920920e1eda689d9936dfcf7332701e80be12566999152626b2c9d730397a95',
-        '1.15':    'kindest/node:v1.15.12@sha256:b920920e1eda689d9936dfcf7332701e80be12566999152626b2c9d730397a95'
+        '1.19':    'kindest/node:v1.19.11@sha256:07db187ae84b4b7de440a73886f008cf903fcf5764ba8106a9fd5243d6f32729'
+    ],
+    '0.12.0': [
+        '1.23.4':  'kindest/node:v1.23.4@sha256:0e34f0d0fd448aa2f2819cfd74e99fe5793a6e4938b328f657c8e3f81ee0dfb9',
+        '1.23':    'kindest/node:v1.23.4@sha256:0e34f0d0fd448aa2f2819cfd74e99fe5793a6e4938b328f657c8e3f81ee0dfb9',
+        '1.22.7':  'kindest/node:v1.22.7@sha256:1dfd72d193bf7da64765fd2f2898f78663b9ba366c2aa74be1fd7498a1873166',
+        '1.22':    'kindest/node:v1.22.7@sha256:1dfd72d193bf7da64765fd2f2898f78663b9ba366c2aa74be1fd7498a1873166',
+        '1.21.10': 'kindest/node:v1.21.10@sha256:84709f09756ba4f863769bdcabe5edafc2ada72d3c8c44d6515fc581b66b029c',
+        '1.21':    'kindest/node:v1.21.10@sha256:84709f09756ba4f863769bdcabe5edafc2ada72d3c8c44d6515fc581b66b029c',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:393bb9096c6c4d723bb17bceb0896407d7db581532d11ea2839c80b28e5d8deb',
+        '1.20':    'kindest/node:v1.20.15@sha256:393bb9096c6c4d723bb17bceb0896407d7db581532d11ea2839c80b28e5d8deb'
     ]
 ]
 def _kind_image = null
@@ -137,35 +87,28 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                   '0.11.1',
-                   '0.11',
-                   '0.10',
-                   '0.9',
-                   '0.8'
+                   '0.12.0',
+                   '0.11.1'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version.  Kind 0.9.0: 1.19, 1.19.1, 1.18, 1.18.8, 1.17, 1.17.11, 1.16, 1.16.15, 1.15, and 1.15.12.  Kind 0.10.0: 1.20, 1.20.2, 1.19, 1.19.7, 1.18, 1.18.15, 1.17, 1.17.17, 1.16, and 1.16.15.  Kind 0.11.0 and 0.11.1: 1.23, 1.23.0, 1.22, 1.22.0, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11, 1.18, 1.18.19, 1.17, 1.17.17, 1.16, and 1.16.15.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.10, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.21.1',
+                    '1.21.10',
+                    '1.23.4',
                     '1.23.3',
                     '1.23',
+                    '1.22.10',
                     '1.22.5',
                     '1.22',
+                    '1.21.1',
                     '1.21',
+                    '1.20.15',
                     '1.20.7',
                     '1.20',
                     '1.19.11',
-                    '1.19',
-                    '1.18.19',
-                    '1.18',
-                    '1.17.17',
-                    '1.17',
-                    '1.16.15',
-                    '1.16',
-                    '1.15.12',
-                    '1.15'
+                    '1.19'
                ]
         )
         string(name: 'KUBECTL_VERSION',
@@ -234,7 +177,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.4'
+               defaultValue: '2.0.5'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -513,7 +456,6 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
-                        TWO_CLUSTERS = "false"
                     }
                     steps {
                         sh '''
@@ -556,7 +498,6 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
 
-                            export TWO_CLUSTERS=${TWO_CLUSTERS}
                             export OCR_USERNAME=${OCR_USERNAME}
                             export OCR_PASSWORD=${OCR_PASSWORD}
                             export OCR_EMAIL=${OCR_EMAIL}

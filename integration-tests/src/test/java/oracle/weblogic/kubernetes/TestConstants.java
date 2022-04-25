@@ -23,8 +23,6 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.collect.logs.on.success", "false"));
   public static final int SLEEP_SECONDS_AFTER_FAILURE =
       Integer.parseInt(getNonEmptySystemProperty("wko.it.sleep.seconds.after.failure", "0"));
-  public static boolean TWO_CLUSTERS =
-      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.two.clusters", "false"));
   public static final String K8S_NODEPORT_HOST1 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host1");
   public static final String K8S_NODEPORT_HOST2 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host2");
   public static final String OPDEMO = getNonEmptySystemProperty("wko.it.opdemo");
@@ -223,6 +221,7 @@ public interface TestConstants {
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
   public static final String FLUENTD_INDEX_KEY = "fluentd";
+  public static final String INTROSPECTOR_INDEX_KEY = "introspectord";
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";

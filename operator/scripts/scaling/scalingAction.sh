@@ -98,7 +98,7 @@ cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["spec"]["ports"]:
   if i["name"] == "rest":
-    print(i["port"])
+    print((i["port"]))
 INPUT
 port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
@@ -131,7 +131,7 @@ cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["groups"]:
   if i["name"] == "weblogic.oracle":
-    print(i["preferredVersion"]["version"])
+    print((i["preferredVersion"]["version"]))
 INPUT
 domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -196,7 +196,7 @@ cat > cmds-$$.py << INPUT
 import sys, json
 for j in json.load(sys.stdin)["spec"]["clusters"]:
   if j["clusterName"] == "$wls_cluster_name":
-    print (j["replicas"])
+    print((j["replicas"]))
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -219,7 +219,7 @@ function get_num_ms_domain_scope() {
   else
 cat > cmds-$$.py << INPUT
 import sys, json
-print (json.load(sys.stdin)["spec"]["replicas"])
+print((json.load(sys.stdin)["spec"]["replicas"]))
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -253,7 +253,7 @@ cat > cmds-$$.py << INPUT
 import sys, json
 for j in json.load(sys.stdin)["status"]["clusters"]:
   if j["clusterName"] == "$clusterName":
-    print (j["minimumReplicas"])
+    print((j["minimumReplicas"]))
 INPUT
   minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi

@@ -2,6 +2,7 @@
 title: "Domain processing"
 date: 2019-02-23T17:20:20-05:00
 draft: false
+description: "Understand how the operator processes domains and creates resources."
 weight: 8
 ---
 

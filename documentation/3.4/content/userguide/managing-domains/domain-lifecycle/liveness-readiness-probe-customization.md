@@ -83,15 +83,26 @@ The following operator-populated environment variables are available for use in 
 
 #### Readiness probe customization
 
-By default, the readiness probe is configured to use the WebLogic Server ReadyApp framework. The ReadyApp framework allows fine customization of the readiness probe by the application's participation in the framework. For more details, see [Using the ReadyApp Framework](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/depgd/managing.html#GUID-C98443B1-D368-4CA4-A7A4-97B86FFD3C28). The readiness probe is used to determine if the server is ready to accept user requests. The readiness is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes.
+Here are the options for customizing the readiness probe and its tuning:
 
-By default, the readiness probe is configured to check readiness every 5 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds. The default success and failure thresholds values are 1. You can customize the readiness probe initial delay, interval, timeout, success and failure thresholds using the `readinessProbe` attribute under the `serverPod` element of the domain resource.
+- By default, the readiness probe is configured to use the WebLogic Server ReadyApp framework. The ReadyApp framework allows fine customization of the readiness probe by the application's participation in the framework. For more details, see [Using the ReadyApp Framework](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/depgd/managing.html#GUID-C98443B1-D368-4CA4-A7A4-97B86FFD3C28). The readiness probe is used to determine if the server is ready to accept user requests. The readiness is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes.
 
-Following is an example configuration to change readiness probe interval, timeout and failure threshold value.
-```yaml
-  serverPod:
-    readinessProbe:
-      periodSeconds: 10
-      timeoutSeconds: 10
-      failureThreshold: 3
-```
+- By default, the readiness probe is configured to check readiness every 5 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds. The default success and failure thresholds values are 1. You can customize the readiness probe initial delay, interval, timeout, success and failure thresholds using the `readinessProbe` attribute under the `serverPod` element of the domain resource.
+
+  Following is an example configuration to change readiness probe interval, timeout and failure threshold value.
+  ```yaml
+    serverPod:
+      readinessProbe:
+        periodSeconds: 10
+        timeoutSeconds: 10
+        failureThreshold: 3
+  ```
+
+- You can use domain resource configuration to customize
+  the amount of time the operator will wait for a WebLogic Server pod to become ready
+  before it forces the pod to restart. The default is 30 minutes.
+  See the `maxReadyWaitTimeSeconds` attribute on `domain.spec.serverPod`
+  (which applies to all pods in the domain),
+  `domain.spec.adminServer.serverPod`,
+  `domain.spec.managedServers[*].serverPod`,
+  or `domain.spec.clusters[*].serverPod`.

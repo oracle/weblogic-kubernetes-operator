@@ -8,16 +8,19 @@ pre = "<b> </b>"
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
 
  - **[Domain in PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}})**:
+   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `PersistentVolume`.
    - Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home in a persistent volume.
    - Supply WebLogic applications in the persistent volume.
    - Mutate WebLogic configuration using WLST, the WebLogic Server Administration Console, or [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) supplied in a Kubernetes ConfigMap.
 
  - **[Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})**:
+   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `Image`.
    - Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home layered on this image.
    - Supply WebLogic applications layered on the installation image.
    - Mutate WebLogic configuration by supplying a new image and rolling, or by configuration overrides supplied in a Kubernetes ConfigMap.
 
  - **[Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}})**:
+   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `FromModel`.
    - Supply a WebLogic installation in an image and supply WebLogic configuration in one of three ways:
      - As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.
      - As WDT model YAML file supplied in separate [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}).

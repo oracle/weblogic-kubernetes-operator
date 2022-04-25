@@ -207,14 +207,26 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
 `clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
-The `shutdown` field of `serverPod` controls how servers will be shut down and has three fields:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
-or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
-complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
-the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
-The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
+The `shutdown` field of `serverPod` controls how managed servers will be shut down and has the following four properties:
+`shutdownType`, `timeoutSeconds`, `ignoreSessions` and `waitForAllSessions`. The operator runtime monitors these properties but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the WebLogic Server instance Pod is created.
+
+| Field| Default Value | Supported Values | Description |
+| --- | --- | --- | --- |
+| `shutdownType` | `Graceful` | `Graceful` or `Forced` | Specifies how the operator will shut down server instances. |
+| `timeoutSeconds` | 30 | Whole number in seconds where 0 means no timeout. | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. |
+| `ignoreSessions` | `false` | `true` or `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful. |
+| `waitForAllSessions` | `false` | `true` or `false` | For graceful shutdown only, set to `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only during in-flight work handling. |
+
+{{% notice note %}}
+The `waitForAllSessions` property does not apply when the `ignoreSessions` property is `true`. When the
+`ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during 
+the WebLogic graceful shutdown process. When the`waitForAllSessions` is `true`, the graceful shutdown
+process will wait for all HTTP sessions to complete or be invalidated before proceeding. When `waitForAllSessions`
+is `false`, the graceful shutdown process will wait only for non-persisted HTTP sessions to complete 
+or be invalidated before proceeding.
+{{% /notice %}}
 
 #### Shutdown environment variables
 
@@ -227,6 +239,8 @@ the operator will not override the environment variable based on the shutdown co
 | `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
 | `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
+| `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
+
 
 #### `shutdown` rules
 
@@ -323,7 +337,7 @@ Specifying a `maxUnavailable` property value of `1` protects against inadvertent
 servers are shut down at the same time during the rolling restart process.
 
 {{% notice note %}}
-If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this chapter.
+If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-domain-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this document.
 {{% /notice %}}
 
 ### Draining a node and PodDisruptionBudget
@@ -442,8 +456,6 @@ have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
 4. The operator will restart all the servers in the domain.
 
 ### Domain lifecycle sample scripts
-Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
-
-The scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. They are helpful when scripting the life cycle of a WebLogic Server domain. For more information, see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/domain-lifecycle/README.md).
+See the [Life cycle sample scripts]({{< relref "/userguide/managing-domains/domain-lifecycle/scripts.md" >}})
+for scripts that help with initiating domain life cycle operations.

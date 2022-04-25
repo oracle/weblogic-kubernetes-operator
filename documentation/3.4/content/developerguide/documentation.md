@@ -2,6 +2,7 @@
 title: "Documentation"
 date: 2019-03-19T07:13:22-04:00
 draft: false
+description: "Learn how to contribute to the operator documentation."
 weight: 9
 ---
 

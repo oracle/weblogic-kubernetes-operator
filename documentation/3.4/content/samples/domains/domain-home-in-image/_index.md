@@ -14,7 +14,12 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * The WebLogic Image Tool requires that `JAVA_HOME` is set to a Java JDK version 8 or later.
-* The operator requires an image with either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
+* The operator requires a WebLogic image with either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server General Availability image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has this patch applied.
+
+   {{% notice warning %}}
+   This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   {{% /notice %}}
+
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/storage/_index.md" >}}).
 * Create a Kubernetes Secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName`; see [Configuration parameters](#configuration-parameters) below. For example:
@@ -103,7 +108,7 @@ The script will perform the following steps:
   this image contains sensitive information about the domain, including keys and
   credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+  [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```shell
@@ -147,7 +152,7 @@ If you run the sample from a machine that is remote to the Kubernetes cluster, a
 * If you want Kubernetes to pull the image from a private registry, create a Kubernetes Secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret.
 {{% notice note %}}
 The Kubernetes Secret must be in the same namespace where the domain will be running.
-For more information, see [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+For more information, see [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
 {{% /notice %}}
 * Run the `create-domain.sh` script without the `-e` option.
 * Push the `image` to the target registry.
@@ -174,7 +179,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when the `mode` is set to `wlst`. | `wdt/wdt_model_dynamic.yaml` |
 | `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when the `mode` is set to `wdt` (which is the default `mode`). | `wlst/create-wls-domain.py` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_projects/domains/<domainUID>` |
-| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
+| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server General Availability (GA) image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has this patch applied. **NOTE**: The example base images are GA images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
@@ -316,14 +321,14 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
 Annotations:  <none>
-API Version:  weblogic.oracle/v2
+API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
   Cluster Name:        
   Creation Timestamp:  2019-01-10T14:29:37Z
   Generation:          1
   Resource Version:    3698533
-  Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
+  Self Link:           /apis/weblogic.oracle/v8/namespaces/default/domains/domain1
   UID:                 28655979-14e4-11e9-b751-fa163e855ac8
 Spec:
   Admin Server:

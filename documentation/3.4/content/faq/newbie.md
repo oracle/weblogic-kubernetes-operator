@@ -15,6 +15,8 @@ The WebLogic Kubernetes Operator (the “operator”) is open source and free, l
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
+For more information, see [Pricing and licensing]({{< relref "/userguide/platforms/environments#pricing-and-licensing" >}}).
+
 #### How can I get help?
 
 You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
@@ -113,9 +115,22 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 #### Patching and Upgrades
 
-**Q:** Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.
+**Q:** How can I get a patched Oracle container image for running in Kubernetes (one-off patches, overlays, CPUs, etc.)?
 
-**A:** For relevant information, see [Patch WebLogic Server images]({{< relref "/userguide/base-images/#patch-weblogic-server-images" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** Download pre-patched images from the Oracle Container Registry or use WebLogic Image Tool to create your own.
+For additional information on WebLogic container images on Oracle Container registry,
+see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+
+For additional information on creating new container images with the WebLogic Image Tool,
+see [Create custom images]({{< relref "/userguide/base-images/custom-images.md" >}}).
+
+**Q:** How do I apply patches without impacting my application's uptime?
+
+**A:** See [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}).
+
+**Q:** How do I integrate patching with my continuous integration and continuous deployment processes?
+
+**A:** See [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ***
 
