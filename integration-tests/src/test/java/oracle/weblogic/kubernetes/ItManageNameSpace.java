@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -107,11 +108,12 @@ class ItManageNameSpace {
   private static LoggingFacade logger = null;
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
+  List<String> namespacesToClean = new ArrayList<>();
+
   /**
    * Get namespaces for operator, domain.
    *
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces injected by JUnit
    */
   @BeforeAll
   public static void initAll(@Namespaces(8) List<String> namespaces) {
@@ -173,6 +175,10 @@ class ItManageNameSpace {
         logger.info("Uninstalling operator");
         uninstallOperator(helmParam);
       }
+      for (var namespace : namespacesToClean) {
+        deleteNamespacedArtifacts(namespace);
+        deleteNamespace(namespace);
+      }
     }
   }
 
@@ -216,6 +222,10 @@ class ItManageNameSpace {
     logger.info("creating namespace {0}", manageByExp3NS);
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
 
+    namespacesToClean.add(manageByExp1NS);
+    namespacesToClean.add(manageByExp2NS);
+    namespacesToClean.add(manageByExp3NS);
+
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
         opNamespaces[1], null);
@@ -243,6 +253,7 @@ class ItManageNameSpace {
 
     logger.info("Upgrading operator in namespace {0}", opNamespaces[1]);
     assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
+    namespacesToClean.add(manageByLabelNS);
 
     //verify domain is started
     createSecrets(manageByLabelNS);
@@ -308,6 +319,7 @@ class ItManageNameSpace {
 
     logger.info("upgrade operator1 to replace managing domains using RegExp namespaces");
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
+    namespacesToClean.add(manageByExpDomainNS);
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     logger.info("set helm params to use domainNamespaceSelectionStrategy=RegExp for "
         + "namespaces names started with weblogic");
@@ -352,6 +364,7 @@ class ItManageNameSpace {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    namespacesToClean.add(manageByLabelDomainNS);
     logger.info("Install and verify operator in namespace {0}", opNamespaces[3]);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
