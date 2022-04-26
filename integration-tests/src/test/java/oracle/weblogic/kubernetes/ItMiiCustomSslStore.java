@@ -10,16 +10,12 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -36,6 +32,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -45,7 +42,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.SslUtils.generateJksStores;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +67,6 @@ class ItMiiCustomSslStore {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-custom-ssl";
   private static final String pvName = getUniqueName(domainUid + "-pv-");
@@ -90,10 +85,6 @@ class ItMiiCustomSslStore {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -151,15 +142,12 @@ class ItMiiCustomSslStore {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -188,7 +176,6 @@ class ItMiiCustomSslStore {
    * The client uses t3s cluster URL with custom SSL TrustStore on the command line
    */
   @Test
-  @Order(1)
   @DisplayName("Verify JNDI Context can be accessed using t3s cluster URL")
   void testMiiGetCustomSSLContext() {
 
@@ -219,13 +206,11 @@ class ItMiiCustomSslStore {
     extOpts.append("-Dweblogic.security.SSL.ignoreHostnameVerification=true ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStore=/shared/TrustKeyStore.jks ");
     extOpts.append("-Dweblogic.security.SSL.trustedCAKeyStorePassPhrase=changeit ");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for client to get Initial context "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runClientInsidePod(adminServerPodName, domainNamespace,
-            "/u01", extOpts.toString() + " SslTestClient", "t3s://" + domainUid + "-cluster-cluster-1:8100"));
+    testUntil(
+        runClientInsidePod(adminServerPodName, domainNamespace,
+          "/u01", extOpts.toString() + " SslTestClient", "t3s://"
+                + domainUid + "-cluster-cluster-1:8100"),
+        logger,
+        "Wait for client to get Initial context");
   }
 }

@@ -123,6 +123,20 @@ public class Pod {
   }
 
   /**
+   * Check a given pod is in ready status.
+   *
+   * @param namespace name of the namespace in which to check the pod status
+   * @param labels map of labels as key value pairs
+   * @param podName name of the pod
+   * @return true if pod is ready otherwise false
+   */
+  public static Callable<Boolean> podReady(String namespace, String podName, Map<String, String> labels) {
+    return () -> {
+      return Kubernetes.isPodReady(namespace, labels, podName);
+    };
+  }
+
+  /**
    * Check a given pod is in initializing status.
    *
    * @param namespace name of the namespace in which to check the pod status

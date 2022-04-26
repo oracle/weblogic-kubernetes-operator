@@ -46,8 +46,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,13 +58,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.kubernetes.client.util.Yaml.dump;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -83,16 +82,21 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -105,7 +109,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -145,16 +148,14 @@ class ItConfigDistributionStrategy {
   static int mysqlDBPort2;
   static String dsUrl1;
   static String dsUrl2;
+  static String mysql1SvcEndpoint = null;
+  static String mysql2SvcEndpoint = null;
 
   String dsName0 = "JdbcTestDataSource-0";
   String dsName1 = "JdbcTestDataSource-1";
   String dsSecret = domainUid.concat("-mysql-secret");
+  String adminSvcExtHost = null;
 
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(15, MINUTES).await();
   private static LoggingFacade logger = null;
 
   /**
@@ -188,13 +189,26 @@ class ItConfigDistributionStrategy {
 
 
     //start two MySQL database instances
-    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
+    createMySQLDB("mysqldb-1", "root", "root123", getNextFreePort(), domainNamespace, null);
     mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
-    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
+    logger.info("mysqlDBPort1 is: " + mysqlDBPort1);
+    createMySQLDB("mysqldb-2", "root", "root456", getNextFreePort(), domainNamespace, null);
     mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
+    logger.info("mysqlDBPort2 is: " + mysqlDBPort2);
 
-    dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
-    dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
+    if (OKD) {
+      mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");
+      mysql2SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-2");
+    }
+
+    String mysql1HostAndPort = getHostAndPort(mysql1SvcEndpoint, mysqlDBPort1);
+    logger.info("mysql1HostAndPort = {0} ", mysql1HostAndPort);
+    String mysql2HostAndPort = getHostAndPort(mysql2SvcEndpoint, mysqlDBPort2);
+    logger.info("mysql2HostAndPort = {0} ", mysql2HostAndPort);
+
+    dsUrl1 = "jdbc:mysql://" + mysql1HostAndPort;
+    dsUrl2 = "jdbc:mysql://" + mysql2HostAndPort;
+
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -204,11 +218,15 @@ class ItConfigDistributionStrategy {
 
     //create and start WebLogic domain
     createDomain();
+
+    // Expose the admin service external node port as  a route for OKD
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+
     //create a jdbc resource targeted to cluster
-    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1);
-    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1);
+    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
+    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     //deploy application to view server configuration
-    deployApplication(clusterName + "," + adminServerName);
+    deployApplication();
 
   }
 
@@ -242,20 +260,20 @@ class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+
     logger.info("Checking if the clusterview app in admin server is accessible after restart");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for clusterview app in admin server is accessible after restart"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        withLongRetryPolicy,
+        () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
           return response.statusCode() == 200;
-        });
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
   }
 
   /**
@@ -300,14 +318,12 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -357,14 +373,12 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                    + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -372,13 +386,12 @@ class ItConfigDistributionStrategy {
     logger.info("Deleting the old override configmap {0}", overridecm);
     deleteConfigMap(overridecm, domainNamespace);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting for configmap {0} to be deleted. Elapsed time{1}, remaining time {2}",
-            overridecm, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(() -> {
-              return listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
-                  -> (cm.getMetadata().getName().equals(overridecm)));
-            });
-
+    testUntil(
+        withLongRetryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
+            -> (cm.getMetadata().getName().equals(overridecm))),
+        logger,
+        "configmap {0} to be deleted.");
 
     Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
     Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
@@ -409,17 +422,14 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                    + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("99999999"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("99999999"),
+        logger,
+        "server configuration to be updated");
 
     verifyResourceJDBC0Override(true);
-
   }
 
   /**
@@ -479,13 +489,9 @@ class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    testUntil(configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -640,12 +646,15 @@ class ItConfigDistributionStrategy {
             "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     //verify server attribute MaxMessageSize
     String appURI = "/clusterview/ConfigServlet?"
         + "attributeTest=true&"
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    String url = "http://" + hostAndPort + appURI;
 
     return (()
         -> {
@@ -658,21 +667,29 @@ class ItConfigDistributionStrategy {
   private void verifyConfigXMLOverride(boolean configUpdated) {
 
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
 
     //verify server attribute MaxMessageSize
     String configUri = "ConfigServlet?"
         + "attributeTest=true"
         + "&serverType=adminserver"
         + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
-
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
-    } else {
-      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
-    }
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      if (response.statusCode() != 200) {
+        logger.info("Response code is not 200 retrying...");
+        return false;
+      }
+      if (configUpdated) {
+        return response.body().contains("MaxMessageSize=100000000");
+      } else {
+        return response.body().contains("MaxMessageSize=10000000");
+      }
+    }, logger, "clusterview app in admin server is accessible after restart");
 
   }
 
@@ -682,23 +699,49 @@ class ItConfigDistributionStrategy {
 
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName0;
     String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:12"), "Did get getMaxCapacity:12");
-      assertTrue(response.body().contains("getInitialCapacity:2"), "Did get getInitialCapacity:2");
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-    }
+    testUntil(
+        () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (configUpdated) {
+            if (!(response.body().contains("getMaxCapacity:12"))) {
+              logger.info("Did get getMaxCapacity:12");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:2"))) {
+              logger.info("Did get getInitialCapacity:2");
+              return false;
+            }
+          } else {
+            if (!(response.body().contains("getMaxCapacity:15"))) {
+              logger.info("Did get getMaxCapacity:15");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:1"))) {
+              logger.info("Did get getInitialCapacity:1");
+              return false;
+            }
+          }
+          return true;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
 
     //test connection pool in all managed servers of dynamic cluster
+    HttpResponse<String> response = null;
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
@@ -714,7 +757,11 @@ class ItConfigDistributionStrategy {
 
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName1;
@@ -760,8 +807,8 @@ class ItConfigDistributionStrategy {
   private void verifyPodsStateNotChanged() {
     logger.info("Verifying the WebLogic server pod states are not changed");
     for (Map.Entry<String, OffsetDateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      OffsetDateTime creationTimestamp = (OffsetDateTime) entry.getValue();
+      String podName = entry.getKey();
+      OffsetDateTime creationTimestamp = entry.getValue();
       assertTrue(podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }
@@ -901,19 +948,40 @@ class ItConfigDistributionStrategy {
   }
 
   //deploy application clusterview.war to domain
-  private void deployApplication(String targets) {
-    logger.info("Getting port for default channel");
-    int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default port failed");
-    logger.info("default channel port: {0}", defaultChannelPort);
-    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+  private void deployApplication() {
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
 
-    //deploy application
-    logger.info("Deploying webapp {0} to domain", clusterViewAppPath);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, clusterViewAppPath,
-        domainNamespace);
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to targets {1},{2}", clusterViewAppPath, clusterName, adminServerName);
+    String targets = "{identity:[clusters,'" + clusterName + "']},{identity:[servers,'" + adminServerName + "']}";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    testUntil(
+        () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        },
+        logger,
+        "Deploying the application using Rest");
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
+    //verify server attribute MaxMessageSize
+    String configUri = "ConfigServlet?"
+        + "attributeTest=true"
+        + "&serverType=adminserver"
+        + "&serverName=" + adminServerName;
+
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      return 200 == response.statusCode();
+    }, logger, "Waiting for deployment to be ready and return 200");
   }
 
   //restart pods by manipulating the serverStartPolicy to NEVER and IF_NEEDED
@@ -953,7 +1021,8 @@ class ItConfigDistributionStrategy {
   }
 
   //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
+  private void createJdbcDataSource(String dsName, String user, String password,
+                                    int mySQLNodePort, String sqlSvcEndpoint) {
 
     try {
       logger.info("Getting port for default channel");
@@ -963,7 +1032,10 @@ class ItConfigDistributionStrategy {
       logger.info("default channel port: {0}", defaultChannelPort);
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
-      String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
+
+      String hostAndPort = getHostAndPort(sqlSvcEndpoint, mySQLNodePort);
+      logger.info("hostAndPort = {0} ", hostAndPort);
+      String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
@@ -1039,6 +1111,34 @@ class ItConfigDistributionStrategy {
       }
     }
     return -1;
+  }
+
+  private static String getMySQLSvcName(String namespace, String dbName) {
+    logger.info(dump(Kubernetes.listServices(namespace)));
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getMetadata().getName();
+      }
+    }
+    return null;
+  }
+
+  private static String getMySQLSvcEndpoint(String domainNamespace, String dbName) {
+    String svcName = getMySQLSvcName(domainNamespace, dbName);
+    String command = new String("oc -n " + domainNamespace + " get ep | grep " + svcName + " |  awk '{print $2}'");
+    ExecResult result = null;
+    try {
+      result = exec(new String(command), true);
+      getLogger().info("The command returned exit value: "
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
+      assertTrue((result.exitValue() == 0),
+             "curl command returned non zero value");
+    } catch (Exception e) {
+      getLogger().info("Got exception, command failed with errors " + e.getMessage());
+    }
+    return  result.stdout();
   }
 
 }

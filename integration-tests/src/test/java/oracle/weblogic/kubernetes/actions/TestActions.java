@@ -1495,11 +1495,13 @@ public class TestActions {
 
   /**
    * Install WebLogic Remote Console.
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName the name of the admin server pod
    *
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installWlsRemoteConsole() {
-    return WebLogicRemoteConsole.installWlsRemoteConsole();
+  public static boolean installWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
+    return WebLogicRemoteConsole.installWlsRemoteConsole(domainNamespace, adminServerPodName);
   }
 
   /**

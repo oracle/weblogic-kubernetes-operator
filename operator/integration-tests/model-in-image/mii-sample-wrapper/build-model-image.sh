@@ -45,7 +45,6 @@
 #      WDT_DOMAIN_TYPE
 #      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 #
-
 set -eu
 set -o pipefail
 
