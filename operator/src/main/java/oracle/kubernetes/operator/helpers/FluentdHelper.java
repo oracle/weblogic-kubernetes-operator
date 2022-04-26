@@ -220,7 +220,7 @@ public class FluentdHelper {
         "metadata.labels['weblogic.serverName']",
         true);
 
-    if (LogHomeLayoutType.Flat.equals(domain.getLogHomeLayout())) {
+    if (LogHomeLayoutType.FLAT.equals(domain.getLogHomeLayout())) {
       addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
           domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
           false);

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 835e11ec579b9ea7db2797e5536f95b664e17580e3c78ae2b559eb9607e6e6c5
+    weblogic.sha256: 1737c3058a7ad2df46f06f1dc64d5d176e806fea33f1e5909460a34dfd7faa51
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -526,13 +526,13 @@ spec:
                 type: string
               logHomeLayout:
                 description: Control how the log files under logHome is organized.
-                  Flat - all files are under the logHome root directory. ByServers
+                  FLAT - all files are under the logHome root directory. BY_SERVERS
                   (default) - domain log file and introspector.out are at the logHome
                   root level, all other files are organized under the respective server
                   name logs directory.  logHome/servers/<server name>/logs.
                 enum:
-                - Flat
-                - ByServers
+                - FLAT
+                - BY_SERVERS
                 type: string
               domainHomeSourceType:
                 description: 'Domain home file system source type: Legal values: Image,

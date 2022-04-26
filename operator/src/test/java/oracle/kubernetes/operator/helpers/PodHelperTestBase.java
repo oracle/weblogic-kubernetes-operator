@@ -1561,13 +1561,22 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
-  void whenPodCreated_withLogHomeLayoutSpecified_hasLogHomeLayoutEnvVariable() {
+  void whenPodCreated_withLogHomeLayoutFlat_hasLogHomeLayoutEnvVariableSet() {
     final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
-    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.Flat);
+    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.FLAT);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME_LAYOUT",
-        LogHomeLayoutType.Flat.toString()));
+        LogHomeLayoutType.FLAT.toString()));
+  }
+
+  @Test
+  void whenPodCreated_withoutLogHomeLayout_hasNoLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString())));
   }
 
   @Test

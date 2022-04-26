@@ -110,10 +110,10 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenLogHomeLayoutSet_returnIt() {
-    configureDomain(domain).withLogHomeLayout(LogHomeLayoutType.Flat);
+  void whenLogHomeLayoutSet_returnTheCorrectLayoutType() {
+    configureDomain(domain).withLogHomeLayout(LogHomeLayoutType.FLAT);
 
-    assertThat(domain.getLogHomeLayout(), equalTo(LogHomeLayoutType.Flat));
+    assertThat(domain.getLogHomeLayout(), equalTo(LogHomeLayoutType.FLAT));
   }
 
   @Test

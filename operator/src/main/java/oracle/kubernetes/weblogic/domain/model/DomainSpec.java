@@ -108,15 +108,15 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * The log files layout under logHome.
-   *   Flat - all files is in one directory
-   *   ByServers - log files are organized under loghome/servers/server name/logs.
+   *   FLAT - all files is in one directory
+   *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
    * */
   @Description(
       "Control how the log files under logHome is organized. "
-        + "Flat - all files are under the logHome root directory. "
-        + "ByServers (default) - domain log file and introspector.out are at the logHome root level, all other files "
+        + "FLAT - all files are under the logHome root directory. "
+        + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files "
         + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
-  private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.ByServers;
+  private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
   /**
@@ -1063,6 +1063,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
+            .append("logHomeLayout", logHomeLayout)
             .append("logHomeEnabled", logHomeEnabled)
             .append("managedServers", managedServers)
             .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
@@ -1098,6 +1099,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(logHomeLayout)
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
@@ -1139,6 +1141,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeLayout, rhs.logHomeLayout)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
