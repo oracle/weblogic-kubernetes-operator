@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -76,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVe
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.addSccToNsSvcAccount;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -150,16 +152,19 @@ class ItElasticLoggingFluentd {
 
     // install and verify Elasticsearch
     elasticSearchNs = namespaces.get(2);
+    if (OKD) {
+      addSccToNsSvcAccount("default", elasticSearchNs);
+    }
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
-    assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
+    assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
-    assertTrue(kibanaParams != null, "Failed to install Kibana");
+    assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -181,6 +186,8 @@ class ItElasticLoggingFluentd {
 
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
+    // create fluentd configuration
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -283,6 +290,7 @@ class ItElasticLoggingFluentd {
     String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
     String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
     logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
+    // as long as there is something returned
     boolean jobCompeted = results1.contains("introspectDomain.sh");
     logger.info("found completed job " + jobCompeted);
 
@@ -411,10 +419,10 @@ class ItElasticLoggingFluentd {
             )
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort()))))
+                    .adminService(new AdminService()
+                        .addChannelsItem(new Channel()
+                            .channelName("default")
+                            .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -440,11 +448,11 @@ class ItElasticLoggingFluentd {
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
-    String indexName = (String) testVarMap.get(index);
-    StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
-        .append(" --max-time " + waittime)
+    String indexName = testVarMap.get(index);
+    StringBuilder curlOptions = new StringBuilder(" --connect-timeout " + waittime)
+        .append(" --max-time ").append(waittime)
         .append(" -X GET ");
-    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
+    StringBuilder k8sExecCmdPrefixBuff = new StringBuilder(k8sExecCmdPrefix);
     int offset = k8sExecCmdPrefixBuff.indexOf("http");
     k8sExecCmdPrefixBuff.insert(offset, curlOptions);
     String cmd = k8sExecCmdPrefixBuff

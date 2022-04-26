@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -79,7 +80,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -114,8 +114,8 @@ public class ItMiiDomainModelInPV {
   private static String adminSecretName;
   private static String encryptionSecretName;
 
-  private static final String pvName = getUniquePvOrPvcName(domainUid1 + "-wdtmodel-pv-");
-  private static final String pvcName = getUniquePvOrPvcName(domainUid1 + "-wdtmodel-pvc-");
+  private static final String pvName = getUniqueName(domainUid1 + "-wdtmodel-pv-");
+  private static final String pvcName = getUniqueName(domainUid1 + "-wdtmodel-pvc-");
 
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";

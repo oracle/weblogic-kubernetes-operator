@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
@@ -271,6 +272,22 @@ public class TestAssertions {
    */
   public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace) {
     return Pod.podDoesNotExist(podName, domainUid, namespace);
+  }
+
+  /**
+   * Checks if the pod is running in a given namespace.
+   * The method assumes the pod name to starts with provided value for podName
+   * and decorated with provided label selector
+   * @param podName name of pod
+   * @param labels label for pod
+   * @param namespace in which to check for the pod existence
+   * @return true if pods are exist and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static Callable<Boolean> isPodReady(String namespace,
+                                             Map<String, String> labels,
+                                             String podName) throws ApiException {
+    return Pod.podReady(namespace, podName, labels);
   }
 
   /**
@@ -670,10 +687,11 @@ public class TestAssertions {
    * Check if Prometheus is running.
    *
    * @param namespace in which is prometheus is running
+   * @param releaseName name of prometheus helm chart release
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> isPrometheusReady(String namespace) {
-    return Prometheus.isReady(namespace);
+  public static Callable<Boolean> isPrometheusReady(String namespace, String releaseName) {
+    return Prometheus.isReady(namespace, releaseName);
   }
 
   /**
@@ -770,5 +788,17 @@ public class TestAssertions {
     }
 
     return false;
+  }
+
+  /**
+   * Check if executed command contains expected output.
+   *
+   * @param pod   V1Pod object
+   * @param searchKey expected string in the log
+   * @return true if the output matches searchKey otherwise false
+   */
+  public static Callable<Boolean> searchPodLogForKey(V1Pod pod, String searchKey) {
+    return () -> oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodLog(pod.getMetadata().getName(),
+        pod.getMetadata().getNamespace()).contains(searchKey);
   }
 }

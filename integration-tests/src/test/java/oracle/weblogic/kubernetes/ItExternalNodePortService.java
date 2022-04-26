@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +36,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -57,27 +54,31 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The use case verifies external RMI client access to WebLogic cluster.
- * The external RMI client access resources (JMS/EJB) using the NodePort 
- * service instead of LoadBalancer tunneling using the approach as described 
+ * The external RMI client access resources (JMS/EJB) using the NodePort
+ * service instead of LoadBalancer tunneling using the approach as described
  * in following  WebLogic Kubernetes operator faq page
  * https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/
  * In a WebLogic domain, configure a custom channel for the T3 protocol that
@@ -85,7 +86,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * correspond to the address and port remote clients will use to access the
  * WebLogic cluster resources. Configure a WebLogic dynamic cluster domain using
  * Model In Image. Add a cluster targeted JMS distributed destination.
- * Configure a NodePort Sevice that redirects HTTP traffic to custom channel. 
+ * Configure a NodePort Sevice that redirects HTTP traffic to custom channel.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -95,7 +96,6 @@ class ItExternalNodePortService {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static int replicaCount = 2;
   private static int nextFreePort = -1;
   private static String clusterName = "cluster-1";
@@ -115,10 +115,6 @@ class ItExternalNodePortService {
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning unique namespace for Operator");
@@ -151,7 +147,7 @@ class ItExternalNodePortService {
     // Prepare the config map sparse model file from the template by replacing
     // Public Address of the custom channel with K8S_NODEPORT_HOST
     nextFreePort = getNextFreePort();
-    Map<String, String> configTemplateMap  = new HashMap();
+    Map<String, String> configTemplateMap  = new HashMap<>();
     configTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
     configTemplateMap.put("FREE_PORT", String.valueOf(nextFreePort));
 
@@ -174,15 +170,12 @@ class ItExternalNodePortService {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
   }
 
   /**
@@ -207,8 +200,8 @@ class ItExternalNodePortService {
    * Queue using Nodeport service http url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
-   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
-   * available to download to build the external rmi JMS Client. 
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not
+   * available to download to build the external rmi JMS Client.
    */
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
@@ -219,9 +212,9 @@ class ItExternalNodePortService {
     buildClient();
     buildClientOnPod();
 
-    // Prepare the Nodeport service yaml file from the template file by 
-    // replacing domain namespace, domain UID, cluster name and host name 
-    Map<String, String> templateMap  = new HashMap();
+    // Prepare the Nodeport service yaml file from the template file by
+    // replacing domain namespace, domain UID, cluster name and host name
+    Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
@@ -241,28 +234,33 @@ class ItExternalNodePortService {
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployNodePort), true));
 
-    // Unlike Voyager There is no such service to check for tunneling
     logger.info("kubectl apply returned {0}", result.toString());
     String serviceName = domainUid + "-cluster-" + clusterName + "-ext";
     String portName = "clustert3channel";
     checkServiceExists(serviceName, domainNamespace);
+    String clusterSvcRouteHost = createRouteForOKD(serviceName, domainNamespace);
     int httpTunnelingPort =
         getServiceNodePort(domainNamespace, serviceName, portName);
-    assertTrue(httpTunnelingPort != -1,
+    assertNotEquals(-1, httpTunnelingPort,
         "Could not get the Http TunnelingPort service node port");
     logger.info("HttpTunnelingPort for NodePort Service {0}", httpTunnelingPort);
 
+    // This test uses JMSclient which gets an InitialContext. For this, we need to specify the http port that
+    // the client can access to get the Initial context.
+    String hostAndPort = getHostAndPort(clusterSvcRouteHost + ":80", httpTunnelingPort);
+
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
-    runExtClient(httpTunnelingPort, 2, false);
+    // works from RMI client outside of k8s cluster
+    runExtClient(hostAndPort, 2, false);
+
     logger.info("External RMI tunneling works for NodePortService");
   }
 
   // Run the RMI client outside the K8s Cluster
-  private void runExtClient(int httpTunnelingPort, int serverCount, boolean checkConnection) {
+  private void runExtClient(String hostAndPort, int serverCount, boolean checkConnection) {
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
-    httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
+    httpUrl.append(hostAndPort);
     StringBuffer javaCmd = new StringBuffer("java -cp ");
     javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javaCmd.append(":");
@@ -274,15 +272,8 @@ class ItExternalNodePortService {
     javaCmd.append(" ");
     javaCmd.append(String.valueOf(checkConnection));
     logger.info("java command to be run {0}", javaCmd.toString());
-
     // Note it takes a couples of iterations before the client success
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for Http JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javaCmd)));
+    testUntil(runJmsClient(new String(javaCmd)), logger, "Wait for Http JMS Client to access WLS");
   }
 
   // Download the wlthint3client.jar from Adminserver pod to local filesystem.
@@ -306,12 +297,12 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Build JMS Client inside the Admin Server Pod
   private void buildClientOnPod() {
-    String destLocation = "/u01/oracle/JmsTestClient.java";
+    String destLocation = "/u01/JmsTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
              adminServerPodName, "weblogic-server",
              Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
@@ -323,7 +314,7 @@ class ItExternalNodePortService {
     javacCmd.append(" -it ");
     javacCmd.append(adminServerPodName);
     javacCmd.append(" -- /bin/bash -c \"");
-    javacCmd.append("javac -cp ");
+    javacCmd.append("cd /u01; javac -cp ");
     javacCmd.append(jarLocation);
     javacCmd.append(" JmsTestClient.java ");
     javacCmd.append(" \"");
@@ -332,7 +323,7 @@ class ItExternalNodePortService {
         () -> exec(new String(javacCmd), true));
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
+    assertEquals(0, result.exitValue(), "Client compilation fails");
   }
 
   // Run external standalone JMS Client using wlthint3client.jar in classpath.

@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -38,6 +40,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -48,6 +51,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
+import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -55,6 +59,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -64,7 +69,9 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -72,14 +79,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
@@ -511,7 +523,7 @@ public class CommonTestUtils {
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
     String finalHost = host != null ? host : K8S_NODEPORT_HOST;
     logger.info("finalHost = {0}", finalHost);
-    withQuickRetryPolicy
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking that credentials {0}/{1} are {2}"
                     + "(elapsed time {3}ms, remaining time {4}ms)",
@@ -529,6 +541,93 @@ public class CommonTestUtils {
             String.format(
                 "Failed to validate credentials %s/%s on pod %s in namespace %s",
                 username, password, podName, namespace)));
+  }
+
+  /**
+   * Start a port-forward process with a given set of attributes.
+   * @param hostName host information to used against address param
+   * @param domainNamespace domain namespace
+   * @param domainUid domain uid
+   * @param port the remote port
+   * @return generated local forward port
+   */
+  public static String startPortForwardProcess(String hostName,
+                                       String domainNamespace,
+                                       String domainUid,
+                                       int port) {
+    LoggingFacade logger = getLogger();
+    // Create a unique stdout file for kubectl port-forward command
+    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace
+                    + "-" + port + ".out";
+
+    logger.info("Start port forward process");
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+
+    // Let kubectl choose and allocate a local port number that is not in use
+    StringBuffer cmd = new StringBuffer("kubectl port-forward --address ")
+        .append(hostName)
+        .append(" pod/")
+        .append(adminServerPodName)
+        .append(" -n ")
+        .append(domainNamespace)
+        .append(" :")
+        .append(String.valueOf(port))
+        .append(" > ")
+        .append(pfFileName)
+        .append(" 2>&1 &");
+    logger.info("Command to forward port {0} ", cmd.toString());
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(cmd.toString(), true),
+        String.format("Failed to forward port by running command %s", cmd));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
+    assertNotNull(getForwardedPort(pfFileName),
+          "port-forward command fails to assign a local port");
+    return getForwardedPort(pfFileName);
+  }
+
+  /**
+   * Stop port-forward process(es) started through startPortForwardProcess.
+   * @param domainNamespace namespace where port-forward procees were started
+   */
+  public static void stopPortForwardProcess(String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Stop port forward process");
+    final StringBuffer getPids = new StringBuffer("ps -ef | ")
+        .append("grep 'kubectl* port-forward ' | grep ")
+        .append(domainNamespace)
+        .append(" | awk ")
+        .append(" '{print $2}'");
+    logger.info("Command to get pids for port-forward processes {0}", getPids.toString());
+    ExecResult result = assertDoesNotThrow(() -> exec(getPids.toString(), true));
+    if (result.exitValue() == 0) {
+      String[] pids = result.stdout().split(System.lineSeparator());
+
+      for (String pid : pids) {
+        logger.info("Command to kill port forward process: {0}", "kill -9 " + pid);
+        result = assertDoesNotThrow(() -> exec("kill -9 " + pid, true));
+        logger.info("stopPortForwardProcess command returned {0}", result.toString());
+      }
+    }
+  }
+
+  private static String getForwardedPort(String portForwardFileName) {
+    //wait until forwarded port number is written to the file upto 5 minutes
+    LoggingFacade logger = getLogger();
+    assertDoesNotThrow(() ->
+        testUntil(
+            isFileExistAndNotEmpty(portForwardFileName),
+            logger,
+            "forwarded port number is written to the file " + portForwardFileName));
+    String portFile = assertDoesNotThrow(() -> Files.readAllLines(Paths.get(portForwardFileName)).get(0));
+    logger.info("Port forward info:\n {0}", portFile);
+    String forwardedPortNo = null;
+    String regex = ".*Forwarding.*:(\\d+).*";
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(portFile);
+    if (matcher.find()) {
+      forwardedPortNo = matcher.group(1);
+    }
+    return forwardedPortNo;
   }
 
   /**
@@ -713,23 +812,29 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource runtime using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
    * @param resourcesUrl url of the resource
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort,
+                                            String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime")
         .append("/")
         .append(resourcesUrl)
         .append("/");
 
     logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
-    return new Command()
+    return Command
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedValue);
@@ -1083,7 +1188,6 @@ public class CommonTestUtils {
         });
   }
 
-
   /**
    * Returns the java system property value, converting an empty string to null.
    *
@@ -1126,5 +1230,24 @@ public class CommonTestUtils {
       propertyValue += "/";
     }
     return propertyValue;
+  }
+
+  /**
+   * Get a unique name.
+   * @param prefix prefix of the name
+   * @param suffix suffix of the name
+   * @return the full name
+   */
+  public static String getUniqueName(String prefix, String... suffix) {
+    char[] name = new char[6];
+    for (int i = 0; i < name.length; i++) {
+      name[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+    String cmName = prefix + new String(name);
+    for (String s : suffix) {
+      cmName += s;
+    }
+    getLogger().info("Creating unique name {0}", cmName);
+    return cmName;
   }
 }

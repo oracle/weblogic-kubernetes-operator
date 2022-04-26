@@ -100,6 +100,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotCh
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
@@ -109,7 +110,6 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilCom
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -134,8 +134,8 @@ class ItTwoDomainsManagedByTwoOperators {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String defaultSharingPvcName = getUniquePvOrPvcName("default-sharing-pvc");
-  private static final String defaultSharingPvName = getUniquePvOrPvcName("default-sharing-pv");
+  private static final String defaultSharingPvcName = getUniqueName("default-sharing-pvc");
+  private static final String defaultSharingPvName = getUniqueName("default-sharing-pv");
 
   private static String defaultNamespace = "default";
   private static String domain1Uid = null;
@@ -346,8 +346,8 @@ class ItTwoDomainsManagedByTwoOperators {
 
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
-      String pvName = getUniquePvOrPvcName(domainUid + "-pv-" + domainNamespace);
-      String pvcName = getUniquePvOrPvcName(domainUid + "-pvc");
+      String pvName = getUniqueName(domainUid + "-pv-" + domainNamespace);
+      String pvcName = getUniqueName(domainUid + "-pvc");
 
       // create WebLogic credentials secret
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);

@@ -37,14 +37,12 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -55,23 +53,25 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.getUniquePvOrPvcName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -80,7 +80,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -103,21 +102,17 @@ class ItSystemResOverrides {
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
   int t3ChannelPort;
-  final String pvName = getUniquePvOrPvcName(domainUid + "-pv-");
-  final String pvcName = getUniquePvOrPvcName(domainUid + "-pvc-");
+  final String pvName = getUniqueName(domainUid + "-pv-");
+  final String pvcName = getUniqueName(domainUid + "-pvc-");
   final String wlSecretName = "weblogic-credentials";
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;
+  String adminSvcExtHost = null;
 
   static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
   LinkedHashMap<String, OffsetDateTime> podTimestamps;
 
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
   private static LoggingFacade logger = null;
 
   /**
@@ -157,8 +152,13 @@ class ItSystemResOverrides {
     sitconfigAppPath = Paths.get(distDir.toString(), "sitconfig.war");
     assertTrue(sitconfigAppPath.toFile().exists(), "Application archive is not available");
 
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+
     //deploy application to view server configuration
-    deployApplication(clusterName + "," + adminServerName);
+    deployApplication();
 
   }
 
@@ -203,13 +203,10 @@ class ItSystemResOverrides {
     verifyPodsStateNotChanged();
 
     //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for jms server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated());
+    testUntil(
+        configUpdated(),
+        logger,
+        "jms server configuration to be updated");
 
     verifyJMSResourceOverride();
     verifyWLDFResourceOverride();
@@ -225,7 +222,8 @@ class ItSystemResOverrides {
 
     //verify server attribute MaxMessageSize
     String appURI = "/sitconfig/SitconfigServlet";
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    String url = "http://" + hostAndPort + appURI;
 
     return (()
         -> {
@@ -235,8 +233,15 @@ class ItSystemResOverrides {
   }
 
   private void verifyJMSResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+        "default");
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+
+    String uri = "http://" + hostAndPort + "/sitconfig/SitconfigServlet";
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -246,8 +251,14 @@ class ItSystemResOverrides {
   }
 
   private void verifyWLDFResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+        "default");
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    String uri = "http://" + hostAndPort + "/sitconfig/SitconfigServlet";
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -421,22 +432,38 @@ class ItSystemResOverrides {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
+
+    //create router for admin service on OKD
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
   }
 
   //deploy application sitconfig.war to domain
-  private void deployApplication(String targets) {
-    logger.info("Getting port for default channel");
-    int defaultChannelPort = assertDoesNotThrow(()
-        -> getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server default port failed");
-    logger.info("default channel port: {0}", defaultChannelPort);
-    assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
+  private void deployApplication() {
 
-    //deploy application
-    logger.info("Deploying webapp {0} to domain", sitconfigAppPath);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, targets, sitconfigAppPath,
-        domainNamespace);
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
+    //deploy clusterview application
+    logger.info("Deploying sitconfig app {0} to targets {1},{2}", sitconfigAppPath, clusterName, adminServerName);
+    String targets = "{identity:[clusters,'" + clusterName + "']},{identity:[servers,'" + adminServerName + "']}";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    testUntil(
+        () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              targets, sitconfigAppPath, null, "sitconfig"));
+          return result.stdout().equals("202");
+        },
+        logger,
+        "Deploying the application using Rest");
   }
 
   /**
