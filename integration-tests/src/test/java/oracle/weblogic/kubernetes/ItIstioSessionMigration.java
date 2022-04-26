@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.custom.Quantity;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -63,6 +64,9 @@ class ItIstioSessionMigration {
 
   private static LoggingFacade logger = null;
 
+  private static Map<String, Quantity> resourceRequest = new HashMap<>();
+  private static Map<String, Quantity> resourceLimit = new HashMap<>();
+
   /**
    * Install operator, create a custom image using model in image with model files
    * and create a WebLlogic domain with a dynamic cluster.
@@ -108,6 +112,12 @@ class ItIstioSessionMigration {
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
+
+    // set resource request and limit
+    resourceRequest.put("cpu", new Quantity("250m"));
+    resourceRequest.put("memory", new Quantity("768Mi"));
+    resourceLimit.put("cpu", new Quantity("2"));
+    resourceLimit.put("memory", new Quantity("2Gi"));
 
     // config the domain with Istio ingress with Istio gateway
     String managedServerPrefix = domainUid + "-managed-server";

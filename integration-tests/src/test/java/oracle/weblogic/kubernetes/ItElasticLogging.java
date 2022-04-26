@@ -458,6 +458,7 @@ class ItElasticLogging {
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
+
       testResult = true;
     } else {
       assertEquals(0, count, "Total count of logs should be zero!");
