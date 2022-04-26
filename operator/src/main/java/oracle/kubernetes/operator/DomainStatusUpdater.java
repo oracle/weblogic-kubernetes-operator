@@ -266,9 +266,10 @@ public class DomainStatusUpdater {
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
    * @param message a fuller description of the problem
+   * @param next the next step to run. May be null.
    */
-  public static Step createTopologyMismatchFailureSteps(String message) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message).removingOldFailures(TOPOLOGY_MISMATCH);
+  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
   }
 
   /**
@@ -1241,6 +1242,12 @@ public class DomainStatusUpdater {
     public FailureStep forIntrospection(@Nullable V1Job introspectorJob) {
       jobUid = Optional.ofNullable(introspectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse("");
       return this;
+    }
+
+    private FailureStep(DomainFailureReason reason, String message, Step next) {
+      super(next);
+      this.reason = reason;
+      this.message = message;
     }
 
     private FailureStep(DomainFailureReason reason, String message) {

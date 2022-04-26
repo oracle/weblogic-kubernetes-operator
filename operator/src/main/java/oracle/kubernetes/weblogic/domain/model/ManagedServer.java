@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -11,6 +11,7 @@ import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the Managed Server. Required. */
@@ -22,6 +23,7 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
   @Nonnull
   private String serverName;
 
+  @NotNull
   public String getServerName() {
     return serverName;
   }
@@ -50,10 +52,6 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
     }
 
     if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    if (!(o instanceof ManagedServer)) {
       return false;
     }
 
