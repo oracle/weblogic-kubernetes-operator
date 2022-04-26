@@ -24,14 +24,12 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -39,28 +37,39 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/** In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. A test
+ * using routes are added to run only on OKD cluster.
+*/
 
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
@@ -80,11 +89,7 @@ class ItRemoteConsole {
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
-
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  private static String adminSvcExtHost = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -117,15 +122,16 @@ class ItRemoteConsole {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // install and verify Traefik
-    logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    if (!OKD) {
+      logger.info("Installing Traefik controller using helm");
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
 
-    // install and verify Nginx
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-    // create a basic model in image domain
-    createMiiDomainAndVerify(
+      // install and verify Nginx
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    }
+
+    createSSLenabledMiiDomainAndVerify(
         domainNamespace,
         domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -133,12 +139,15 @@ class ItRemoteConsole {
         managedServerPrefix,
         replicaCount);
 
-    // create ingress rules with path routing for Traefik, and NGINX
-    createTraefikIngressRoutingRules(domainNamespace);
-    createNginxIngressPathRoutingRules();
+    // create ingress rules with path routing for Traefik and NGINX
+    if (!OKD) {
+      createTraefikIngressRoutingRules(domainNamespace);
+      createNginxIngressPathRoutingRules();
+    }
 
     // install WebLogic remote console
-    assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
+    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+        "Remote Console installation failed");
 
     // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
     verifyWlsRemoteConsoleConnection();
@@ -149,10 +158,11 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Traefik is successful")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughTraefik() {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-    assertTrue(traefikNodePort != -1,
+    assertNotEquals(-1, traefikNodePort,
         "Could not get the default external service node port");
     logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
@@ -165,14 +175,66 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through NGINX is successful")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughNginx() {
 
-    assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
+    assertNotEquals(-1, nginxNodePort, "Could not get the default external service node port");
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
     verifyRemoteConsoleConnectionThroughLB(nginxNodePort);
     logger.info("WebLogic domain is accessible through remote console using NGINX");
+  }
+
+  /**
+   * Verify k8s WebLogic domain is accessible through remote console using SSL.
+   */
+  @Test
+  @DisplayName("Verify Connecting to Mii domain by Remote Console using SSL is successful")
+  void testWlsRemoteConsoleConnectionUsingSSL() {
+    int sslNodePort = getServiceNodePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    assertNotEquals(-1, sslNodePort,
+          "Could not get the default-secure external service node port");
+    logger.info("Found the administration service nodePort {0}", sslNodePort);
+
+    //expose the admin server external service to access the console in OKD cluster
+    //set the sslPort as the target port
+    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
+                    domainNamespace, "domain1-admin-server-sslport-ext");
+    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
+    int sslPort = getServicePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    logger.info("The hostAndPort is {0}", hostAndPort);
+
+    //verify WebLogic console is accessible through default-secure nodeport
+    String curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + hostAndPort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+    logger.info("Executing WebLogic console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic console is accessible thru default-secure service");
+
+    //verify remote console is accessible through default-secure nodeport
+    //The final complete curl command to run is like:
+    //curl -sk -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"https://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
+    curlCmd = "curl -sk -v --show-error --noproxy '*' --user "
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H  "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
+        + hostAndPort + "\\" + "\"}" + "\""
+        + " --write-out %{http_code} -o /dev/null";
+    logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    logger.info("Remote console is accessible through default-secure service");
+
   }
 
   /**
@@ -263,10 +325,16 @@ class ItRemoteConsole {
   private static void verifyWlsRemoteConsoleConnection() {
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
+    assertNotEquals(-1, nodePort,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     //The final complete curl command to run is like:
     //curl -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
@@ -279,7 +347,7 @@ class ItRemoteConsole {
         + " --data "
         + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
         + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\"}" + "\""
+        + hostAndPort + "\\" + "\"}" + "\""
         + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");

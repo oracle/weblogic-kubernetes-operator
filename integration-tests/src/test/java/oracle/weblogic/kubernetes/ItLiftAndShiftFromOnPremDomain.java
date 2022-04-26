@@ -26,14 +26,10 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -57,6 +53,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
@@ -70,9 +69,9 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -89,13 +88,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("Test to validate on-prem to k8s use case")
 @IntegrationTest
-@Tag("okdenv")
 class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy = null;
   private static final String LIFT_AND_SHIFT_WORK_DIR = WORK_DIR + "/liftandshiftworkdir";
   private static final String ON_PREM_DOMAIN = "onpremdomain";
   private static final String DISCOVER_DOMAIN_OUTPUT_DIR = "wkomodelfilesdir";
@@ -125,15 +121,6 @@ class ItLiftAndShiftFromOnPremDomain {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(6, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(15, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -306,15 +293,12 @@ class ItLiftAndShiftFromOnPremDomain {
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     // verify the admin server service and pod is created
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -327,9 +311,9 @@ class ItLiftAndShiftFromOnPremDomain {
     if (!OKD) {
       // create ingress rules with path routing for Traefik
       createTraefikIngressRoutingRules(domainNamespace);
-    
+
       traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-      assertTrue(traefikNodePort != -1,
+      assertNotEquals(-1, traefikNodePort,
           "Could not get the default external service node port");
       logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
       logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
@@ -337,7 +321,7 @@ class ItLiftAndShiftFromOnPremDomain {
       hostName = createRouteForOKD(clusterService, domainNamespace);
     }
 
-    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + traefikNodePort;
+    String hostAndPort = getHostAndPort(hostName, traefikNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String curlString = String.format("curl -v --show-error --noproxy '*' "
@@ -415,6 +399,8 @@ class ItLiftAndShiftFromOnPremDomain {
 
   private static void updateDomainYamlFile() {
     try {
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+          "apiVersion: \"weblogic.oracle/v8\"", "apiVersion: \"weblogic.oracle/" + DOMAIN_VERSION + "\"");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
