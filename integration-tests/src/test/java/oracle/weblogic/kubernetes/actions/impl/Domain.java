@@ -166,6 +166,21 @@ public class Domain {
   }
 
   /**
+   * Get a Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion domain version
+   * @return domain custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
+                                                                      String namespace,
+                                                                      String domainVersion) throws ApiException {
+    return Kubernetes.getDomainCustomResource(domainUid, namespace, domainVersion);
+  }
+
+  /**
    * Patch the Domain Custom Resource.
    *
    * @param domainUid unique domain identifier

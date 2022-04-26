@@ -45,7 +45,9 @@ import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
@@ -56,6 +58,7 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Paths.get;
+import static java.util.Optional.ofNullable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -80,6 +83,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -103,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -749,4 +754,75 @@ public class DomainUtils {
     }
   }
 
+  /**
+   * Check the domain status condition type does not exist.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @return true if the condition type does not exist, false otherwise
+   */
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType) {
+    return verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+            conditionType, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type does not exist.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type does not exist, false otherwise
+   */
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType,
+                                                                    String domainVersion) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
+            domainVersion));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+      for (DomainCondition domainCondition : domainConditionList) {
+        if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+          return false;
+        }
+      }
+    } else {
+      if (domain == null) {
+        getLogger().info("domain is null");
+      } else {
+        getLogger().info("domain status is null");
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Obtains the specified domain, validates that it has a spec and no rolling condition.
+   * @param domainNamespace the namespace
+   * @param domainUid the UID
+   */
+  @org.jetbrains.annotations.NotNull
+  public static Domain getAndValidateInitialDomain(String domainNamespace, String domainUid) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+            String.format("getDomainCustomResource failed "
+                            + "with ApiException when tried to get domain %s in namespace %s",
+                    domainUid, domainNamespace));
+
+    assertNotNull(domain, "Got null domain resource");
+    assertNotNull(domain.getSpec(), domain + "/spec is null");
+    assertFalse(domainHasRollingCondition(domain), "Found rolling condition at start of test");
+    return domain;
+  }
+
+  private static boolean domainHasRollingCondition(Domain domain) {
+    return ofNullable(domain.getStatus())
+            .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
+            .map(DomainCondition::getType).anyMatch("Rolling"::equals);
+  }
 }
