@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtif
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -477,18 +478,25 @@ class ItManageNameSpace {
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
-    V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
-    assertNotNull(namespaceObject, "Can't find namespace with name " + domainNS);
-    logger.info("add label {0} to namespace {1}", Collections.singletonList(labels), domainNS);
-    namespaceObject.getMetadata().setLabels(labels);
-    try {
-      logger.info("Before replacing the namespace object\n {0}", Yaml.dump(namespaceObject));
-      Kubernetes.replaceNamespace(namespaceObject);
-      logger.info("After replacing the namespace object\n {0}",
-          Yaml.dump(Kubernetes.getNamespaceAsObject(domainNS)));
-    } catch (ApiException e) {
-      logger.warning(e.getResponseBody());
-    }
+    testUntil(() -> {
+      V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
+      if (namespaceObject == null) {
+        logger.info("namespace object is null");
+        return false;
+      }
+      logger.info("add label {0} to namespace {1}", Collections.singletonList(labels), domainNS);
+      namespaceObject.getMetadata().setLabels(labels);
+      try {
+        logger.info("Before replacing the namespace object\n {0}", Yaml.dump(namespaceObject));
+        Kubernetes.replaceNamespace(namespaceObject);
+        logger.info("After replacing the namespace object\n {0}",
+            Yaml.dump(Kubernetes.getNamespaceAsObject(domainNS)));
+      } catch (ApiException e) {
+        logger.warning(e.getResponseBody());
+        return false;
+      }
+      return true;
+    }, logger, "Waiting for namespace {0} to be replaced", domainNS);
   }
 
   private void checkOperatorCanScaleDomain(String opNamespace, String domainUid) {
