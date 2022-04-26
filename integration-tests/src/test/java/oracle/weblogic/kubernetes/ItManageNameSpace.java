@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +133,9 @@ class ItManageNameSpace {
     labels1.put(OPERATOR_RELEASE_NAME, OPERATOR_RELEASE_NAME);
     labels2 = new java.util.HashMap<>();
     labels2.put(OPERATOR_RELEASE_NAME + "2", OPERATOR_RELEASE_NAME);
+    logger.info("Setting label: {0} to namespace: {1}", labels1, domainNamespaces[0]);
     setLabelToNamespace(domainNamespaces[0], labels1);
+    logger.info("Setting label: {0} to namespace: {2}", labels1, domainNamespaces[1]);
     setLabelToNamespace(domainNamespaces[1], labels2);
   }
 
@@ -157,11 +160,15 @@ class ItManageNameSpace {
       deleteDomainCustomResource("weblogic", "weblogic" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource weblogic from weblogic" + domainNamespaces[1]);
     } finally {
+      logger.info("Deleting secret default");
       deleteSecrets("default");
+      logger.info("Deleting secret {0}", "atest-" + domainNamespaces[0]);
       deleteSecrets("atest-" + domainNamespaces[0]);
+      logger.info("Deleting namespace {0}", "atest-" + domainNamespaces[0]);
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
       for (HelmParams helmParam : opHelmParams) {
+        logger.info("Uninstalling operator");
         uninstallOperator(helmParam);
       }
     }
@@ -200,26 +207,30 @@ class ItManageNameSpace {
     String manageByLabelNS = "weblogic1" + domainNamespaces[0];
     String manageByLabelDomainUid = "weblogic1" + domainsUid[0];
 
+    logger.info("creating namespace {0}", manageByExp1NS);
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp1NS));
+    logger.info("creating namespace {0}", manageByExp2NS);
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
+    logger.info("creating namespace {0}", manageByExp3NS);
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
 
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
         opNamespaces[1], null);
 
-
-    //verify that domainNamespaces field will be ignored and domain will not start for default
+    logger.info("verify that domainNamespaces field will be ignored and domain will not start for default");
     checkDomainNotStartedInDefaultNS();
 
-    // install  operator sharing same domain
+    logger.info("install  operator sharing same domain");
     checkSecondOperatorFailedToShareSameNS(manageByExp1NS);
 
-    //upgrade operator to manage domains with Labeled namespaces
+    logger.info("upgrade operator to manage domains with Labeled namespaces");
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
+    logger.info("Creating namespace {0}", manageByLabelNS);
     assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest", "weblogic2");
+    logger.info("Setting label {0} to namespace {1}", Collections.singletonList(labels), manageByLabelNS);
     setLabelToNamespace(manageByLabelNS, labels);
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[1])
@@ -228,6 +239,7 @@ class ItManageNameSpace {
         .domainNamespaceLabelSelector("mytest")
         .domainNamespaceSelectionStrategy("LabelSelector");
 
+    logger.info("Upgrading operator in namespace {0}", opNamespaces[1]);
     assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
 
     //verify domain is started
@@ -235,7 +247,7 @@ class ItManageNameSpace {
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
     checkOperatorCanScaleDomain(opNamespaces[1],manageByLabelDomainUid);
 
-    //check operator can't manage anymore manageByExp1NS
+    logger.info("check operator can't manage anymore manageByExp1NS");
     assertTrue(isOperatorFailedToScaleDomain(opNamespaces[1], manageByExpDomain1Uid,
         manageByExp1NS), "Operator can still manage domain "
         + manageByExp1NS + " in the namespace " + manageByExp1NS);
@@ -276,8 +288,8 @@ class ItManageNameSpace {
     String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
 
 
-    //switch namespace domainsNamespaces[1] to the label1,
-    // managed by operator and verify domain is started and can be managed by operator.
+    logger.info("switch namespace domainsNamespaces[1] to the label1,"
+        + "managed by operator and verify domain is started and can be managed by operator.");
     setLabelToNamespace(domainNamespaces[1], labels1);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNamespaces[1], domainsUid[1]),
         "Failed to create domain CRD or "
@@ -285,17 +297,18 @@ class ItManageNameSpace {
         + " is running in namespace " + domainNamespaces[1]);
     checkOperatorCanScaleDomain(opNamespaces[0], domainsUid[1]);
 
-    //check that with specific Selector default namespace is not under operator management
+    logger.info("check that with specific Selector default namespace is not under operator management");
     checkDomainNotStartedInDefaultNS();
 
-    //check that another operator with selector=List matching domain namespace,
-    // managed by first operator fails to install
+    logger.info("check that another operator with selector=List matching domain namespace,"
+        + "managed by first operator fails to install");
     checkSecondOperatorFailedToShareSameNS(domainNamespaces[0]);
 
-    //upgrade operator1 to replace managing domains using RegExp namespaces
+    logger.info("upgrade operator1 to replace managing domains using RegExp namespaces");
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
-    //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
+    logger.info("set helm params to use domainNamespaceSelectionStrategy=RegExp for "
+        + "namespaces names started with weblogic");
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[0])
         .externalRestEnabled(true)
@@ -303,13 +316,14 @@ class ItManageNameSpace {
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp("^" + "weblogic2");
 
+    logger.info("Upgrade operator in namespace {0}", opNamespaces[0]);
     assertTrue(upgradeAndVerifyOperator(opNamespaces[0], opParams));
 
-    //verify domain is started in namespace with name starting with weblogic* and operator can scale it.
+    logger.info("verify domain is started in namespace with name starting with weblogic* and operator can scale it.");
     createSecrets(manageByExpDomainNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
     checkOperatorCanScaleDomain(opNamespaces[0],manageByExpDomainUid);
-    //verify operator can't manage anymore domain running in the namespace with label
+    logger.info("verify operator can't manage anymore domain running in the namespace with label");
     assertTrue(isOperatorFailedToScaleDomain(opNamespaces[0], domainsUid[0], domainNamespaces[0]),
         "Operator can still manage domain "
             + domainsUid[0] + " in the namespace " + domainNamespaces[0]);
@@ -336,17 +350,20 @@ class ItManageNameSpace {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    logger.info("Install and verify operator in namespace {0}", opNamespaces[3]);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
         "mytest4", false).getHelmParams();
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest4", manageByLabelDomainUid);
+    logger.info("Adding labels{0} to namespace {1}", Collections.singletonList(labels), manageByLabelDomainNS);
     assertDoesNotThrow(() -> addLabelsToNamespace(manageByLabelDomainNS, labels));
-    //verify domain can't be started because operator does not have permission to manage it
+    logger.info("verify domain can't be started because operator does not have permission to manage it");
     createSecrets(manageByLabelDomainNS);
     checkPodNotCreated(manageByLabelDomainUid + adminServerPrefix, manageByLabelDomainUid, manageByLabelDomainNS);
+    logger.info("Delete domain resource {0}", manageByLabelDomainUid);
     deleteDomainResource(manageByLabelDomainNS, manageByLabelDomainUid);
-    //upgrade operator and start domain
+    logger.info("upgrade operator and start domain");
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[3], "external-weblogic-operator-svc");
 
     OperatorParams opParams = new OperatorParams()
@@ -355,16 +372,24 @@ class ItManageNameSpace {
         .helmParams(opHelmParams[2]);
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[3], opParams));
+    logger.info("Creating domain resource for domainUid{0} in namespace {1}",
+        manageByLabelDomainUid, manageByLabelDomainNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelDomainNS, manageByLabelDomainUid));
+
+    logger.info("Creating route for OKD");
+    createRouteForOKD("external-weblogic-operator-svc", opNamespaces[3]);
+    logger.info("Creating ssl termination route for OKD");
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespaces[3]);
     checkOperatorCanScaleDomain(opNamespaces[3], manageByLabelDomainUid);
   }
 
   private void checkUpgradeFailedToAddNSManagedByAnotherOperator() {
-    //upgrade operator1 to replace managing domains using RegExp namespaces
-    // for ns names starting from weblogic, there one of domains
-    //in namespace weblogic* is managed by operator2
+    logger.info("upgrade operator1 to replace managing domains using RegExp namespaces"
+        + " for ns names starting from weblogic, there one of domains"
+        + "in namespace weblogic* is managed by operator2");
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
-    //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
+    logger.info("set helm params to use domainNamespaceSelectionStrategy=RegExp "
+        + "for namespaces names started with weblogic");
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams[0])
         .externalRestEnabled(true)
@@ -372,6 +397,7 @@ class ItManageNameSpace {
         .domainNamespaceSelectionStrategy("RegExp")
         .domainNamespaceRegExp("^" + "weblogic");
 
+    logger.info("upgrade operator");
     assertFalse(upgradeAndVerifyOperator(opNamespaces[0], opParams), "Upgrade does not fail when adding domain,"
         + " managed by other operator");
   }
@@ -383,10 +409,13 @@ class ItManageNameSpace {
                                                                        String domainNamespacesValue) {
     // install and verify operator set to manage domains based on LabelSelector strategy,
     // domainNamespaces value expected to be ignored
+    logger.info("Installing operator in namespace {0}", opNamespace);
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
         selectorValue, true, domainNamespacesValue).getHelmParams();
-    String operExtSVCRouteName = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    logger.info("Creating route for OKD");
+    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    logger.info("Creating ssl termination route for OKD");
     setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
@@ -397,14 +426,17 @@ class ItManageNameSpace {
         }
     );
     if (domainNamespacesValue != null) {
-      //verify that domainNamespaces field will be ignored and domain will not start
+      logger.info("verify that domainNamespaces field will be ignored and domain will not start");
       createSecrets(domainNamespacesValue);
       checkPodNotCreated(domainNamespacesValue + adminServerPrefix, domainNamespacesValue, domainNamespacesValue);
     }
-    //verify that domains in namespaces not matching selector value will not start
+    logger.info("verify that domains in namespaces not matching selector value will not start");
     unmanagedDomains.forEach((domainNS, domainUid) -> {
+      logger.info("Creating secrets");
       createSecrets(domainNS);
+      logger.info("Checking that the pods are not created");;
       checkPodNotCreated(domainUid + adminServerPrefix, domainUid, domainNS);
+      logger.info("Deleting domain resource {0} in namespace {1}", domainUid, domainNS);
       deleteDomainResource(domainNS, domainUid);
     }
     );
@@ -413,7 +445,7 @@ class ItManageNameSpace {
 
   private boolean isOperatorFailedToScaleDomain(String opNamespace, String domainUid, String domainNamespace) {
     try {
-      //check operator can't manage domainNamespace by trying to scale domain
+      logger.info("check operator can't manage domainNamespace by trying to scale domain");
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       String managedServerPodNamePrefix = domainUid + "-managed-server";
       String opServiceAccount = OPERATOR_RELEASE_NAME + "-sa";
@@ -430,7 +462,7 @@ class ItManageNameSpace {
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
-    //add label to domain namespace
+    logger.info("add label to domain namespace");
     V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
     assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
     namespaceObject1.getMetadata().setLabels(labels);
@@ -438,6 +470,7 @@ class ItManageNameSpace {
   }
 
   private void checkOperatorCanScaleDomain(String opNamespace, String domainUid) {
+    logger.info("Checking if operator can scale the domain {0} in namespace {1}", domainUid, opNamespace);
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     assertTrue(scaleClusterWithRestApi(domainUid, clusterName, 3,
         externalRestHttpsPort, opNamespace, OPERATOR_RELEASE_NAME + "-sa"),
@@ -445,7 +478,8 @@ class ItManageNameSpace {
   }
 
   private void checkSecondOperatorFailedToShareSameNS(String domainNamespace) {
-    // try to install another operator sharing same domain namespace via different domainNsSelectionStrategy
+    logger.info("try to install another operator sharing same domain "
+        + "namespace via different domainNsSelectionStrategy");
     HelmParams opHelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespaces[2])
         .chartDir(OPERATOR_CHART_DIR);
@@ -453,7 +487,7 @@ class ItManageNameSpace {
       HelmParams opHelmParams2 = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
           opNamespaces[2], "List",
           null, true, domainNamespace).getHelmParams();
-      assertNull(opHelmParams2, "Operator helm chart sharing same NS with other operator did not fail");
+      assertNull(opHelmParams2, "Operator helm chart sharing same NS with other operator cannot be installed");
     } catch (org.opentest4j.AssertionFailedError ex) {
       //expecting to fail
       logger.info("Helm installation failed as expected " + ex.getMessage());
@@ -462,17 +496,15 @@ class ItManageNameSpace {
   }
 
   private void checkDomainNotStartedInDefaultNS() {
-    //verify operator can't start domain in the default namespace when domainNsSelectionStrategy not List
-    // and selector does not match default
+    logger.info("verify operator can't start domain in the default namespace when domainNsSelectionStrategy not List"
+        + "and selector does not match default");
     checkPodNotCreated("defaultuid" + adminServerPrefix, "defaultuid", "default");
-
     logger.info("Delete defaultuid custom resource in namespace {0}", "default");
     deleteDomainCustomResource("defaultuid", "default");
     logger.info("Deleted Domain Custom Resource " + "defaultuid");
   }
 
   private boolean createDomainResourceAndVerifyDomainIsRunning(String domainNamespace, String domainUid) {
-
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
     Domain domain = createDomainResource(domainNamespace, domainUid);
@@ -587,6 +619,7 @@ class ItManageNameSpace {
   }
 
   private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
+
     Domain domain = createDomainResource(domNamespace, domainUid);
     assertNotNull(domain, "Failed to create domain CRD in namespace " + domNamespace);
     createDomainAndVerify(domain, domNamespace);
