@@ -106,7 +106,6 @@ class ItElasticLoggingFluentd {
   private static final String WLS_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
   private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
 
-  private static final String FLUENTD_NAME = "fluentd";
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
 
   // constants for Domain
@@ -221,7 +220,6 @@ class ItElasticLoggingFluentd {
   @AfterAll
   void tearDown() {
     if (!SKIP_CLEANUP) {
-
       elasticsearchParams = new LoggingExporterParams()
           .elasticsearchName(ELASTICSEARCH_NAME)
           .elasticsearchImage(ELASTICSEARCH_IMAGE)
