@@ -1514,21 +1514,18 @@ class DomainProcessorTest {
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
           List.of(INDEPENDENT_SERVER));
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
-    domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
+    domainConfigurator.withDefaultReplicaCount(2);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
-    List<V1Pod> runningPods = getRunningPods();
-    //one introspector pod, one admin server pod, one independent server and four managed server pods for each cluster
-    assertThat(runningPods.size(), equalTo(11));
+    //one introspector pod, one admin server pod, one independent server and two managed server pods for each cluster
+    assertThat(getRunningPods().size(), equalTo(7));
 
     removeSecondClusterAndIndependentServerFromDomainTopology();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
-    runningPods = getRunningPods();
-    //one introspector pod, one admin server pod and four managed server pods for the one remaining cluster
-    assertThat(runningPods.size(), equalTo(6));
+    //one introspector pod, one admin server pod and two managed server pods for the one remaining cluster
+    assertThat(getRunningPods().size(), equalTo(4));
   }
 
   @Test

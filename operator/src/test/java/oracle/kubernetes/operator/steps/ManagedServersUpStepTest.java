@@ -670,7 +670,7 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo, false);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
@@ -681,7 +681,7 @@ class ManagedServersUpStepTest {
   private Step createNextStepWithNullWlsDomainConfig() {
     configSupport.setAdminServerName(ADMIN);
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo, false);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(null, domainPresenceInfo);
     return factory.createServerStep(domainPresenceInfo, null, serversUpStepFactory, nextStep);
   }
 
