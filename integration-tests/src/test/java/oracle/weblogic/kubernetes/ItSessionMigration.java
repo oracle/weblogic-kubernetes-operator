@@ -59,15 +59,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify that when the primary server is down, another server takes on its 
- * clients to become the new primary server and HTTP session state is migrated 
- * to the new primary server. 
+ * Verify that when the primary server is down, another server takes on its
+ * clients to become the new primary server and HTTP session state is migrated
+ * to the new primary server.
  *
- * Also verify that an annotation containing a slash in the name propagates 
+ * Also verify that an annotation containing a slash in the name propagates
  * to the server pod
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
@@ -90,7 +89,7 @@ class ItSessionMigration {
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static String finalPrimaryServerName = null;
   // Since the ServerTemplate section of the model file model.sessmigr.yaml
-  // does not explicitly specify ListenPort, the introspector/wdt generated 
+  // does not explicitly specify ListenPort, the introspector/wdt generated
   // default ListenPort for each dynamic server is set to 7100
   private static int managedServerPort = 7100;
   private static int replicaCount = 2;
@@ -204,7 +203,7 @@ class ItSessionMigration {
             "After the primary server stopped, another server should become the new primary server"),
         () -> assertEquals(origSessionCreateTime, sessionCreateTime,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server"),
-        () -> assertEquals(count, SESSION_STATE,
+        () -> assertEquals(SESSION_STATE, count,
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
 
@@ -242,15 +241,15 @@ class ItSessionMigration {
 
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey, myAnnotationValue);
-    assertTrue(myAnnotationValue.equals(annotationValue),
+    assertEquals(annotationValue, myAnnotationValue,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue));
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey2, myAnnotationValue2);
-    assertTrue(myAnnotationValue2.equals(annotationValue2),
+    assertEquals(annotationValue2, myAnnotationValue2,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue2));
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey3, myAnnotationValue3);
-    assertTrue(myAnnotationValue3.equals(annotationValue3),
+    assertEquals(annotationValue3, myAnnotationValue3,
         String.format("Failed to propagate annotation %s to the server pod", annotationValue3));
   }
 
@@ -262,7 +261,7 @@ class ItSessionMigration {
     String destSessionMigrYamlFile =
         generateNewModelFileWithUpdatedDomainUid(domainUid, "ItSessionMigration", getOrigModelFile());
 
-    List<String> appList = new ArrayList();
+    List<String> appList = new ArrayList<>();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
@@ -329,7 +328,7 @@ class ItSessionMigration {
                                               String encryptionSecretName,
                                               String miiImage) {
 
-    Map<String, String> annotationKeyValues = new HashMap();
+    Map<String, String> annotationKeyValues = new HashMap<>();
     annotationKeyValues.put(annotationKey, annotationValue);
     annotationKeyValues.put(annotationKey2, annotationValue2);
     annotationKeyValues.put(annotationKey3, annotationValue3);

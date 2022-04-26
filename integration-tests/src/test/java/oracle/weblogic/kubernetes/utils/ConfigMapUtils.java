@@ -11,15 +11,18 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readString;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -137,6 +140,113 @@ public class ConfigMapUtils {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Failed to create configmap %s with files %s", configMapName, files));
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
+  }
+
+  /**
+   * Check if Config Map exists.
+   *
+   * @param nameSpace namespace for the pod
+   * @param configMapName name of Config Map to modify
+   * @return Callable object
+   * @throws ApiException if getting config maps throws exception
+   */
+  public static Callable<Boolean> configMapExist(String nameSpace, String configMapName) throws ApiException {
+    List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
+    V1ConfigMap configMapToModify = cmList.stream()
+        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    return () -> {
+      return configMapToModify != null;
+    };
+  }
+
+  /**
+   * Check if Config Map doesn't exist.
+   * @param nameSpace namespace for the pod
+   * @param configMapName name of Config Map to modify
+   */
+  public static Callable<Boolean> configMapDoesNotExist(String nameSpace, String configMapName) throws ApiException {
+    List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
+    V1ConfigMap configMapToModify = cmList.stream()
+        .filter(cm -> configMapName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    return () -> {
+      return configMapToModify == null;
+    };
+  }
+
+  /**
+   * replace Config Map.
+   * @param nameSpace namespace for the pod
+   * @param configMapName name of Config Map to replace
+   * @param fileName new config map file name
+   */
+  public static boolean replaceConfigMap(String nameSpace, String configMapName, String fileName) {
+    LoggingFacade logger = getLogger();
+    boolean result = false;
+    StringBuffer editConfigMap = new StringBuffer("kubectl create configmap ");
+    editConfigMap.append(configMapName);
+    editConfigMap.append(" -n ");
+    editConfigMap.append(nameSpace);
+    editConfigMap.append(" --from-file ");
+    editConfigMap.append(Paths.get(fileName));
+    editConfigMap.append(" -o yaml --dry-run=client | kubectl replace -f -");
+
+    logger.info("kubectl replace command is {0}", editConfigMap.toString());
+    // replace configMap with new file
+    ExecResult execResult = assertDoesNotThrow(() -> exec(new String(editConfigMap), true));
+
+    if (execResult.exitValue() == 0) {
+      logger.info("kubectl replace returned {0}", execResult.toString());
+      result = true;
+    } else {
+      logger.info("Failed to replace the configmap: " + execResult.stderr());
+    }
+
+    return result;
+  }
+
+  /**
+   * Edit Config Map.
+   * @param oldRegex search for existed value to replace
+   * @param newRegex new value
+   * @param nameSpace namespace for the pod
+   * @param cmName name of Config Map to modify
+   * @param configFileName name of Config file to modify
+   * @throws ApiException when update fails
+   */
+  public static void editConfigMap(String oldRegex, String newRegex,
+                                   String nameSpace, String cmName,
+                                   String configFileName) throws ApiException {
+    List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
+    V1ConfigMap configMapToModify = cmList.stream()
+        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    assertNotNull(configMapToModify,"Can't find cm for " + cmName);
+    Map<String, String> cmData = configMapToModify.getData();
+
+    String values = cmData.get("logstash.conf").replace(oldRegex,newRegex);
+    assertNotNull(values, "can't find values for key prometheus.yml");
+    cmData.replace(configFileName, values);
+
+    configMapToModify.setData(cmData);
+    Kubernetes.replaceConfigMap(configMapToModify);
+
+    cmList = Kubernetes.listConfigMaps(nameSpace).getItems();
+
+    configMapToModify = cmList.stream()
+        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    assertNotNull(configMapToModify,"Can't find cm for " + cmName);
+    assertNotNull(configMapToModify.getData(), "Can't retreive the cm data for " + cmName + " after modification");
   }
 
   /**

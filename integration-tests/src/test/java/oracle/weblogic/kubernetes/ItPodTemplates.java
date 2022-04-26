@@ -27,7 +27,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -60,7 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to verify domain pod templates.")
 @IntegrationTest
-@Tag("okdenv")
 class ItPodTemplates {
 
 
@@ -207,8 +205,8 @@ class ItPodTemplates {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, 
-        namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
@@ -266,19 +264,19 @@ class ItPodTemplates {
                                               String domainHomeSource,
                                               int replicaCount) {
     // add labels to serverPod
-    Map<String, String> labelKeyValues = new HashMap();
+    Map<String, String> labelKeyValues = new HashMap<>();
     labelKeyValues.put("servername", "$(SERVER_NAME)");
     labelKeyValues.put("domainname", "$(DOMAIN_NAME)");
     labelKeyValues.put("domainuid", "$(DOMAIN_UID)");
 
     // add annotations to serverPod as DOMAIN_HOME and LOG_HOME contains "/" which is not allowed
     // in labels
-    Map<String, String> annotationKeyValues = new HashMap();
+    Map<String, String> annotationKeyValues = new HashMap<>();
     annotationKeyValues.put("domainhome", "$(DOMAIN_HOME)");
     annotationKeyValues.put("loghome", "$(LOG_HOME)");
 
     // add label to cluster serverPod for CLUSTER_NAME
-    Map<String, String> clusterLabelKeyValues = new HashMap();
+    Map<String, String> clusterLabelKeyValues = new HashMap<>();
     clusterLabelKeyValues.put("clustername", "$(CLUSTER_NAME)");
     // create the domain CR
     Domain domain = new Domain()
