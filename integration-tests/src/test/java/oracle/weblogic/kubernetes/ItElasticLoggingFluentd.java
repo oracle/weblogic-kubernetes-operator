@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -13,16 +12,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -33,12 +26,11 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.FluentdSpecification;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -49,7 +41,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -60,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.INTROSPECTOR_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
@@ -69,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -78,7 +69,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -199,7 +189,6 @@ class ItElasticLoggingFluentd {
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // create fluentd configuration
-    configFluentd();
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -217,7 +206,10 @@ class ItElasticLoggingFluentd {
 
     // Verify that ELK Stack is ready to use
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, FLUENTD_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
+    testVarMap.putAll(verifyLoggingExporterReady(opNamespace, elasticSearchNs, null,
+        INTROSPECTOR_INDEX_KEY));
+    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null,
+        KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
     testVarMap.putAll(kibanaMap);
@@ -296,38 +288,15 @@ class ItElasticLoggingFluentd {
     logger.info("Total count of logs: " + count);
     logger.info("Total failed count: " + failedCount);
 
-    return count > 0 && failedCount == 0;
-  }
+    // search for introspector indexed entries
+    String queryCriteria1 = "/_search?q=filesource:introspectDomain.sh";
+    String results1 = execSearchQuery(queryCriteria1, INTROSPECTOR_INDEX_KEY);
+    logger.info("/_search?q=filesource:introspectDomain.sh ===> {0}", results1);
+    // as long as there is something returned
+    boolean jobCompeted = results1.contains("introspectDomain.sh");
+    logger.info("found completed job " + jobCompeted);
 
-  private static void configFluentd() {
-    Class<?> thisClass = new Object(){}.getClass();
-    String srcFluentdYamlFile =  MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML;
-    String destFluentdYamlFile =
-        RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName() + "/" + FLUENTD_CONFIGMAP_YAML;
-    Path srcFluentdYamlPath = Paths.get(srcFluentdYamlFile);
-    Path destFluentdYamlPath = Paths.get(destFluentdYamlFile);
-
-    // create dest dir
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + thisClass.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT
-            + "/" + thisClass.getClass().getSimpleName()));
-
-    // copy fluentd.configmap.elk.yaml to results dir
-    assertDoesNotThrow(() -> Files.copy(srcFluentdYamlPath, destFluentdYamlPath, REPLACE_EXISTING),
-        "Failed to copy fluentd.configmap.elk.yaml");
-
-    // replace weblogic.domainUID, namespace in fluentd.configmap.elk.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-domain", domainUid),
-        "Could not modify weblogic.domainUID in fluentd.configmap.elk.yaml");;
-    assertDoesNotThrow(() -> replaceStringInFile(destFluentdYamlFile, "fluentd-namespace", domainNamespace),
-        "Could not modify namespace in fluentd.configmap.elk.yaml");
-
-    // create fluentd configuration
-    assertTrue(Command
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destFluentdYamlFile))
-        .execute(), "kubectl create failed");
+    return count > 0 && failedCount == 0 && jobCompeted;
   }
 
   private static String createAndVerifyDomainImage() {
@@ -399,8 +368,23 @@ class ItElasticLoggingFluentd {
                                               String encryptionSecretName,
                                               String miiImage) {
     final String volumeName = "weblogic-domain-storage-volume";
-    final String fluentdRootPath = "/scratch";
+    final String logHomeRootPath = "/scratch";
     // create the domain CR
+
+    FluentdSpecification fluentdSpecification = new FluentdSpecification();
+    fluentdSpecification.setImage(FLUENTD_IMAGE);
+    fluentdSpecification.setWatchIntrospectorLogs(true);
+    fluentdSpecification.setImagePullPolicy("IfNotPresent");
+    fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
+    fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
+        .name(volumeName)
+        .mountPath(logHomeRootPath)));
+
+    assertDoesNotThrow(() -> {
+      Path filePath = Path.of(MODEL_DIR + "/" + FLUENTD_CONFIGMAP_YAML);
+      fluentdSpecification.setFluentdConfiguration(Files.readString(filePath));
+    });
+
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -418,74 +402,23 @@ class ItElasticLoggingFluentd {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
+            .withFluentdConfiguration(fluentdSpecification)
             .serverPod(new ServerPod()
                 .volumes(Arrays.asList(
                     new V1Volume()
                         .name(volumeName)
-                        .emptyDir(new V1EmptyDirVolumeSource()),
-                    new V1Volume()
-                        .name("fluentd-config-volume")
-                        .configMap(
-                            new V1ConfigMapVolumeSource()
-                                .defaultMode(420)
-                                .name("fluentd-config"))))
+                        .emptyDir(new V1EmptyDirVolumeSource())))
                 .volumeMounts(Arrays.asList(
                     new V1VolumeMount()
                         .name(volumeName)
-                        .mountPath(fluentdRootPath)))
+                        .mountPath(logHomeRootPath)))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
-                .containers(Arrays.asList(
-                    new V1Container()
-                        .addArgsItem("- -c")
-                        .addArgsItem("- /etc/fluent.conf")
-                        .addEnvItem(new V1EnvVar()
-                            .name("DOMAIN_UID")
-                            .valueFrom(new V1EnvVarSource()
-                                .fieldRef(new V1ObjectFieldSelector()
-                                    .fieldPath("metadata.labels['weblogic.domainUID']"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("SERVER_NAME")
-                            .valueFrom(new V1EnvVarSource()
-                                .fieldRef(new V1ObjectFieldSelector()
-                                    .fieldPath("metadata.labels['weblogic.serverName']"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("LOG_PATH")
-                            .value("/scratch/logs/" + domainUid + "/$(SERVER_NAME).log"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("FLUENTD_CONF")
-                            .value("fluentd.conf"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("FLUENT_ELASTICSEARCH_SED_DISABLE")
-                            .value("true"))
-                        .addEnvItem(new V1EnvVar()
-                            .name("ELASTICSEARCH_HOST")
-                            .valueFrom(new V1EnvVarSource()
-                                .secretKeyRef(new V1SecretKeySelector()
-                                  .key("elasticsearchhost")
-                                  .name("weblogic-credentials"))))
-                        .addEnvItem(new V1EnvVar()
-                            .name("ELASTICSEARCH_PORT")
-                            .valueFrom(new V1EnvVarSource()
-                                .secretKeyRef(new V1SecretKeySelector()
-                                    .key("elasticsearchport")
-                                    .name("weblogic-credentials"))))
-                        .name(FLUENTD_NAME)
-                        .image(FLUENTD_IMAGE)
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
-                        .resources(new V1ResourceRequirements())
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("fluentd-config-volume")
-                                .mountPath("/fluentd/etc/fluentd.conf")
-                                .subPath("fluentd.conf"),
-                            new V1VolumeMount()
-                                .name("weblogic-domain-storage-volume")
-                                .mountPath("/scratch"))))))
+            )
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                     .adminService(new AdminService()

@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
 
 public class OperatorUtils {
 
+  private OperatorUtils() {
+    // no-op
+  }
+
   // 2K chars (4K bytes)
   private static final int DEFAULT_BUF_SIZE = 0x800;
 

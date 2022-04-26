@@ -133,9 +133,10 @@ class PodCompatibility extends CollectiveCompatibility {
       Map<String, V1Container> actual = createMap(actualContainers);
 
       List<CompatibilityCheck> containerChecks = new ArrayList<>();
-      for (String name : expected.keySet()) {
+      for (Map.Entry<String, V1Container> entry : expected.entrySet()) {
+        String name = entry.getKey();
         if (actual.containsKey(name)) {
-          containerChecks.add(createCompatibilityCheck(expected.get(name), actual.get(name)));
+          containerChecks.add(createCompatibilityCheck(entry.getValue(), actual.get(name)));
         } else {
           containerChecks.add(new Mismatch("additional container '%s' added", name));
         }

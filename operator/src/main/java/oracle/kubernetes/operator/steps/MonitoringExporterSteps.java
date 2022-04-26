@@ -38,6 +38,10 @@ import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createReque
 
 public class MonitoringExporterSteps {
 
+  private MonitoringExporterSteps() {
+    // no-op
+  }
+
   /** Time in seconds to wait to recheck for ready state. **/
   private static final int READY_RECHECK_INTERVAL = 2;
 

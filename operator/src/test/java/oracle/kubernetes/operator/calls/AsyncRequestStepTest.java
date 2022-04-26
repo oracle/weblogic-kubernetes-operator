@@ -50,6 +50,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -197,10 +198,12 @@ class AsyncRequestStepTest {
 
   @Test
   void whenDomainStatusIsNull_ignoreSuccess() {
-    info.getDomain().setStatus(null);
-    testSupport.addDomainPresenceInfo(info);
+    assertDoesNotThrow(() -> {
+      info.getDomain().setStatus(null);
+      testSupport.addDomainPresenceInfo(info);
 
-    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+      testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+    });
   }
 
   @Test

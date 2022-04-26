@@ -68,7 +68,7 @@ public class DomainNamespaces {
   private final SemanticVersion productVersion;
 
   AtomicBoolean isStopping(String ns) {
-    return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return namespaceStoppingMap.computeIfAbsent(ns, key -> new AtomicBoolean(false));
   }
 
   boolean isStarting(String ns) {
@@ -160,7 +160,7 @@ public class DomainNamespaces {
    */
   @Nonnull
   NamespaceStatus getNamespaceStatus(@Nonnull String ns) {
-    return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+    return namespaceStatuses.computeIfAbsent(ns, key -> new NamespaceStatus());
   }
 
   static WatchTuning getWatchTuning() {

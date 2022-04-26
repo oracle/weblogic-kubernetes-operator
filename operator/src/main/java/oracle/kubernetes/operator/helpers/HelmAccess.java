@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,6 +10,10 @@ import javax.annotation.Nullable;
  * A class which allows the operator to retrieve variables from Helm.
  */
 public class HelmAccess {
+
+  private HelmAccess() {
+    // no-op
+  }
 
   /** Helm variable to specify list of domain namespace. */
   public static final String OPERATOR_DOMAIN_NAMESPACES = "OPERATOR_DOMAIN_NAMESPACES";
