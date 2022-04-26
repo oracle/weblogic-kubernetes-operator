@@ -43,6 +43,8 @@ pipeline {
         github_creds = 'ecnj_github'
         dockerhub_username_creds = 'docker-username'
         dockerhub_password_creds = 'docker-password'
+        ocr_username_creds = 'OCR username'
+        ocr_password_creds = 'OCR Password'
         ocir_registry_creds = 'ocir-server'
         ocir_email_creds = 'ocir-email'
         ocir_username_creds = 'ocir-username'
@@ -152,7 +154,7 @@ pipeline {
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
-               description: 'WebLogic base image name. Default is the image name in OCIR.',
+               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
                defaultValue: 'weblogick8s/test-images/weblogic'
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
@@ -160,7 +162,7 @@ pipeline {
                defaultValue: '12.2.1.4'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
-               description: 'FWM Infra image name. Default is the image name in OCIR.',
+               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
                defaultValue: 'weblogick8s/test-images/fmw-infrastructure'
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
@@ -168,7 +170,7 @@ pipeline {
                defaultValue: '12.2.1.4'
         )
         string(name: 'DB_IMAGE_NAME',
-               description: 'Oracle DB image name. Default is the image name in OCIR.',
+               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
                defaultValue: 'weblogick8s/test-images/database/enterprise'
         )
         string(name: 'DB_IMAGE_TAG',
@@ -181,7 +183,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.0.4'
+               defaultValue: '2.0.5'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -467,11 +469,13 @@ EOF
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
-                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
-                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
-                        TWO_CLUSTERS = "false"
+                        OCR_USERNAME = credentials("${ocr_username_creds}")
+                        OCR_PASSWORD = credentials("${ocr_password_creds}")
+                        OCR_EMAIL = credentials("${ocr_username_creds}")
+                        OCIR_REGISTRY = credentials("${ocir_registry_creds}")
+                        OCIR_USERNAME = credentials("${ocir_username_creds}")
+                        OCIR_PASSWORD = credentials("${ocir_password_creds}")
+                        OCIR_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
                         sh '''
@@ -514,7 +518,9 @@ EOF
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
 
-                            export TWO_CLUSTERS=${TWO_CLUSTERS}
+                            export OCR_USERNAME=${OCR_USERNAME}
+                            export OCR_PASSWORD=${OCR_PASSWORD}
+                            export OCR_EMAIL=${OCR_EMAIL}
                             export OCIR_USERNAME=${OCIR_USERNAME}
                             export OCIR_PASSWORD=${OCIR_PASSWORD}
                             export OCIR_EMAIL=$OCIR_EMAIL}
