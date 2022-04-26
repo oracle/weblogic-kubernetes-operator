@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # 
@@ -45,7 +45,6 @@
 #      WDT_DOMAIN_TYPE
 #      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 #
-set -x
 set -eu
 set -o pipefail
 
@@ -68,9 +67,8 @@ echo @@ INFO: OKD=${OKD}
 
 IMGTOOL=$WORKDIR/model-images/imagetool/bin/imagetool.sh
 
-function output_dryrun() {
+output_dryrun() {
 
-set -x
 MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
 MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
 MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
@@ -152,7 +150,7 @@ dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
 dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
 dryrun:  --wdtModelOnly \\
 dryrun:  ${CHOWN_ROOT:+${CHOWN_ROOT}} \\
-dryrun:   --target $TARGET \\
+dryrun:  --target $TARGET \\
 dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
 dryrun:
 dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
@@ -200,8 +198,6 @@ else
   $tmpfil
 
   echo "@@ Info: About to remove '$tmpfil'."
-
-  rm $tmpfil
 
   echo "@@ Info: Done!"
 
