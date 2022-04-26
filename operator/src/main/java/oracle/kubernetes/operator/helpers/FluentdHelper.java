@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
@@ -219,9 +220,15 @@ public class FluentdHelper {
         "metadata.labels['weblogic.serverName']",
         true);
 
-    addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
-            domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
-            false);
+    if (LogHomeLayoutType.Flat.equals(domain.getLogHomeLayout())) {
+      addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
+          domain.getEffectiveLogHome() + "/$(SERVER_NAME).log",
+          false);
+    } else {
+      addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "LOG_PATH",
+          domain.getEffectiveLogHome() + "/servers/$(SERVER_NAME)/logs/$(SERVER_NAME).log",
+          false);
+    }
 
     // Always add this because we only have one fluentd configmap, and it may contain the
     // introspector log parser config. If this environment variable is not set then the managed server
