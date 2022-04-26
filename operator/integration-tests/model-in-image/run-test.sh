@@ -42,7 +42,7 @@ DO_UPDATE4=false
 DO_AI=${DO_AI:-false}
 WDT_DOMAIN_TYPE=WLS
 
-function usage() {
+usage() {
   cat << EOF
 
   Usage: $(basename $0)
@@ -205,7 +205,7 @@ fi
 # Helper script ($1 == number of pods)
 #
 
-function doPodWait() {
+doPodWait() {
   # wl-pod-wait.sh is a public script that's checked into the sample utils directory
 
   local wcmd="\$WORKDIR/utils/wl-pod-wait.sh -p $1 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -t \$POD_WAIT_TIMEOUT_SECS"
@@ -386,7 +386,7 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   if [ "$OKD" = "false" ]; then
     doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
-  fi  
+  fi
 
   doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   doPodWait 0

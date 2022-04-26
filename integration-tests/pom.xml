@@ -487,8 +487,6 @@
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDomainInPVUsingWDT,
                   **/ItFmwDynamicClusterMiiDomain,
-                  **/ItFmwBigCMMiiDomain,
-                  **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain,
                   **/ItMiiSampleFmwMain,
                   **/ItMiiSampleFmwAux
