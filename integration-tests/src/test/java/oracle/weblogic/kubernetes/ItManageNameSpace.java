@@ -36,8 +36,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -58,26 +56,26 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
 
 /**
  * Simple JUnit test file used for testing operator namespace management,
@@ -86,7 +84,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator namespace management usability using Helm chart")
 @IntegrationTest
-@Tag("gate")
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
@@ -107,10 +104,8 @@ class ItManageNameSpace {
 
   private static LoggingFacade logger = null;
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-  private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(5, SECONDS)
-          .atMost(2, MINUTES).await();
+
+  List<String> namespacesToClean = new ArrayList<>();
 
   /**
    * Get namespaces for operator, domain.
@@ -156,22 +151,25 @@ class ItManageNameSpace {
       logger.info("Delete domain1test custom resource in namespace {0}", "test-" + domainNamespaces[0]);
       deleteDomainCustomResource(domainsUid[0] + "test", "test-" + domainNamespaces[0]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[0] + "test from test-" + domainNamespaces[0]);
-  
+
       logger.info("Delete domain2test custom resource in namespace {0}", "test-" + domainNamespaces[1]);
       deleteDomainCustomResource(domainsUid[1] + "test", "test-" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[1] + "test from test-" + domainNamespaces[1]);
-  
+
       logger.info("Delete weblogic custom resource in namespace {0}", "weblogic" + domainNamespaces[1]);
       deleteDomainCustomResource("weblogic", "weblogic" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource weblogic from weblogic" + domainNamespaces[1]);
     } finally {
       deleteSecrets("default");
       deleteSecrets("atest-" + domainNamespaces[0]);
-     
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
+      }
+      for (var namespace : namespacesToClean) {
+        deleteNamespacedArtifacts(namespace);
+        deleteNamespace(namespace);
       }
     }
   }
@@ -192,6 +190,7 @@ class ItManageNameSpace {
   @Order(1)
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
+  @Tag("gate")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
@@ -211,6 +210,10 @@ class ItManageNameSpace {
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp1NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
+
+    namespacesToClean.add(manageByExp1NS);
+    namespacesToClean.add(manageByExp2NS);
+    namespacesToClean.add(manageByExp3NS);
 
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
@@ -237,6 +240,7 @@ class ItManageNameSpace {
         .domainNamespaceSelectionStrategy("LabelSelector");
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
+    namespacesToClean.add(manageByLabelNS);
 
     //verify domain is started
     createSecrets(manageByLabelNS);
@@ -302,6 +306,7 @@ class ItManageNameSpace {
 
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
+    namespacesToClean.add(manageByExpDomainNS);
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
@@ -344,6 +349,7 @@ class ItManageNameSpace {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    namespacesToClean.add(manageByLabelDomainNS);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
         "mytest4", false).getHelmParams();
@@ -394,12 +400,13 @@ class ItManageNameSpace {
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
         selectorValue, true, domainNamespacesValue).getHelmParams();
+    String operExtSVCRouteName = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
           createSecrets(domainNS);
           assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
-
           checkOperatorCanScaleDomain(opNamespace, domainUid);
         }
     );
@@ -534,7 +541,8 @@ class ItManageNameSpace {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
     return domain;
   }
