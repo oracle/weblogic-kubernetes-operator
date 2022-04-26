@@ -592,7 +592,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() {
+  void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, "elastic-cred", null);
@@ -601,12 +601,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         true, false);
     testSupport.defineResources(jobPod);
     defineNormalFluentdContainerInIntrospection();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
 
     Packet packet = testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
     logRecords.clear();
     assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
             equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
-    assertThat(terminalStep.wasRun(), is(false));
+    assertThat(terminalStep.wasRun(), is(true));
 
   }
 
