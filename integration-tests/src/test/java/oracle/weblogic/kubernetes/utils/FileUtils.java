@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -37,8 +38,10 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FI
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.installWdtParams;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -162,6 +165,41 @@ public class FileUtils {
   public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
       throws IOException, ApiException {
     Kubernetes.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  /**
+   * Copy a file from Kubernetes pod to local filesystem.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied from
+   * @param container name of the container
+   * @param srcPath source file location on the pod
+   * @param destPath destination file location on local filesystem
+   * @throws IOException when copy fails
+   * @throws InterruptedException if the process was interrupted
+   */
+  public static void copyFileFromPodUsingK8sExec(String namespace,
+                                                 String pod,
+                                                 String container,
+                                                 String srcPath,
+                                                 Path destPath) throws IOException, InterruptedException {
+    LoggingFacade logger = getLogger();
+    StringBuffer copyFileCmd = new StringBuffer("kubectl exec ");
+    copyFileCmd.append(" -n ");
+    copyFileCmd.append(namespace);
+    copyFileCmd.append(" pod/");
+    copyFileCmd.append(pod);
+    copyFileCmd.append(" -c ");
+    copyFileCmd.append(container);
+    copyFileCmd.append(" -- cat ");
+    copyFileCmd.append(srcPath);
+    copyFileCmd.append(" > ");
+    copyFileCmd.append(destPath);
+
+    // copy a file from pod to local using kubectl exec
+    logger.info("kubectl copy command is {0}", copyFileCmd.toString());
+    ExecResult result = assertDoesNotThrow(() -> exec(new String(copyFileCmd), true));
+
+    logger.info("kubectl copy returned {0}", result.toString());
   }
 
   /**
@@ -384,4 +422,38 @@ public class FileUtils {
     return targetFile;
   }
 
+  /**
+   * Check if the required file ls empty.
+   *
+   * @param fileName the name of the file that needs to be checked
+   * @return true if a file is not empty with the given fileName
+   */
+  public static Callable<Boolean> isFileExistAndNotEmpty(String fileName) {
+    File file = new File(fileName);
+    return () -> {
+      boolean fileReady = (file.exists() && file.length() != 0);
+      return fileReady;
+    };
+  }
+
+  /**
+   * search a given string/work in file.
+   *
+   * @param fileName the name of the file
+   * @param searchString string to search
+   * @return true if the string found in the given fileName, otherwise return false
+   */
+  public static boolean searchStringInFile(String fileName, String searchString) throws IOException {
+    LoggingFacade logger = getLogger();
+    List<String> lines = Files.readAllLines(Paths.get(fileName));
+    for (String line : lines) {
+      if (line.contains(searchString)) {
+        logger.info("Found string {0} in the file {1}", searchString, fileName);
+        return true;
+      }
+    }
+
+    logger.info("Failed to find string {0} in the file {1}", searchString, fileName);
+    return false;
+  }
 }

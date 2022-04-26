@@ -30,14 +30,10 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -59,9 +55,9 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
-@Tag("okdenv")
 class ItCoherenceTests {
 
   // constants for Coherence
@@ -98,7 +93,6 @@ class ItCoherenceTests {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
 
@@ -111,10 +105,6 @@ class ItCoherenceTests {
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning a unique namespace for Operator");
@@ -158,7 +148,7 @@ class ItCoherenceTests {
             serverName, domainNamespace));
 
     assertAll("Check that the cache loaded successfully",
-        () -> assertTrue(execResult1.exitValue() == 0, "Failed to load the cache"),
+        () -> assertEquals(0, execResult1.exitValue(), "Failed to load the cache"),
         () -> assertTrue(execResult1.stdout().contains(successMarker), "Failed to load the cache")
     );
 
@@ -179,7 +169,7 @@ class ItCoherenceTests {
             serverName, domainNamespace));
 
     assertAll("Check that the cache loaded successfully",
-        () -> assertTrue(execResult1.exitValue() == 0, "Failed to validate the cache"),
+        () -> assertEquals(0, execResult1.exitValue(), "Failed to validate the cache"),
         () -> assertTrue(execResult2.stdout().contains(successMarker), "Failed to validate the cache")
     );
 
@@ -275,8 +265,8 @@ class ItCoherenceTests {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, 
-        domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret

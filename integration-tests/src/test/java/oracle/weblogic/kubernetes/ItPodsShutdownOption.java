@@ -31,6 +31,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -49,6 +51,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
-@Tag("okdenv")
 class ItPodsShutdownOption {
 
   private static String domainNamespace = null;
@@ -304,7 +306,7 @@ class ItPodsShutdownOption {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")
-            )
+                )
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
@@ -342,7 +344,9 @@ class ItPodsShutdownOption {
     // check that admin service/pod exists in the domain namespace
     logger.info("Checking that admin service/pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodNamePrefix + i;
@@ -350,7 +354,9 @@ class ItPodsShutdownOption {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), managedServerPodName, domainUid, domainNamespace);
     }
 
     // check for independent managed server pods existence in the domain namespace
@@ -358,7 +364,9 @@ class ItPodsShutdownOption {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that independent ms service/pod {0} exists in namespace {1}",
           podName, domainNamespace);
-      checkPodReadyAndServiceExists(podName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(10, MINUTES).await(), podName, domainUid, domainNamespace);
     }
   }
 
