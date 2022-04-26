@@ -123,6 +123,8 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -952,6 +954,41 @@ class DomainProcessorTest {
     executeScheduledRetry();
 
     assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+  }
+
+  @Test
+  void whenFluentdSpecified_verifyConfigMap() {
+    domainConfigurator
+            .withFluentdConfiguration(true, "fluentd-cred",
+                    null)
+            .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+            .map(V1ConfigMap::getData)
+            .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
+
+  }
+
+  @Test
+  void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
+    domainConfigurator
+            .withFluentdConfiguration(true, "fluentd-cred",
+                    "<match>me</match>")
+            .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+            .map(V1ConfigMap::getData)
+            .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
+            .orElse(null), equalTo("<match>me</match>"));
   }
 
   private void executeScheduledRetry() {

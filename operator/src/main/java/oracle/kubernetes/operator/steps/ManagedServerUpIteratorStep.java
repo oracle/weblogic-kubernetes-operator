@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -198,8 +198,8 @@ public class ManagedServerUpIteratorStep extends Step {
     private boolean hasServerAvailableToStart(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String adminServerName = ((WlsDomainConfig) packet.get(DOMAIN_TOPOLOGY)).getAdminServerName();
-      return ((getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
-              && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName)))));
+      return (getNumServersStarted() <= info.getNumScheduledManagedServers(clusterName, adminServerName)
+              && (canStartConcurrently(info.getNumReadyManagedServers(clusterName, adminServerName))));
     }
 
     private boolean canStartConcurrently(long numReady) {

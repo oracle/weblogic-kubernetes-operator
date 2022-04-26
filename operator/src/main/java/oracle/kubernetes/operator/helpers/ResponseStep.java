@@ -28,8 +28,10 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
 import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.FIBER_TIMEOUT;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 
@@ -47,7 +49,7 @@ public abstract class ResponseStep<T> extends Step {
   private Step previousStep = null;
 
   /** Constructor specifying no next step. */
-  public ResponseStep() {
+  protected ResponseStep() {
     this(null);
   }
 
@@ -56,7 +58,7 @@ public abstract class ResponseStep<T> extends Step {
    *
    * @param nextStep Next step
    */
-  public ResponseStep(Step nextStep) {
+  protected ResponseStep(Step nextStep) {
     this(null, nextStep);
   }
 
@@ -66,7 +68,7 @@ public abstract class ResponseStep<T> extends Step {
    * @param conflictStep Conflict step
    * @param nextStep Next step
    */
-  public ResponseStep(Step conflictStep, Step nextStep) {
+  protected ResponseStep(Step conflictStep, Step nextStep) {
     super(nextStep);
     this.conflictStep = conflictStep;
   }
@@ -97,7 +99,7 @@ public abstract class ResponseStep<T> extends Step {
 
   @SuppressWarnings("unchecked")
   private CallResponse<T> getCallResponse(Packet packet) {
-    return (CallResponse<T>) packet.getSpi(CallResponse.class);
+    return packet.getSpi(CallResponse.class);
   }
 
   private NextAction fromCallResponse(Packet packet, CallResponse<T> callResponse) {
@@ -169,32 +171,35 @@ public abstract class ResponseStep<T> extends Step {
    */
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
-        .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
+        .map(rs -> rs.doPotentialRetry(conflictStep, packet,
+            Optional.ofNullable(callResponse).map(CallResponse::getStatusCode).orElse(FIBER_TIMEOUT)))
         .orElseGet(() -> logNoRetry(packet, callResponse));
   }
 
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
-    addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
+    if (callResponse != null) {
+      addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
 
-    if (LOGGER.isWarningEnabled()) {
-      LOGGER.warning(
-          MessageKeys.ASYNC_NO_RETRY,
-          Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.call).orElse("--no call--"),
-          callResponse.getExceptionString(),
-          callResponse.getStatusCode(),
-          callResponse.getHeadersString(),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.namespace).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.name).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(r -> r.body)
-              .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
-              .map(CallParams::getFieldSelector).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
-              .map(CallParams::getLabelSelector).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getRequestParams).map(RequestParams::getCallParams)
-              .map(CallParams::getResourceVersion).orElse(""),
-          Optional.of(callResponse).map(CallResponse::getE).map(ApiException::getResponseBody).orElse(""));
+      if (callResponse.getStatusCode() != HTTP_NOT_FOUND && LOGGER.isWarningEnabled()) {
+        LOGGER.warning(
+            MessageKeys.ASYNC_NO_RETRY,
+            Optional.ofNullable(previousStep).map(Step::identityHash).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
+            callResponse.getExceptionString(),
+            callResponse.getStatusCode(),
+            callResponse.getHeadersString(),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.namespace).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.name).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(r -> r.body)
+                .map(b -> LoggingFactory.getJson().serialize(b)).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+                .map(CallParams::getFieldSelector).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+                .map(CallParams::getLabelSelector).orElse(""),
+            Optional.of(callResponse.getRequestParams()).map(RequestParams::getCallParams)
+                .map(CallParams::getResourceVersion).orElse(""),
+            Optional.of(callResponse.getE()).map(ApiException::getResponseBody).orElse(""));
+      }
     }
     return null;
   }

@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -82,7 +83,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   private final ClassLoader contextClassLoader;
   private CompletionCallback completionCallback;
   /** The thread on which this Fiber is currently executing, if applicable. */
-  private volatile Thread currentThread;
+  private final AtomicReference<Thread> currentThread = new AtomicReference<>();
   private ExitCallback exitCallback;
   private Collection<Fiber> children = null;
   // Will only be populated if log level is at least FINE
@@ -284,7 +285,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
       synchronized (this) {
         // currentThread is protected by the monitor for this fiber so
         // that it is accessible to cancel() even when the lock is held
-        currentThread = null;
+        currentThread.set(null);
       }
       lock.unlock();
       assert (!lock.isHeldByCurrentThread());
@@ -296,7 +297,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         throw new OnExitRunnableException(t);
       } finally {
         synchronized (this) {
-          if (currentThread == null) {
+          if (currentThread.get() == null) {
             triggerExitCallback();
           }
         }
@@ -324,7 +325,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
           completionCheck();
         }
       } finally {
-        CURRENT_FIBER.set(oldFiber);
+        if (oldFiber == null) {
+          CURRENT_FIBER.remove();
+        } else {
+          CURRENT_FIBER.set(oldFiber);
+        }
       }
     }
   }
@@ -391,13 +396,14 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
       synchronized (this) {
         // currentThread is protected by the monitor for this fiber so
         // that it is accessible to cancel() even when the lock is held
-        currentThread = Thread.currentThread();
+        Thread thread = Thread.currentThread();
+        currentThread.set(thread);
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("Thread entering doRunInternal(): {0}", currentThread);
+          LOGGER.finer("Thread entering doRunInternal(): {0}", thread);
         }
 
-        old = currentThread.getContextClassLoader();
-        currentThread.setContextClassLoader(contextClassLoader);
+        old = thread.getContextClassLoader();
+        thread.setContextClassLoader(contextClassLoader);
       }
 
       try {
@@ -424,9 +430,9 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         }
       }
     } finally {
-      if (isRequireUnlock.value) {
+      if (Boolean.TRUE.equals(isRequireUnlock.value)) {
         synchronized (this) {
-          currentThread = null;
+          currentThread.set(null);
           triggerExitCallback();
         }
         lock.unlock();
@@ -532,7 +538,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
       sb.append(parent.getName());
       sb.append("-child-");
     } else {
-      Thread thread = currentThread;
+      Thread thread = currentThread.get();
       if (thread != null) {
         sb.append(thread.getName());
         sb.append("-");
@@ -581,9 +587,10 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
     // children
     synchronized (this) {
-      if (currentThread != null) {
+      Thread thread = currentThread.get();
+      if (thread != null) {
         if (mayInterrupt) {
-          currentThread.interrupt();
+          thread.interrupt();
         }
         count.incrementAndGet();
       }
