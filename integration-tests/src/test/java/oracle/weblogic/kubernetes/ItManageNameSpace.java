@@ -9,11 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -462,11 +464,17 @@ class ItManageNameSpace {
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
-    logger.info("add label to domain namespace");
     V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
     assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
+    logger.info("add label {0} to namespace {1}", Collections.singletonList(labels), domainNS);
     namespaceObject1.getMetadata().setLabels(labels);
-    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(Kubernetes.getNamespaceAsObject(domainNS)));
+    try {
+      V1Namespace namespaceAsObject = Kubernetes.getNamespaceAsObject(domainNS);
+      logger.info("Replacing the namespace object\n {0}", Yaml.dump(namespaceAsObject));
+      Kubernetes.replaceNamespace(namespaceAsObject);
+    } catch (ApiException e) {
+      logger.warning(e.getResponseBody());
+    }
   }
 
   private void checkOperatorCanScaleDomain(String opNamespace, String domainUid) {
