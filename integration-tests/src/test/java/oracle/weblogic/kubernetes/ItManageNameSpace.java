@@ -466,7 +466,7 @@ class ItManageNameSpace {
     V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
     assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
     namespaceObject1.getMetadata().setLabels(labels);
-    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));
+    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(Kubernetes.getNamespaceAsObject(domainNS)));
   }
 
   private void checkOperatorCanScaleDomain(String opNamespace, String domainUid) {
