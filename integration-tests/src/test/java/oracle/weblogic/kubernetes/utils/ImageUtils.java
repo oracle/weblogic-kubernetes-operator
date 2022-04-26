@@ -527,7 +527,12 @@ public class ImageUtils {
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
+    String repoPrefix = DOMAIN_IMAGES_REPO;
+    if (DOMAIN_IMAGES_REPO.contains("weblogick8s")) {
+      repoPrefix = DOMAIN_IMAGES_REPO.substring(0, DOMAIN_IMAGES_REPO.length() - 12);
+    }
+
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(repoPrefix)) {
       // docker login, if necessary
       if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");

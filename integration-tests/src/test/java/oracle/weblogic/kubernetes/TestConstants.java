@@ -51,7 +51,6 @@ public interface TestConstants {
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
       "https://oracle.github.io/weblogic-kubernetes-operator/charts";
 
-
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
   public static final String REPO_DUMMY_VALUE = "dummy";
