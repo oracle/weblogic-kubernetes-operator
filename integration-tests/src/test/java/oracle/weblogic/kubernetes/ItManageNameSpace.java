@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -104,8 +103,6 @@ class ItManageNameSpace {
 
   private static LoggingFacade logger = null;
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-  List<String> namespacesToClean = new ArrayList<>();
 
   /**
    * Get namespaces for operator, domain.
@@ -167,10 +164,6 @@ class ItManageNameSpace {
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
       }
-      for (var namespace : namespacesToClean) {
-        deleteNamespacedArtifacts(namespace);
-        deleteNamespace(namespace);
-      }
     }
   }
 
@@ -211,10 +204,6 @@ class ItManageNameSpace {
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
 
-    namespacesToClean.add(manageByExp1NS);
-    namespacesToClean.add(manageByExp2NS);
-    namespacesToClean.add(manageByExp3NS);
-
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
         opNamespaces[1], null);
@@ -240,7 +229,6 @@ class ItManageNameSpace {
         .domainNamespaceSelectionStrategy("LabelSelector");
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
-    namespacesToClean.add(manageByLabelNS);
 
     //verify domain is started
     createSecrets(manageByLabelNS);
@@ -306,7 +294,6 @@ class ItManageNameSpace {
 
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
-    namespacesToClean.add(manageByExpDomainNS);
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
@@ -349,7 +336,6 @@ class ItManageNameSpace {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
-    namespacesToClean.add(manageByLabelDomainNS);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
         "mytest4", false).getHelmParams();
