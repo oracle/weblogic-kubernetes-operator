@@ -464,14 +464,15 @@ class ItManageNameSpace {
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
-    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
-    assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
+    V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
+    assertNotNull(namespaceObject, "Can't find namespace with name " + domainNS);
     logger.info("add label {0} to namespace {1}", Collections.singletonList(labels), domainNS);
-    namespaceObject1.getMetadata().setLabels(labels);
+    namespaceObject.getMetadata().setLabels(labels);
     try {
-      V1Namespace namespaceAsObject = Kubernetes.getNamespaceAsObject(domainNS);
-      logger.info("Replacing the namespace object\n {0}", Yaml.dump(namespaceAsObject));
-      Kubernetes.replaceNamespace(namespaceAsObject);
+      logger.info("Before replacing the namespace object\n {0}", Yaml.dump(namespaceObject));
+      Kubernetes.replaceNamespace(namespaceObject);
+      logger.info("After replacing the namespace object\n {0}",
+          Yaml.dump(Kubernetes.getNamespaceAsObject(domainNS)));
     } catch (ApiException e) {
       logger.warning(e.getResponseBody());
     }
