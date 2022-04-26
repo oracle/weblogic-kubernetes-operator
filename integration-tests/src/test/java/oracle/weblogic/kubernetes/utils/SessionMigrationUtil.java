@@ -145,7 +145,7 @@ public class SessionMigrationUtil {
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(domainNamespace, adminServerPodName,
         null, true, "/bin/sh", "-c", curlCmd));
-    if (execResult.exitValue() == 0) {
+    if (execResult.exitValue() == 0 && execResult.stderr() != null && execResult.stderr().isEmpty()) {
       logger.info("\n HTTP response is \n " + execResult.stdout());
       assertAll("Check that primary server name is not null or empty",
           () -> assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null"),
