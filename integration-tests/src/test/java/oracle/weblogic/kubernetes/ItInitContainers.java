@@ -71,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
-@Tag("okdenv")
 class ItInitContainers {
 
   private static String opNamespace = null;
@@ -142,7 +141,7 @@ class ItInitContainers {
         .helmParams(opHelmParams)
         .javaLoggingLevel(("FINE"));
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
-        "Failed to upgrade operator to FINE  logging level");
+        "Failed to upgrade operator to FINE  logging leve");
   }
 
   private static void createSecrets(String domainNamespace) {
@@ -159,8 +158,7 @@ class ItInitContainers {
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
 
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, 
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
@@ -173,9 +171,9 @@ class ItInitContainers {
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
-   * The following introspect version usecase was added based on issue 
-   * reported by OFSS team. With initContainer configured, the WebLogic server 
-   * pod should not roll with modified introspect version without any update to 
+   * The following introspect version usecase was added based on issue
+   * reported by OFSS team. With initContainer configured, the WebLogic server
+   * pod should not roll with modified introspect version without any update to
    * domain resource.
    * Update the introspect version with out any change to domain resource
    * Make sure no WebLogic server pod get rolled.
@@ -215,7 +213,7 @@ class ItInitContainers {
     patchDomainResourceWithNewIntrospectVersion(domain1Uid,domain1Namespace);
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(domain1Namespace, pods);
-   
+
   }
 
   private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {

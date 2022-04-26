@@ -18,7 +18,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -49,7 +49,7 @@ public class ApplicationUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    withQuickRetryPolicy
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for appliation to be ready {0} "
                     + "(elapsed time {1} ms, remaining time {2} ms)",
@@ -199,10 +199,10 @@ public class ApplicationUtils {
     // check if the application is accessible inside of a server pod using quick retry policy
     logger.info("Check and wait for the application to become ready");
     for (int i = 1; i <= replicaCount; i++) {
-      checkAppIsRunning(withQuickRetryPolicy, domainNamespace, managedServerPodNamePrefix + i,
+      checkAppIsRunning(withStandardRetryPolicy, domainNamespace, managedServerPodNamePrefix + i,
           msInternalPort, "testwebapp/index.jsp", managedServerPodNamePrefix + i);
     }
-    checkAppIsRunning(withQuickRetryPolicy, domainNamespace, adminServerPodName,
+    checkAppIsRunning(withStandardRetryPolicy, domainNamespace, adminServerPodName,
         adminInternalPort, "testwebapp/index.jsp", adminServerPodName);
   }
 

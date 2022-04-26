@@ -3,6 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +20,13 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
@@ -37,12 +39,14 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
@@ -52,6 +56,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPodUsingK8sExec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.searchStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -61,11 +69,12 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVe
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.addSccToNsSvcAccount;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,7 +82,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * To test ELK Stack used in Operator env, this Elasticsearch test does
  * 1. Install Kibana/Elasticsearch.
- * 2. Install and start Operator with ELK Stack enabled.
+ * 2. Install and start Operators with ELK Stack enabled,
+ *    one used to test createLogStashConfigMap = true and another one is used to
+ *    test createLogStashConfigMap = false.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
  *    Kibana and Logstash created in the Operator pod successfully.
  * 4. Install WebLogic Logging Exporter in all WebLogic server pods by
@@ -86,6 +97,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       stores them in its repository correctly.
  *    2) Using WebLogic Logging Exporter, WebLogic server Logs can be integrated to
  *       ELK Stack in the same pod that the domain is running on.
+ *    3) Users can update logstash configuration by updating the configmap
+ *       weblogic-operator-logstash-cm instead of rebuilding operator image
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
@@ -109,8 +122,8 @@ class ItElasticLogging {
   private static int replicaCount = 2;
 
   private static String opNamespace = null;
+  private static String opNamespace2 = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -130,41 +143,47 @@ class ItElasticLogging {
    *                   JUnit engine parameter resolution mechanism.
    */
   @BeforeAll
-  public static void init(@Namespaces(3) List<String> namespaces) {
+  public static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning a unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
+    // get a new unique opNamespace2
+    logger.info("Assigning a unique namespace for Operator");
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    opNamespace2 = namespaces.get(1);
+
     // get a new unique domainNamespace
     logger.info("Assigning a unique namespace for Domain");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
-    domainNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domainNamespace = namespaces.get(2);
 
     // install and verify Elasticsearch
-    elasticSearchNs = namespaces.get(2);
+    elasticSearchNs = namespaces.get(3);
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+
+    if (OKD) {
+      addSccToNsSvcAccount("default", elasticSearchNs);
+    }
+
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
             String.format("Failed to install Elasticsearch"));
-    assertTrue(elasticsearchParams != null, "Failed to install Elasticsearch");
+    assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
     kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
         String.format("Failed to install Kibana"));
-    assertTrue(kibanaParams != null, "Failed to install Kibana");
+    assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -190,7 +209,9 @@ class ItElasticLogging {
         opNamespace);
 
     // install WebLogic Logging Exporter if in non-OKD env
-    installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
+    if (!OKD) {
+      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
+    }
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -199,9 +220,6 @@ class ItElasticLogging {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName);
 
-    testVarMap = new HashMap<String, String>();
-
-    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
     StringBuffer elasticsearchUrlBuff =
         new StringBuffer("curl http://")
             .append(elasticSearchHost)
@@ -211,6 +229,7 @@ class ItElasticLogging {
     logger.info("Elasticsearch URL {0}", k8sExecCmdPrefix);
 
     // Verify that ELK Stack is ready to use
+    testVarMap = new HashMap<String, String>();
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, LOGSTASH_INDEX_KEY);
     Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
@@ -224,7 +243,6 @@ class ItElasticLogging {
   @AfterAll
   void tearDown() {
     if (!SKIP_CLEANUP) {
-
       // uninstall ELK Stack
       elasticsearchParams = new LoggingExporterParams()
           .elasticsearchName(ELASTICSEARCH_NAME)
@@ -261,7 +279,10 @@ class ItElasticLogging {
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true);
+    // verify log level query results
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
+            String.format("Query logs of level=INFO failed")));
 
     logger.info("Query logs of level=INFO succeeded");
   }
@@ -305,6 +326,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
@@ -339,24 +361,38 @@ class ItElasticLogging {
   }
 
   private static String createAndVerifyDomainImage() {
-    // create image with model files
-    String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-    StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
-        .append(WORK_DIR)
-        .append("/")
-        .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
-        .append(",")
-        .append(DOWNLOAD_DIR)
-        .append("/")
-        .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
-        .append(",")
-        .append(DOWNLOAD_DIR)
-        .append("/")
-        .append(SNAKE_DOWNLOADED_FILENAME);
+    String miiImage = null;
 
-    logger.info("Create image with model file and verify");
-    String miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
-        MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+    // create image with model files
+    if (!OKD) {
+      String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+      StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
+          .append(WORK_DIR)
+          .append("/")
+          .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(SNAKE_DOWNLOADED_FILENAME);
+
+      logger.info("Create image with model file and verify");
+      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
+          MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+    } else {
+      List<String> appList = new ArrayList<>();
+      appList.add(MII_BASIC_APP_NAME);
+
+      // build the model file list
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WLS_LOGGING_MODEL_FILE);
+
+      // create image with model files
+      logger.info("Create image with model file and verify");
+      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, modelList, appList);
+    }
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -386,18 +422,20 @@ class ItElasticLogging {
     String queryCriteria = "/_search?q=log:" + serverName;
     withStandardRetryPolicy.untilAsserted(
         () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
-            String.format("serverName %s is not RUNNING", serverName)));
+          String.format("serverName %s is not RUNNING", serverName)));
 
     String queryResult = execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY);
     logger.info("query result is {0}", queryResult);
   }
 
-  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
-                                               String index, boolean checkCount, String... args) {
+  private boolean verifyCountsHitsInSearchResults(String queryCriteria, String regex,
+                                                  String index, boolean checkCount, String... args) {
     String checkExist = (args.length == 0) ? "" : args[0];
+    boolean testResult = false;
     int count = -1;
     int failedCount = -1;
     String hits = "";
+
     String results = execSearchQuery(queryCriteria, index);
     Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(results);
@@ -412,17 +450,21 @@ class ItElasticLogging {
 
     logger.info("Total count of logs: " + count);
     if (!checkExist.equalsIgnoreCase("notExist")) {
-      assertTrue(kibanaParams != null, "Failed to install Kibana");
+      assertNotNull(kibanaParams, "Failed to install Kibana");
       assertTrue(count > 0, "Total count of logs should be more than 0!");
       if (checkCount) {
-        assertTrue(failedCount == 0, "Total failed count should be 0!");
         logger.info("Total failed count: " + failedCount);
+        assertEquals(0, failedCount, "Total failed count should be 0!");
       } else {
         assertFalse(hits.isEmpty(), "Total hits of search is empty!");
       }
+      testResult = true;
     } else {
-      assertTrue(count == 0, "Total count of logs should be zero!");
+      assertEquals(0, count, "Total count of logs should be zero!");
+      testResult = true;
     }
+
+    return testResult;
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
@@ -432,7 +474,7 @@ class ItElasticLogging {
     logger.info("Operator pod name " + operatorPodName);
 
     int waittime = 5;
-    String indexName = (String) testVarMap.get(index);
+    String indexName = testVarMap.get(index);
     StringBuffer curlOptions = new StringBuffer(" --connect-timeout " + waittime)
         .append(" --max-time " + waittime)
         .append(" -X GET ");
@@ -453,5 +495,65 @@ class ItElasticLogging {
     logger.info("Search query returns " + execResult.stdout());
 
     return execResult.stdout();
+  }
+
+  private void verifyLogstashConfigMapModifyResult(String replaceStr) {
+    String containerName = "logstash";
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertTrue(operatorPodName != null && !operatorPodName.isEmpty(),
+        "Failed to get Operator pad name");
+    logger.info("Operator pod name " + operatorPodName);
+
+    // command to restart logstash container
+    StringBuffer restartLogstashCmd = new StringBuffer("kubectl exec ");
+    restartLogstashCmd.append(" -n ");
+    restartLogstashCmd.append(opNamespace);
+    restartLogstashCmd.append(" pod/");
+    restartLogstashCmd.append(operatorPodName);
+    restartLogstashCmd.append(" -c ");
+    restartLogstashCmd.append(containerName);
+    restartLogstashCmd.append(" -- kill -SIGHUP 1");
+    logger.info("Command to restart logstash is {0}", restartLogstashCmd.toString());
+
+    // restart logstash container
+    ExecResult execResult = assertDoesNotThrow(() -> exec(restartLogstashCmd.toString(), true));
+    logger.info("command to restart logstash returned {0}", execResult.toString());
+
+    assertNotNull(execResult, "command returns null");
+    if (execResult.exitValue() == 0) {
+      logger.info("command {0} returns {1}", restartLogstashCmd, execResult.toString());
+    } else {
+      logger.info("Failed to exec the command command {0}. Error is {1} ", restartLogstashCmd, execResult.stderr());
+    }
+
+    // wait for logstash config modified and verify
+    withStandardRetryPolicy.untilAsserted(
+        () -> assertTrue(copyConfigFromPodAndSearchForString(containerName, replaceStr),
+            String.format("Failed to find search string %s", replaceStr)));
+  }
+
+  private boolean copyConfigFromPodAndSearchForString(String containerName, String replaceStr) {
+    String sourceConfigFileInPod = "/usr/share/logstash/pipeline/logstash.conf";
+    String newDestConfigFile = WORK_DIR + "/logstash_new.conf";
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertTrue(operatorPodName != null && !operatorPodName.isEmpty(),
+        "Failed to get Operator pad name");
+    logger.info("Operator pod name " + operatorPodName);
+
+    assertDoesNotThrow(
+        () -> Files.deleteIfExists(Paths.get(newDestConfigFile)));
+
+    // copy logstash config file from logstash container to the local
+    assertDoesNotThrow(
+        () -> copyFileFromPodUsingK8sExec(opNamespace, operatorPodName,
+            containerName, sourceConfigFileInPod, Paths.get(newDestConfigFile)));
+
+    // verify that the logstash config is modified successfully
+    boolean configFileModified =
+        assertDoesNotThrow(() -> searchStringInFile(newDestConfigFile, replaceStr), "searchStringInFile failed");
+
+    return configFileModified;
   }
 }

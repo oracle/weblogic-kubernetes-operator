@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -27,7 +27,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -207,18 +206,6 @@ public class FmwUtils {
           managedServerName, domainNamespace);
       checkPodReadyAndServiceExists(managedServerName, domainUid, domainNamespace);
     }
-
-    //check access to the em console: http://hostname:port/em
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort, "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/em --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd1);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
-    logger.info("EM console is accessible thru default service");
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -13,9 +13,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * Tests to verify MII sample with WLS domain using auxiliary image.
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @DisplayName("Test model in image sample with WLS domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
+@Tag("samples")
 class ItMiiSampleWlsAux {
 
   private static ItMiiSampleHelper myItMiiSampleHelper = null;
@@ -52,7 +56,9 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
   void testAIWlsInitialUseCase() {
-    myItMiiSampleHelper.callInitialUseCase(this.getClass().getSimpleName().toLowerCase());
+    assertDoesNotThrow(() -> {
+      myItMiiSampleHelper.callInitialUseCase(this.getClass().getSimpleName().toLowerCase());
+    });
   }
 
   /**
@@ -70,8 +76,10 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
   void testAIWlsUpdate1UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update1", "Update1 use case failed", this.getClass().getSimpleName().toLowerCase());
+    assertDoesNotThrow(() -> {
+      myItMiiSampleHelper
+          .callUpdateUseCase("-update1", "Update1 use case failed", this.getClass().getSimpleName().toLowerCase());
+    });
   }
 
   /**
@@ -89,8 +97,10 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
   void testAIWlsUpdate2UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update2", "Update2 use case failed", this.getClass().getSimpleName().toLowerCase());
+    assertDoesNotThrow(() -> {
+      myItMiiSampleHelper
+          .callUpdateUseCase("-update2", "Update2 use case failed", this.getClass().getSimpleName().toLowerCase());
+    });
   }
 
   /**
@@ -108,8 +118,10 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
   void testAIWlsUpdate3UseCase() {
-    myItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
-        "Update3 use case failed", this.getClass().getSimpleName().toLowerCase());
+    assertDoesNotThrow(() -> {
+      myItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
+          "Update3 use case failed", this.getClass().getSimpleName().toLowerCase());
+    });
   }
 
   /**
@@ -124,8 +136,10 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
   void testAIWlsUpdate4UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update4", "Update4 use case failed", this.getClass().getSimpleName().toLowerCase());
+    assertDoesNotThrow(() -> {
+      myItMiiSampleHelper
+          .callUpdateUseCase("-update4", "Update4 use case failed", this.getClass().getSimpleName().toLowerCase());
+    });
   }
 
   /**
