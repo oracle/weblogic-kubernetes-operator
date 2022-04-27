@@ -146,7 +146,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String DATA_HOME_OVERRIDE = "/u01/oracle/mydata";
+  private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
   private static final String miiImageName = "mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String miiDomainUid = "miidomain";
@@ -552,7 +552,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
   /**
    * Verify dataHome override in a domain with domain in image type.
-   * In this domain, set dataHome to /u01/oracle/mydata in domain custom resource
+   * In this domain, set dataHome to /u01/mydata in domain custom resource
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should be overridden by dataHome
    * File store and JMS server are targeted to the WebLogic cluster cluster-1

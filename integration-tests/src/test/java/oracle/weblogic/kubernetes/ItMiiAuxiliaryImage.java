@@ -36,6 +36,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
@@ -53,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -1229,8 +1232,17 @@ class ItMiiAuxiliaryImage {
   }
 
   private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
+    //replace the BUSYBOX_IMAGE and BUSYBOX_TAG in Dockerfile
+    Path dockerDestFile = Paths.get(WORK_DIR, "auximages", "Dockerfile");
+    assertDoesNotThrow(() -> Files.copy(Paths.get(dockerFileLocation),
+        dockerDestFile, StandardCopyOption.REPLACE_EXISTING));
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_IMAGE", BUSYBOX_IMAGE);
+      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_TAG", BUSYBOX_TAG);
+    });
+
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
-        stageDirPath, dockerFileLocation,
+        stageDirPath, dockerDestFile.toString(),
         "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", auxiliaryImage);
     assertTrue(new Command()
         .withParams(new CommandParams()
