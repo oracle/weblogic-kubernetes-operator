@@ -80,8 +80,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
   - __Use auxiliary images__:
     Use [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
     to create one or more small images that contain the desired files. This automatically copies files
-    from each of the small images into each pod's file system's
-    `configuration.model.modelHome` or `configuration.model.wdtInstallHome` location.
+    from each of the small images into the `/aux/models` and `/aux/weblogic-deploy` directories
+    in each pod's file system so that the introspection job can find them.
 
   - __Use a Persistent Volume Claim (PVC)__:
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
@@ -164,8 +164,8 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models`.|
-| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT install. Defaults to `/u01/wdt/weblogic-deploy`.|
+| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
+| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT install. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
 
 **Notes**:
 
