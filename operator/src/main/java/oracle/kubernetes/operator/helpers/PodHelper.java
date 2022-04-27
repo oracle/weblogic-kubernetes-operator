@@ -451,6 +451,11 @@ public class PodHelper {
       CoreDelegate delegate = packet.getSpi(CoreDelegate.class);
       return new Certificates(delegate).getOperatorInternalCertificateData();
     }
+
+    @Override
+    Step createCycleEndStep(Step next) {
+      return next;
+    }
   }
 
   static class AdminPodStep extends Step {
@@ -522,6 +527,36 @@ public class PodHelper {
       labelPodAsNeedingToRoll(pod);
       deferProcessing(createCyclePodStep(pod, next));
       return null;
+    }
+
+    @Override
+    Step createCycleEndStep(Step next) {
+      return new CycleEndStep(next);
+    }
+
+    private class CycleEndStep extends Step {
+
+      public CycleEndStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        removeFromServersMarkedForRollMap();
+        return doNext(packet);
+      }
+
+      private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
+        return DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getServersToRoll)
+            .orElse(Collections.emptyMap());
+      }
+
+      private void removeFromServersMarkedForRollMap() {
+        synchronized (packet) {
+          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
+        }
+      }
     }
 
     private void deferProcessing(Step deferredStep) {
