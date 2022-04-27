@@ -51,6 +51,13 @@ public class DomainSpec {
   private String logHome;
 
   @ApiModelProperty(
+      "Control how the log files under logHome is organized. "
+          + "FLAT - all files are under the logHome root directory. "
+          + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files"
+          + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
+  private String logHomeLayout;
+
+  @ApiModelProperty(
       "Specified whether the log home folder is enabled. Not required. "
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
@@ -327,6 +334,19 @@ public class DomainSpec {
 
   public void setLogHome(String logHome) {
     this.logHome = logHome;
+  }
+
+  public DomainSpec logHomeLayout(String logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
+    return this;
+  }
+
+  public String getLogHomeLayout() {
+    return logHomeLayout;
+  }
+
+  public void setLogHomeLayout(String logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
   }
 
   public DomainSpec logHomeEnabled(Boolean logHomeEnabled) {
