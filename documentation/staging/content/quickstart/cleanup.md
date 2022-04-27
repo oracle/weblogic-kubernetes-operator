@@ -36,7 +36,7 @@ weight: 7
     $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
-        --set "kubernetes.namespaces={traefik}" 
+        --set "kubernetes.namespaces={traefik}"
     ```
 
 1.	Delete the domain namespace:
@@ -85,7 +85,7 @@ weight: 7
 
 #### Delete the tools directory.
 
-1.  When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
+1.  When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
 
     ```shell
     $ rm -rf /tmp/dhii-sample/tools/
