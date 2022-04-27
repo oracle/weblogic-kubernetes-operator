@@ -1234,9 +1234,10 @@ class ItMiiAuxiliaryImage {
   private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     //replace the BUSYBOX_IMAGE and BUSYBOX_TAG in Dockerfile
     Path dockerDestFile = Paths.get(WORK_DIR, "auximages", "Dockerfile");
-    assertDoesNotThrow(() -> Files.copy(Paths.get(dockerFileLocation),
-        dockerDestFile, StandardCopyOption.REPLACE_EXISTING));
     assertDoesNotThrow(() -> {
+      Files.createDirectories(dockerDestFile.getParent());
+      Files.copy(Paths.get(dockerFileLocation),
+          dockerDestFile, StandardCopyOption.REPLACE_EXISTING);
       replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_IMAGE", BUSYBOX_IMAGE);
       replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_TAG", BUSYBOX_TAG);
     });
