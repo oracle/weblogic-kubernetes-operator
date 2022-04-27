@@ -124,6 +124,7 @@ Elements related to logging:
 * `includeServerOutInPodLog`: Specifies whether the server .out file will be included in the Pod's log. Defaults to true.
 * `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
+* `logHomeLayout`: Specifies how the log files are organized under the `logHome` directory. Default to `BY_SERVER` or not specified, domain and introspector.out are placed at root level, all other log files are organized under logHome/servers/server name/logs. If `FLAT` is specified, all files are placed at root level.
 * `httpAccessLogInLogHome`: Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.
 
 Elements related to security:

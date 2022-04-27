@@ -103,7 +103,8 @@ public class DomainSpec extends BaseConfiguration {
           + "server *.out, introspector .out, and optionally HTTP access log files "
           + "if `httpAccessLogInLogHome` is true. "
           + "Default is `/shared/logs/DOMAIN-UID`. "
-          + "Ignored if `logHomeEnabled` is false.")
+          + "Ignored if `logHomeEnabled` is false."
+          + "See also `domains.spec.logHomeLayout`.")
   private String logHome;
 
   /**
@@ -112,10 +113,11 @@ public class DomainSpec extends BaseConfiguration {
    *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
    * */
   @Description(
-      "Control how the log files under logHome is organized. "
-        + "FLAT - all files are under the logHome root directory. "
-        + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files "
-        + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
+      "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
+        + "`FLAT` - - all files directly in the `logHome` root directory. "
+        + "`BY_SERVERS` (default) - domain log files and `introspector.out` are at the logHome root level, "
+        + "all other files are organized under the respective server name logs directory.  "
+        + "logHome/servers/<server name>/logs.")
   private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
