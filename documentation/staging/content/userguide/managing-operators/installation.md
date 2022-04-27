@@ -31,6 +31,14 @@ Before installing the operator, ensure that each of its prerequisite requirement
 See [Prepare for installation]({{<relref "/userguide/managing-operators/preparation.md">}}).
 {{% /notice %}}
 
+{{% notice note %}}
+By default, installing the operator also configures a deployment and supporting resources for the 
+[conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook">}})
+and deploys the conversion webhook. 
+See [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook">}}) 
+for more details.
+{{% /notice %}}
+
 After meeting the [prerequisite requirements]({{<relref "/userguide/managing-operators/preparation.md">}}),
 install the operator using the `helm install` command with the operator Helm chart according
 to the following instructions.
@@ -141,12 +149,6 @@ in the `sample-weblogic-operator-ns` namespace,
 configures a deployment and supporting resources for the operator,
 and deploys the operator.
 
-In addition, it also configures a deployment and supporting resources for the 
-[conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook">}})
-and deploys the conversion webhook. 
-See [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook">}}) 
-for more details.
-
 You can verify the operator installation by examining the output from the `helm install` command.
 
 To check if the operator is deployed and running,
@@ -164,6 +166,7 @@ see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting#c
   as shown in the previous example.
 
 ### Install the WebLogic domain resource conversion webhook
+By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster, and removed the first time an operator is uninstalled. If you are using multiple operators, or want to be able to create or alter domains even when no operator's are running, then you will need to fine tune this life-cycle. 
 Refer to [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) section for the conversion webhook installation details. 
 
 ### Set up domain namespaces
@@ -220,11 +223,11 @@ is not necessary and such instances will continue to run without interruption
 during the upgrade.
 
 When you upgrade a 3.x operator to 4.0, it will also create a 
-[WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}})
-deployment and its associated resources in the same namespace. If the conversion webhook deployment already exists in
- some other namespace, then a new conversion webhook deployment is not created.
-The [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}})
- automatically and transparently upgrades the existing Domains from the 3.x schema to the 4.0 schema.
+WebLogic Domain resource conversion webhook deployment and its associated resources in the same namespace. If the conversion 
+webhook deployment already exists in some other namespace, then a new conversion webhook deployment is not created.
+The webhook automatically and transparently upgrades the existing Domains from the 3.x schema to the 4.0 schema.
+For more information, see 
+[WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}).
 
 ### Uninstall the operator
 
@@ -274,8 +277,9 @@ from having these side effects, then use one of the following two options:
  in a separate namespace using `webhookOnly=true` helm configuration value.
 - Use the `preserveWebhook=true` helm configuration value during operator installation with the `helm install` command.
 
-### Uninstall the WebLogic domain resource conversion webhook
-See [uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}) for the conversion webhook uninstallation details.
+For more information, see 
+[uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}})
+for the conversion webhook uninstallation details.
 
 ### Installation sample
 
