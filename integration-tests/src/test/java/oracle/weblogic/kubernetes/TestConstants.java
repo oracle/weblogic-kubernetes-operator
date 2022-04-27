@@ -51,19 +51,20 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
-  // BASE_IMAGES_REPO constants
+  // BASE_IMAGES_REPO constants from where all the base images are pulled
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
-
   public static final String BASE_IMAGES_REPO_REGISTRY = System.getenv("BASE_IMAGES_REPO");
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
   public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
   public static final String BASE_IMAGES_REPO_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
   public static final String BASE_IMAGES_REPO_SECRET_NAME = "base-images-repo-secret";
 
-  public static final String REPO_REGISTRY_USERNAME = System.getenv("REPO_REGISTRY_USERNAME");
-  public static final String REPO_REGISTRY_PASSWORD = System.getenv("REPO_REGISTRY_PASSWORD");
-  public static final String REPO_REGISTRY_EMAIL = System.getenv("REPO_REGISTRY_EMAIL");
-  public static final String REPO_REGISTRY_SECRET_NAME = "repo-registry-secret";
+  // TEST_IMAGES_REPO constants to which all test domain images are pushed into
+  public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
+  public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
+  public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
+  public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
+  public static final String TEST_IMAGES_REPO_SECRET_NAME = "repo-registry-secret";
 
   // ocir default image values, these values will be used while running locally
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
@@ -73,9 +74,10 @@ public interface TestConstants {
   public static final String DB_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/database/enterprise";
   public static final String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
 
-  // repository to push the domain images, for kind push to kind repo
-  // for others push to REPO_REGISTRY if REPO_REGISTRY env var is provided,
-  // if its not provided (like local runs) don't push the domain images to any repo
+  // repository to push the domain images created during test execution
+  // (a) for kind cluster push to kind repo
+  // (b) for OKD or OKE push to TEST_IMAGES_REPO_REGISTRY 
+  // (c) for local runs don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
       .orElse(getNonEmptySystemProperty("wko.it.repo.registry") != null
           ? getNonEmptySystemProperty("wko.it.repo.registry") + "/weblogick8s/" : "");
