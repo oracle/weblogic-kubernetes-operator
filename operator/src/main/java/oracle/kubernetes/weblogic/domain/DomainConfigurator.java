@@ -37,7 +37,8 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
-  public DomainConfigurator() {
+  protected DomainConfigurator() {
+    // no-op
   }
 
   protected DomainConfigurator(Domain domain) {
@@ -359,6 +360,9 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
 
   public abstract DomainConfigurator withMonitoringExporterPort(Integer port);
+
+  public abstract DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
+                                                              String credentialName, String fluentdConfig);
 
   /**
    * Adds a default server configuration to the domain, if not already present.

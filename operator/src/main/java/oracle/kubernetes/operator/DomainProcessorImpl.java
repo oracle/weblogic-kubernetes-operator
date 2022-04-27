@@ -91,6 +91,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -296,6 +297,10 @@ public class DomainProcessorImpl implements DomainProcessor {
           JobHelper.createIntrospectionStartStep(null));
   }
 
+  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
+    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info, next);
+  }
+
   /**
    * Compares the domain introspection version to current introspection state label and request introspection
    * if they don't match.
@@ -401,7 +406,15 @@ public class DomainProcessorImpl implements DomainProcessor {
         info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
         // fall through
       case MODIFIED:
-        info.setServerPodFromEvent(serverName, pod);
+        boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
+        if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
+          if (PodHelper.shouldRestartEvictedPod(pod)) {
+            LOGGER.info(MessageKeys.POD_EVICTED, getPodName(pod), getPodStatusMessage(pod));
+            createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+          } else {
+            LOGGER.info(MessageKeys.POD_EVICTED_NO_RESTART, getPodName(pod), getPodStatusMessage(pod));
+          }
+        }
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
@@ -1154,6 +1167,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
+            createOrReplaceFluentdConfigMapStep(info, null),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
