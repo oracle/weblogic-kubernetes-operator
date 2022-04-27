@@ -314,7 +314,7 @@ class ItManageNameSpace {
     logger.info("check that with specific Selector default namespace is not under operator management");
     checkDomainNotStartedInDefaultNS();
 
-    logger.info("check that another operator with selector=List matching domain namespace,"
+    logger.info("check that another operator with selector=List matching domain namespace, "
         + "managed by first operator fails to install");
     checkSecondOperatorFailedToShareSameNS(domainNamespaces[0]);
 
@@ -401,7 +401,7 @@ class ItManageNameSpace {
 
   private void checkUpgradeFailedToAddNSManagedByAnotherOperator() {
     logger.info("upgrade operator1 to replace managing domains using RegExp namespaces"
-        + " for ns names starting from weblogic, there one of domains"
+        + " for ns names starting from weblogic, there one of domains "
         + "in namespace weblogic* is managed by operator2");
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     logger.info("set helm params to use domainNamespaceSelectionStrategy=RegExp "
@@ -526,7 +526,7 @@ class ItManageNameSpace {
   }
 
   private void checkDomainNotStartedInDefaultNS() {
-    logger.info("verify operator can't start domain in the default namespace when domainNsSelectionStrategy not List"
+    logger.info("verify operator can't start domain in the default namespace when domainNsSelectionStrategy not List "
         + "and selector does not match default");
     checkPodNotCreated("defaultuid" + adminServerPrefix, "defaultuid", "default");
     logger.info("Delete defaultuid custom resource in namespace {0}", "default");
