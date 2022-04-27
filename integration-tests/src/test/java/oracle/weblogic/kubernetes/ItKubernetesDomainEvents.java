@@ -365,7 +365,7 @@ class ItKubernetesDomainEvents {
               "patchDomainCustomResource failed");
 
       logger.info("verify domain changed event is logged");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
       checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
       logger.info("verify domain failed event");
       checkFailedEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
@@ -383,7 +383,7 @@ class ItKubernetesDomainEvents {
    */
   @Test
   void testK8SEventsMultiClusterEvents() {
-    createNewCluster();
+    createNewCluster(domainNamespace3);
     OffsetDateTime timestamp = now();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
         externalRestHttpsPort, opNamespace, opServiceAccount);
@@ -873,13 +873,13 @@ class ItKubernetesDomainEvents {
         namespace, jobCreationContainer);
   }
 
-  private void createNewCluster() {
+  private void createNewCluster(String domainNamespace) {
     final String managedServerNameBase = "cl2-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(domainNamespace1, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -898,9 +898,9 @@ class ItKubernetesDomainEvents {
 
     // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace1);
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
 
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
 
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
@@ -912,27 +912,27 @@ class ItKubernetesDomainEvents {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodNameBase, domainUid, domainNamespace1);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace1);
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
     // verify new cluster managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace1);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace1);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
 
     // verify new cluster managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace1);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
   }
 
