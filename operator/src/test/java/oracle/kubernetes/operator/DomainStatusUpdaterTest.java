@@ -30,8 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
@@ -46,6 +44,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;

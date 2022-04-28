@@ -12,8 +12,8 @@ import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNPROCESSABLE_ENTITY;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;

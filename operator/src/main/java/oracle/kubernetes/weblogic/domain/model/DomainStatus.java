@@ -20,7 +20,6 @@ import jakarta.json.JsonPatchBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
@@ -134,6 +133,10 @@ public class DomainStatus {
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
+    if (newCondition.isNotValid()) {
+      throw new IllegalArgumentException("May not add condition " + newCondition);
+    }
+
     if (conditions.contains(newCondition)) {
       unmarkMatchingCondition(newCondition);
       return this;
