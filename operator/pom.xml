@@ -99,8 +99,7 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds>
-              <excludeArtifactIds>kotlin-stdlib-jdk7,kotlin-stdlib-jdk8</excludeArtifactIds>
+              <excludeGroupIds>io.prometheus,com.google.protobuf,org.jetbrains.kotlin</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
