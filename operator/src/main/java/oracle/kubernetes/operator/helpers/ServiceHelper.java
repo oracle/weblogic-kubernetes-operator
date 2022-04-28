@@ -177,6 +177,19 @@ public class ServiceHelper {
     return new ExternalServiceStepContext(null, packet).createModel();
   }
 
+  static List<String> getAppProtocolAndPortName(String portName) {
+    List<String> results = new ArrayList<>();
+    String[] tokens = portName.split("-");
+    if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+        || "tls".equals(tokens[0])) {
+      results.add(tokens[0]);
+      int index = portName.indexOf('-');
+      // normalize channel name since we use appProtocol
+      results.add(portName.substring(index + 1));
+    }
+    return results;
+  }
+
   private static class ForServerStep extends ServiceHelperStep {
     private final boolean isPreserveServices;
 
@@ -328,8 +341,15 @@ public class ServiceHelper {
       if (port == null) {
         return;
       }
-
-      addServicePortIfNeeded(ports, createServicePort(portName, port));
+      String appProtocol = null;
+      if (isIstioEnabled()) {
+        List<String> results = getAppProtocolAndPortName(portName);
+        if (results.size() == 2) {
+          appProtocol = results.get(0);
+          portName = results.get(1);
+        }
+      }
+      addServicePortIfNeeded(ports, createServicePort(portName, port, appProtocol));
       if (isSipProtocol(protocol)) {
         addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
       }
@@ -462,9 +482,10 @@ public class ServiceHelper {
       return one.getProtocol().equals(two.getProtocol());
     }
 
-    V1ServicePort createServicePort(String portName, Integer port) {
+    V1ServicePort createServicePort(String portName, Integer port, String appProtocol) {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
+          .appProtocol(appProtocol)
           .port(port)
           .protocol(V1ServicePort.ProtocolEnum.TCP);
     }
@@ -789,8 +810,17 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
+      String appProtocol = null;
+      if (isIstioEnabled()) {
+        List<String> results = getAppProtocolAndPortName(portName);
+        if (results.size() == 2) {
+          appProtocol = results.get(0);
+          portName = results.get(1);
+        }
+      }
+
       if (port != null) {
-        addServicePortIfNeeded(ports, createServicePort(portName, port));
+        addServicePortIfNeeded(ports, createServicePort(portName, port, appProtocol));
       }
       if (isSipProtocol(protocol)) {
         V1ServicePort udpPort = createSipUdpServicePort(portName, port);
@@ -967,21 +997,21 @@ public class ServiceHelper {
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
-
+      String appProtocol = null;
       if (channel == null && isIstioEnabled() && channelName != null) {
-        String[] tokens = channelName.split("-");
-        if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-              || "tls".equals(tokens[0])) {
-          int index = channelName.indexOf('-');
-          channel = getChannel(channelName.substring(index + 1));
+        List<String> results = getAppProtocolAndPortName(channelName);
+        if (results.size() == 2) {
+          appProtocol = results.get(0);
+          channelName = results.get(1);
         }
+        channel = getChannel(channelName);
       }
       if (channel == null || internalPort == null) {
         return;
       }
 
       addServicePortIfNeeded(ports,
-          createServicePort(channelName, internalPort)
+          createServicePort(channelName, internalPort, appProtocol)
             .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 

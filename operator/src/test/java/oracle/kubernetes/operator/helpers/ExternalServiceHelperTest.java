@@ -123,7 +123,7 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
     getServerConfig().addNetworkAccessPoint(
         new NetworkAccessPoint(channelName, "t3", LISTEN_PORT, 0));
 
-    final V1ServicePort createdPort = getServerPortWithName(channelName);
+    final V1ServicePort createdPort = getServerPortWithName(configuredChannelName);
     assertThat(createdPort, notNullValue());
     assertThat(createdPort.getPort(), equalTo(LISTEN_PORT));
     assertThat(createdPort.getNodePort(), equalTo(NODE_PORT));
@@ -144,3 +144,4 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
   }
 
 }
+
