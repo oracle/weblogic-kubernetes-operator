@@ -1,16 +1,17 @@
 // Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator;
+package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 
 public enum DomainFailureReason {
   @SerializedName("DomainInvalid")
@@ -35,6 +36,11 @@ public enum DomainFailureReason {
     @Override
     public String getEventSuggestion(DomainPresenceInfo info) {
       return getFailureRetryAdditionalMessage(info);
+    }
+
+    @Override
+    boolean hasFatalError(String message) {
+      return message.contains(FATAL_INTROSPECTOR_ERROR);
     }
   },
   @SerializedName("Kubernetes")
@@ -71,6 +77,11 @@ public enum DomainFailureReason {
     @Override
     public String getEventSuggestion(DomainPresenceInfo info) {
       return EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
+    }
+
+    @Override
+    DomainFailureSeverity getDefaultSeverity() {
+      return DomainFailureSeverity.WARNING;
     }
   },
   @SerializedName("TopologyMismatch")
@@ -110,6 +121,20 @@ public enum DomainFailureReason {
     }
   };
 
+
+  static boolean isFatalError(@Nonnull String reasonString, String message) {
+    return Optional.ofNullable(toValue(reasonString)).map(r -> r.hasFatalError(message)).orElse(false);
+  }
+
+  private static DomainFailureReason toValue(String reasonString) {
+    for (DomainFailureReason reason : values()) {
+      if (reason.value.equals(reasonString)) {
+        return reason;
+      }
+    }
+    return null;
+  }
+
   public abstract String getEventError();
 
   public abstract String getEventSuggestion(DomainPresenceInfo info);
@@ -139,5 +164,17 @@ public enum DomainFailureReason {
   @Override
   public String toString() {
     return String.valueOf(this.value);
+  }
+
+  DomainFailureSeverity getDefaultSeverity() {
+    return DomainFailureSeverity.SEVERE;
+  }
+
+  /**
+   * Returns true if, for this failure reason, the message indicates a fatal error.
+   * @param message a description of what went wrong.
+   */
+  boolean hasFatalError(String message) {
+    return false;
   }
 }

@@ -91,8 +91,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
@@ -124,6 +122,8 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -562,7 +562,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     assertThat(fluentdContainer, notNullValue());
 
-    assertThat(Optional.ofNullable(fluentdContainer)
+    assertThat(Optional.of(fluentdContainer)
             .map(V1Container::getVolumeMounts)
             .orElseGet(Collections::emptyList)
             .stream()
@@ -592,7 +592,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithoutFluentdTerminatedDuringIntropsection() {
+  void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain)
         .withFluentdConfiguration(true, "elastic-cred", null);
@@ -601,12 +601,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         true, false);
     testSupport.defineResources(jobPod);
     defineNormalFluentdContainerInIntrospection();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
 
     Packet packet = testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
     logRecords.clear();
     assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
             equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
-    assertThat(terminalStep.wasRun(), is(false));
+    assertThat(terminalStep.wasRun(), is(true));
 
   }
 

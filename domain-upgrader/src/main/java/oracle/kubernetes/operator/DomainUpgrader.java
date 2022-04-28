@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 
 import oracle.kubernetes.common.logging.CommonLoggingFacade;
 import oracle.kubernetes.common.logging.CommonLoggingFactory;
@@ -30,6 +31,8 @@ public class DomainUpgrader {
   private static final CommonLoggingFacade LOGGER =
           CommonLoggingFactory.getLogger("DomainUpgrader", "Operator");
   private static SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+  private static IntConsumer exitCall = System::exit;
 
   String inputFileName;
   String outputDir;
@@ -133,7 +136,7 @@ public class DomainUpgrader {
                     + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-o --overwriteExistingFile] "
                     + "[-h --help]",
             "", options, "");
-    System.exit(1);
+    exitCall.accept(1);
   }
 
   static class DomainUpgraderException extends RuntimeException {

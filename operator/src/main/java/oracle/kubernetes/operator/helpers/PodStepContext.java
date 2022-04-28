@@ -470,8 +470,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   Step createCyclePodStep(V1Pod pod, Step next) {
     return Step.chain(DomainStatusUpdater.createStartRollStep(),
-        new CyclePodStep(pod, next, LOGGER.formatMessage(CYCLING_POD_SPEC_CHANGED)));
+        new CyclePodStep(pod, createCycleEndStep(next), LOGGER.formatMessage(CYCLING_POD_SPEC_CHANGED)));
   }
+
+  abstract Step createCycleEndStep(Step next);
 
   private boolean isLegacyAuxImageOperatorVersion(String operatorVersion) {
     try {

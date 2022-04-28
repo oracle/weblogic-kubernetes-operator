@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1737c3058a7ad2df46f06f1dc64d5d176e806fea33f1e5909460a34dfd7faa51
+    weblogic.sha256: 9d568816b5c1756bf73246b17935adfdfa7af18a30b56fafe585175e399837fc
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -525,10 +525,11 @@ spec:
                   if `domainHomeSourceType` is FromModel.
                 type: string
               logHomeLayout:
-                description: Control how the log files under logHome is organized.
-                  FLAT - all files are under the logHome root directory. BY_SERVERS
-                  (default) - domain log file and introspector.out are at the logHome
-                  root level, all other files are organized under the respective server
+                description: Control how log files under `logHome` are organized when
+                  logHome is set and `logHomeEnabled` is true. `FLAT` - - all files
+                  directly in the `logHome` root directory. `BY_SERVERS` (default)
+                  - domain log files and `introspector.out` are at the logHome root
+                  level, all other files are organized under the respective server
                   name logs directory.  logHome/servers/<server name>/logs.
                 enum:
                 - FLAT
@@ -3561,7 +3562,7 @@ spec:
                   the domain, Node Manager, server logs, server *.out, introspector
                   .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
                   is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled`
-                  is false.
+                  is false.See also `domains.spec.logHomeLayout`.
                 type: string
               includeServerOutInPodLog:
                 description: Specifies whether the server .out file will be included
@@ -12657,6 +12658,14 @@ spec:
                 items:
                   type: object
                   properties:
+                    severity:
+                      description: The severity of the failure. Can be Fatal, Severe
+                        or Warning.
+                      type: string
+                      enum:
+                      - Fatal
+                      - Severe
+                      - Warning
                     reason:
                       description: Unique, one-word, CamelCase reason for the condition's
                         last transition.
