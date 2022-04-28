@@ -29,7 +29,6 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
-import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -52,8 +51,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.REPLICAS_TOO_HIGH;
-import static oracle.kubernetes.operator.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.ClusterStatusMatcher.hasStatusForCluster;
@@ -87,6 +84,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -104,8 +103,6 @@ abstract class DomainStatusUpdateTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private final RandomStringGenerator generator = new RandomStringGenerator();
-  private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private List<String> liveServers;
@@ -800,7 +797,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAtLeastOnePodAndFailedConditionTrueFound_leaveIt() {
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withStatus(TRUE));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD));
     failPod("server2");
 
     updateDomainStatus();

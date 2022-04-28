@@ -46,7 +46,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.NO_AVAILABLE_PORT_TO_
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
@@ -61,6 +60,7 @@ import static oracle.kubernetes.operator.helpers.WlsConfigValidator.CLUSTER_SIZE
 import static oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DEFAULT_LISTEN_PORT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;

@@ -194,6 +194,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
+| `severity` | string | The severity of the failure. Can be Fatal, Severe or Warning. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
 | `type` | string | The type of the condition. Valid types are Completed, Available, Failed, Rolling, and ConfigChangesPendingRestart. |
 
