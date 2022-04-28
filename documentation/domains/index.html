@@ -1209,6 +1209,15 @@ window.onload = function() {
     "DomainCondition": {
       "type": "object",
       "properties": {
+        "severity": {
+          "description": "The severity of the failure. Can be Fatal, Severe or Warning.",
+          "type": "string",
+          "enum": [
+            "Fatal",
+            "Severe",
+            "Warning"
+          ]
+        },
         "reason": {
           "description": "Unique, one-word, CamelCase reason for the condition\u0027s last transition.",
           "type": "string"

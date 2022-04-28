@@ -19,6 +19,19 @@ public enum DomainConditionType implements Obsoleteable {
   @SerializedName("Failed")
   FAILED("Failed",null, DOMAIN_FAILURE_RESOLVED) {
     @Override
+    int compare(DomainCondition thisCondition, DomainCondition thatCondition) {
+      if (compareUsingSeverities(thisCondition, thatCondition)) {
+        return thisCondition.getSeverity().compareTo(thatCondition.getSeverity());
+      } else {
+        return super.compare(thisCondition, thatCondition);
+      }
+    }
+
+    private boolean compareUsingSeverities(DomainCondition thisCondition, DomainCondition thatCondition) {
+      return thatCondition.getType() == FAILED && thisCondition.getSeverity() != thatCondition.getSeverity();
+    }
+
+    @Override
     boolean allowMultipleConditionsWithThisType() {
       return true;
     }
@@ -61,6 +74,16 @@ public enum DomainConditionType implements Obsoleteable {
 
   DomainConditionType(String label) {
     this(label, null, null);
+  }
+
+  /**
+   * Compares two conditions for precedence. Returns a negative number if thisCondition is to be sorted
+   * before thatCondition.
+   * @param thisCondition the first of two conditions to compare
+   * @param thatCondition the second of two conditions to compare
+   */
+  int compare(DomainCondition thisCondition, DomainCondition thatCondition) {
+    return thisCondition.compareTransitionTime(thatCondition);
   }
 
   boolean allowMultipleConditionsWithThisType() {
