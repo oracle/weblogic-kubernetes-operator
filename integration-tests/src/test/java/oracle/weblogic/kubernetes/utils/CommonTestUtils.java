@@ -88,10 +88,9 @@ public class CommonTestUtils {
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
-
+  
   public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
   public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
-
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.
