@@ -372,6 +372,36 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * The Fluentd configuration.
+   *
+   */
+  @Description("Automatic fluentd sidecar injection. If "
+          + "specified, the operator "
+          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, "
+          + "Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. "
+          + "WebLogic Server instances that are already running when the `fluentdSpecification` field is created "
+          + "or deleted, will not be affected until they are restarted. When any given server "
+          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+          + " will have the fluentd sidecar or not, as appropriate")
+  private FluentdSpecification fluentdSpecification;
+
+  public FluentdSpecification getFluentdSpecification() {
+    return fluentdSpecification;
+  }
+
+  DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
+                                String fluentdConfig) {
+    if (fluentdSpecification == null) {
+      fluentdSpecification = new FluentdSpecification();
+    }
+    fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
+    fluentdSpecification.setElasticSearchCredentials(credentialName);
+    fluentdSpecification.setFluentdConfiguration(fluentdConfig);
+    return this;
+  }
+
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -1013,7 +1043,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("monitoringExporter", monitoringExporter)
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
-            .append("webLogicCredentialsSecret", webLogicCredentialsSecret);
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -1046,7 +1077,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(monitoringExporter)
             .append(replicas)
             .append(serverStartPolicy)
-            .append(webLogicCredentialsSecret);
+            .append(webLogicCredentialsSecret)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -1087,10 +1119,10 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
-            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
+            .append(fluentdSpecification, rhs.getFluentdSpecification());
     return builder.isEquals();
   }
-
 
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {

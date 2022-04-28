@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Debugging a deployed domain."
 +++
 
-Here are some suggestions for debugging problems with a domin after your Domain YAML file is deployed.
+Here are some suggestions for debugging problems with a domain after your Domain YAML file is deployed.
 
 ### Contents
 

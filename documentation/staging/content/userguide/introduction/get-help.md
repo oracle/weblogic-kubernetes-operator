@@ -16,7 +16,7 @@ To join our public channel, please
 [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).
 The invitation email will include
 details of how to access our Slack workspace.
-After you are logged in, please come to `#weblogic-kubernetes-toolkit` and say, "hello!"
+After you are logged in, please come to `#operator` and say, "hello!"
 
 ### GitHub issues
 To quickly get help, we strongly recommend using [Oracle Slack](#oracle-slack).

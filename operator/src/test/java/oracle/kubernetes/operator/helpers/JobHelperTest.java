@@ -9,8 +9,12 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -18,6 +22,7 @@ import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -61,6 +66,9 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
+import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
@@ -68,6 +76,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -82,6 +91,9 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
@@ -148,10 +160,14 @@ class JobHelperTest extends DomainValidationTestBase {
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
   public void setup() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(
+        TestUtils.silenceOperatorLogger()
+            .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
+            .withLogLevel(Level.FINE));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
@@ -340,6 +356,7 @@ class JobHelperTest extends DomainValidationTestBase {
             "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
   }
 
+
   @Test
   void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     configureDomain().withEnvironmentVariable("USER_MEM_ARGS", "");
@@ -365,6 +382,68 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("item1"));
 
+  }
+
+  @Test
+  void whenFluentdWatchIntrospectLogsEnable_jobPodShouldHaveFluentdSidecar() {
+    configureDomain().withFluentdConfiguration(true, "dummy-cred",
+        null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getContainers)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), notNullValue());
+
+  }
+
+  @Test
+  void whenFluentdWatchIntrospectLogsDisable_jobPodShouldHaveFluentdSidecar() {
+    configureDomain().withFluentdConfiguration(false, "dummy-cred",
+            null);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(Optional.ofNullable(jobSpec)
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getContainers)
+            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), equalTo(Optional.empty()));
+
+  }
+
+  @Test
+  void whenNoFluentdConfigmap_createIt() {
+    configureDomain().withFluentdConfiguration(false, "dummy-cred",
+        null);
+
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
+    assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_CREATED));
+
+  }
+
+  @Test
+  void whenFluendConfigmapExists_replaceIt() {
+    Map<String, String> data = new HashMap<>();
+    data.put(FLUENTD_CONFIG_DATA_NAME, "<fakedata/>");
+    V1ObjectMeta metaData = new V1ObjectMeta()
+        .name(FLUENTD_CONFIGMAP_NAME)
+        .namespace(domainPresenceInfo.getNamespace());
+    V1ConfigMap configMap = new V1ConfigMap()
+        .metadata(metaData)
+        .data(data);
+    testSupport.defineResources(configMap);
+
+    configureDomain().withFluentdConfiguration(false, "dummy-cred",
+        null);
+
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_REPLACED));
   }
 
   private static final String EMPTY_DATA_HOME = "";
@@ -1136,6 +1215,8 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(job, nullValue());
   }
+
+
 
   @Test
   void whenIntrospectRequestSet_runIntrospector() {

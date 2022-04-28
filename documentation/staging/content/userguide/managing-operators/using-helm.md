@@ -463,11 +463,11 @@ elkIntegrationEnabled:  true
 ##### `logStashImage`
 Specifies the container image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is `false`.
 
-Defaults to `logstash:6.6.0`.
+Defaults to `logstash:6.8.23`.
 
 Example:
 ```yaml
-logStashImage:  "docker.elastic.co/logstash/logstash:6.2.0"
+logStashImage:  "docker.elastic.co/logstash/logstash:6.8.23"
 ```
 
 ##### `elasticSearchHost`

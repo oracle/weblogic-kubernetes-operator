@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -114,7 +115,8 @@ public class PodHelper {
   }
 
   static boolean hasClusterNameOrNull(@Nullable V1Pod pod, String clusterName) {
-    return getClusterName(pod) == null || getClusterName(pod).equals(clusterName);
+    String actualName = getClusterName(pod);
+    return actualName == null || actualName.equals(clusterName);
   }
 
   private static String getClusterName(@Nullable V1Pod pod) {
@@ -224,6 +226,38 @@ public class PodHelper {
   }
 
   /**
+   * Check if pod is in failed state with "Evicted" as the reason.
+   * @param pod pod
+   * @return true, if pod is in failed state with "Evicted" as the reason.
+   */
+  public static boolean isEvicted(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(PodHelper::isEvicted)
+        .orElse(false);
+  }
+
+  /**
+   * Chcek if the pod status shows that the pod is evicted.
+   * @param status Pod status to be checked
+   * @return True if the pod status shows that the pod is evicted, false otherwise
+   */
+  public static boolean isEvicted(@Nonnull V1PodStatus status) {
+    return V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())
+        && EVICTED_REASON.equals(status.getReason());
+  }
+
+  /**
+   * Return true if pod was evicted and operator is configured to restart evicted pods.
+   * @param pod pod
+   * @return true, if pod was evicted and operator is configured to restart evicted pods
+   *
+   */
+  public static boolean shouldRestartEvictedPod(V1Pod pod) {
+    return isEvicted(pod) && TuningParameters.getInstance().getPodTuning().restartEvictedPods;
+  }
+
+  /**
    * Returns the domain UID associated with the specified pod.
    * @param pod the pod
    */
@@ -245,6 +279,17 @@ public class PodHelper {
     return null;
   }
 
+  /**
+   * Get the message from the pod's status.
+   * @param pod pod
+   * @return Message string from the pod's status
+   */
+  public static String getPodStatusMessage(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .map(V1PodStatus::getMessage)
+        .orElse(null);
+  }
 
   /**
    * Factory for {@link Step} that creates admin server pod.
@@ -406,6 +451,11 @@ public class PodHelper {
       CoreDelegate delegate = packet.getSpi(CoreDelegate.class);
       return new Certificates(delegate).getOperatorInternalCertificateData();
     }
+
+    @Override
+    Step createCycleEndStep(Step next) {
+      return next;
+    }
   }
 
   static class AdminPodStep extends Step {
@@ -477,6 +527,36 @@ public class PodHelper {
       labelPodAsNeedingToRoll(pod);
       deferProcessing(createCyclePodStep(pod, next));
       return null;
+    }
+
+    @Override
+    Step createCycleEndStep(Step next) {
+      return new CycleEndStep(next);
+    }
+
+    private class CycleEndStep extends Step {
+
+      public CycleEndStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        removeFromServersMarkedForRollMap();
+        return doNext(packet);
+      }
+
+      private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
+        return DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getServersToRoll)
+            .orElse(Collections.emptyMap());
+      }
+
+      private void removeFromServersMarkedForRollMap() {
+        synchronized (packet) {
+          Optional.ofNullable(serversMarkedForRoll(packet)).ifPresent(m -> m.remove(getServerName()));
+        }
+      }
     }
 
     private void deferProcessing(Step deferredStep) {

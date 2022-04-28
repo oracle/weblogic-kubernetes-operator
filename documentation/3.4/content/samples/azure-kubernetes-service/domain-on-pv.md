@@ -52,13 +52,13 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator"
+$ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 
 The output will show something similar to the following:
 
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator"
+$ helm install weblogic-operator weblogic-operator/weblogic-operator
 NAME: weblogic-operator
 LAST DEPLOYED: Tue Jan 18 17:07:56 2022
 NAMESPACE: default
@@ -85,7 +85,7 @@ weblogic-operator-56654bcdb7-qww7f                1/1     Running     0         
   - [Create secrets](#create-secrets)
   - [Create WebLogic Domain](#create-weblogic-domain-1)
 
-Now that You have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
+Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
 
 ##### Create secrets
 

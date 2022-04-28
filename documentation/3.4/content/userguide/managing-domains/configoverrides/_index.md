@@ -95,7 +95,7 @@ Typical attributes for overrides include:
 * Debugging
 * Tuning (`MaxMessageSize`, and such)
 
-See [overrides distribution](#overrides-distribution) for a discussion of distributing new or changed configuration overrides to already running WebLogic Server instances.
+See [overrides distribution](#overrides-distribution) for a description of distributing new or changed configuration overrides to already running WebLogic Server instances.
 
 ---
 ### Unsupported overrides

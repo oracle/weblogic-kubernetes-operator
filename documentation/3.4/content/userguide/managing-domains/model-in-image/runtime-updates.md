@@ -59,9 +59,11 @@ the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are discussed in
 [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 Supported and unsupported changes are discussed in
-[Supported and unsupported updates](#supported-and-unsupported-updates).
+[Supported updates](#supported-updates)
+and
+[Unsupported updates](#unsupported-updates).
 
-_It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct approach for an update._
+_It is the administrator's responsibility to make the necessary changes to a domain resource to initiate the correct approach for an update._
 
 {{% notice warning %}}
 Custom configuration overrides, which are WebLogic configuration overrides
@@ -141,22 +143,22 @@ It is important to avoid applying unsupported model updates to a running domain.
 
 The following summarizes the types of runtime update configuration that are _not_ supported in this release of Model in Image unless a workaround or alternative is documented:
 
-  - Decreasing dynamic cluster size (see detailed discussion below for an alternative)
+  - Decreasing dynamic cluster size (see the following detailed description for an alternative)
   - Adding WebLogic Servers to a configured cluster or removing them
   - Default and custom network channel configuration for an existing WebLogic cluster or server. Specifically:
     - Adding or removing Network Access Points (custom channels) for existing servers
     - Changing a Default, SSL, Admin, or custom channel, `Enabled`, listen address, protocol, or port
   - Node Manager related configuration
-  - Log related settings (see the detailed discussion below for when this applies)
+  - Log related settings (see the following detailed description for when this applies)
   - Changing the domain name
-  - Deleting an MBean attribute (see the detailed discussion below for workaround)
-  - Changing any existing MBean name (see the detailed discussion below for workaround)
-  - Embedded LDAP entries (see detailed discussion below for alternatives)
+  - Deleting an MBean attribute (see the following detailed description for a workaround)
+  - Changing any existing MBean name (see the following detailed description for a workaround)
+  - Embedded LDAP entries (see the following detailed description for alternatives)
   - Any Model YAML `topology:` stanza changes
   - Dependency deletion in combination with online updates
   - Various security related changes in combination with online updates
 
-Here is a detailed discussion of each unsupported runtime update
+Here is a detailed description of each unsupported runtime update
 and a description of workarounds and alternatives when applicable:
 
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file.
@@ -237,7 +239,9 @@ and a description of workarounds and alternatives when applicable:
 
 If you have verified your proposed model updates to a running
 Model in Image domain are supported by consulting
-[Supported and unsupported updates](#supported-and-unsupported-updates),
+[Supported updates](#supported-updates)
+and
+[Unsupported updates](#unsupported-updates),
 then you can use the following approaches.
 
 For online or offline updates:
@@ -278,11 +282,11 @@ plus, an offline update, if there are any accompanying model changes.
 
 Model updates can include additions, changes, and deletions. For help generating model changes:
 
- - For a discussion of model file syntax, see the
+ - For a description of model file syntax, see the
    [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation
    and Model in Image [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
- - For a discussion about helper tooling that you can use to generate model change YAML,
+ - For a description of helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
  - If you specify multiple model files in your image, volumes (including those based on images from the [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}) feature), or WDT ConfigMap,
@@ -480,7 +484,7 @@ Deletion can be problematic for online updates in two cases:
  - Deleting the parent type section in an MBean hierarchy.
 
 In general, complex deletion should be handled by offline updates
-in order to avoid these problems.
+to avoid these problems.
 
 **Note**: Implicitly removing a model's parent type
 section may sometimes work depending
@@ -689,8 +693,8 @@ _Here is how to interpret each domain resource's `domain.status.conditions` type
       * There were model changes and these changes modify non-dynamic WebLogic configuration.
       * Processing successfully completed, including the introspector job.
       * The administrator has not subsequently rolled/restarted each WebLogic Server pod
-        (in order to propagate the pending non-dynamic changes).
-        * See the following discussion of WebLogic pod labels to see which pods are awaiting restart.
+        (to propagate the pending non-dynamic changes).
+        * See the following description of WebLogic pod labels to see which pods are awaiting restart.
     * For example:
       ```
       Status:
@@ -878,7 +882,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   #      /tmp/compare_model_stdout
   ```
 
-> **Note**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
+**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
 
 #### Changing a Domain `restartVersion` or `introspectVersion`
 

@@ -9,7 +9,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
 ### Contents
 
  - [Introduction](#introduction)
- - [WebLogic Deploy Tool models](#weblogic-deploy-tool-models)
+ - [WebLogic Deploy Tooling models](#weblogic-deploy-tooling-models)
  - [Runtime behavior](#runtime-behavior)
  - [Runtime updates](#runtime-updates)
  - [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
@@ -23,7 +23,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
 
 It enables:
 
- - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
+ - Defining a WebLogic domain home configuration using WebLogic Deploy Tooling (WDT) model files and application archives.
  - Embedding these files in a single image that also contains a WebLogic installation,
    and using the WebLogic Image Tool (WIT) to generate this image. Or, alternatively,
    embedding the files in one or more application specific images.
@@ -37,7 +37,7 @@ This feature is supported for standard WLS domains, Restricted JRF domains, and 
 
 For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
-### WebLogic Deploy Tool models
+### WebLogic Deploy Tooling models
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
 configuration scripts and templates.
@@ -82,7 +82,7 @@ To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{
 ### References
 
  - [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}})
- - [WebLogic Deploy Tool (WDT)](https://oracle.github.io/weblogic-deploy-tooling/)
+ - [WebLogic Deploy Tooling (WDT)](https://oracle.github.io/weblogic-deploy-tooling/)
  - [WebLogic Image Tool (WIT)](https://oracle.github.io/weblogic-image-tool/)
  - Domain [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md), [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}})
  - HTTP load balancers: Ingress [documentation]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}), [sample]({{< relref "/samples/ingress/_index.md" >}})

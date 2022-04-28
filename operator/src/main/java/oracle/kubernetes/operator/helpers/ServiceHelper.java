@@ -42,6 +42,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
@@ -625,6 +626,16 @@ public class ServiceHelper {
         }
         ConflictStep rhs = ((ConflictStep) other);
         return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+      }
+
+      @Override
+      public int hashCode() {
+        HashCodeBuilder builder =
+            new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(conflictStep);
+
+        return builder.toHashCode();
       }
 
       private Step getConflictStep() {

@@ -2,7 +2,7 @@
 title: "External network access security"
 date: 2019-03-08T19:07:36-05:00
 weight: 2
-description: "Remote access security"
+description: "Remote access security."
 ---
 
 #### WebLogic T3 and administrative channels

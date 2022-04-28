@@ -69,9 +69,9 @@ When you deploy a Model in Image domain resource YAML file:
 Model updates can be applied at runtime by changing an image, secrets, a domain resource, or a WDT model ConfigMap after initial deployment.
 
 Some updates may be applied to a running domain without requiring any WebLogic pod restarts (an online update),
-but others may require rolling the pods in order to propagate the update's changes (an offline update),
+but others may require rolling the pods to propagate the update's changes (an offline update),
 and still others may require shutting down the entire domain before applying the update (a full domain restart update).
-_It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct type of update._
+_It is the administrator's responsibility to make the necessary changes to a domain resource to initiate the correct type of update._
 
 See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 

@@ -20,4 +20,4 @@ may be used to create a running server that further exposes the WebLogic domain
 outside of the Kubernetes cluster.
 
 For information about setting up Kubernetes to access a private registry, see
-[Set up Kubernetes to access domain images]({{< relref "/userguide/base-images/ocr-images#set-up-kubernetes-to-access-domain-images" >}}).
+[Set up Kubernetes to access domain images]({{< relref "/userguide/base-images/access-images.md" >}}).

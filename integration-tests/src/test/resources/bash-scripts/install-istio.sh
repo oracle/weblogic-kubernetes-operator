@@ -30,8 +30,9 @@ kubectl delete namespace istio-system --ignore-not-found
 # istio installation will create the namespace 'istio-system' 
 # kubectl create namespace istio-system
 
-( cd $workdir;  
-  curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${version} TARGET_ARCH=x86_64 sh -
+( cd $workdir;
+  curl -Lo "istio.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/istio%2Fistio-${version}-linux-amd64.tar.gz";
+  tar zxf istio.tar.gz
 )
 
 ( cd ${istiodir}

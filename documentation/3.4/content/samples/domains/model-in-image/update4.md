@@ -121,7 +121,7 @@ Here are the steps:
 
    Now that the updated Work Manager configuration is deployed in an updated model ConfigMap and the updated
    data source configuration is reflected in the updated data source Secret, we need to have the operator
-   rerun its introspector job in order to regenerate its configuration.
+   rerun its introspector job to regenerate its configuration.
 
    Change the `spec.introspectVersion` of the domain to trigger domain introspection.
    To do this:

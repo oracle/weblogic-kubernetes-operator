@@ -10,8 +10,8 @@ You can:
 * Deploy an operator that manages all WebLogic domains in all namespaces in a Kubernetes cluster, or that only manages domains in a specific subset of the namespaces, or that manages only domains that are located in the same namespace as the operator. At most, a namespace can be managed by one operator.
 * Supply WebLogic domain configuration using:
   * _Domain in PV_: Locates WebLogic domain homes in a Kubernetes PersistentVolume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
-  * _Domain in Image_: Includes a WebLogic domain home in a container image.
-  * _Model in Image_: Includes [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models and archives in a container image.
+  * _Domain in Image_: Includes a WebLogic domain home in an image.
+  * _Model in Image_: Includes [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models and archives in an image.
 * Configure deployment of WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 * Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
 * Start and stop servers and clusters in the domain based on declarative startup parameters and desired states.
@@ -41,7 +41,7 @@ See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes t
 
 #### Operator earlier versions
 
-Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), and [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/).
+Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/), and [3.4.x](https://oracle.github.io/weblogic-kubernetes-operator/3.4/).
 
 #### Backward compatibility guidelines
 

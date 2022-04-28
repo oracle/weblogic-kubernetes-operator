@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
@@ -130,9 +131,9 @@ public class MonitoringExporterConfiguration {
       writeOptionalStringField(out, "prefix", src.prefix);
       writeOptionalValueArray(out, src.values);
 
-      for (String key : src.keySet()) {
-        out.name(key);
-        writeQuery(out, src.get(key));
+      for (Map.Entry<String, ExporterQuery> entry : src.entrySet()) {
+        out.name(entry.getKey());
+        writeQuery(out, entry.getValue());
       }
 
       out.endObject();

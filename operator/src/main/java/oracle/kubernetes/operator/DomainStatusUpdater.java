@@ -54,6 +54,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -68,14 +69,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRO
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
-import static oracle.kubernetes.operator.DomainFailureReason.ABORTED;
-import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
-import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
-import static oracle.kubernetes.operator.DomainFailureReason.REPLICAS_TOO_HIGH;
-import static oracle.kubernetes.operator.DomainFailureReason.SERVER_POD;
-import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
@@ -98,6 +91,14 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by
@@ -266,9 +267,10 @@ public class DomainStatusUpdater {
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
    * @param message a fuller description of the problem
+   * @param next the next step to run. May be null.
    */
-  public static Step createTopologyMismatchFailureSteps(String message) {
-    return new FailureStep(TOPOLOGY_MISMATCH, message).removingOldFailures(TOPOLOGY_MISMATCH);
+  public static Step createTopologyMismatchFailureSteps(String message, Step next) {
+    return new FailureStep(TOPOLOGY_MISMATCH, message, next).removingOldFailures(TOPOLOGY_MISMATCH);
   }
 
   /**
@@ -1241,6 +1243,12 @@ public class DomainStatusUpdater {
     public FailureStep forIntrospection(@Nullable V1Job introspectorJob) {
       jobUid = Optional.ofNullable(introspectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse("");
       return this;
+    }
+
+    private FailureStep(DomainFailureReason reason, String message, Step next) {
+      super(next);
+      this.reason = reason;
+      this.message = message;
     }
 
     private FailureStep(DomainFailureReason reason, String message) {

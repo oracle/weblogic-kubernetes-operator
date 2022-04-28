@@ -29,7 +29,7 @@ three different ways to generate a custom WebLogic Server installation image
 from a base OS image (optionally, with WebLogic patches). In addition, the WIT `createAuxImage` command
 supports creating auxiliary images which
 do _not_ contain a WebLogic Server installation,
-and instead, solely contain the [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) binary, model, or archive files;
+and instead, solely contain the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) installation and model files;
 this option is designed for the Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
 Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/userguide/base-images/ocr-images#inspect-images" >}}).
@@ -66,7 +66,8 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
       - As a layer on an existing
         WebLogic image in the repository
         that doesn't already have a domain home, such as an updated CPU image from OCR.
-      - Or, as a new WebLogic image from a base OS image.
+      - Or, as a new WebLogic image from a base OS image. **NOTE**:  Oracle strongly recommends rebasing your
+        images with the latest security patches by applying the [`--recommendedPatches`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/) option.
       - For more information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/patch-images#domain-in-image" >}}).
 
   - WIT [`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command:
@@ -128,7 +129,7 @@ to [create a custom image with your model inside the image](#create-a-custom-ima
 #### Create a custom base image
 
 {{% notice tip %}}
-This section describes using the WebLogic Image Tool (WIT) `create` command
+This section describes using the WebLogic Image Tool (WIT) [`create`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) command
 to build a custom base WebLogic Server image.
 This is sometimes necessary to build an image with a specific patch, and such,
 but most use cases can instead, obtain pre-built
@@ -137,7 +138,8 @@ See
 [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 {{% /notice %}}
 
-Here's an example of using the WIT `create` command to create a base WebLogic Server image
+Here's an example of using the WIT [create](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
+command to create a base WebLogic Server image
 from a base Oracle Linux image, a WebLogic installer download, and a JRE installer download:
 
 1. First, [install](https://oracle.github.io/weblogic-image-tool/userguide/setup/) the WebLogic Image Tool. This
@@ -266,11 +268,10 @@ see [Container image protection]({{<relref "/security/domain-security/image-prot
 {{% notice warning %}}
 The sample scripts in this section reference base image
 `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
-This is an Oracle Container Registry (OCR) GA image
-which includes the latest security patches for Oracle Linux and Java,
-_and does not include the latest security patches for WebLogic Server_.
-GA images are intended for single desktop demonstration and development purposes.
-For all other uses, Oracle strongly recommends using images with the latest security patches,
+This is an OCR General Availability (GA) image
+which **does not include** the latest security patches for WebLogic Server.
+GA images are intended for single desktop demonstration and development purposes _only_.
+For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
 such as OCR Critical Patch Updates (CPU) images or custom generated images.
 See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
@@ -291,7 +292,7 @@ are provided that demonstrate how to create the image using either
 WLST to define the domain
 or [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models to define the domain.
 In these samples, you will see a reference to a "base" or `--fromImage` image.
-You should use an image with the recommended patches installed as this base image,
+You should use an image with the recommended security patches installed as this base image,
 where this image could be an OCR image or a custom image.
 See
 [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
@@ -309,7 +310,7 @@ to create the domain home in Domain in Image.
 - Domain in Image using WDT:
 
   Here we explore a step-by-step approach for Domain in Image
-  using WebLogic Deploy Tool models to create the domain home.
+  using WebLogic Deploy Tooling models to create the domain home.
   These steps stage files to `/tmp/dii-wdt-stage`,
   assume the operator source is in `/tmp/weblogic-kubernetes-operator`,
   assume you have installed WIT in `/tmp/imagetool`,
@@ -511,9 +512,9 @@ to create the domain home in Domain in Image.
 #### Create a custom image with your model inside the image
 
 In the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}})
-documentation, you will see a reference to a "base" or `--fromImage` image.
-This image can be an OCR image or a custom image.
-See
-[Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+documentation, you will see a reference to a "base" or `--fromImage` image. You should use an image with
+the recommended security patches installed as this base image, where this image could be an OCR image or a custom image.
+
+See [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
 or
 [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).

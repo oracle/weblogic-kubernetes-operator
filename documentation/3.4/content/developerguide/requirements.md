@@ -2,6 +2,7 @@
 title: "Requirements"
 date: 2019-02-23T17:19:19-05:00
 draft: false
+description: "Review the software requirements to obtain and build the operator."
 weight: 1
 ---
 

@@ -29,7 +29,18 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+- You can start with a WebLogic Server 12.2.1.4 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for JRF domains.
+  {{% notice note %}}
+  The images in `container-registry.oracle.com/middleware/weblogic` and `container-registry.oracle.com/middleware/fmw-infrastructure` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` and `container-registry.oracle.com/middleware/fmw-infrastructure_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
+  {{% /notice %}}
+
+  {{% notice warning %}}
+  The example base images are GA images and are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+  {{% /notice %}}
+
+
+
+  For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 - Or, you can manually build your own base image, as described in [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
@@ -174,9 +185,7 @@ The following Domain fields are specific to Model in Image domains.
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
  - For fully specified Model in Image Domain YAML file examples,
-   see the operator source directory
-   `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`
-   for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+   see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 #### Always use external state

@@ -8,12 +8,13 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.common.utils.CommonTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -29,18 +30,16 @@ class DomainUpgraderTest {
   public static final String DOMAIN_V8_AUX_IMAGE30_YAML = "aux-image-30-sample.yaml";
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
-  private CommonTestUtils.ConsoleHandlerMemento consoleControl;
   private PrintStream console;
   private ByteArrayOutputStream bytes;
 
   @BeforeEach
-  public void setUp() {
-    consoleControl = CommonTestUtils.silenceLogger().collectLogMessages(logRecords, DOMAIN_UPGRADE_SUCCESS);
-    mementos.add(consoleControl);
+  public void setUp() throws NoSuchFieldException {
+    mementos.add(CommonTestUtils.silenceLogger().collectLogMessages(logRecords, DOMAIN_UPGRADE_SUCCESS));
+    mementos.add(StaticStubSupport.install(DomainUpgrader.class, "exitCall", new ExitIntConsumer()));
     bytes   = new ByteArrayOutputStream();
     console = System.out;
     System.setOut(new PrintStream(bytes));
-    System.setSecurityManager(new NoExitSecurityManager());
   }
 
   @AfterEach
@@ -85,20 +84,9 @@ class DomainUpgraderTest {
     }
   }
 
-  private static class NoExitSecurityManager extends SecurityManager {
+  protected static class ExitIntConsumer implements IntConsumer {
     @Override
-    public void checkPermission(Permission perm) {
-      // allow anything.
-    }
-
-    @Override
-    public void checkPermission(Permission perm, Object context) {
-      // allow anything.
-    }
-
-    @Override
-    public void checkExit(int status) {
-      super.checkExit(status);
+    public void accept(int status) {
       throw new ExitException(status);
     }
   }

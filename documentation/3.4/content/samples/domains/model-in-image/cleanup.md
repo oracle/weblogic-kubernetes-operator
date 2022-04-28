@@ -18,7 +18,7 @@ To remove the resources you have created in these samples:
 
    It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
 
-   > **Note**: When you delete a domain, the operator will detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
+   **NOTE**: When you delete a domain, the operator will detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
 2. If you set up the Traefik ingress controller:
 

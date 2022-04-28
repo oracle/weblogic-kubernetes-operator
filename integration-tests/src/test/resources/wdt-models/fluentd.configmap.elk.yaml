@@ -1,20 +1,10 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    weblogic.domainUID: fluentd-domain
-    weblogic.resourceVersion: domain-v1
-  name: fluentd-config
-  namespace: fluentd-namespace
-data:
-  fluentd.conf: |
-    <match fluent.**>
-      @type null
-    </match>
-    <source>
+<match fluent.**>
+     @type null
+</match>
+<source>
       @type tail
       @log_level debug
       path "#{ENV['LOG_PATH']}"
@@ -39,8 +29,25 @@ data:
         format12 / <(?<messageID>(.*?))>/
         format13 / <(?<message>(.*?))>/
       </parse>
-    </source>
-    <match **>
+</source>
+<source>
+  @type tail
+  path "#{ENV['INTROSPECTOR_OUT_PATH']}"
+  pos_file /tmp/introspector.log.pos
+  read_from_head true
+  tag "#{ENV['DOMAIN_UID']}-introspector"
+  # multiline_flush_interval 20s
+  <parse>
+    @type multiline
+    format_firstline /@\[/
+    format1 /^@\[(?<timestamp>.*)\]\[(?<filesource>.*?)\]\[(?<level>.*?)\](?<message>.*)/
+    # use the timestamp field in the message as the timestamp
+    # instead of the time the message was actually read
+    time_key timestamp
+    keep_time_key true
+  </parse>
+</source>
+<match "#{ENV['DOMAIN_UID']}">
       @type elasticsearch
       @log_level debug
       host "#{ENV['ELASTICSEARCH_HOST']}"
@@ -51,4 +58,16 @@ data:
       logstash_prefix fluentd
       #include_tag_key true
       #tag_key @log_name
-    </match>
+</match>
+<match "#{ENV['DOMAIN_UID']}-introspector">
+@type elasticsearch
+@log_level debug
+host "#{ENV['ELASTICSEARCH_HOST']}"
+port "#{ENV['ELASTICSEARCH_PORT']}"
+index_name "#{ENV['DOMAIN_UID']}"
+type_name introspectord
+logstash_format true
+logstash_prefix introspectord
+  #include_tag_key true
+  #tag_key @log_name
+</match>

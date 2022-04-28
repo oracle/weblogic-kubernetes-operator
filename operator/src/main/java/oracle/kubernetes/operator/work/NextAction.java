@@ -87,7 +87,7 @@ public final class NextAction implements BreadCrumbFactory {
    * @param unit Delay time unit
    */
   public void delay(Step next, Packet p, long delay, TimeUnit unit) {
-    suspend(next, (fiber) -> fiber.scheduleOnce(delay, unit, () -> fiber.resume(p)));
+    suspend(next, fiber -> fiber.scheduleOnce(delay, unit, () -> fiber.resume(p)));
   }
 
   /**

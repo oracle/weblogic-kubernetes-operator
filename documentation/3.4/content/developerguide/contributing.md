@@ -2,6 +2,7 @@
 title: "Contribute to the operator"
 date: 2019-02-23T17:19:19-05:00
 draft: false
+description: "Learn how to contribute to the operator project."
 weight: 1
 ---
 

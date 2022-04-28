@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,32 +15,39 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ResourceVersionTest {
 
   @Test
   void whenWellFormed_createIt() {
-    new ResourceVersion("v1");
-    new ResourceVersion("v3");
-    new ResourceVersion("v27");
+    assertDoesNotThrow(() -> {
+      new ResourceVersion("v1");
+      new ResourceVersion("v3");
+      new ResourceVersion("v27");
 
-    new ResourceVersion("v3alpha1");
-    new ResourceVersion("v3alpha12");
-    new ResourceVersion("v100alpha42");
-    new ResourceVersion("v100alpha");
+      new ResourceVersion("v3alpha1");
+      new ResourceVersion("v3alpha12");
+      new ResourceVersion("v100alpha42");
+      new ResourceVersion("v100alpha");
 
-    new ResourceVersion("v3beta1");
-    new ResourceVersion("v3beta12");
-    new ResourceVersion("v100beta42");
-    new ResourceVersion("v100beta");
+      new ResourceVersion("v3beta1");
+      new ResourceVersion("v3beta12");
+      new ResourceVersion("v100beta42");
+      new ResourceVersion("v100beta");
+    });
   }
 
   @Test
   void whenNotWellFormedButLegal_createIt() {
-    new ResourceVersion("token20");
-    new ResourceVersion("r100");
-    new ResourceVersion("prefix3");
+    assertDoesNotThrow(() -> {
+      new ResourceVersion("token20");
+      new ResourceVersion("r100");
+      new ResourceVersion("prefix3");
+    });
   }
 
   @Test
@@ -73,22 +80,22 @@ class ResourceVersionTest {
   void whenParsed_verifyWellFormed() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
-    assert (rv.isWellFormed());
+    assertTrue(rv.isWellFormed());
 
     rv = new ResourceVersion("v27");
-    assert (rv.isWellFormed());
+    assertTrue(rv.isWellFormed());
 
     rv = new ResourceVersion("v100alpha42");
-    assert (rv.isWellFormed());
+    assertTrue(rv.isWellFormed());
 
     rv = new ResourceVersion("token20");
-    assert (!rv.isWellFormed());
+    assertFalse(rv.isWellFormed());
 
     rv = new ResourceVersion("r100");
-    assert (!rv.isWellFormed());
+    assertFalse(rv.isWellFormed());
 
     rv = new ResourceVersion("prefix3");
-    assert (!rv.isWellFormed());
+    assertFalse(rv.isWellFormed());
   }
 
   @Test
