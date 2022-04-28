@@ -169,7 +169,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
       [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
       in the Runtime Updates section of the Model in Image user guide.
     * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for online update calls to the
-       WebLogic domain from the WebLogic Deploy Tool within the introspector job. All timeouts
+       WebLogic domain from WebLogic Deploy Tooling within the introspector job. All timeouts
        are specified in milliseconds and default to two or three minutes. For a full list of
        timeouts, call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
 
@@ -228,7 +228,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLST_EXTRA_PROPERTIES`: System properties appended to WLST_PROPERTIES for  WLST commands in introspector jobs or WebLogic Server instance containers.
-* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during Model in Image introspector jobs or WebLogic Server instance containers.
+* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 

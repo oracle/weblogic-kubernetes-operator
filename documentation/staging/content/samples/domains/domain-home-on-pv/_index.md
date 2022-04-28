@@ -62,7 +62,7 @@ $ ./create-domain.sh \
 The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, then its contents must be removed before using this script.
-* Create a Kubernetes Job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
+* Create a Kubernetes Job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tooling (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
 ```shell
