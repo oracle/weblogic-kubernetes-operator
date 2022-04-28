@@ -679,9 +679,9 @@ externalDebugHttpPort:  30777
 
 ### WebLogic Domain conversion webhook Helm configuration values
 
-The WebLogic Domain conversion webhook is automatically installed by default when an Operator is installed, and uninstalled when any Operator is uninstalled. You can optionally install and uninstall it independently by using the Operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}})
+The WebLogic Domain conversion webhook is automatically installed by default when an Operator is installed, and uninstalled when any Operator is uninstalled. You can optionally install and uninstall it independently by using the Operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}), and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
 
-**Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration) and [Debugging options](#debugging-options) configuration values that are used by the Operator installation. If you want to use a different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using `webhookOnly` configuration value below and provide the new value during webhook installation.
+**Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the Operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using `webhookOnly` configuration value below and provide the new value during webhook installation.
 
 ##### `webhookOnly`
 Specifies whether only the conversion webhook should be installed during the `helm install` and if the Operator installation should be skipped. By default, the `helm install` command installs both the Operator and the conversion webhook. 
@@ -691,6 +691,6 @@ Defaults to `false`.
 
 ##### `preserveWebhook`
 Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using `helm uninstall`. By default, the `helm uninstall` removes both the webhook and the operator installation.
-If set to `true`, the `helm uninstall` command will skip removing the webhook installation.
+If set to `true`, the `helm uninstall` command will skip removing the webhook installation. Ignored when `webhookOnly` is set to `true`.
 
 Defaults to `false`.

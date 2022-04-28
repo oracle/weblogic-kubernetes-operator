@@ -15,6 +15,10 @@ pre = "<b> </b>"
 The Domain CustomResourceDefinition in Operator version 4.0 has changed significantly from previous Operator releases. For this reason, we have updated the API version of the Domain custom resource in CRD to `weblogic.oracle/v9` from `weblogic.oracle/v8`. We continue to support the Domains with API version `weblogic.oracle/v8` and provide full backward compatibility. If you want to use new fields introduced in the latest `weblogic.oracle/v9` schema, then you will need to update the API version in your Domain resource YAML. 
 
 ### Automated upgrade of `weblogic.oracle/v8` schema domain resource
+{{% notice note %}}
+The automated upgrade described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init-containers and volumes. 
+As time permits, Oracle recommends using a simplified `weblogic.oracle/v9` schema configuration for the auxiliary images as documented in the [Auxiliary Images Configuration]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images#configuration" >}}) section instead of relying on the generated low-level schema.
+{{% /notice %}}
 The 4.0 Operator provides a seamless upgrade of the Domain resources with `weblogic.oracle/v8` version of the schema. When you create a Domain using a domain resource YAML with `weblogic.oracle/v8` schema in a namespace managed by the WKO 4.0, the [WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}) performs an automated upgrade of the domain resource to the `weblogic.oracle/v9` schema. The conversion webhook runtime converts the `weblogic.oracle/v8` configuration to the equivalent configuration in WKO 4.0. Similarly, when [upgrading the Operator version]({{< relref "/userguide/managing-operators/installation#upgrade-the-operator" >}}), Domains resources with `weblogic.oracle/v8` schema are seamlessly upgraded.
 
 ### Upgrade the `weblogic.oracle/v8` schema domain resource manually
