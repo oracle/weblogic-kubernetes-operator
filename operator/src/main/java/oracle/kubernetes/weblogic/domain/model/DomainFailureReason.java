@@ -170,6 +170,10 @@ public enum DomainFailureReason {
     return DomainFailureSeverity.SEVERE;
   }
 
+  /**
+   * Returns true if, for this failure reason, the message indicates a fatal error.
+   * @param message a description of what went wrong.
+   */
   boolean hasFatalError(String message) {
     return false;
   }
