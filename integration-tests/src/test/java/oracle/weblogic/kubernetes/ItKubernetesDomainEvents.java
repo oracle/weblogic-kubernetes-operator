@@ -368,7 +368,7 @@ class ItKubernetesDomainEvents {
       checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
       checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
       logger.info("verify domain failed event");
-      checkFailedEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
+      checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
       shutdownDomain(domainUid, domainNamespace5);
     }
@@ -383,8 +383,8 @@ class ItKubernetesDomainEvents {
    */
   @Test
   void testK8SEventsMultiClusterEvents() {
-    createNewCluster(domainNamespace3);
     OffsetDateTime timestamp = now();
+    createNewCluster(domainNamespace3);
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
         externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the DomainProcessing Starting/Completed event is generated");
