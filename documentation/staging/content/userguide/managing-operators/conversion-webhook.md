@@ -50,7 +50,7 @@ $ helm install sample-weblogic-conversion-webhook \
 ```
 The above command creates a Helm release named `sample-weblogic-conversion-webhook` 
 in the `sample-weblogic-conversion-webhook-ns` namespace, 
-configures a deployment and supporting resources for the conversion webhook 
+configures a deployment and supporting resources for the conversion webhook, 
 and deploys the conversion webhook. This command uses the `default` service account for the `sample-weblogic-conversion-webhook-ns` namespace.
 
 To check if the conversion webhook is deployed and running,
