@@ -14,7 +14,6 @@ description: "How to install, upgrade, and uninstall the operator."
 - [Update a running operator](#update-a-running-operator)
 - [Upgrade the operator](#upgrade-the-operator)
 - [Uninstall the operator](#uninstall-the-operator)
-- [Uninstall the WebLogic domain resource conversion webhook](#uninstall-the-weblogic-domain-resource-conversion-webhook)
 - [Installation sample](#installation-sample)
 
 ### Introduction
