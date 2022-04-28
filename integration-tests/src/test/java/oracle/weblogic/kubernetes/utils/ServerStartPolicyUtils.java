@@ -460,13 +460,15 @@ public class ServerStartPolicyUtils {
   private static Callable<Boolean> checkClusterStatus(String domainUid, String domainNamespace,
                                                String samplePathDir, String clusterName,
                                                String regex) {
-    // use clusterStatus.sh to verify scaling results
-    String result = assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
-                STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
-        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
-    logger.info("Status of cluster {0} retured {1}, expected {2}", clusterName, result, regex);
-    return () -> verifyExecuteResult(result, regex);
+    return () -> {
+      // use clusterStatus.sh to verify scaling results
+      String result = assertDoesNotThrow(() ->
+              executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                  STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+          String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
+      logger.info("Status of cluster {0} retured {1}, expected {2}", clusterName, result, regex);
+      return verifyExecuteResult(result, regex);
+    };
   }
 
 }
