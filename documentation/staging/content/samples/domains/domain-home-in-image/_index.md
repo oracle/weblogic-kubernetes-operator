@@ -205,8 +205,8 @@ The following parameters can be provided in the inputs file.
 | `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only, in a single server (all-in-one) Kubernetes Deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. |  If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster. |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes Secret for the Administration Server user name and password. | `domain1-weblogic-credentials` |
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
-| `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
-| `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
+| `toolsDir` | The directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
+| `wdtVersion` | Version of WebLogic Deploy Tooling to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
 | `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the inputs YAML file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
@@ -499,7 +499,7 @@ $ docker rmi domain-home-in-image:12.2.1.4
 
 #### Delete the tools directory.
 
-When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
+When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
 By default, they are installed under `/tmp/dhii-sample/tools` directory.
 
 ```shell

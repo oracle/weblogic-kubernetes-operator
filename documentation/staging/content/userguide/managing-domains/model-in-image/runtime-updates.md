@@ -389,7 +389,7 @@ Use the following steps to initiate an online configuration update to your model
 After you've completed these steps, the operator will subsequently run an introspector Job which
 generates a new merged model,
 compares the new merged model to the previously deployed merged model,
-and runs the WebLogic Deploy Tool to process the differences:
+and runs WebLogic Deploy Tooling to process the differences:
 
  - If the introspector job WDT determines that the differences are confined to
    fully dynamic WebLogic configuration MBean changes,
