@@ -176,7 +176,7 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
-| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT install. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
+| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
 
 **Notes**:
 
