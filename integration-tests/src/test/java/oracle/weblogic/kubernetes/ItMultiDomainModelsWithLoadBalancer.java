@@ -1139,10 +1139,13 @@ class ItMultiDomainModelsWithLoadBalancer {
     int numClusters = domain.getSpec().getClusters().size();
     for (int i = 1; i <= numClusters; i++) {
       clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
-      createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
     }
 
-    if (!OKD) {
+    if (OKD) {
+      for (int i = 1; i <= numClusters; i++) {
+        createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
+      }
+    } else {
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap,
           true, nginxHelmParams.getIngressClassName(), true, ADMIN_SERVER_PORT);
