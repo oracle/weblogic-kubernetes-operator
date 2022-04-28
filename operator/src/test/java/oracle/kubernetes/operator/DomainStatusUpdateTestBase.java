@@ -944,7 +944,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {   // todo here
+  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH));
     domain.setReplicaCount("cluster1", 4);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
@@ -955,7 +955,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {  // todo here
+  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
     domain.setReplicaCount("cluster1", 4);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
@@ -965,7 +965,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() { //todo here
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
@@ -977,7 +977,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {  // todo here
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 

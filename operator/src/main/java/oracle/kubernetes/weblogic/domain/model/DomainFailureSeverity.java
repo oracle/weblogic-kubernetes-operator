@@ -3,8 +3,17 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public enum DomainFailureSeverity {
-  FATAL("Fatal"), SEVERE("Severe"), WARNING("Warning");
+  @SerializedName("Fatal")
+  FATAL("Fatal"),
+
+  @SerializedName("Severe")
+  SEVERE("Severe"),
+
+  @SerializedName("Warning")
+  WARNING("Warning");
 
   private final String value;
 
@@ -15,9 +24,5 @@ public enum DomainFailureSeverity {
   @Override
   public String toString() {
     return String.valueOf(this.value);
-  }
-
-  public static DomainFailureSeverity getDefault() {
-    return SEVERE;
   }
 }
