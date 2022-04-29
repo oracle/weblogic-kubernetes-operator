@@ -218,19 +218,22 @@ public class SecretUtils {
   /**
    * Create multiple secrets if base images repository and domain images repository are different.
    *
-   * @param namespaces list of namespaces in which to create image repository secrets
+   * @param namespace namespace in which to create image repository secrets
    * @return string array of secret names created
    */
-  public static String[] createSecretsForImageRepos(String... namespaces) {
+  public static String[] createSecretsForImageRepos(String namespace) {
     List<String> secrets = new ArrayList<>();
-    for (String namespace : namespaces) {
-      //create base images repo secret and repo registry secret
+    //create repo registry secret
+    if (!secretExists(OCIR_SECRET_NAME, namespace)) {
       createOcirRepoSecret(namespace);
-      secrets.add(OCIR_SECRET_NAME);
-      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+    }
+    secrets.add(OCIR_SECRET_NAME);
+    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+      //create base images repo secret
+      if (!secretExists(OCR_SECRET_NAME, namespace)) {
         createOcrRepoSecret(namespace);
-        secrets.add(OCR_SECRET_NAME);
       }
+      secrets.add(OCR_SECRET_NAME);
     }
     return secrets.toArray(new String[secrets.size()]);
   }
