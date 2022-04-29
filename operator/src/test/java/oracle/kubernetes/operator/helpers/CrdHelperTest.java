@@ -43,6 +43,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.ConversionWebhookMainTest.getCertificates;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
+import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -52,7 +53,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class CrdHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
@@ -61,6 +61,7 @@ class CrdHelperTest {
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
   public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
+  private static final String HASH = "b2bbe25894b465f3da8d9b7272e7049f67e2c2b0d983859af3556acdfd591313";
 
   private V1CustomResourceDefinition defaultCrd;
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -78,18 +79,25 @@ class CrdHelperTest {
   }
 
   private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
+    return defineCrd(operatorVersion, null);
+
+  }
+
+  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion, String hash) {
     return new V1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1")
         .kind("CustomResourceDefinition")
-        .metadata(createMetadata(operatorVersion))
+        .metadata(createMetadata(operatorVersion, hash))
         .spec(createSpec());
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion) {
-    return new V1ObjectMeta()
+  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String hash) {
+    V1ObjectMeta meta = new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
         .putLabelsItem(LabelConstants.OPERATOR_VERSION, operatorVersion.toString());
+    Optional.ofNullable(hash).ifPresent(h -> meta.putAnnotationsItem(SHA256_ANNOTATION, h));
+    return meta;
   }
 
   private V1CustomResourceDefinitionSpec createSpec() {
@@ -201,20 +209,18 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt() {
-    assertDoesNotThrow(() -> {
-      V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
-      existing.getSpec().addVersionsItem(
-              new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
-          .conversion(new V1CustomResourceConversion().strategy("Webhook"));
-      testSupport.defineResources(existing);
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+    existing.getSpec().addVersionsItem(
+            new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("Webhook"));
+    testSupport.defineResources(existing);
 
-      testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
-    });
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
   }
 
   @Test
   void whenExistingCrdHasNoneConversionStrategy_replaceIt() {
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION);
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION, HASH);
     existing
             .getSpec()
             .addVersionsItem(
@@ -227,6 +233,43 @@ class CrdHelperTest {
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasCompatibleConversionWebhook_dontReplaceIt() {
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION, HASH);
+    existing.getSpec().addVersionsItem(
+        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        .conversion(CrdHelper.CrdContext.createConversionWebhook("asdf"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+  }
+
+  @Test
+  void whenExistingCrdHasIncompatibleConversionWebhook_replaceIt() {
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION, HASH);
+    existing.getSpec().addVersionsItem(
+        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenExistingCrdHasFutureVersionAndIncompatibleConversionWebhook_dontReplaceIt() {
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, HASH);
+    existing.getSpec().addVersionsItem(
+        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
   }
 
   @Test

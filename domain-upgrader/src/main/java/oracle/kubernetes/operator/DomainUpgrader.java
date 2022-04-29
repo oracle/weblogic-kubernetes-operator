@@ -9,7 +9,6 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.IntConsumer;
 
 import oracle.kubernetes.common.logging.CommonLoggingFacade;
 import oracle.kubernetes.common.logging.CommonLoggingFactory;
@@ -31,8 +30,6 @@ public class DomainUpgrader {
   private static final CommonLoggingFacade LOGGER =
           CommonLoggingFactory.getLogger("DomainUpgrader", "Operator");
   private static SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
-
-  private static IntConsumer exitCall = System::exit;
 
   String inputFileName;
   String outputDir;
@@ -88,13 +85,17 @@ public class DomainUpgrader {
           String outputFileName,
           boolean overwriteExistingFile,
           String inputFileName) {
-    this.outputDir = Optional.ofNullable(outputDir).orElse(new File(inputFileName).getParent());
+    this.outputDir = Optional.ofNullable(outputDir).orElse(getDefaultOutputDir(inputFileName));
     String inputFileNameBase = FilenameUtils.getBaseName(inputFileName);
     String inputFileNameExtension  = FilenameUtils.getExtension(inputFileName);
     this.outputFileName = Optional.ofNullable(outputFileName)
             .orElse(inputFileNameBase + "__converted." + inputFileNameExtension);
     this.inputFileName = inputFileName;
     this.overwriteExistingFile = overwriteExistingFile;
+  }
+
+  private String getDefaultOutputDir(String inputFileName) {
+    return Optional.ofNullable(new File(inputFileName).getParent()).orElse(".");
   }
 
   private static DomainUpgrader parseCommandLine(String[] args) {
@@ -136,7 +137,7 @@ public class DomainUpgrader {
                     + "<input-file> [-d <output_dir>] [-f <output_file_name>] [-o --overwriteExistingFile] "
                     + "[-h --help]",
             "", options, "");
-    exitCall.accept(1);
+    System.exit(1);
   }
 
   static class DomainUpgraderException extends RuntimeException {

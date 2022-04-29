@@ -211,8 +211,13 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
-      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
-              .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
+      return createConversionWebhook(Optional.ofNullable(certificates)
+          .map(Certificates::getWebhookCertificateData).orElse(null));
+    }
+
+    public static V1CustomResourceConversion createConversionWebhook(String certificateData) {
+      return Optional.ofNullable(certificateData)
+          .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
@@ -367,6 +372,28 @@ public class CrdHelper {
             && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
       }
 
+      private boolean existingCrdHasCompatibleWebhook(V1CustomResourceDefinition existingCrd) {
+        byte[] caBundle = Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
+            .map(Base64::decodeBase64).orElse(null);
+        return currentCRDVersionHigherThanProductVersion(existingCrd)
+            || Optional.ofNullable(getWebhookClientConfig(existingCrd))
+            .map(whClientConfig -> whClientConfig.equals(createConversionWebhook(caBundle))).orElse(true);
+      }
+
+      private V1CustomResourceConversion getWebhookClientConfig(V1CustomResourceDefinition existingCrd) {
+        return Optional.ofNullable(existingCrd.getSpec()).map(crd -> crd.getConversion()).orElse(null);
+      }
+
+      private boolean currentCRDVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
+        if (productVersion != null) {
+          SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
+          if (currentCrdVersion == null || currentCrdVersion.compareTo(productVersion) > 0) {
+            return true;
+          }
+        }
+        return false;
+      }
+
       private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
         return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, CrdContext.this.model);
       }
@@ -396,7 +423,8 @@ public class CrdHelper {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
           return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-        } else if (!existingCrdContainsConversionWebhook(existingCrd)) {
+        } else if (!existingCrdContainsConversionWebhook(existingCrd)
+            || !existingCrdHasCompatibleWebhook(existingCrd)) {
           return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);

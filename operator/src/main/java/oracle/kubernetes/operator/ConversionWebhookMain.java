@@ -12,6 +12,8 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.BaseRestServer;
 import oracle.kubernetes.operator.rest.RestConfig;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
@@ -34,6 +36,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
 
 /** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain extends BaseMain {
+  static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final ConversionWebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
