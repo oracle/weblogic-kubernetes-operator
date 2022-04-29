@@ -16,6 +16,7 @@ import java.util.Map;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -288,6 +289,8 @@ class ItMiiAuxiliaryImage {
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
+
+    logger.info(Yaml.dump(domainCR));
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
