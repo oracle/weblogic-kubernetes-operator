@@ -37,6 +37,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -45,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -87,6 +87,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
@@ -168,6 +169,10 @@ class ItMiiAuxiliaryImage {
     assertNotNull(namespaces.get(3), "Namespace list is null");
     wdtDomainNamespace = namespaces.get(3);
 
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
   }
@@ -191,7 +196,7 @@ class ItMiiAuxiliaryImage {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createSecretForBaseImages(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -286,7 +291,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
 
@@ -612,7 +617,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage1);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
 
@@ -695,7 +700,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
 
@@ -785,7 +790,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage3);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage3);
 
@@ -894,7 +899,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage4);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage4);
 
@@ -1060,7 +1065,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5);
     Domain domainCR = createDomainResource(domainUid, wdtDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage4, miiAuxiliaryImage5);
 
@@ -1256,9 +1261,6 @@ class ItMiiAuxiliaryImage {
   }
 
   private void createSecretsForDomain(String adminSecretName, String encryptionSecretName, String domainNamespace) {
-    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
-      createOcirRepoSecret(domainNamespace);
-    }
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
