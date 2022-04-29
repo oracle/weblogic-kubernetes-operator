@@ -49,7 +49,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
     - [`internalDebugHttpPort`](#internaldebughttpport)
     - [`externalDebugHttpPort`](#externaldebughttpport)
-  - [WebLogic Domain conversion Webhook Helm configuration values](#weblogic-domain-conversion-webhook-helm-configuration-values)
+  - [WebLogic Domain conversion webhook Helm configuration values](#weblogic-domain-conversion-webhook-helm-configuration-values)
     - [`webhookOnly`](#webhookonly)
     - [`preserveWebhook`](#preservewebhook)
 
@@ -679,7 +679,7 @@ externalDebugHttpPort:  30777
 
 ### WebLogic Domain conversion webhook Helm configuration values
 
-The WebLogic Domain conversion webhook is automatically installed by default when an operator is installed, and uninstalled when any operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
+The WebLogic Domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
 
 **Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
 

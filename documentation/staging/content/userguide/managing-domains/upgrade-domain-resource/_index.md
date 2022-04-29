@@ -55,11 +55,11 @@ Usage: java -jar domain-upgrader.jar  <input-file> [-d <output_dir>] [-f <output
 | --- | --- | --- |
 | `input-file` | (Required) Name of the operator 3.x/V8 domain resource YAML file to be converted. | |
 | `-d`, `--outputDir` | The directory where the tool will place the converted file. | The directory of the input file. |
-| `-f`, `--outputFile` | Name of the converted file. | Base name of the input file name followed by "__converted." followed by the input file extension. |
+| `-f`, `--outputFile` | Name of the converted file. | Base name of the input file name followed by `"__converted."` followed by the input file extension. |
 | `-h`, `--help` | Prints help message. | |
 | `-o`, `--overwriteExistingFile` | Enable overwriting the existing output file, if any. | |
 
-If the output file name is not specified using the `-f` parameter, then the tool generates the file name by appending `__converted.` and the input file extension to the
+If the output file name is not specified using the `-f` parameter, then the tool generates the file name by appending `"__converted."` and the input file extension to the
 base name of the input file name. For example, assuming the name of the V8 domain resource YAML file to be upgraded is `domain-v8.yaml` in the current directory:
 
 ```

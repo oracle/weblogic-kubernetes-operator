@@ -272,8 +272,8 @@ in the domain CRD so you will be unable to create domains using `weblogic.oracle
 If you want to prevent the uninstall of an operator  
 from having these side effects, then use one of the following two options:
 - [Install the conversion webhook]({{< relref "userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}})
- in a separate namespace using `webhookOnly=true` helm configuration value.
-- Use the `preserveWebhook=true` helm configuration value during operator installation with the `helm install` command.
+ in a separate namespace using `webhookOnly=true` Helm configuration value.
+- Use the `preserveWebhook=true` Helm configuration value during operator installation with the `helm install` command.
 
 For more information, see
 [uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}})
