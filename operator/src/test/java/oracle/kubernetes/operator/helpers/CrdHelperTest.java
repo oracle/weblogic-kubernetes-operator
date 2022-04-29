@@ -61,7 +61,7 @@ class CrdHelperTest {
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
   public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
-  private static final String HASH = "b2bbe25894b465f3da8d9b7272e7049f67e2c2b0d983859af3556acdfd591313";
+  private static final String HASH = "58a295e514ceb84ae0bb6e1609d0bd16cd68fe06de13966c964a4cb36a0cd9fd";
 
   private V1CustomResourceDefinition defaultCrd;
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
