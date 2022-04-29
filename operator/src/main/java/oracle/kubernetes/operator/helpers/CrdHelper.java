@@ -385,14 +385,14 @@ public class CrdHelper {
 
       private boolean webhookIsCompatible(V1CustomResourceDefinition existingCrd) {
         return crdVersionHigherThanProductVersion(existingCrd)
-            || createConversionWebhook(getCaBundle()).equals(getWebhookClientConfig(existingCrd));
+            || createConversionWebhook(getCaBundle()).equals(getConversionWebhook(existingCrd));
       }
 
       private byte[] getCaBundle() {
         return Optional.ofNullable(getCertificateData(certificates)).map(Base64::decodeBase64).orElse(null);
       }
 
-      private V1CustomResourceConversion getWebhookClientConfig(V1CustomResourceDefinition existingCrd) {
+      private V1CustomResourceConversion getConversionWebhook(V1CustomResourceDefinition existingCrd) {
         return Optional.ofNullable(existingCrd.getSpec())
             .map(V1CustomResourceDefinitionSpec::getConversion).orElse(null);
       }
