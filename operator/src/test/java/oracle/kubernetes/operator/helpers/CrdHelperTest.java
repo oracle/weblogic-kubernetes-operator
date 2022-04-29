@@ -32,15 +32,18 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_NO_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.ConversionWebhookMainTest.getCertificates;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
@@ -72,8 +75,10 @@ class CrdHelperTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
+  private final Function<URI, Path> pathFunctionWithException = fileSystem::getPathThrowsIllegaArgumentException;
   private final Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
   private final TerminalStep terminalStep = new TerminalStep();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   private V1CustomResourceDefinition defineDefaultCrd() {
     return CrdHelper.CrdContext.createModel(PRODUCT_VERSION, getCertificates());
@@ -96,7 +101,8 @@ class CrdHelperTest {
   private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String hash) {
     V1ObjectMeta meta = new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
-        .putLabelsItem(LabelConstants.OPERATOR_VERSION, operatorVersion.toString());
+        .putLabelsItem(LabelConstants.OPERATOR_VERSION,
+            Optional.ofNullable(operatorVersion).map(o -> o.toString()).orElse(null));
     Optional.ofNullable(hash).ifPresent(h -> meta.putAnnotationsItem(SHA256_ANNOTATION, h));
     return meta;
   }
@@ -105,6 +111,8 @@ class CrdHelperTest {
     return new V1CustomResourceDefinitionSpec()
         .group(KubernetesConstants.DOMAIN_GROUP)
         .scope("Namespaced")
+        .addVersionsItem(new V1CustomResourceDefinitionVersion()
+            .served(true).name(KubernetesConstants.OLD_DOMAIN_VERSION))
         .names(
             new V1CustomResourceDefinitionNames()
                 .plural(KubernetesConstants.DOMAIN_PLURAL)
@@ -116,7 +124,7 @@ class CrdHelperTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
-        TestUtils.silenceOperatorLogger()
+        consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, CREATING_CRD, REPLACE_CRD_FAILED, CREATE_CRD_FAILED)
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
@@ -162,6 +170,17 @@ class CrdHelperTest {
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
+  void whenNotAuthorizedToReadCrd_retryOnFailureAndLogWarningMessageInOnFailureNoRetry() {
+    consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_UNAUTHORIZED);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
   }
 
   @Test
@@ -265,6 +284,19 @@ class CrdHelperTest {
   }
 
   @Test
+  void whenCrdStepCalledWithNullProductVersionAndIncompatibleConversionWebhook_replaceIt() {
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION, HASH);
+    existing.getSpec().addVersionsItem(
+        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null, getCertificates()));
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @Test
   void whenExistingCrdHasFutureVersionAndIncompatibleConversionWebhook_dontReplaceIt() {
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, HASH);
@@ -362,5 +394,35 @@ class CrdHelperTest {
     CrdHelper.writeCrdFiles("/crd.yaml");
 
     assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
+
+  @Test
+  void whenCrdCreatedWithMainMethod_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("/crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
+
+  @Test
+  void whenCrdCreatedWithRelativeFileName_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
+
+  @Test
+  void whenCrdMainCalledWithNoArguments_illegalArgumentExceptionThrown() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      CrdHelper.main();
+    });
+  }
+
+  @Test
+  void testCrdCreationExceptionWhenWritingCrd() throws NoSuchFieldException {
+    StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunctionWithException);
+
+    Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> {
+      CrdHelper.main("crd.yaml");
+    });
   }
 }

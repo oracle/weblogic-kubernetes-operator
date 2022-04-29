@@ -80,7 +80,7 @@ public class CrdHelper {
    * Used by build to generate crd-validation.yaml
    * @param args Arguments that must be one value giving file name to create
    */
-  public static void main(String[] args) throws URISyntaxException {
+  public static void main(String... args) throws URISyntaxException {
     if (args == null || args.length != 1) {
       throw new IllegalArgumentException();
     }
@@ -400,7 +400,7 @@ public class CrdHelper {
       private boolean crdVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
         if (productVersion != null) {
           SemanticVersion existingCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
-          if (existingCrdVersion == null || existingCrdVersion.compareTo(productVersion) > 0) {
+          if (existingCrdVersion != null && existingCrdVersion.compareTo(productVersion) > 0) {
             return true;
           }
         }
