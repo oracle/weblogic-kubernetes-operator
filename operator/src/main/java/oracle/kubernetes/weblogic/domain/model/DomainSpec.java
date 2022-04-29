@@ -240,22 +240,13 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Deprecated
-  @Description(
-      "Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified."
-          + " True indicates that the domain home file system is present in the container image"
-          + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume. Defaults to unset.")
-  private Boolean domainHomeInImage;
-
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is present in the container image"
           + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume. FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are"
-          + " unspecified, then `domainHomeSourceType` defaults to Image.")
+          + " Defaults to Image.")
   private DomainSourceType domainHomeSourceType;
 
   /**
@@ -696,31 +687,6 @@ public class DomainSpec extends BaseConfiguration {
     this.httpAccessLogInLogHome = httpAccessLogInLogHome;
   }
 
-  /**
-   * Returns true if this domain's home is defined in the default docker image for the domain.
-   * Defaults to true.
-   *
-   * @return true or false
-   * @since 2.0
-   */
-  boolean isDomainHomeInImage() {
-    return Optional.ofNullable(domainHomeInImage).orElse(true);
-  }
-
-  /**
-   * Specifies whether the domain home is stored in the image.
-   *
-   * @param domainHomeInImage true if the domain home is in the image
-   */
-  public void setDomainHomeInImage(boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-  }
-
-  public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
-    setDomainHomeInImage(domainHomeInImage);
-    return this;
-  }
-
   @Nonnull DomainSourceType getDomainHomeSourceType() {
     return Optional.ofNullable(domainHomeSourceType).orElse(inferDomainSourceType());
   }
@@ -728,15 +694,18 @@ public class DomainSpec extends BaseConfiguration {
   private DomainSourceType inferDomainSourceType() {
     if (getModel() != null) {
       return DomainSourceType.FROM_MODEL;
-    } else if (isDomainHomeInImage()) {
-      return DomainSourceType.IMAGE;
     } else {
-      return DomainSourceType.PERSISTENT_VOLUME;
+      return DomainSourceType.IMAGE;
     }
   }
 
   public void setDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
+    setDomainHomeSourceType(domainHomeSourceType);
+    return this;
   }
 
   public String getIntrospectVersion() {
@@ -1027,7 +996,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("configuration", configuration)
             .append("domainHome", domainHome)
-            .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
             .append("domainUID", domainUid)
             .append("image", image)
@@ -1061,7 +1029,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrideSecrets)
             .append(configuration)
             .append(domainHome)
-            .append(domainHomeInImage)
             .append(domainHomeSourceType)
             .append(domainUid)
             .append(image)
@@ -1098,7 +1065,6 @@ public class DomainSpec extends BaseConfiguration {
             .appendSuper(super.equals(other))
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
-            .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)

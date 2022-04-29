@@ -18,6 +18,9 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class SchemaConversionUtilsTest {
@@ -57,6 +60,70 @@ class SchemaConversionUtilsTest {
             readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML), API_VERSION_V9);
     Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_SERVER_SCOPED_LEGACY_AUX_IMAGE_YAML);
     assertThat(convertedDomain, equalTo(expectedDomain));
+  }
+
+  @Test
+  void testV8DomainWithDomainHomeInImageTrue_convertedToDomainHomeSourceType() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setDomainHomeInImage(v8Domain, true);
+    setDomainHomeSourceType(v8Domain, null);
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+            v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasEntry("domainHomeSourceType", "Image"));
+    assertThat(spec, not(hasKey("domainHomeInImage")));
+  }
+
+  @Test
+  void testV8DomainWithDomainHomeInImageFalse_convertedToDomainHomeSourceType() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setDomainHomeInImage(v8Domain, false);
+    setDomainHomeSourceType(v8Domain, null);
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+            v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasEntry("domainHomeSourceType", "PersistentVolume"));
+    assertThat(spec, not(hasKey("domainHomeInImage")));
+  }
+
+  @Test
+  void testV8DomainWithDomainHomeInImage_dontReplaceExistingDomainHomeSourceType() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setDomainHomeInImage(v8Domain, true);
+    setDomainHomeSourceType(v8Domain, "FromModel");
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+            v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasEntry("domainHomeSourceType", "FromModel"));
+    assertThat(spec, not(hasKey("domainHomeInImage")));
+  }
+
+  private void setDomainHomeInImage(Map<String, Object> v8Domain, boolean domainHomeInImage) {
+    ((Map<String, Object>) v8Domain.get("spec")).put("domainHomeInImage", String.valueOf(domainHomeInImage));
+  }
+
+  private void setDomainHomeSourceType(Map<String, Object> v8Domain, String domainHomeSourceType) {
+    Map<String, Object> spec = (Map<String, Object>) v8Domain.get("spec");
+    if (domainHomeSourceType == null) {
+      spec.remove("domainHomeSourceType");
+    } else {
+      spec.put("domainHomeSourceType", domainHomeSourceType);
+    }
   }
 
   @SuppressWarnings("unchecked")

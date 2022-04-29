@@ -39,10 +39,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
-import oracle.kubernetes.operator.JobAwaiterStepFactory;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -248,7 +245,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)
             .withImage(LATEST_IMAGE)
-            .withDomainHomeInImage(false);
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     List<String> overrideSecrets = new ArrayList<>();

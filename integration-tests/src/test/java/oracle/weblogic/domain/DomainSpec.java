@@ -91,22 +91,13 @@ public class DomainSpec {
       allowableValues = "range[0,infinity]")
   private Integer replicas;
 
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the image"
-          + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume.")
-  private Boolean domainHomeInImage;
-
   @ApiModelProperty(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is contained in the image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
-          + " unspecified then domainHomeSourceType defaults to Image.")
+          + " Defaults to Image.")
   private String domainHomeSourceType;
 
   @ApiModelProperty(
@@ -478,23 +469,6 @@ public class DomainSpec {
     this.replicas = replicas;
   }
 
-  public DomainSpec domainHomeInImage(Boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-    return this;
-  }
-
-  public Boolean domainHomeInImage() {
-    return domainHomeInImage;
-  }
-
-  public Boolean getDomainHomeInImage() {
-    return domainHomeInImage;
-  }
-
-  public void setDomainHomeInImage(Boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-  }
-
   public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
     return this;
@@ -803,7 +777,6 @@ public class DomainSpec {
             .append("imagePullSecrets", imagePullSecrets)
             .append("auxiliaryImageVolumes", auxiliaryImageVolumes)
             .append("replicas", replicas)
-            .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
             .append("introspectVersion", introspectVersion)
             .append("configuration", configuration)
@@ -841,7 +814,6 @@ public class DomainSpec {
             .append(imagePullSecrets)
             .append(auxiliaryImageVolumes)
             .append(replicas)
-            .append(domainHomeInImage)
             .append(domainHomeSourceType)
             .append(introspectVersion)
             .append(configuration)
@@ -887,7 +859,6 @@ public class DomainSpec {
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(auxiliaryImageVolumes, rhs.auxiliaryImageVolumes)
             .append(replicas, rhs.replicas)
-            .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
