@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -24,10 +25,16 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -206,5 +213,25 @@ public class SecretUtils {
           }
           return false;
         });
+  }
+
+  /**
+   * Create multiple secrets if base images repository and domain images repository are different.
+   *
+   * @param namespaces list of namespaces in which to create image repository secrets
+   * @return string array of secret names created
+   */
+  public static String[] createSecretsForImageRepos(String... namespaces) {
+    List<String> secrets = new ArrayList<>();
+    for (String namespace : namespaces) {
+      //create base images repo secret and repo registry secret
+      createOcirRepoSecret(namespace);
+      secrets.add(OCIR_SECRET_NAME);
+      if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+        createOcrRepoSecret(namespace);
+        secrets.add(OCR_SECRET_NAME);
+      }
+    }
+    return secrets.toArray(new String[secrets.size()]);
   }
 }
