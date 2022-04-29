@@ -211,13 +211,11 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
-      return createConversionWebhook(Optional.ofNullable(certificates)
-          .map(Certificates::getWebhookCertificateData).orElse(null));
+      return createConversionWebhook(getCertificateData(certificates));
     }
 
     public static V1CustomResourceConversion createConversionWebhook(String certificateData) {
-      return Optional.ofNullable(certificateData)
-          .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
+      return Optional.ofNullable(getCABundle(certificateData)).map(CrdContext::createConversionWebhook).orElse(null);
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
@@ -228,6 +226,14 @@ public class CrdHelper {
                               .namespace(getWebhookNamespace()).port(CONVERSION_WEBHOOK_HTTPS_PORT)
                               .path(WEBHOOK_PATH))
                       .caBundle(caBundle)));
+    }
+
+    private static String getCertificateData(Certificates certificates) {
+      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData).orElse(null);
+    }
+
+    private static byte[] getCABundle(String certificateData) {
+      return Optional.ofNullable(certificateData).map(Base64::decodeBase64).orElse(null);
     }
 
     static String getVersionFromCrdSchemaFileName(String name) {
@@ -367,27 +373,34 @@ public class CrdHelper {
         super(next);
       }
 
-      private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
-        return existingCrd.getSpec().getConversion() != null
-            && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
+      private boolean existingCrdContainsCompatibleConversionWebhook(V1CustomResourceDefinition existingCrd) {
+        return hasConversionWebhookStrategy(existingCrd)
+            && webhookIsCompatible(existingCrd);
       }
 
-      private boolean existingCrdHasCompatibleWebhook(V1CustomResourceDefinition existingCrd) {
-        byte[] caBundle = Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
-            .map(Base64::decodeBase64).orElse(null);
-        return currentCRDVersionHigherThanProductVersion(existingCrd)
-            || Optional.ofNullable(getWebhookClientConfig(existingCrd))
-            .map(whClientConfig -> whClientConfig.equals(createConversionWebhook(caBundle))).orElse(true);
+      private Boolean hasConversionWebhookStrategy(V1CustomResourceDefinition existingCrd) {
+        return Optional.ofNullable(existingCrd.getSpec().getConversion())
+            .map(c -> c.getStrategy().equalsIgnoreCase(WEBHOOK)).orElse(false);
+      }
+
+      private boolean webhookIsCompatible(V1CustomResourceDefinition existingCrd) {
+        return crdVersionHigherThanProductVersion(existingCrd)
+            || createConversionWebhook(getCaBundle()).equals(getWebhookClientConfig(existingCrd));
+      }
+
+      private byte[] getCaBundle() {
+        return Optional.ofNullable(getCertificateData(certificates)).map(Base64::decodeBase64).orElse(null);
       }
 
       private V1CustomResourceConversion getWebhookClientConfig(V1CustomResourceDefinition existingCrd) {
-        return Optional.ofNullable(existingCrd.getSpec()).map(crd -> crd.getConversion()).orElse(null);
+        return Optional.ofNullable(existingCrd.getSpec())
+            .map(V1CustomResourceDefinitionSpec::getConversion).orElse(null);
       }
 
-      private boolean currentCRDVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
+      private boolean crdVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
         if (productVersion != null) {
-          SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
-          if (currentCrdVersion == null || currentCrdVersion.compareTo(productVersion) > 0) {
+          SemanticVersion existingCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
+          if (existingCrdVersion == null || existingCrdVersion.compareTo(productVersion) > 0) {
             return true;
           }
         }
@@ -423,8 +436,7 @@ public class CrdHelper {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
           return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-        } else if (!existingCrdContainsConversionWebhook(existingCrd)
-            || !existingCrdHasCompatibleWebhook(existingCrd)) {
+        } else if (!existingCrdContainsCompatibleConversionWebhook(existingCrd)) {
           return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);
