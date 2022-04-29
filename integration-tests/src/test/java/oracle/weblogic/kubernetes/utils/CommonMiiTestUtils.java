@@ -223,11 +223,16 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String imageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName) {
 
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : repoSecretName) {
+      secrets.add(secret);
+    }
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -268,6 +273,7 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    domain.spec().setImagePullSecrets(secrets);
 
     setPodAntiAffinity(domain);
     return domain;
@@ -296,7 +302,7 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String baseImageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName,
