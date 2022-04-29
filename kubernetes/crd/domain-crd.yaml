@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 58a295e514ceb84ae0bb6e1609d0bd16cd68fe06de13966c964a4cb36a0cd9fd
+    weblogic.sha256: 5dd76971bd5368a5ca540666f416b8207817a42fe2f4181297eb9acfb495a6af
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -531,9 +531,7 @@ spec:
                   field. PersistentVolume indicates that the domain home file system
                   is located on a persistent volume. FromModel indicates that the
                   domain home file system will be created and managed by the operator
-                  based on a WDT domain model. If this field is specified, it overrides
-                  the value of `domainHomeInImage`. If both fields are unspecified,
-                  then `domainHomeSourceType` defaults to Image.'
+                  based on a WDT domain model. Defaults to Image.'
                 enum:
                 - Image
                 - PersistentVolume
@@ -6639,13 +6637,6 @@ spec:
                   field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
                 type: number
-              domainHomeInImage:
-                description: Deprecated. Use `domainHomeSourceType` instead. Ignored
-                  if `domainHomeSourceType` is specified. True indicates that the
-                  domain home file system is present in the container image specified
-                  by the image field. False indicates that the domain home file system
-                  is located on a persistent volume. Defaults to unset.
-                type: boolean
               serverStartPolicy:
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
