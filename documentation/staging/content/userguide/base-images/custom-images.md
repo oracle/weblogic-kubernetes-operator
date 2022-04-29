@@ -310,7 +310,7 @@ to create the domain home in Domain in Image.
 - Domain in Image using WDT:
 
   Here we explore a step-by-step approach for Domain in Image
-  using WebLogic Deploy Tool models to create the domain home.
+  using WebLogic Deploy Tooling models to create the domain home.
   These steps stage files to `/tmp/dii-wdt-stage`,
   assume the operator source is in `/tmp/weblogic-kubernetes-operator`,
   assume you have installed WIT in `/tmp/imagetool`,

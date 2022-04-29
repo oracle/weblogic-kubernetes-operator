@@ -30,6 +30,9 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 Model in Image requires an image with a WebLogic Server installation.
 
 - You can start with a WebLogic Server 12.2.1.4 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for JRF domains.
+  {{% notice note %}}
+  The images in `container-registry.oracle.com/middleware/weblogic` and `container-registry.oracle.com/middleware/fmw-infrastructure` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` and `container-registry.oracle.com/middleware/fmw-infrastructure_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
+  {{% /notice %}}
 
   {{% notice warning %}}
   The example base images are GA images and are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
@@ -88,8 +91,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
   - __Use auxiliary images__:
     Use [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
     to create one or more small images that contain the desired files. This automatically copies files
-    from each of the small images into each pod's file system's
-    `configuration.model.modelHome` or `configuration.model.wdtInstallHome` location.
+    from each of the small images into the `/aux/models` and `/aux/weblogic-deploy` directories
+    in each pod's file system so that the introspection job can find them.
 
   - __Use a Persistent Volume Claim (PVC)__:
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
@@ -172,8 +175,8 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models`.|
-| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT install. Defaults to `/u01/wdt/weblogic-deploy`.|
+| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
+| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/userguide/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
 
 **Notes**:
 
@@ -182,9 +185,7 @@ The following Domain fields are specific to Model in Image domains.
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
  - For fully specified Model in Image Domain YAML file examples,
-   see the operator source directory
-   `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`
-   for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
+   see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 #### Always use external state

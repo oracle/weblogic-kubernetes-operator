@@ -27,9 +27,9 @@ import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
-import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
-import static oracle.kubernetes.operator.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 
 public class DomainValidationSteps {
 
