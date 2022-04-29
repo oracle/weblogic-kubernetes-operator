@@ -65,6 +65,8 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static String ISTIO_METRICS_SERVICE_NAME = "tcp-metrics";
+  private static String METRICS_SERVICE_NAME = "metrics";
 
   private ServiceHelper() {
   }
@@ -180,12 +182,15 @@ public class ServiceHelper {
   static List<String> getAppProtocolAndPortName(String portName) {
     List<String> results = new ArrayList<>();
     String[] tokens = portName.split("-");
-    if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-        || "tls".equals(tokens[0])) {
-      results.add(tokens[0]);
-      int index = portName.indexOf('-');
-      // normalize channel name since we use appProtocol
-      results.add(portName.substring(index + 1));
+    
+    if (!ISTIO_METRICS_SERVICE_NAME.equals(portName)) {
+      if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+          || "tls".equals(tokens[0])) {
+        results.add(tokens[0]);
+        int index = portName.indexOf('-');
+        // normalize channel name since we use appProtocol
+        results.add(portName.substring(index + 1));
+      }
     }
     return results;
   }
@@ -441,7 +446,7 @@ public class ServiceHelper {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
+      return getDomain().isIstioEnabled() ? ISTIO_METRICS_SERVICE_NAME : METRICS_SERVICE_NAME;
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
