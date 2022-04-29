@@ -188,8 +188,9 @@ class ItTwoDomainsManagedByTwoOperators {
     installAndVerifyOperator(opNamespaces.get(1), domainNamespaces.get(1));
 
     // initiate domainUid list for two domains
+    String domainPrefix = getUniqueName("tdlbs-domain");
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("tdlbs-domain" + i);
+      domainUids.add(domainPrefix + i);
     }
 
     domain1Uid = domainUids.get(0);
