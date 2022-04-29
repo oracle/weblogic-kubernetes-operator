@@ -50,6 +50,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -216,6 +217,8 @@ class CrdHelperTest {
     testSupport.defineResources(existing);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
   @Test
@@ -245,6 +248,7 @@ class CrdHelperTest {
     testSupport.defineResources(existing);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
   @Test
@@ -270,6 +274,8 @@ class CrdHelperTest {
     testSupport.defineResources(existing);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+
+    assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
   @Test

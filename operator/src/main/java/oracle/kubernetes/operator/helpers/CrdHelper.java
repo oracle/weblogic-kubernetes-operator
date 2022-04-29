@@ -117,9 +117,9 @@ public class CrdHelper {
       writer.write("\n");
       dumpYaml(writer, model);
     } catch (IOException io) {
-      throw new RuntimeException(io);
+      throw new CrdCreationException(io);
     } catch (IllegalArgumentException e) {
-      throw new RuntimeException("Bad argument: " + outputFileName, e);
+      throw new CrdCreationException("Bad argument: " + outputFileName, e);
     }
   }
 
@@ -336,8 +336,8 @@ public class CrdHelper {
 
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
-      for (V1CustomResourceDefinitionVersion version : versions) {
-        version.setStorage(false);
+      for (V1CustomResourceDefinitionVersion crdVersion : versions) {
+        crdVersion.setStorage(false);
       }
       versions.add(0,
           new V1CustomResourceDefinitionVersion()
@@ -565,6 +565,17 @@ public class CrdHelper {
         return true;
       }
       return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
+    }
+  }
+
+  static class CrdCreationException extends RuntimeException {
+
+    public CrdCreationException(String message, Exception e) {
+      super(message, e);
+    }
+
+    public CrdCreationException(Exception e) {
+      super(e);
     }
   }
 }
