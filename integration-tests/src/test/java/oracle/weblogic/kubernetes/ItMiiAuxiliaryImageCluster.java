@@ -30,6 +30,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -38,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageClusterScope;
@@ -45,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.patchDomainClu
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readFilesInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -357,8 +361,18 @@ class ItMiiAuxiliaryImageCluster {
   }
 
   private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
+    //replace the BUSYBOX_IMAGE and BUSYBOX_TAG in Dockerfile
+    Path dockerDestFile = Paths.get(WORK_DIR, "auximages", "Dockerfile");
+    assertDoesNotThrow(() -> {
+      Files.createDirectories(dockerDestFile.getParent());
+      Files.copy(Paths.get(dockerFileLocation),
+          dockerDestFile, StandardCopyOption.REPLACE_EXISTING);
+      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_IMAGE", BUSYBOX_IMAGE);
+      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_TAG", BUSYBOX_TAG);
+    });
+
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
-        stageDirPath, dockerFileLocation,
+        stageDirPath, dockerDestFile.toString(),
         "--build-arg AUXILIARY_IMAGE_PATH=" + auxiliaryImagePath, auxiliaryImage);
     assertTrue(new Command()
         .withParams(new CommandParams()
