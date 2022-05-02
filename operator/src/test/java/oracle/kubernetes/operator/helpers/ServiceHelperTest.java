@@ -390,7 +390,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  void onRunIstioPortNamePatternedService_verifyPortNameNormalized() {
+  void onIstioPortNamePatternedService_verifyPortNamesAreNormalizedWithAppProtocolSet() {
     consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
     configureDomain().withIstio();
     setUpIstioServicePortPatterns();
