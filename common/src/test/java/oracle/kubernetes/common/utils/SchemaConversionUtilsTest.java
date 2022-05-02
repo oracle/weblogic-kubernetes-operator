@@ -6,6 +6,8 @@ package oracle.kubernetes.common.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -126,7 +128,99 @@ class SchemaConversionUtilsTest {
     }
   }
 
+  @Test
+  void testV8DomainWithConfigOverrides_moveToOverridesConfigMap() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setConfigOverrides(v8Domain, "someMap");
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+        v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasKey("configuration"));
+    Map<String, Object> configuration = (Map<String, Object>) spec.get("configuration");
+    assertThat(configuration, hasEntry("overridesConfigMap", "someMap"));
+    assertThat(spec, not(hasKey("configOverrides")));
+  }
+
+  @Test
+  void testV8DomainWithConfigOverrides_dontReplaceExistingOverridesConfigMap() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setConfigOverrides(v8Domain, "someMap");
+    setOverridesConfigMap(v8Domain, "existingMap");
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+        v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasKey("configuration"));
+    Map<String, Object> configuration = (Map<String, Object>) spec.get("configuration");
+    assertThat(configuration, hasEntry("overridesConfigMap", "existingMap"));
+    assertThat(spec, not(hasKey("configOverrides")));
+  }
+
+  private void setConfigOverrides(Map<String, Object> v8Domain, String configMap) {
+    ((Map<String, Object>) v8Domain.get("spec")).put("configOverrides", configMap);
+  }
+
+  private void setOverridesConfigMap(Map<String, Object> v8Domain, String configMap) {
+    ((Map<String, Object>) ((Map<String, Object>) v8Domain.get("spec"))
+        .computeIfAbsent("configuration", k -> new LinkedHashMap<>())).put("overridesConfigMap", configMap);
+  }
+
+  @Test
+  void testV8DomainWithConfigOverrideSecrets_moveToConfigurationSecrets() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setConfigOverrideSecrets(v8Domain, Collections.singletonList("someSecret"));
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+        v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasKey("configuration"));
+    Map<String, Object> configuration = (Map<String, Object>) spec.get("configuration");
+    assertThat(configuration, hasEntry("secrets", Collections.singletonList("someSecret")));
+    assertThat(spec, not(hasKey("configOverrideSecrets")));
+  }
+
+  @Test
+  void testV8DomainWithConfigOverrideSecrets_dontReplaceExistingSecrets() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    setConfigOverrideSecrets(v8Domain, Collections.singletonList("someSecret"));
+    setConfigurationSecrets(v8Domain, Collections.singletonList("configSecret"));
+
+    Map<String, Object> convertedDomain = (Map<String, Object>) schemaConversionUtils.convertDomainSchema(
+        v8Domain, API_VERSION_V9);
+
+    assertThat(convertedDomain, hasKey("spec"));
+    Map<String, Object> spec = (Map<String, Object>) convertedDomain.get("spec");
+    assertThat(spec, hasKey("configuration"));
+    Map<String, Object> configuration = (Map<String, Object>) spec.get("configuration");
+    assertThat(configuration, hasEntry("secrets", Collections.singletonList("configSecret")));
+    assertThat(spec, not(hasKey("configOverrideSecrets")));
+  }
+
   @SuppressWarnings("unchecked")
+  private void setConfigOverrideSecrets(Map<String, Object> v8Domain, List<String> secrets) {
+    ((Map<String, Object>) v8Domain.get("spec")).put("configOverrideSecrets", secrets);
+  }
+
+  private void setConfigurationSecrets(Map<String, Object> v8Domain, List<String> secrets) {
+    ((Map<String, Object>) ((Map<String, Object>) v8Domain.get("spec"))
+        .computeIfAbsent("configuration", k -> new LinkedHashMap<>())).put("secrets", secrets);
+  }
+
   private Map<String, Object> readAsYaml(String fileName) throws IOException {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());

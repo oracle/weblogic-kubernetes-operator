@@ -775,8 +775,7 @@ public class Domain implements KubernetesObject {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
+    return spec.getConfigOverrideSecrets();
   }
 
   /**

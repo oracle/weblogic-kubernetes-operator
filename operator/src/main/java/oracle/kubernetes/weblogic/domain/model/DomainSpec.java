@@ -271,27 +271,6 @@ public class DomainSpec extends BaseConfiguration {
   private Configuration configuration;
 
   /**
-   * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
-   *
-   * @since 2.0
-   */
-  @Deprecated
-  @Description("Deprecated. Use `configuration.overridesConfigMap` instead."
-      + " Ignored if `configuration.overridesConfigMap` is specified."
-      + " The name of the ConfigMap for optional WebLogic configuration overrides.")
-  private String configOverrides;
-
-  /**
-   * A list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
-   *
-   * @since 2.0
-   */
-  @Deprecated
-  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
-      + " A list of names of the Secrets for optional WebLogic configuration overrides.")
-  private List<String> configOverrideSecrets;
-
-  /**
    * The WebLogic Monitoring Exporter configuration.
    *
    * @since 3.2
@@ -724,6 +703,11 @@ public class DomainSpec extends BaseConfiguration {
     this.configuration = configuration;
   }
 
+  public DomainSpec withConfiguration(Configuration configuration) {
+    setConfiguration(configuration);
+    return this;
+  }
+
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -773,21 +757,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   String getConfigOverrides() {
-    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(configOverrides);
-  }
-
-  public DomainSpec withConfigOverrides(@Nullable String overrides) {
-    this.configOverrides = overrides;
-    return this;
+    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(null);
   }
 
   @Nullable
   List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(configOverrideSecrets).orElse(Collections.emptyList());
-  }
-
-  public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
-    this.configOverrideSecrets = overridesSecretNames;
+    return Optional.ofNullable(configuration).map(Configuration::getSecrets).orElse(Collections.emptyList());
   }
 
   /**
@@ -992,8 +967,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("adminServer", adminServer)
             .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("clusters", clusters)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
             .append("configuration", configuration)
             .append("domainHome", domainHome)
             .append("domainHomeSourceType", domainHomeSourceType)
@@ -1025,8 +998,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer)
             .append(allowReplicasBelowMinDynClusterSize)
             .append(clusters)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
             .append(configuration)
             .append(domainHome)
             .append(domainHomeSourceType)
@@ -1081,8 +1052,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())

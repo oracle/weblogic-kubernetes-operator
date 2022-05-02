@@ -17,8 +17,6 @@ The specification of the operation of the WebLogic domain. Required.
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
 | `clusters` | Array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
-| `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
-| `configOverrideSecrets` | Array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional directory in a server's container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration. |
 | `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
@@ -100,8 +98,8 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to DYNAMIC. |
-| `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of `spec.configOverrides` is ignored. |
-| `secrets` | Array of string | A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored. |
+| `overridesConfigMap` | string | The name of the ConfigMap for WebLogic configuration overrides. |
+| `secrets` | Array of string | A list of names of the Secrets for WebLogic configuration overrides or model. |
 
 ### Fluentd Specification
 

@@ -261,7 +261,7 @@
           "$ref": "#/definitions/Model"
         },
         "secrets": {
-          "description": "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.",
+          "description": "A list of names of the Secrets for WebLogic configuration overrides or model.",
           "type": "array",
           "items": {
             "type": "string"
@@ -272,7 +272,7 @@
           "$ref": "#/definitions/Istio"
         },
         "overridesConfigMap": {
-          "description": "The name of the ConfigMap for WebLogic configuration overrides. If this field is specified, then the value of `spec.configOverrides` is ignored.",
+          "description": "The name of the ConfigMap for WebLogic configuration overrides.",
           "type": "string"
         },
         "introspectorJobActiveDeadlineSeconds": {
@@ -341,14 +341,6 @@
         "configuration": {
           "description": "Models and overrides affecting the WebLogic domain configuration.",
           "$ref": "#/definitions/Configuration"
-        },
-        "configOverrideSecrets": {
-          "deprecated": "true",
-          "description": "Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "imagePullSecrets": {
           "description": "A list of image pull Secrets for the WebLogic Server image.",
@@ -469,11 +461,6 @@
         },
         "dataHome": {
           "description": "An optional directory in a server\u0027s container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration.",
-          "type": "string"
-        },
-        "configOverrides": {
-          "deprecated": "true",
-          "description": "Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides.",
           "type": "string"
         },
         "logHomeEnabled": {

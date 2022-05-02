@@ -107,20 +107,6 @@ public class DomainSpec {
   @ApiModelProperty("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use configuration.overridesConfigMap instead."
-          + " Ignored if configuration.overridesConfigMap is specified."
-          + " The name of the config map for optional WebLogic configuration overrides.")
-  private String configOverrides;
-
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-          + " A list of names of the secrets for optional WebLogic configuration overrides.")
-  private List<String> configOverrideSecrets = new ArrayList<>();
-
-
   /**
    * The Fluentd configuration.
    *
@@ -520,53 +506,6 @@ public class DomainSpec {
     this.configuration = configuration;
   }
 
-  public DomainSpec configOverrides(String configOverrides) {
-    this.configOverrides = configOverrides;
-    return this;
-  }
-
-  public String configOverrides() {
-    return configOverrides;
-  }
-
-  public String getConfigOverrides() {
-    return configOverrides;
-  }
-
-  public void setConfigOverrides(String configOverrides) {
-    this.configOverrides = configOverrides;
-  }
-
-  public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
-    this.configOverrideSecrets = configOverrideSecrets;
-    return this;
-  }
-
-  public List<String> configOverrideSecrets() {
-    return configOverrideSecrets;
-  }
-
-  /**
-   * Adds config override secrets.
-   * @param configOverrideSecretsItem Config override secret
-   * @return this
-   */
-  public DomainSpec addConfigOverrideSecretsItem(String configOverrideSecretsItem) {
-    if (configOverrideSecrets == null) {
-      configOverrideSecrets = new ArrayList<>();
-    }
-    configOverrideSecrets.add(configOverrideSecretsItem);
-    return this;
-  }
-
-  public List<String> getConfigOverrideSecrets() {
-    return configOverrideSecrets;
-  }
-
-  public void setConfigOverrideSecrets(List<String> configOverrideSecrets) {
-    this.configOverrideSecrets = configOverrideSecrets;
-  }
-
   public DomainSpec adminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
     return this;
@@ -780,8 +719,6 @@ public class DomainSpec {
             .append("domainHomeSourceType", domainHomeSourceType)
             .append("introspectVersion", introspectVersion)
             .append("configuration", configuration)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
@@ -817,8 +754,6 @@ public class DomainSpec {
             .append(domainHomeSourceType)
             .append(introspectVersion)
             .append(configuration)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
@@ -862,8 +797,6 @@ public class DomainSpec {
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
-            .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)

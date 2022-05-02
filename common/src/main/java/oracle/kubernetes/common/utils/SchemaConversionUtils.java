@@ -50,6 +50,8 @@ public class SchemaConversionUtils {
     convertLegacyAuxiliaryImages(spec);
     removeProgressingConditionFromDomainStatus(domain);
     convertDomainHomeInImageToDomainHomeSourceType(domain);
+    moveConfigOverrides(domain);
+    moveConfigOverrideSecrets(domain);
     domain.put("apiVersion", desiredAPIVersion);
     LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -113,6 +115,30 @@ public class SchemaConversionUtils {
       if (existing != null && !domainSpec.containsKey("domainHomeSourceType")) {
         domainSpec.put("domainHomeSourceType",
                 Boolean.parseBoolean((String) existing) ? "Image" : "PersistentVolume");
+      }
+    }
+  }
+
+  private void moveConfigOverrides(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      Object existing = domainSpec.remove("configOverrides");
+      if (existing != null) {
+        Map<String, Object> configuration =
+            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        configuration.putIfAbsent("overridesConfigMap", existing);
+      }
+    }
+  }
+
+  private void moveConfigOverrideSecrets(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      Object existing = domainSpec.remove("configOverrideSecrets");
+      if (existing != null) {
+        Map<String, Object> configuration =
+            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        configuration.putIfAbsent("secrets", existing);
       }
     }
   }

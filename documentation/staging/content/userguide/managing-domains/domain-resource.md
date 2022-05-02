@@ -147,9 +147,9 @@ Elements related to specifying and overriding WebLogic domain configuration:
 
 * These elements are under `configuration`.
 
-  * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}). If this field is specified, then the value of `spec.configOverrides` is ignored.
+  * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
   * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC.
-  * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.
+  * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) or model.
   * `introspectorJobActiveDeadlineSeconds`: The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.
 
 * These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
