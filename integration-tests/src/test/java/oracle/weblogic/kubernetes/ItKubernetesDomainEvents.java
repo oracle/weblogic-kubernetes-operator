@@ -211,8 +211,8 @@ class ItKubernetesDomainEvents {
 
     // install and verify operator with REST API
     opParams = installAndVerifyOperator(opNamespace, opServiceAccount,
-            true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
-            domainNamespace4, domainNamespace5);
+        true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
+        domainNamespace4, domainNamespace5);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
@@ -344,25 +344,25 @@ class ItKubernetesDomainEvents {
       OffsetDateTime timestamp = now();
 
       logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
-              adminServerPodName, domainNamespace5);
+          adminServerPodName, domainNamespace5);
       checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
 
       for (int i = 1; i <= replicaCount; i++) {
         logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
-                managedServerPodNamePrefix + i, domainNamespace5);
+            managedServerPodNamePrefix + i, domainNamespace5);
         checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
       }
 
       logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-              + " Changed and Failed events are logged");
+          + " Changed and Failed events are logged");
       patchStr = "[{\"op\": \"replace\", "
-              + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+          + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
+          "patchDomainCustomResource failed");
 
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
@@ -405,26 +405,26 @@ class ItKubernetesDomainEvents {
     try {
       logger.info("Scaling cluster using patching");
       String patchStr
-              = "["
-              + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
-              + "]";
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+          + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "Failed to patch domain");
+          "Failed to patch domain");
 
       logger.info("verify the Failed event is generated");
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
     } finally {
       logger.info("Updating domain resource to set correct replicas size");
       String patchStr
-              = "["
-              + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
-              + "]";
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
+          + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "Failed to patch domain");
+          "Failed to patch domain");
     }
   }
 
@@ -453,30 +453,30 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     try {
       String patchStr
-              = "["
-              + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": false},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
-              + "]";
+          = "["
+          + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": false},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
+          + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "Failed to patch domain");
+          "Failed to patch domain");
 
       // No event will be created for this
       logger.info("verify the Failed event is NOT generated");
       assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,
-              DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
+          DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
       String patchStr
-              = "["
-              + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
-              + "]";
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
+          + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "Failed to patch domain");
+          "Failed to patch domain");
     }
   }
 
@@ -544,7 +544,7 @@ class ItKubernetesDomainEvents {
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
-            adminServerPodName, managedServerPodNamePrefix, replicaCount);
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
@@ -552,17 +552,17 @@ class ItKubernetesDomainEvents {
 
     //change logHome from /shared/logs to /shared/logs/logHome
     String patchStr = "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
-            + "]";
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
+        + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
     assertTrue(patchDomainResource(domainUid, domainNamespace3, new StringBuffer(patchStr)),
-            "patchDomainCustomResource(logHome) failed");
+        "patchDomainCustomResource(logHome) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace3),
-            String.format("getDomainCustomResource failed with ApiException"
-                            + " when tried to get domain %s in namespace %s",
-                    domainUid, domainNamespace3));
+        String.format("getDomainCustomResource failed with ApiException"
+                + " when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace3));
 
     //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
@@ -570,15 +570,15 @@ class ItKubernetesDomainEvents {
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-            domainUid, domainNamespace3);
+        domainUid, domainNamespace3);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace3),
-            String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace3));
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace3));
 
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-              managedServerPodNamePrefix + i, domainNamespace3);
+          managedServerPodNamePrefix + i, domainNamespace3);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
     }
 
@@ -601,7 +601,7 @@ class ItKubernetesDomainEvents {
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
-            adminServerPodName, managedServerPodNamePrefix, replicaCount);
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
     //print out the original includeServerOutInPodLog value
     boolean includeLogInPod = domain1.getSpec().includeServerOutInPodLog();
@@ -609,36 +609,36 @@ class ItKubernetesDomainEvents {
 
     //change includeServerOutInPodLog
     String patchStr = "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
-            + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
-            + "]";
+        + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
+        + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
+        + "]";
     logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
 
     assertTrue(patchDomainResource(domainUid, domainNamespace3, new StringBuffer(patchStr)),
-            "patchDomainCustomResource(includeServerOutInPodLog) failed");
+        "patchDomainCustomResource(includeServerOutInPodLog) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace3),
-            String.format("getDomainCustomResource failed with "
-                            + "ApiException when tried to get domain %s in namespace %s",
-                    domainUid, domainNamespace3));
+        String.format("getDomainCustomResource failed with "
+                + "ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace3));
 
     //print out includeServerOutInPodLog in the new patched domain
     logger.info("In the new patched domain includeServerOutInPodLog is: {0}",
-            domain1.getSpec().includeServerOutInPodLog());
+        domain1.getSpec().includeServerOutInPodLog());
     assertNotEquals(includeLogInPod, domain1.getSpec().includeServerOutInPodLog(),
-            "includeServerOutInPodLog is not updated");
+        "includeServerOutInPodLog is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-            domainUid, domainNamespace3);
+        domainUid, domainNamespace3);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace3),
-            String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace3));
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace3));
 
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-              managedServerPodNamePrefix + i, domainNamespace3);
+          managedServerPodNamePrefix + i, domainNamespace3);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
     }
 
@@ -718,11 +718,11 @@ class ItKubernetesDomainEvents {
   }
 
   // Create and start a WebLogic domain in PV
-  private  static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
+  private static void createDomain(String domainNamespace, String domainUid, String pvName, String pvcName) {
 
     assertDoesNotThrow(() -> createDomain(domainNamespace, domainUid, pvName, pvcName,
-            "IF_NEEDED"),
-            "Failed to create domain custom resource");
+        "IF_NEEDED"),
+        "Failed to create domain custom resource");
 
     // verify the admin server service created
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -730,7 +730,7 @@ class ItKubernetesDomainEvents {
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service/pod {0} is created in namespace {1}",
-              managedServerPodNamePrefix + i, domainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
   }
@@ -745,7 +745,7 @@ class ItKubernetesDomainEvents {
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
@@ -754,8 +754,8 @@ class ItKubernetesDomainEvents {
     int t3ChannelPort = getNextFreePort();
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-                    -> File.createTempFile("domain", "properties"),
-            "Failed to create domain properties file");
+            -> File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
@@ -772,62 +772,62 @@ class ItKubernetesDomainEvents {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
-                    -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
-            "Failed to write domain properties file");
+            -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+        "Failed to write domain properties file");
 
     // WLST script for creating domain
     Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-            pvName, pvcName, domainNamespace);
+        pvName, pvcName, domainNamespace);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domainNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
-                    .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-                    .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                    .imagePullPolicy("IfNotPresent")
-                    .imagePullSecrets(Arrays.asList(
-                            new V1LocalObjectReference()
-                                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(wlSecretName)
-                            .namespace(domainNamespace))
-                    .includeServerOutInPodLog(true)
-                    .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/logs/" + domainUid)
-                    .dataHome("")
-                    .serverStartPolicy(serverStartupPolicy)
-                    .serverPod(new ServerPod() //serverpod
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                            .addVolumesItem(new V1Volume()
-                                    .name(pvName)
-                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                                            .claimName(pvcName)))
-                            .addVolumeMountsItem(new V1VolumeMount()
-                                    .mountPath("/shared")
-                                    .name(pvName)))
-                    .adminServer(new AdminServer() //admin server
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster() //cluster
-                            .clusterName(cluster1Name)
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING")));
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy("IfNotPresent")
+            .imagePullSecrets(Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy(serverStartupPolicy)
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .addClustersItem(new Cluster() //cluster
+                .clusterName(cluster1Name)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
@@ -838,11 +838,11 @@ class ItKubernetesDomainEvents {
    * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
    * and property file. Create a Kubernetes job to create domain on persistent volume.
    *
-   * @param wlstScriptFile python script to create domain
+   * @param wlstScriptFile       python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
-   * @param namespace name of the domain namespace in which the job is created
+   * @param pvName               name of the persistent volume to create domain in
+   * @param pvcName              name of the persistent volume claim
+   * @param namespace            name of the domain namespace in which the job is created
    */
   private static void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
                                                 String pvName, String pvcName, String namespace) {
@@ -942,9 +942,9 @@ class ItKubernetesDomainEvents {
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
     int countBefore = getDomainEventCount(namespace, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
     V1Patch patch = new V1Patch("["
-            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
     assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-            "Failed to patch domain");
+        "Failed to patch domain");
     int serverNumber = replicaCount + 1;
 
     switch (testType) {
@@ -964,19 +964,19 @@ class ItKubernetesDomainEvents {
     if (verify) {
       logger.info("Verify the Completed event is generated after " + testType);
       checkEventWithCount(
-              opNamespace, namespace, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
+          opNamespace, namespace, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
 
   private static void checkFailedEvent(
-          String opNamespace, String domainNamespace, String domainUid,
-          String failureReason, String type, OffsetDateTime timestamp) {
+      String opNamespace, String domainNamespace, String domainUid,
+      String failureReason, String type, OffsetDateTime timestamp) {
     testUntil(withLongRetryPolicy,
-            checkDomainFailedEventWithReason(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp),
-            logger,
-            "domain event {0} to be logged in namespace {1}",
-            failureReason,
-            domainNamespace);
+        checkDomainFailedEventWithReason(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        failureReason,
+        domainNamespace);
   }
 
   private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp, String domainNamespace) {
@@ -986,11 +986,11 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
     // verify that Rolling condition is removed
     testUntil(
-            () -> verifyDomainStatusConditionTypeDoesNotExist(
-                    domainUid, domainNamespace, "Rolling"),
-            logger,
-            "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
-            domainUid,
-            domainNamespace);
+        () -> verifyDomainStatusConditionTypeDoesNotExist(
+            domainUid, domainNamespace, "Rolling"),
+        logger,
+        "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
+        domainUid,
+        domainNamespace);
   }
 }

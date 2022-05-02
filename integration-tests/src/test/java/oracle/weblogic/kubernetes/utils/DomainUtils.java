@@ -816,13 +816,6 @@ public class DomainUtils {
 
     assertNotNull(domain, "Got null domain resource");
     assertNotNull(domain.getSpec(), domain + "/spec is null");
-    assertFalse(domainHasRollingCondition(domain), "Found rolling condition at start of test");
     return domain;
-  }
-
-  private static boolean domainHasRollingCondition(Domain domain) {
-    return ofNullable(domain.getStatus())
-            .map(DomainStatus::conditions).orElse(Collections.emptyList()).stream()
-            .map(DomainCondition::getType).anyMatch("Rolling"::equals);
   }
 }
