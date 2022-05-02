@@ -133,6 +133,6 @@ spec:
   # The number of managed servers to start for any unlisted clusters
   # replicas: 1
   #
-#  configuration
+#  configuration:
 #    overridesConfigMap: jdbccm
 #    secrets: [dbsecret]
