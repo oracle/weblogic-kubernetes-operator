@@ -55,6 +55,11 @@ public abstract class InMemoryFileSystem extends FileSystem {
     return PathStub.createPathStub(createPathString(uri.getPath(), new String[0]));
   }
 
+  @Nonnull
+  public Path getPathThrowsIllegaArgumentException(@Nonnull URI uri) {
+    throw new IllegalArgumentException("test");
+  }
+
   private String createPathString(String first, String[] more) {
     return more.length == 0 ? first : first + "/" + String.join("/", more);
   }

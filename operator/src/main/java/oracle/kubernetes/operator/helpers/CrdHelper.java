@@ -80,7 +80,7 @@ public class CrdHelper {
    * Used by build to generate crd-validation.yaml
    * @param args Arguments that must be one value giving file name to create
    */
-  public static void main(String[] args) throws URISyntaxException {
+  public static void main(String... args) throws URISyntaxException {
     if (args == null || args.length != 1) {
       throw new IllegalArgumentException();
     }
@@ -117,9 +117,9 @@ public class CrdHelper {
       writer.write("\n");
       dumpYaml(writer, model);
     } catch (IOException io) {
-      throw new RuntimeException(io);
+      throw new CrdCreationException(io);
     } catch (IllegalArgumentException e) {
-      throw new RuntimeException("Bad argument: " + outputFileName, e);
+      throw new CrdCreationException("Bad argument: " + outputFileName, e);
     }
   }
 
@@ -211,8 +211,11 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook(Certificates certificates) {
-      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
-              .map(Base64::decodeBase64).map(CrdContext::createConversionWebhook).orElse(null);
+      return createConversionWebhook(getCertificateData(certificates));
+    }
+
+    public static V1CustomResourceConversion createConversionWebhook(String certificateData) {
+      return Optional.ofNullable(getCABundle(certificateData)).map(CrdContext::createConversionWebhook).orElse(null);
     }
 
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
@@ -223,6 +226,14 @@ public class CrdHelper {
                               .namespace(getWebhookNamespace()).port(CONVERSION_WEBHOOK_HTTPS_PORT)
                               .path(WEBHOOK_PATH))
                       .caBundle(caBundle)));
+    }
+
+    private static String getCertificateData(Certificates certificates) {
+      return Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData).orElse(null);
+    }
+
+    private static byte[] getCABundle(String certificateData) {
+      return Optional.ofNullable(certificateData).map(Base64::decodeBase64).orElse(null);
     }
 
     static String getVersionFromCrdSchemaFileName(String name) {
@@ -325,8 +336,8 @@ public class CrdHelper {
 
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
-      for (V1CustomResourceDefinitionVersion version : versions) {
-        version.setStorage(false);
+      for (V1CustomResourceDefinitionVersion crdVersion : versions) {
+        crdVersion.setStorage(false);
       }
       versions.add(0,
           new V1CustomResourceDefinitionVersion()
@@ -362,9 +373,38 @@ public class CrdHelper {
         super(next);
       }
 
-      private boolean existingCrdContainsConversionWebhook(V1CustomResourceDefinition existingCrd) {
-        return existingCrd.getSpec().getConversion() != null
-            && existingCrd.getSpec().getConversion().getStrategy().equalsIgnoreCase(WEBHOOK);
+      private boolean existingCrdContainsCompatibleConversionWebhook(V1CustomResourceDefinition existingCrd) {
+        return hasConversionWebhookStrategy(existingCrd)
+            && webhookIsCompatible(existingCrd);
+      }
+
+      private Boolean hasConversionWebhookStrategy(V1CustomResourceDefinition existingCrd) {
+        return Optional.ofNullable(existingCrd.getSpec().getConversion())
+            .map(c -> c.getStrategy().equalsIgnoreCase(WEBHOOK)).orElse(false);
+      }
+
+      private boolean webhookIsCompatible(V1CustomResourceDefinition existingCrd) {
+        return crdVersionHigherThanProductVersion(existingCrd)
+            || createConversionWebhook(getCaBundle()).equals(getConversionWebhook(existingCrd));
+      }
+
+      private byte[] getCaBundle() {
+        return Optional.ofNullable(getCertificateData(certificates)).map(Base64::decodeBase64).orElse(null);
+      }
+
+      private V1CustomResourceConversion getConversionWebhook(V1CustomResourceDefinition existingCrd) {
+        return Optional.ofNullable(existingCrd.getSpec())
+            .map(V1CustomResourceDefinitionSpec::getConversion).orElse(null);
+      }
+
+      private boolean crdVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
+        if (productVersion != null) {
+          SemanticVersion existingCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
+          if (existingCrdVersion != null && existingCrdVersion.compareTo(productVersion) > 0) {
+            return true;
+          }
+        }
+        return false;
       }
 
       private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
@@ -396,7 +436,7 @@ public class CrdHelper {
           return doNext(updateCrd(getNext(), existingCrd), packet);
         } else if (!existingCrdContainsVersion(existingCrd)) {
           return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-        } else if (!existingCrdContainsConversionWebhook(existingCrd)) {
+        } else if (!existingCrdContainsCompatibleConversionWebhook(existingCrd)) {
           return doNext(updateExistingCrdWithConversion(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);
@@ -525,6 +565,17 @@ public class CrdHelper {
         return true;
       }
       return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
+    }
+  }
+
+  static class CrdCreationException extends RuntimeException {
+
+    public CrdCreationException(String message, Exception e) {
+      super(message, e);
+    }
+
+    public CrdCreationException(Exception e) {
+      super(e);
     }
   }
 }
