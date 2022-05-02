@@ -67,7 +67,7 @@ various approaches.  We can start by asking ourselves questions like these:
   domain layer.  In the case of Domain in Image, you will need to determine if you need to
   keep the same domain encryption keys.
 
-The diagram below summarizes these concerns in a decision tree for the “domain-in-image” case:
+The following diagram summarizes these concerns in a decision tree for the “domain-in-image” case:
 
 {{< img "Decision model for the \"domain-in-image\" approach" "images/flowchart.png" >}}
 

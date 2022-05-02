@@ -31,7 +31,7 @@ If you need some help setting up a Kubernetes environment to experiment with the
 * Install [Docker for Mac](https://docs.docker.com/docker-for-mac/#kubernetes) or [Docker for Windows](https://docs.docker.com/docker-for-windows/kubernetes/) and enable its embedded Kubernetes cluster.
 * We *do not* recommend or support other development/test options like Minikube, Minishift, kind, and so on.
 
-We have provided our hints and tips for several of these options in the sections below.
+We have provided our hints and tips for several of these options in the following sections.
 
 ### Set up Kubernetes on bare compute resources in a cloud
 

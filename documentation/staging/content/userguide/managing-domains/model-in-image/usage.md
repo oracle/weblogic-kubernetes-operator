@@ -267,7 +267,7 @@ To reuse the wallet:
       label secret MY_DOMAIN_UID-my-opss-wallet-password-secret \
       weblogic.domainUID=sample-domain1
     ```
-  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported above. For example, assuming the file is `ewallet.p12`:
+  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported previously. For example, assuming the file is `ewallet.p12`:
     ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-file-secret \

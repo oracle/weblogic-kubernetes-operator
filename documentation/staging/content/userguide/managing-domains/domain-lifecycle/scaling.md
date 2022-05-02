@@ -89,7 +89,7 @@ If you omit the header, you'll get a `400 (bad request)` response. If you omit t
 
 {{% notice note %}}
 To resolve a `403 (Forbidden)` response, when calling the operator's REST scaling API, you may need to add the `patch` request verb to the cluster role associated with the WebLogic `domains` resource.
-The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource
+The following example ClusterRole definition grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource
 {{% /notice %}}
 
 ```yaml
@@ -209,11 +209,11 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 ##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
-The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
+The script `scalingAction.sh`, specified in the WLDF script action, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
 {{% notice note %}}
-In the example ClusterRoleBinding definition below, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
+In the following example ClusterRoleBinding definition, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
 {{% /notice %}}
 
 ```yaml
