@@ -589,8 +589,7 @@
                     **/ItKubernetesEvents,
                     **/ItMiiAuxiliaryImage,
                     **/ItMultiDomainModels,
-                    **/ItPodsRestart,
-                    **/ItTwoDomainsManagedByTwoOperators
+                    **/ItPodsRestart
                 </includes-failsafe>
             </properties>
         </profile>
