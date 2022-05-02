@@ -117,8 +117,9 @@ Open the *domain.yaml* file and in the `spec:` section, add (or append) the foll
 ```yaml
 spec:
   [ ... ]
-  configOverrides: jdbccm
-  configOverrideSecrets: [dbsecret]
+  configuration:
+    overridesConfigMap: jdbccm
+    secrets: [dbsecret]
 ```
 Save the changes of the domain resource definition file.
 

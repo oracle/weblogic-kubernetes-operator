@@ -69,17 +69,6 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Specifies whether the domain home is stored in the image.
-   *
-   * @param domainHomeInImage boolean indicating if the domain home is stored in the image
-   * @return this object
-   */
-  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
-    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
-    return this;
-  }
-
   public DomainConfigurator withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
     return this;

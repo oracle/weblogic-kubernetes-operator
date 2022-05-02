@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 58a295e514ceb84ae0bb6e1609d0bd16cd68fe06de13966c964a4cb36a0cd9fd
+    weblogic.sha256: efe84baf8c719aa695f95fb6c07ec7a7e8ee8301cb6c0a10ecbe62671703454e
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -277,8 +277,7 @@ spec:
                     type: object
                   secrets:
                     description: A list of names of the Secrets for WebLogic configuration
-                      overrides or model. If this field is specified, then the value
-                      of `spec.configOverrideSecrets` is ignored.
+                      overrides or model.
                     items:
                       type: string
                     type: array
@@ -322,8 +321,7 @@ spec:
                     type: object
                   overridesConfigMap:
                     description: The name of the ConfigMap for WebLogic configuration
-                      overrides. If this field is specified, then the value of `spec.configOverrides`
-                      is ignored.
+                      overrides.
                     type: string
                   introspectorJobActiveDeadlineSeconds:
                     description: The introspector job timeout value in seconds. If
@@ -331,13 +329,6 @@ spec:
                       value is ignored. Defaults to 120 seconds.
                     type: number
                 type: object
-              configOverrideSecrets:
-                description: Deprecated. Use `configuration.secrets` instead. Ignored
-                  if `configuration.secrets` is specified. A list of names of the
-                  Secrets for optional WebLogic configuration overrides.
-                items:
-                  type: string
-                type: array
               imagePullSecrets:
                 description: A list of image pull Secrets for the WebLogic Server
                   image.
@@ -531,9 +522,7 @@ spec:
                   field. PersistentVolume indicates that the domain home file system
                   is located on a persistent volume. FromModel indicates that the
                   domain home file system will be created and managed by the operator
-                  based on a WDT domain model. If this field is specified, it overrides
-                  the value of `domainHomeInImage`. If both fields are unspecified,
-                  then `domainHomeSourceType` defaults to Image.'
+                  based on a WDT domain model. Defaults to Image.'
                 enum:
                 - Image
                 - PersistentVolume
@@ -6639,13 +6628,6 @@ spec:
                   field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
                 type: number
-              domainHomeInImage:
-                description: Deprecated. Use `domainHomeSourceType` instead. Ignored
-                  if `domainHomeSourceType` is specified. True indicates that the
-                  domain home file system is present in the container image specified
-                  by the image field. False indicates that the domain home file system
-                  is located on a persistent volume. Defaults to unset.
-                type: boolean
               serverStartPolicy:
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
@@ -6689,11 +6671,6 @@ spec:
                   storage of default and custom file stores. If `dataHome` is not
                   specified or its value is either not set or empty, then the data
                   storage directories are determined from the WebLogic domain configuration.
-                type: string
-              configOverrides:
-                description: Deprecated. Use `configuration.overridesConfigMap` instead.
-                  Ignored if `configuration.overridesConfigMap` is specified. The
-                  name of the ConfigMap for optional WebLogic configuration overrides.
                 type: string
               logHomeEnabled:
                 description: Specifies whether the log home folder is enabled. Defaults

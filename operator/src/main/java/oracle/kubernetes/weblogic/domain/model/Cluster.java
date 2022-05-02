@@ -126,6 +126,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
+  public Cluster withReplicas(Integer replicas) {
+    setReplicas(replicas);
+    return this;
+  }
+
   /**
    * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
    * in the WebLogic domain home configuration.
@@ -166,6 +171,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Override
   public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public Cluster withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
+    setServerStartPolicy(serverStartPolicy);
+    return this;
   }
 
   public ClusterService getClusterService() {
