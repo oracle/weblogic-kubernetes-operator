@@ -152,7 +152,6 @@ class ItMiiAuxiliaryImage {
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
-    logAll();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -1350,43 +1349,4 @@ class ItMiiAuxiliaryImage {
         .until(() ->
             introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg));
   }
-
-  private static void logAll() {
-    logger.info("BASE_IMAGES_REPO:{0}", TestConstants.BASE_IMAGES_REPO);
-    logger.info("BASE_IMAGES_REPO_SECRET:{0}", TestConstants.BASE_IMAGES_REPO_SECRET);
-    logger.info("OCIR_DEFAULT:{0}", TestConstants.OCIR_DEFAULT);
-    logger.info("OCIR_EMAIL:{0}", TestConstants.OCIR_EMAIL);
-    logger.info("OCIR_FMWINFRA_IMAGE_NAME:{0}", TestConstants.OCIR_FMWINFRA_IMAGE_NAME);
-    logger.info("OCIR_FMWINFRA_IMAGE_TAG:{0}", TestConstants.OCIR_FMWINFRA_IMAGE_TAG);
-    logger.info("OCIR_PASSWORD:{0}", TestConstants.OCIR_PASSWORD);
-    logger.info("OCIR_REGISTRY:{0}", TestConstants.OCIR_REGISTRY);
-    logger.info("OCIR_SECRET_NAME:{0}", TestConstants.OCIR_SECRET_NAME);
-    logger.info("OCIR_USERNAME:{0}", TestConstants.OCIR_USERNAME);
-    logger.info("OCIR_WEBLOGIC_IMAGE_NAME:{0}", TestConstants.OCIR_WEBLOGIC_IMAGE_NAME);
-    logger.info("OCIR_WEBLOGIC_IMAGE_TAG:{0}", TestConstants.OCIR_WEBLOGIC_IMAGE_TAG);
-    logger.info("OCIR_DB_IMAGE_NAME:{0}", TestConstants.OCIR_DB_IMAGE_NAME);
-    logger.info("OCIR_DB_IMAGE_TAG:{0}", TestConstants.OCIR_DB_IMAGE_TAG);
-
-    logger.info("OCR_DB_IMAGE_NAME:{0}", TestConstants.OCR_DB_IMAGE_NAME);
-    logger.info("OCR_DB_IMAGE_TAG:{0}", TestConstants.OCR_DB_IMAGE_TAG);
-    logger.info("OCR_EMAIL:{0}", TestConstants.OCR_EMAIL);
-    logger.info("OCR_FMWINFRA_IMAGE_NAME:{0}", TestConstants.OCR_FMWINFRA_IMAGE_NAME);
-    logger.info("OCR_FMWINFRA_IMAGE_TAG:{0}", TestConstants.OCR_FMWINFRA_IMAGE_TAG);
-    logger.info("OCR_PASSWORD:{0}", TestConstants.OCR_PASSWORD);
-    logger.info("OCR_REGISTRY:{0}", TestConstants.OCR_REGISTRY);
-    logger.info("OCR_SECRET_NAME:{0}", TestConstants.OCR_SECRET_NAME);
-    logger.info("OCR_USERNAME:{0}", TestConstants.OCR_USERNAME);
-    logger.info("OCR_WEBLOGIC_IMAGE_NAME:{0}", TestConstants.OCR_WEBLOGIC_IMAGE_NAME);
-    logger.info("OCR_WEBLOGIC_IMAGE_TAG:{0}", TestConstants.OCR_WEBLOGIC_IMAGE_TAG);
-
-    logger.info("WEBLOGIC_IMAGE_NAME:{0}", TestConstants.WEBLOGIC_IMAGE_NAME);
-    logger.info("WEBLOGIC_IMAGE_TAGS:{0}", TestConstants.WEBLOGIC_IMAGE_TAGS);
-    logger.info("WEBLOGIC_IMAGE_TO_USE_IN_SPEC:{0}", TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
-
-    logger.info("FMWINFRA_IMAGE_NAME:{0}", TestConstants.FMWINFRA_IMAGE_NAME);
-    logger.info("DB_IMAGE_NAME:{0}", TestConstants.DB_IMAGE_NAME);
-    logger.info("DB_IMAGE_TAG:{0}", TestConstants.DB_IMAGE_TAG);
-    logger.info("DB_IMAGE_TO_USE_IN_SPEC:{0}", TestConstants.DB_IMAGE_TO_USE_IN_SPEC);
-  }
-
 }
