@@ -1266,6 +1266,39 @@ public class Kubernetes {
   }
 
   /**
+   * Get the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion version of domain
+   * @return domain custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static Domain getDomainCustomResource(String domainUid, String namespace, String domainVersion)
+          throws ApiException {
+    Object domain;
+    try {
+      domain = customObjectsApi.getNamespacedCustomObject(
+              DOMAIN_GROUP, // custom resource's group name
+              domainVersion, // //custom resource's version
+              namespace, // custom resource's namespace
+              DOMAIN_PLURAL, // custom resource's plural name
+              domainUid // custom object's name
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    if (domain != null) {
+      return handleResponse(domain, Domain.class);
+    }
+
+    getLogger().warning("Domain Custom Resource '" + domainUid + "' not found in namespace " + namespace);
+    return null;
+  }
+
+  /**
    * Patch the Domain Custom Resource using JSON Patch.JSON Patch is a format for describing changes to a JSON document
    * using a series of operations. JSON Patch is specified in RFC 6902 from the IETF. For example, the following
    * operation will replace the "spec.restartVersion" to a value of "2".
