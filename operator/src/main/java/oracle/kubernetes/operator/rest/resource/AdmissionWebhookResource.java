@@ -38,7 +38,7 @@ public class AdmissionWebhookResource extends BaseResource {
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
     LOGGER.entering(href());
-    LOGGER.info("YYY AdmissionWebhookResource.post is called");
+    LOGGER.info("YYY AdmissionWebhookResource.post is called body = " + body + " href=" + href());
 
     return body;
   }
