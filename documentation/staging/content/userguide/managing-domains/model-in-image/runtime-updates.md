@@ -540,7 +540,7 @@ resources:
     ...
 ```
 
-This fail because it implicitly removes
+This fails because it implicitly removes
 the MBean types `SelfTuning` and `WorkManager`.
 
 _Deleting cross-referenced MBeans_

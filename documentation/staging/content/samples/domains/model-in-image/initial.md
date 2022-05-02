@@ -26,7 +26,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
   - A WDT model that describes your WebLogic configuration.
   - A container image that contains your WDT model files and archive.
   - Creating secrets for the domain.
-  - Creating a Domain YAML for the domain that references your Secrets and image.
+  - Creating a Domain YAML file for the domain that references your Secrets and image.
 
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 

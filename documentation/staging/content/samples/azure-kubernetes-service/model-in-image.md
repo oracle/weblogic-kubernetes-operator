@@ -551,7 +551,7 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-res
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
-Modify the Domain YAML with your values.
+Modify the Domain YAML file with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|

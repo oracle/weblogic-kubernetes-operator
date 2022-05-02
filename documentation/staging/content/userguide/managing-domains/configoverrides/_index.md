@@ -340,7 +340,7 @@ Best practices for data source modules and their overrides:
 * Configure the name of the ConfigMap in the Domain YAML file `configuration.overridesConfigMap` field.
 * Configure the names of each Secret in Domain YAML file.
   * If the Secret contains the WebLogic admin `username` and `password` keys, then set the Domain YAML file `webLogicCredentialsSecret` field.
-  * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the following sample Domain YAML).
+  * For all other Secrets, add them to the Domain YAML file `configuration.secrets` field. Note: This must be in an array format even if you only add one Secret (see the following sample Domain YAML file).
 * Changes to configuration overrides, including the contents of the ConfigMap containing the override templates or the contents of referenced Secrets, do not take effect until the operator runs or repeats its [introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}) of the WebLogic domain configuration.
 * If your configuration overrides modify non-dynamic MBean attributes and you currently have WebLogic Server instances from this domain running:
   * Decide if the changes you are making to non-dynamic MBean attributes can be applied by rolling the affected clusters or Managed Server instances, or if the change requires a full domain shutdown. (See [Overrides distribution](#overrides-distribution))
