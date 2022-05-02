@@ -76,6 +76,7 @@ import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatch
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.UniquePortsMatcher.hasOnlyUniquePortNames;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -83,6 +84,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -235,6 +238,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
+
   private AdminServerConfigurator configureAdminServer() {
     return configureDomain().configureAdminServer();
   }
@@ -245,6 +249,33 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   protected WlsServerConfig getServerConfig() {
     return serverConfig;
+  }
+
+  public void setUpIstioServicePortPatterns() {
+    configureAdminServer()
+        .configureAdminService();
+
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport
+        .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
+        .addNetworkAccessPoint("tcp-" + NAP_1, NAP_PORT_1)
+        .addNetworkAccessPoint("tls-" + NAP_2, NAP_PORT_2);
+
+    configSupport
+        .addWlsServer(TEST_SERVER, TEST_PORT)
+        .setAdminPort(ADMIN_PORT)
+        .addNetworkAccessPoint("http-" + NAP_3, NAP_PORT_3);
+    configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
+    serverConfig = domainConfig.getServerConfig(testFacade.getServerName());
+    testSupport
+        .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
+        .addToPacket(SERVER_NAME, testFacade.getServerName())
+        .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
+        .addToPacket(SERVER_SCAN, serverConfig)
+        .addDomainPresenceInfo(domainPresenceInfo);
   }
 
   @Test
@@ -356,6 +387,23 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(
         testFacade.getRecordedService(domainPresenceInfo),
         is(serviceWithName(testFacade.getServiceName())));
+  }
+
+  @Test
+  void onRunIstioPortNamePatternedService_verifyPortNameNormalized() {
+    consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
+    configureDomain().withIstio();
+    setUpIstioServicePortPatterns();
+
+    runServiceHelper();
+    List<V1ServicePort> ports = testFacade.getRecordedService(domainPresenceInfo).getSpec().getPorts();
+    for (V1ServicePort port: ports) {
+      assertThat(port.getAppProtocol(), notNullValue());
+      assertThat(port.getName(), not(startsWith("tcp-")));
+      assertThat(port.getName(), not(startsWith("tls-")));
+      assertThat(port.getName(), not(startsWith("http-")));
+      assertThat(port.getName(), not(startsWith("https-")));
+    }
   }
 
   @Test
