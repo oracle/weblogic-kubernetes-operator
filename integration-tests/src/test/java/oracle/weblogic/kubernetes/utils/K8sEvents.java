@@ -26,6 +26,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -35,6 +36,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class K8sEvents {
 
   private static final LoggingFacade logger = getLogger();
+  public static final String ABORTED_ERROR = "Domain processing is aborted";
+  public static final String DOMAIN_CREATED = "DomainCreated";
+  public static final String DOMAIN_DELETED = "DomainDeleted";
+  public static final String DOMAIN_CHANGED = "DomainChanged";
+  public static final String DOMAIN_FAILED = "DomainFailed";
+  public static final String DOMAIN_PROCESSING_STARTING = "DomainProcessingStarting";
+  public static final String DOMAIN_PROCESSING_COMPLETED = "DomainProcessingCompleted";
+  public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
+  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
+  public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
+  public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
+  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
+  public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
+  public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
+  public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
+  public static final String POD_TERMINATED = "Killing";
+  public static final String POD_STARTED = "Started";
+  public static final String POD_CYCLE_STARTING = "PodCycleStarting";
 
   /**
    * Utility method to check event.
@@ -492,23 +512,54 @@ public class K8sEvents {
     }
   }
 
+  /**
+   * Check if a given DomainFailed event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param failureReason DomainFailureReason to check
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkDomainFailedEventWithReason(
+          String opNamespace, String domainNamespace, String domainUid, String failureReason,
+          String type, OffsetDateTime timestamp) {
+    return () -> {
+      return domainFailedEventExists(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp);
+    };
+  }
 
-  public static final String DOMAIN_CREATED = "DomainCreated";
-  public static final String DOMAIN_DELETED = "DomainDeleted";
-  public static final String DOMAIN_CHANGED = "DomainChanged";
-  public static final String DOMAIN_PROCESSING_STARTING = "DomainProcessingStarting";
-  public static final String DOMAIN_PROCESSING_COMPLETED = "DomainProcessingCompleted";
-  public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
-  public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
-  public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
-  public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
-  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
-  public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
-  public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
-  public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
-  public static final String POD_TERMINATED = "Killing";
-  public static final String POD_STARTED = "Started";
-  public static final String POD_CYCLE_STARTING = "PodCycleStarting";
+  /**
+   * Check if a given event is logged by the operator in the given namespace.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param failureReason failure reason to check
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static boolean domainFailedEventExists(
+          String opNamespace, String domainNamespace, String domainUid, String failureReason,
+          String type, OffsetDateTime timestamp) {
 
+    try {
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (DOMAIN_FAILED.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
+                && event.getMessage().contains(failureReason)) {
+          logger.info(Yaml.dump(event));
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify type
+          logger.info("Verifying domain event type {0}", type);
+          assertEquals(event.getType(), type);
+          return true;
+        }
+      }
+    } catch (ApiException ex) {
+      logger.log(Level.SEVERE, null, ex);
+    }
+    return false;
+  }
 }
