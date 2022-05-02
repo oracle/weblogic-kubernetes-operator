@@ -430,7 +430,8 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItCrossDomainTransaction,
-                  **/ItKubernetesEvents,
+                  **/ItKubernetesDomainEvents,
+                  **/ItKubernetesNameSpaceWatchingEvents,
                   **/ItMiiAuxiliaryImage,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
@@ -500,7 +501,8 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItCrossDomainTransaction,
-                  **/ItKubernetesEvents,
+                  **/ItKubernetesDomainEvents,
+                  **/ItKubernetesNameSpaceWatchingEvents,
                   **/ItMiiAuxiliaryImage,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
@@ -586,7 +588,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItKubernetesEvents,
+                    **/ItKubernetesDomainEvents,
                     **/ItMiiAuxiliaryImage,
                     **/ItMultiDomainModels,
                     **/ItPodsRestart
