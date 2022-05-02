@@ -182,7 +182,7 @@ class ItMiiDynamicUpdatePart3 {
     checkPodLogContainsString(helper.opNamespace, operatorPodName, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(helper.opNamespace, helper.domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(helper.domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector

@@ -588,11 +588,10 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItKubernetesEvents,
+                    **/ItKubernetesDomainEvents,
                     **/ItMiiAuxiliaryImage,
                     **/ItMultiDomainModels,
-                    **/ItPodsRestart,
-                    **/ItTwoDomainsManagedByTwoOperators
+                    **/ItPodsRestart
                 </includes-failsafe>
             </properties>
         </profile>
