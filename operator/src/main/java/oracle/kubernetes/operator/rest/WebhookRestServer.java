@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.rest;
 
 import java.util.Map;
 
+import oracle.kubernetes.operator.rest.resource.AdmissionWebhookResource;
 import oracle.kubernetes.operator.rest.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -75,7 +76,7 @@ public class WebhookRestServer extends BaseRestServer {
             .register(RequestDebugLoggingFilter.class)
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
-            .packages(ConversionWebhookResource.class.getPackageName())
+            .packages(ConversionWebhookResource.class.getPackageName(), AdmissionWebhookResource.class.getPackageName())
             .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }

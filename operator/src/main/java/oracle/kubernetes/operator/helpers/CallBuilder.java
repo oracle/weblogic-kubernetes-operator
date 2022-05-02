@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Pair;
+import io.kubernetes.client.openapi.apis.AdmissionregistrationV1Api;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
@@ -48,6 +49,8 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
@@ -278,6 +281,38 @@ public class CallBuilder {
                   (V1DeleteOptions) requestParams.body,
                   callback));
 
+  private final CallFactory<V1ValidatingWebhookConfigurationList> listValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(listValidatingWebhookConfigurationAsync(usage, cont, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> readValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> createValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createValidatingWebhookConfigurationAsync(
+                  usage, (V1ValidatingWebhookConfiguration)
+                      requestParams.body, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> patchValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  (V1Patch) requestParams.body,
+                  callback));
+  private final CallFactory<V1Status> deleteValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deleteValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
+
+
+
   private RetryStrategy retryStrategy;
 
   private String fieldSelector;
@@ -337,6 +372,9 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> readValidatingWebhookConfig =
+      (requestParams, usage, cont, callback) ->
+          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, requestParams.namespace, callback));
   private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;
@@ -379,6 +417,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
+
   private final SynchronousCallFactory<V1Pod> patchPodCall =
       (client, requestParams) ->
           new CoreV1Api(client)
@@ -1734,7 +1773,7 @@ public class CallBuilder {
         deletePodDisruptionBudget);
   }
 
-  /* Secrets */
+  /* Events */
 
   private Call listEventAsync(
       ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
@@ -2009,6 +2048,152 @@ public class CallBuilder {
     RequestParams requestParams
         = new RequestParams("createTokenReview", null, null, body, callParams);
     return executeSynchronousCall(requestParams, createTokenReviewCall);
+  }
+
+  /* ValidatingWebhookConfiguration */
+
+  private Call listValidatingWebhookConfigurationAsync(
+      ApiClient client, String cont, ApiCallback<V1ValidatingWebhookConfigurationList> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .listValidatingWebhookConfigurationAsync(
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing validating webhook configuration.
+   *
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listValidatingWebhookConfigurationAsync(ResponseStep<V1ValidatingWebhookConfigurationList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listValidatingWebhookConfiguration", null, null, null, callParams),
+        listValidatingWebhookConfiguration);
+  }
+
+  private Call readValidatingWebhookConfigurationAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .readValidatingWebhookConfigurationAsync(name, pretty, callback);
+  }
+
+  /**
+   * Asynchronous step for reading validating webhook configuration.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readValidatingWebhookConfigurationAsync(
+      String name, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("readValidatingWebhookConfiguration", null, name, null, ""),
+        readValidatingWebhookConfiguration);
+  }
+
+  private Call createValidatingWebhookConfigurationAsync(
+      ApiClient client, V1ValidatingWebhookConfiguration body,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .createValidatingWebhookConfigurationAsync(body, pretty, null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating validating webhook configuration.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createValidatingWebhookConfigurationAsync(
+      V1ValidatingWebhookConfiguration body, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createValidatingWebhookConfiguration", null, null, body, callParams),
+        createValidatingWebhookConfiguration);
+  }
+
+  private Call patchValidatingWebhookConfigurationAsync(
+      ApiClient client, String name, V1Patch patch,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .patchValidatingWebhookConfigurationAsync(name, patch, pretty, null,
+            null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for patching ValidatingWebhookConfiguration.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchValidatingWebhookConfigurationAsync(
+      String name, String namespace, V1Patch patchBody,
+      ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchValidatingWebhookConfiguration", null, name, patchBody, callParams),
+        patchValidatingWebhookConfiguration);
+  }
+
+  private Call deleteValidatingWebhookConfigurationAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .deleteValidatingWebhookConfigurationAsync(
+            name,
+            pretty,
+            dryRun,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            deleteOptions,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for deleting validating webhook configuration.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the service is associated with
+   * @param deleteOptions Delete options
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteValidatingWebhookConfigurationAsync(
+      String name,
+      String namespace,
+      String domainUid,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deleteValidatingWebhookConfiguration", namespace, name, deleteOptions, domainUid),
+        deleteValidatingWebhookConfiguration);
   }
 
   public Step readPodLogAsync(String name, String namespace, String domainUid, ResponseStep<String> responseStep) {

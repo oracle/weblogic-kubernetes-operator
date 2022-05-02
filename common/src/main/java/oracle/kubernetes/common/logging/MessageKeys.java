@@ -210,6 +210,9 @@ public class MessageKeys {
   public static final String PODS_FAILED = "WLSDO-0040";
   public static final String PODS_NOT_READY = "WLSDO-0041";
 
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION_CREATED = "WLSKOWH-0001";
+  public static final String CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKOWH-0002";
+
   private MessageKeys() {
   }
 }

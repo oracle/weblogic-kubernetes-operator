@@ -64,7 +64,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
+public class WebhookMainTest extends ThreadFactoryTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -82,9 +82,9 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-  private final ConversionWebhookMainDelegateStub delegate =
-          createStrictStub(ConversionWebhookMainDelegateStub.class, testSupport);
-  private final ConversionWebhookMain main = new ConversionWebhookMain(delegate);
+  private final WebhookMainDelegateStub delegate =
+          createStrictStub(WebhookMainDelegateStub.class, testSupport);
+  private final WebhookMain main = new WebhookMain(delegate);
   private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
@@ -140,7 +140,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   void whenConversionWebhookCreated_logStartupMessage() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CONVERSION_WEBHOOK_STARTED);
 
-    ConversionWebhookMain.createMain(buildProperties);
+    WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords,
                containsInfo(CONVERSION_WEBHOOK_STARTED).withParams(GIT_BUILD_VERSION, IMPL, GIT_BUILD_TIME));
@@ -150,7 +150,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   void whenConversionWebhookCreated_logWebhookNamespace() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, WEBHOOK_CONFIG_NAMESPACE);
 
-    ConversionWebhookMain.createMain(buildProperties);
+    WebhookMain.createMain(buildProperties);
 
     assertThat(logRecords, containsInfo(WEBHOOK_CONFIG_NAMESPACE).withParams(getWebhookNamespace()));
   }
@@ -161,7 +161,7 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     inMemoryFileSystem.defineFile("/deployment/webhook-identity/webhookKey", "asdf");
     loggerControl.ignoringLoggedExceptions(RuntimeException.class, NoSuchFileException.class);
 
-    ConversionWebhookMain.createMain(buildProperties).completeBegin();
+    WebhookMain.createMain(buildProperties).completeBegin();
 
     MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
@@ -212,10 +212,10 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
 
-  public abstract static class ConversionWebhookMainDelegateStub implements ConversionWebhookMainDelegate {
+  public abstract static class WebhookMainDelegateStub implements WebhookMainDelegate {
     private final FiberTestSupport testSupport;
 
-    public ConversionWebhookMainDelegateStub(FiberTestSupport testSupport) {
+    public WebhookMainDelegateStub(FiberTestSupport testSupport) {
       this.testSupport = testSupport;
     }
 
@@ -252,17 +252,17 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
     }
   }
 
-  static class TestStepFactory implements ConversionWebhookMain.NextStepFactory {
+  static class TestStepFactory implements WebhookMain.NextStepFactory {
     @SuppressWarnings("FieldCanBeLocal")
     private static TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {
       factory = new TestStepFactory();
-      return StaticStubSupport.install(ConversionWebhookMain.class, "nextStepFactory", factory);
+      return StaticStubSupport.install(WebhookMain.class, "nextStepFactory", factory);
     }
 
     @Override
-    public Step createInitializationStep(ConversionWebhookMainDelegate delegate, Step next) {
+    public Step createInitializationStep(WebhookMainDelegate delegate, Step next) {
       return next;
     }
   }
