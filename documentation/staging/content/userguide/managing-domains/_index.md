@@ -170,7 +170,7 @@ Server log files are placed in a subdirectory `servers/<server name>/logs`
 by default when both `logHome` and `logHomeEnabled` are set.
 Set `logHomeLayout` to `FLAT` to place all log files at the `logHome` root.
 
-For example, the default layout of the log files under the `logHome` root.
+For example, here is the default layout of the log files under the `logHome` root:
 
 ```text
 /shared/logs/domain1$ ls -aRtl 
