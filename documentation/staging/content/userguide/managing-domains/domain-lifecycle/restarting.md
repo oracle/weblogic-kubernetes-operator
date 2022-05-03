@@ -98,7 +98,7 @@ Changes to configuration overrides include:
 * Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
 * Changing the contents to any of the Secrets referenced by `configuration.secrets`
 
-The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [initiate operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
+The changes to the previously listed fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [initiate operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
 
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
 {{% /notice %}}

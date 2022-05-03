@@ -29,7 +29,7 @@ $ ./buildDockerImage.sh -t weblogic-kubernetes-operator:some-tag
 
 Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
 
-We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
+We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the  previous example, the tag could be the GitHub ID of the developer.
 
 #### Running the operator from an IDE
 

@@ -30,7 +30,7 @@ Following is an example configuration to change the liveness probe interval, tim
 
 **Note**: The liveness probe success threshold value must always be 1. See [Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) in the Kubernetes documentation for more details.
 
-After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the configuration examples below). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
+After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the following configuration examples). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
 
 
 * The `spec.livenessProbeCustomScript` domain resource attribute affects all WebLogic Server instance Pods in the domain.
@@ -59,7 +59,7 @@ The following operator-populated environment variables are available for use in 
 
 `ORACLE_HOME` or `MW_HOME`: The Oracle Fusion Middleware software location as a file system path within the container.
 
-`WL_HOME`: The Weblogic Server installation location as a file system path within the container. 
+`WL_HOME`: The Weblogic Server installation location as a file system path within the container.
 
 `DOMAIN_HOME`: The domain home location as a file system path within the container.
 
@@ -75,7 +75,7 @@ The following operator-populated environment variables are available for use in 
 
 **NOTES**:
 
-* Additional operator-populated environment variables that are not listed above, are not supported for use in the liveness probe custom script.
+* Additional operator-populated environment variables that are not listed, are not supported for use in the liveness probe custom script.
 
 * The custom liveness probe script can call `source $DOMAIN_HOME/bin/setDomainEnv.sh` if it needs to set up its PATH or CLASSPATH to access WebLogic utilities in its domain.
 

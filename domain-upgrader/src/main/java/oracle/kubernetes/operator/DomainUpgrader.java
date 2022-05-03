@@ -88,13 +88,17 @@ public class DomainUpgrader {
           String outputFileName,
           boolean overwriteExistingFile,
           String inputFileName) {
-    this.outputDir = Optional.ofNullable(outputDir).orElse(new File(inputFileName).getParent());
+    this.outputDir = Optional.ofNullable(outputDir).orElse(getDefaultOutputDir(inputFileName));
     String inputFileNameBase = FilenameUtils.getBaseName(inputFileName);
     String inputFileNameExtension  = FilenameUtils.getExtension(inputFileName);
     this.outputFileName = Optional.ofNullable(outputFileName)
             .orElse(inputFileNameBase + "__converted." + inputFileNameExtension);
     this.inputFileName = inputFileName;
     this.overwriteExistingFile = overwriteExistingFile;
+  }
+
+  private String getDefaultOutputDir(String inputFileName) {
+    return Optional.ofNullable(new File(inputFileName).getParent()).orElse(".");
   }
 
   private static DomainUpgrader parseCommandLine(String[] args) {

@@ -292,7 +292,6 @@ The operator will restart servers when any of the follow fields on the Domain th
 * `auxiliaryImageVolumes`
 * `containerSecurityContext`
 * `domainHome`
-* `domainHomeInImage`
 * `domainHomeSourceType`
 * `env`
 * `image`

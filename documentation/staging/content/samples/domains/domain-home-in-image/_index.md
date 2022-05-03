@@ -22,7 +22,7 @@ The following prerequisites must be met prior to running the create domain scrip
 
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/storage/_index.md" >}}).
-* Create a Kubernetes Secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName`; see [Configuration parameters](#configuration-parameters) below. For example:
+* Create a Kubernetes Secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName`; see [Configuration parameters](#configuration-parameters). For example:
 
 ```shell
 $ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
@@ -68,7 +68,7 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 
-* Create a properties file, `domain.properties`, in the directory that is created above.
+* Create a properties file, `domain.properties`, in the directory that was created previously.
   This properties file will be used to create a sample WebLogic Server domain.
   The `domain.properties` file will be removed upon successful completion of the script.
 
@@ -110,7 +110,7 @@ The script will perform the following steps:
   For more information, see
   [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
-* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```shell
 $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
 ```
@@ -217,7 +217,7 @@ The sample demonstrates how to create a WebLogic domain home and associated Kube
 
 The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-Note that the example results below use the `default` Kubernetes Namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
+Note that the following example results use the `default` Kubernetes Namespace. If you are using a different namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
 ##### Generated YAML files with the default inputs
 

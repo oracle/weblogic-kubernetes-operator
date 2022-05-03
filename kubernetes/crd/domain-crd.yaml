@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 9d568816b5c1756bf73246b17935adfdfa7af18a30b56fafe585175e399837fc
+    weblogic.sha256: d973b3a8a2ccc0c9ac828fd8a73cde4fac09c097539ee1d633acbcf839836fee
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -277,8 +277,7 @@ spec:
                     type: object
                   secrets:
                     description: A list of names of the Secrets for WebLogic configuration
-                      overrides or model. If this field is specified, then the value
-                      of `spec.configOverrideSecrets` is ignored.
+                      overrides or model.
                     items:
                       type: string
                     type: array
@@ -322,8 +321,7 @@ spec:
                     type: object
                   overridesConfigMap:
                     description: The name of the ConfigMap for WebLogic configuration
-                      overrides. If this field is specified, then the value of `spec.configOverrides`
-                      is ignored.
+                      overrides.
                     type: string
                   introspectorJobActiveDeadlineSeconds:
                     description: The introspector job timeout value in seconds. If
@@ -331,13 +329,6 @@ spec:
                       value is ignored. Defaults to 120 seconds.
                     type: number
                 type: object
-              configOverrideSecrets:
-                description: Deprecated. Use `configuration.secrets` instead. Ignored
-                  if `configuration.secrets` is specified. A list of names of the
-                  Secrets for optional WebLogic configuration overrides.
-                items:
-                  type: string
-                type: array
               imagePullSecrets:
                 description: A list of image pull Secrets for the WebLogic Server
                   image.
@@ -526,11 +517,11 @@ spec:
                 type: string
               logHomeLayout:
                 description: Control how log files under `logHome` are organized when
-                  logHome is set and `logHomeEnabled` is true. `FLAT` - - all files
+                  logHome is set and `logHomeEnabled` is true. `FLAT` - all files
                   directly in the `logHome` root directory. `BY_SERVERS` (default)
-                  - domain log files and `introspector.out` are at the logHome root
+                  - domain log files and `introspector.out` are at the `logHome` root
                   level, all other files are organized under the respective server
-                  name logs directory.  logHome/servers/<server name>/logs.
+                  name logs directory  logHome/servers/<server name>/logs.
                 enum:
                 - FLAT
                 - BY_SERVERS
@@ -542,9 +533,7 @@ spec:
                   field. PersistentVolume indicates that the domain home file system
                   is located on a persistent volume. FromModel indicates that the
                   domain home file system will be created and managed by the operator
-                  based on a WDT domain model. If this field is specified, it overrides
-                  the value of `domainHomeInImage`. If both fields are unspecified,
-                  then `domainHomeSourceType` defaults to Image.'
+                  based on a WDT domain model. Defaults to Image.'
                 enum:
                 - Image
                 - PersistentVolume
@@ -6650,13 +6639,6 @@ spec:
                   field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
                 type: number
-              domainHomeInImage:
-                description: Deprecated. Use `domainHomeSourceType` instead. Ignored
-                  if `domainHomeSourceType` is specified. True indicates that the
-                  domain home file system is present in the container image specified
-                  by the image field. False indicates that the domain home file system
-                  is located on a persistent volume. Defaults to unset.
-                type: boolean
               serverStartPolicy:
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
@@ -6700,11 +6682,6 @@ spec:
                   storage of default and custom file stores. If `dataHome` is not
                   specified or its value is either not set or empty, then the data
                   storage directories are determined from the WebLogic domain configuration.
-                type: string
-              configOverrides:
-                description: Deprecated. Use `configuration.overridesConfigMap` instead.
-                  Ignored if `configuration.overridesConfigMap` is specified. The
-                  name of the ConfigMap for optional WebLogic configuration overrides.
                 type: string
               logHomeEnabled:
                 description: Specifies whether the log home folder is enabled. Defaults
