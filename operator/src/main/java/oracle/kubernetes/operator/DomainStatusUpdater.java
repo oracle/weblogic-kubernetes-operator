@@ -74,8 +74,6 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -86,6 +84,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
@@ -505,13 +504,13 @@ public class DomainStatusUpdater {
       return newEvents;
     }
 
-    void addFailure(DomainStatus status, DomainFailureReason reason, String message) {
-      status.addCondition(new DomainCondition(FAILED).withReason(reason).withMessage(message));
-      addDomainEvent(new EventData(DOMAIN_FAILED, message).failureReason(reason));
+    void addFailure(DomainStatus status, DomainCondition condition) {
+      status.addCondition(condition);
+      addDomainEvent(condition);
     }
 
-    void addDomainEvent(EventData eventData) {
-      newEvents.add(eventData);
+    void addDomainEvent(DomainCondition condition) {
+      newEvents.add(new EventData(DOMAIN_FAILED, condition.getMessage()).failureReason(condition.getReason()));
     }
 
   }
@@ -612,11 +611,11 @@ public class DomainStatusUpdater {
         newConditions.apply();
 
         if (isHasFailedPod()) {
-          addFailure(status, SERVER_POD, forPodFailedMessage());
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodFailedMessage()));
         } else if (hasPodNotReadyInTime()) {
-          addFailure(status, SERVER_POD, formatPodNotReadyMessage());
+          addFailure(status, new DomainCondition(FAILED).withReason(SERVER_POD).withMessage(getPodNotReadyMessage()));
         } else {
-          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD.toString().equals(c.getReason()));
+          status.removeConditionsMatching(c -> c.hasType(FAILED) && SERVER_POD == c.getReason());
           if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
             status.removeConditionsWithType(CONFIG_CHANGES_PENDING_RESTART);
           }
@@ -627,11 +626,11 @@ public class DomainStatusUpdater {
         }
       }
 
-      private String formatPodNotReadyMessage() {
+      private String getPodNotReadyMessage() {
         return LOGGER.formatMessage(PODS_NOT_READY);
       }
 
-      private String forPodFailedMessage() {
+      private String getPodFailedMessage() {
         return LOGGER.formatMessage(PODS_FAILED);
       }
 
@@ -644,8 +643,7 @@ public class DomainStatusUpdater {
 
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
-          this.status.removeConditionsMatching(c -> c.hasType(FAILED)
-              && REPLICAS_TOO_HIGH.toString().equals(c.getReason()));
+          this.status.removeConditionsMatching(c -> c.hasType(FAILED) && REPLICAS_TOO_HIGH == c.getReason());
           this.clusterChecks = createClusterChecks();
           conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
           conditionList.add(new DomainCondition(AVAILABLE).withStatus(sufficientServersRunning()));
@@ -683,11 +681,7 @@ public class DomainStatusUpdater {
 
         private boolean failureReasonMatch(DomainCondition c1, DomainCondition c2) {
           return !c1.getType().equals(FAILED)
-              || (getReasonString(c1).equals(getReasonString(c2)) && getMessage(c1).equals(getMessage(c2)));
-        }
-
-        private String getReasonString(DomainCondition condition) {
-          return Optional.ofNullable(condition).map(DomainCondition::getReason).orElse("");
+              || (c1.getReason() == c2.getReason() && getMessage(c1).equals(getMessage(c2)));
         }
 
         private String getMessage(DomainCondition condition) {
@@ -792,9 +786,14 @@ public class DomainStatusUpdater {
         }
 
         private void computeTooManyReplicasFailures() {
-          Arrays.stream(clusterChecks)
+          final String message = Arrays.stream(clusterChecks)
               .filter(ClusterCheck::hasTooManyReplicas)
-              .forEach(check -> addFailure(status, REPLICAS_TOO_HIGH, check.createFailureMessage()));
+              .map(ClusterCheck::createFailureMessage)
+              .collect(Collectors.joining(System.lineSeparator()));
+
+          if (!isNullOrEmpty(message)) {
+            addFailure(status, new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessage(message));
+          }
         }
       }
 
@@ -1277,8 +1276,8 @@ public class DomainStatusUpdater {
     }
 
     class FailureStatusUpdaterContext extends DomainStatusUpdaterContext {
-      private DomainFailureReason reason;
-      private String message;
+      private final DomainFailureReason reason;
+      private final String message;
       private final String jobUid;
 
       public FailureStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep statusUpdaterStep,
@@ -1292,40 +1291,8 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        if (hasJustGotFatalIntrospectorError(message)) {
-          this.reason = ABORTED;
-          this.message = FATAL_INTROSPECTOR_ERROR_MSG + message;
-        } else if (hasJustExceededMaxRetryCount(status)) {
-          this.reason = ABORTED;
-        }
-        addFailure(status, reason, message);
+        addFailure(status, status.createAdjustedFailedCondition(reason, message, jobUid));
         status.removeMarkedFailures();
-
-        if (jobUid != null) {
-          addRetryInfoToStatusMessage(status, jobUid, status.getMessage());
-        }
-      }
-
-      private void addRetryInfoToStatusMessage(DomainStatus domainStatus, String jobUid, String message) {
-        domainStatus.setMessage(domainStatus.createDomainStatusMessage(jobUid, message));
-      }
-
-      private boolean hasJustGotFatalIntrospectorError(String message) {
-        return isFatalIntrospectorMessage(message)
-            && !isFatalIntrospectorMessage(getStatus().getMessage());
-      }
-
-      private boolean isFatalIntrospectorMessage(String statusMessage) {
-        return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
-      }
-
-      private boolean hasJustExceededMaxRetryCount(DomainStatus status) {
-        if (jobUid == null || status.hasReachedMaximumFailureCount()) {
-          return false;
-        } else {
-          status.incrementIntrospectJobFailureCount(jobUid);
-          return status.hasReachedMaximumFailureCount();
-        }
       }
 
     }

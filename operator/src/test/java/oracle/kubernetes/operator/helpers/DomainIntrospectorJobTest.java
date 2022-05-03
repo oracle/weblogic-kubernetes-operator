@@ -119,6 +119,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxilia
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyDomainMap;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -305,7 +306,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private void establishWlsDomainWithCluster(String s) throws JsonProcessingException {
-    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(s));
+    IntrospectionTestUtils.defineIntrospectionTopology(testSupport, createDomainConfig(s));
   }
 
   private static WlsDomainConfig createDomainConfig(String clusterName) {
@@ -581,9 +582,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             jobPod.getMetadata().getName(),
             jobPod.getMetadata().getNamespace(), 1, null, null);
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
-            LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, expectedDetail, 1, 2)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(formatIntrospectionError(expectedDetail)));
+  }
 
+  private String formatIntrospectionError(String failure) {
+    return LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, failure, 1, MAX_RETRY_COUNT);
   }
 
   @Test
@@ -1061,7 +1064,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenIntrospectorJobNotNeeded_doesNotValidateDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
-    IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);
+    IntrospectionTestUtils.defineIntrospectionTopology(testSupport, wlsDomainConfig);
 
     // make JobHelper.runIntrospector() return false
     getCluster("cluster-1").setServerStartPolicy(ServerStartPolicy.NEVER);
@@ -1076,7 +1079,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnDelete() {
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
@@ -1109,7 +1112,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -1130,7 +1133,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private void createFailedIntrospectionLog() {
     ignoreIntrospectorFailureLogs();
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
   }
 
@@ -1213,8 +1216,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(),
-          equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM, 1, 2)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(formatIntrospectionError(SEVERE_PROBLEM)));
   }
 
   @Test
@@ -1248,7 +1250,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
       consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
     }
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, logMessage);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, logMessage);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
   }
 
