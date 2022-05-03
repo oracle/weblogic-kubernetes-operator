@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d973b3a8a2ccc0c9ac828fd8a73cde4fac09c097539ee1d633acbcf839836fee
+    weblogic.sha256: 9df415c46d3e7a62054da058749e62bc79e58087ad553ba13c68e46f6f40c9df
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -521,7 +521,7 @@ spec:
                   directly in the `logHome` root directory. `BY_SERVERS` (default)
                   - domain log files and `introspector.out` are at the `logHome` root
                   level, all other files are organized under the respective server
-                  name logs directory  logHome/servers/<server name>/logs.
+                  name logs directory  `logHome/servers/<server name>/logs`.
                 enum:
                 - FLAT
                 - BY_SERVERS
