@@ -366,6 +366,14 @@
           "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
+        "logHomeLayout": {
+          "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `FLAT` - all files directly in the `logHome` root directory. `BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`.",
+          "type": "string",
+          "enum": [
+            "FLAT",
+            "BY_SERVERS"
+          ]
+        },
         "domainHomeSourceType": {
           "description": "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is present in the container image specified by the `image` field. PersistentVolume indicates that the domain home file system is located on a persistent volume. FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. Defaults to Image.",
           "type": "string",
@@ -388,7 +396,7 @@
           "$ref": "#/definitions/AdminServer"
         },
         "logHome": {
-          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.",
+          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.See also `domains.spec.logHomeLayout`.",
           "type": "string"
         },
         "includeServerOutInPodLog": {

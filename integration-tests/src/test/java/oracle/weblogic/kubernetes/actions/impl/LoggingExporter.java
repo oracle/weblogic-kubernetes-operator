@@ -15,7 +15,6 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -52,6 +51,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaul
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,6 +77,7 @@ public class LoggingExporter {
     String namespace = params.getLoggingExporterNamespace();
     Map<String, String> labels = new HashMap<>();
     labels.put("app", elasticsearchName);
+    boolean deploymentCreated = false;
 
     // create Elasticsearch deployment CR
     logger.info("Create Elasticsearch deployment CR for {0} in namespace {1}",
@@ -86,15 +87,24 @@ public class LoggingExporter {
     // create Elasticsearch deployment
     logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
     try {
-      Kubernetes.createDeployment(elasticsearchDeployment);
-    } catch (ApiException apiex) {
-      if (apiex.getResponseBody().contains("AlreadyExists")) {
-        getLogger().log(Level.WARNING, apiex.getResponseBody());
+      // create Elasticsearch deployment
+      logger.info("Create Elasticsearch deployment {0} in namespace {1}", elasticsearchName, namespace);
+      withStandardRetryPolicy.untilAsserted(
+          () -> assertTrue(Kubernetes.createDeployment(elasticsearchDeployment),
+              String.format("Waiting for Elasticsearch %s in namespace %s to be deployed",
+                  elasticsearchName, namespace)));
+      deploymentCreated = true;
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      if (ex.getMessage().contains("AlreadyExists")) {
+        getLogger().log(Level.WARNING, ex.getMessage());;
       } else {
-        getLogger().log(Level.SEVERE, apiex.getResponseBody());
+        getLogger().log(Level.SEVERE, ex.getMessage());
         fail("Elastic search deployment failed with unknown reason, see above");
       }
     }
+    logger.info("Elasticsearch deploymentCreated: {0}", deploymentCreated);
+
     logger.info("Check if Elasticsearch deployment {0} is ready in namespace {1}",
         elasticsearchName, namespace);
     testUntil(
@@ -116,13 +126,14 @@ public class LoggingExporter {
     assertTrue(serviceCreated, String.format(
         "Failed to create Elasticsearch service for %s in namespace %s",
             elasticsearchName, namespace));
+    logger.info("Elasticsearch service created {0}:",serviceCreated);
 
     // check that Elasticsearch service exists in its namespace
     logger.info("Check that Elasticsearch service {0} exists in namespace {1}",
         elasticsearchName, namespace);
     checkServiceExists(elasticsearchName, namespace);
 
-    return true;
+    return deploymentCreated && serviceCreated;
   }
 
   /**
@@ -136,18 +147,31 @@ public class LoggingExporter {
     String namespace = params.getLoggingExporterNamespace();
     Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);
+    boolean deploymentCreated = false;
 
     // create Kibana deployment CR
     logger.info("Create Kibana deployment CR for {0} in namespace {1}", kibanaName, namespace);
     V1Deployment kibanaDeployment = createKibanaDeploymentCr(params);
 
-    // create Kibana deployment
-    logger.info("Create Kibana deployment {0} in namespace {1}", kibanaName, namespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(kibanaDeployment),
-        "createDeployment of Kibana failed with ApiException");
-    assertTrue(deploymentCreated,
-        String.format("Failed to create Kibana deployment for %s in %s namespace",
-            kibanaName, namespace));
+    try {
+      // create Kibana deployment
+      logger.info("Create Kibana deployment {0} in namespace {1}", kibanaName, namespace);
+      withStandardRetryPolicy.untilAsserted(
+          () -> assertTrue(Kubernetes.createDeployment(kibanaDeployment),
+              String.format("Waiting for Kibana %s in namespace %s to be deployed",
+                  kibanaName, namespace)));
+      deploymentCreated = true;
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      if (ex.getMessage().contains("AlreadyExists")) {
+        getLogger().log(Level.WARNING, ex.getMessage());
+      } else {
+        getLogger().log(Level.SEVERE, ex.getMessage());
+        fail("Kibana deployment failed with unknown reason, see above");
+      }
+    }
+    logger.info("Kibana deploymentCreated: {0}", deploymentCreated);
+
     logger.info("Checking if Kibana deployment is ready {0} completed in namespace {1}",
         kibanaName, namespace);
     testUntil(
@@ -173,7 +197,7 @@ public class LoggingExporter {
         kibanaName, namespace);
     checkServiceExists(kibanaName, namespace);
 
-    return true;
+    return deploymentCreated && serviceCreated;
   }
 
   /**
