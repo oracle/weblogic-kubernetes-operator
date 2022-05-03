@@ -546,13 +546,14 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
+    String uniquePath = "/shared/" + domainNamespace3 + "/domains/logHome";
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
-    logger.info("Currently the log home used by the domain is: {0}", logHome);
+    logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, uniquePath);
 
     //change logHome from /shared/logs to /shared/logs/logHome
     String patchStr = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"" + uniquePath + "\"}"
         + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
