@@ -44,6 +44,8 @@ public interface KubernetesConstants {
   String NAMESPACE = "Namespace";
   String POD = "Pod";
   String EVICTED_REASON = "Evicted";
+  String DEADLINE_EXCEEDED_REASON = "DeadlineExceeded";
+  String BACKOFFLIMIT_EXCEEDED_REASON = "BackoffLimitExceeded";
 
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
 

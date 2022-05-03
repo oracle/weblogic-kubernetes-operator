@@ -44,6 +44,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 
+import static oracle.kubernetes.operator.KubernetesConstants.BACKOFFLIMIT_EXCEEDED_REASON;
+import static oracle.kubernetes.operator.KubernetesConstants.DEADLINE_EXCEEDED_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 
@@ -416,8 +418,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   public static boolean isTimedOutReason(String reason) {
-    LOGGER.warning("xyz-debug- Reason is: " + reason);
-    return "DeadlineExceeded".equals(reason) || "BackoffLimitExceeded".equals(reason);
+    return DEADLINE_EXCEEDED_REASON.equals(reason) || BACKOFFLIMIT_EXCEEDED_REASON.equals(reason);
   }
 
   static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {

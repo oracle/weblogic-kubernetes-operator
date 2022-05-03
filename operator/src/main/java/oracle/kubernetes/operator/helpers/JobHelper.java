@@ -59,6 +59,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
+import static oracle.kubernetes.operator.KubernetesConstants.DEADLINE_EXCEEDED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -752,7 +753,7 @@ public class JobHelper {
       }
 
       private boolean isJobPodTimedOut(V1Pod jobPod) {
-        return "DeadlineExceeded".equals(getJobPodStatusReason(jobPod));
+        return DEADLINE_EXCEEDED_REASON.equals(getJobPodStatusReason(jobPod));
       }
 
       private String getJobPodStatusReason(V1Pod jobPod) {
