@@ -412,7 +412,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   public static boolean isJobTimedOut(V1Job job) {
-    return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
+    return isFailed(job) && isTimedOutReason(getFailedReason(job));
+  }
+
+  public static boolean isTimedOutReason(String reason) {
+    LOGGER.warning("xyz-debug- Reason is: " + reason);
+    return "DeadlineExceeded".equals(reason) || "BackoffLimitExceeded".equals(reason);
   }
 
   static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
