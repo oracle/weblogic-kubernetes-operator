@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -509,6 +510,10 @@ public class Domain implements KubernetesObject {
   String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
+  }
+
+  public LogHomeLayoutType getLogHomeLayout() {
+    return spec.getLogHomeLayout();
   }
 
   boolean isLogHomeEnabled() {

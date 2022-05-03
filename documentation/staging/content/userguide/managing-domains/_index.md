@@ -166,6 +166,34 @@ The operator can automatically override WebLogic Server, domain, and introspecto
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
 and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
 
+Server log files are placed in a subdirectory `servers/<server name>/logs`
+by default when both `logHome` and `logHomeEnabled` are set.
+Set `logHomeLayout` to `FLAT` to place all log files at the `logHome` root.
+
+For example, here is the default layout of the log files under the `logHome` root:
+
+```text
+/shared/logs/domain1$ ls -aRtl 
+-rw-r----- 1 docker root 291340 Apr 27 10:26 sample-domain1.log
+-rw-r--r-- 1 docker root  24772 Apr 26 12:50 introspector_script.out
+drwxr-xr-x 1 docker root    108 Apr 25 13:49 servers
+
+./servers/managed-server2/logs:
+-rw-r----- 1 docker root 921385 Apr 27 18:20 managed-server2.log
+-rw-r----- 1 docker root  25421 Apr 27 10:26 managed-server2.out
+-rw-r----- 1 docker root  14711 Apr 27 10:25 managed-server2_nodemanager.log
+-rw-r--r-- 1 docker root  16829 Apr 27 10:25 managed-server2_nodemanager.out
+-rw-r----- 1 docker root      5 Apr 27 10:25 managed-server2.pid
+
+./servers/admin-server/logs:
+-rw-r----- 1 docker root 903878 Apr 27 18:19 admin-server.log
+-rw-r----- 1 docker root  16516 Apr 27 10:25 admin-server_nodemanager.log
+-rw-r--r-- 1 docker root  18610 Apr 27 10:25 admin-server_nodemanager.out
+-rw-r----- 1 docker root  25514 Apr 27 10:25 admin-server.out
+-rw-r----- 1 docker root      5 Apr 27 10:25 admin-server.pid
+
+```
+
 If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
 Servers, you can set corresponding system properties in `JAVA_OPTIONS`:

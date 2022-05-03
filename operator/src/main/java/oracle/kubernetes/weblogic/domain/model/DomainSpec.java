@@ -24,6 +24,7 @@ import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -102,8 +103,23 @@ public class DomainSpec extends BaseConfiguration {
           + "server *.out, introspector .out, and optionally HTTP access log files "
           + "if `httpAccessLogInLogHome` is true. "
           + "Default is `/shared/logs/DOMAIN-UID`. "
-          + "Ignored if `logHomeEnabled` is false.")
+          + "Ignored if `logHomeEnabled` is false."
+          + "See also `domains.spec.logHomeLayout`.")
   private String logHome;
+
+  /**
+   * The log files layout under `logHome`.
+   *   FLAT - all files is in one directory
+   *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
+   * */
+  @Description(
+      "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
+        + "`FLAT` - all files directly in the `logHome` root directory. "
+        + "`BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, "
+        + "all other files are organized under the respective server name logs directory  "
+        + "`logHome/servers/<server name>/logs`.")
+  private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
+
 
   /**
    * Whether the log home is enabled.
@@ -585,6 +601,19 @@ public class DomainSpec extends BaseConfiguration {
     this.logHome = Optional.ofNullable(logHome).map(this::validatePath).orElse(null);
   }
 
+  /**
+   * Log Home Layout.
+   *
+   * @return The logHomeLayout value.
+   */
+  LogHomeLayoutType getLogHomeLayout() {
+    return logHomeLayout;
+  }
+
+  public void setLogHomeLayout(LogHomeLayoutType logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
+  }
+
   private String validatePath(String s) {
     if (s.isBlank()) {
       return null;
@@ -977,6 +1006,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
+            .append("logHomeLayout", logHomeLayout)
             .append("logHomeEnabled", logHomeEnabled)
             .append("managedServers", managedServers)
             .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
@@ -1009,6 +1039,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(logHomeLayout)
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
@@ -1049,6 +1080,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeLayout, rhs.logHomeLayout)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
