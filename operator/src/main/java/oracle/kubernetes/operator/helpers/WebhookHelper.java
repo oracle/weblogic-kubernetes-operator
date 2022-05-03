@@ -34,7 +34,7 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPER
 
 public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  public static final String VALIDATING_WEBHOOK_NAME = "weblogic-validating-webhook-v9";
+  public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook.v9";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
 
   private WebhookHelper() {
@@ -84,6 +84,8 @@ public class WebhookHelper {
       return AnnotationHelper.withSha256Hash(new V1ValidatingWebhookConfiguration()
           .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).namespace(getWebhookNamespace()).labels(labels))
           .addWebhooksItem(new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
+              .admissionReviewVersions(Collections.singletonList("v1"))
+              .sideEffects("None")
               .addRulesItem(new V1RuleWithOperations()
                   .addApiGroupsItem("weblogic.oracle")
                   .apiVersions(Collections.singletonList(API_VERSION_V9))
