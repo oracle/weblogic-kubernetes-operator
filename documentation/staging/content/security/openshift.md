@@ -28,7 +28,7 @@ COPY --from=builder --chown=oracle:root /u01 /u01
 
 OpenShift, by default, enforces the `restricted` security context constraint which
 allocates a high, random UID in the `root` group for each container.  The standard
-images mentioned above are designed to work with the `restricted` security context constraint.
+images mentioned previously are designed to work with the `restricted` security context constraint.
 
 However, if you build your own image, have an older version of an image, or obtain an
 image from another source, it may not have the necessary permissions.  You may need to

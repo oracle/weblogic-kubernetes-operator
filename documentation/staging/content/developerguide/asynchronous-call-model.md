@@ -100,7 +100,7 @@ In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber
 
 #### Call builder pattern
 
-The asynchronous call model is implemented by classes in the `oracle.kubernetes.operator.helpers` package, including `CallBuilder` and `ResponseStep`.  The model is based on the `Fiber` suspend/resume pattern described above.  `CallBuilder` provides many methods having names ending with "Async", such as `listPodAsync()` or `deleteServiceAsync()`.  These methods return a `Step` that can be returned as part of a `NextAction`.  When creating these `Steps`, the developer must provide a `ResponseStep`.  Only `ResponseStep.onSuccess()` must be implemented; however, it is often useful to override `onFailure()` as Kubernetes treats `404 (Not Found)` as a failure.
+The asynchronous call model is implemented by classes in the `oracle.kubernetes.operator.helpers` package, including `CallBuilder` and `ResponseStep`.  The model is based on the `Fiber` suspend/resume pattern described previously.  `CallBuilder` provides many methods having names ending with "Async", such as `listPodAsync()` or `deleteServiceAsync()`.  These methods return a `Step` that can be returned as part of a `NextAction`.  When creating these `Steps`, the developer must provide a `ResponseStep`.  Only `ResponseStep.onSuccess()` must be implemented; however, it is often useful to override `onFailure()` as Kubernetes treats `404 (Not Found)` as a failure.
 
 In this sample, the developer is using the pattern to list pods from the default namespace that are labeled as part of `cluster-1`.
 

@@ -255,7 +255,7 @@ spec:
   type: ClusterIP
 ```
 
-In the example above, the database would be visible in the cluster using the address
+In the previous example, the database would be visible in the cluster using the address
 `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
 When you run the database in the Kubernetes cluster, you will probably want to also
@@ -269,7 +269,7 @@ the Kubernetes cluster and run RCU on another machine with access to the cluster
 If you wish to run the database outside Kubernetes, you need to create a way for containers
 running in pods in Kubernetes to see the database.  This can be done by defining a
 Kubernetes Service with no selector and associating it with an endpoint definition, as shown
-in the example below:
+in the following example:
 
 ```yaml
 kind: Service
@@ -294,7 +294,7 @@ subsets:
 ```
 
 This creates a DNS name `database` in the current namespace, or`default` if no namespace is
-specified, as in the example above. In this example, the fully qualified name would be
+specified, as in the previous example. In this example, the fully qualified name would be
 `database.default.svc.cluster.local`.  The second part is the namespace.
 If you looked up the `ClusterIP` for such a service, it would have an IP address on the overlay
 network, that is the network inside the Kubernetes cluster.  If you are using flannel,
@@ -406,7 +406,7 @@ to enter the `sys` user password.
 #### Create a Kubernetes Secret with the RCU credentials
 
 You also need to create a Kubernetes Secret containing the credentials for the database schemas.
-When you create your domain using the sample provided below, it will obtain the RCU credentials
+When you create your domain using the following sample, it will obtain the RCU credentials
 from this secret.
 
 We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-rcu-credentials/README.md)
