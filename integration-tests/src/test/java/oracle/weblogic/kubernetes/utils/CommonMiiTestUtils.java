@@ -171,7 +171,7 @@ public class CommonMiiTestUtils {
         domainNamespace,
         imageName,
         adminSecretName,
-        OCIR_SECRET_NAME,
+        new String[]{OCIR_SECRET_NAME},
         encryptionSecretName,
         replicaCount,
         "cluster-1");
@@ -223,11 +223,16 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String imageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName) {
 
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : repoSecretName) {
+      secrets.add(new V1LocalObjectReference().name(secret));
+    }
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -239,8 +244,6 @@ public class CommonMiiTestUtils {
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
             .image(imageName)
-            .addImagePullSecretsItem(new io.kubernetes.client.openapi.models.V1LocalObjectReference()
-                .name(repoSecretName))
             .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domNamespace))
@@ -268,6 +271,7 @@ public class CommonMiiTestUtils {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    domain.spec().setImagePullSecrets(secrets);
 
     setPodAntiAffinity(domain);
     return domain;
@@ -296,7 +300,7 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String baseImageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName,
@@ -343,7 +347,7 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String baseImageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName,
@@ -394,7 +398,7 @@ public class CommonMiiTestUtils {
       String domNamespace,
       String baseImageName,
       String adminSecretName,
-      String repoSecretName,
+      String[] repoSecretName,
       String encryptionSecretName,
       int replicaCount,
       String clusterName,
