@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
@@ -106,6 +107,13 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHome("/my/logs/");
 
     assertThat(domain.getLogHome(), equalTo("/my/logs/"));
+  }
+
+  @Test
+  void whenLogHomeLayoutSet_returnTheCorrectLayoutType() {
+    configureDomain(domain).withLogHomeLayout(LogHomeLayoutType.FLAT);
+
+    assertThat(domain.getLogHomeLayout(), equalTo(LogHomeLayoutType.FLAT));
   }
 
   @Test
