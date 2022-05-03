@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -138,6 +139,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
+            .resources(createResources())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -158,6 +160,16 @@ public abstract class BasePodStepContext extends StepContextBase {
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, auxiliaryImage.getImage());
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name);
     return vars;
+  }
+
+  protected V1ResourceRequirements createResources() {
+    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resourceRequirements = null;
+    if (!resources.getLimits().isEmpty() || !resources.getRequests().isEmpty()) {
+      resourceRequirements = new V1ResourceRequirements()
+          .limits(resources.getLimits()).requests(resources.getRequests());
+    }
+    return resourceRequirements;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {

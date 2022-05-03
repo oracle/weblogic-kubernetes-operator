@@ -386,7 +386,8 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
-            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+            .map(c -> c.env(createEnv(c, tuningParameters)).resources(createResources()))
+            .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
 
