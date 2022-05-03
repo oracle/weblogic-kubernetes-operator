@@ -522,6 +522,34 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
+  void whenJobCreatedWithAuxiliaryImageWithResourceLimits_createInitContainerHasResourceLimits() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("memory", "1Gi");
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
+  void whenJobCreatedWithAuxiliaryImageWithResourceRequests_createInitContainerHasResourceRequests() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withRequestRequirement("memory", "1Gi");
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
   void whenJobCreatedWithAIAndCustomSourceWDTInstallHome_createPodWithInitContainerHavingCustomSourceWDTInstallHome() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
