@@ -28,6 +28,7 @@ import org.apache.commons.codec.binary.Base64;
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 
@@ -81,17 +82,17 @@ public class WebhookHelper {
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       return AnnotationHelper.withSha256Hash(new V1ValidatingWebhookConfiguration()
-          .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).labels(labels))
+          .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).namespace(getWebhookNamespace()).labels(labels))
           .addWebhooksItem(new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
               .addRulesItem(new V1RuleWithOperations()
                   .addApiGroupsItem("weblogic.oracle")
                   .apiVersions(Collections.singletonList(API_VERSION_V9))
                   .operations(Collections.singletonList("UPDATE"))
                   .resources(Collections.singletonList("domains"))
-                  .scope("Namespaces"))
+                  .scope("Namespaced"))
               .clientConfig(new AdmissionregistrationV1WebhookClientConfig()
                   .service(new AdmissionregistrationV1ServiceReference()
-                      .namespace(NamespaceHelper.getWebhookNamespace())
+                      .namespace(getWebhookNamespace())
                       .name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
                       .port(CONVERSION_WEBHOOK_HTTPS_PORT)
                       .path(VALIDATING_WEBHOOK_PATH))
