@@ -35,7 +35,6 @@ import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -54,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -190,7 +190,7 @@ class ItMiiAuxiliaryImageCluster {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, auxiliaryImageDomainScopeNames.toString(), auxiliaryImageClusterScopeNames.toString());
     Domain domainCR = createDomainResourceWithAuxiliaryImageClusterScope(domainUid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, clusterName,
         Map.of(auxiliaryImagePath, List.of(auxiliaryImageVolumeName)),
         auxiliaryImageDomainScopeNames, auxiliaryImageClusterScopeNames);
@@ -362,7 +362,7 @@ class ItMiiAuxiliaryImageCluster {
 
   private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     //replace the BUSYBOX_IMAGE and BUSYBOX_TAG in Dockerfile
-    Path dockerDestFile = Paths.get(WORK_DIR, "auximages", "Dockerfile");
+    Path dockerDestFile = Paths.get(WORK_DIR, "auximagescluster", "Dockerfile");
     assertDoesNotThrow(() -> {
       Files.createDirectories(dockerDestFile.getParent());
       Files.copy(Paths.get(dockerFileLocation),
