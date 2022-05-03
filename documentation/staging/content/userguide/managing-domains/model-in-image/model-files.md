@@ -123,7 +123,7 @@ jdbc-dev-urlprops.10.yaml
 z.yaml
 ```
 
-Then the combined model files list is passed to the WebLogic Deploy Tool as:
+Then the combined model files list is passed to WebLogic Deploy Tooling as:
 
 ```
 y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml

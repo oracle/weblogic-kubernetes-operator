@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -66,17 +67,6 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLivenessProbeCustomScript(String livenessProbeCustomScript) {
     getDomainSpec().setLivenessProbeCustomScript(livenessProbeCustomScript);
-    return this;
-  }
-
-  /**
-   * Specifies whether the domain home is stored in the image.
-   *
-   * @param domainHomeInImage boolean indicating if the domain home is stored in the image
-   * @return this object
-   */
-  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
-    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
     return this;
   }
 
@@ -171,6 +161,17 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLogHome(String logHome) {
     getDomainSpec().setLogHome(logHome);
+    return this;
+  }
+
+  /**
+   * Sets the log home layout value.
+   *
+   * @param logHomeLayout the log home layout value
+   * @return this object
+   */
+  public DomainConfigurator withLogHomeLayout(LogHomeLayoutType logHomeLayout) {
+    getDomainSpec().setLogHomeLayout(logHomeLayout);
     return this;
   }
 

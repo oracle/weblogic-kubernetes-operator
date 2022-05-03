@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -157,7 +158,9 @@ class DomainResourcesValidation {
     info.setPopulated(true);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (info.getDomain().getStatus() == null) {
-      makeRight = makeRight.interrupt();
+      makeRight = makeRight
+          .withEventData(EventHelper.EventItem.DOMAIN_CREATED, null)
+          .interrupt();
     }
     makeRight.execute();
   }

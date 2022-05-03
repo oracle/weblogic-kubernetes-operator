@@ -61,7 +61,7 @@ The script will perform the following steps:
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 
-* Create a properties file, `domain.properties`, in the directory that is created above.
+* Create a properties file, `domain.properties`, in the directory that was created previously.
   This properties file will be used to create a sample FMW Infrastructure domain.
   The `domain.properties` file will be removed upon successful completion of the script.
 
@@ -104,7 +104,7 @@ The script will perform the following steps:
   [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 
-* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -191,8 +191,8 @@ The following parameters can be provided in the inputs file.
 | `rcuCredentialsSecret` | The Kubernetes Secret containing the database credentials. | `domain1-rcu-credentials` |
 | `rcuDatabaseURL` | The database URL. | `database:1521/service` |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID to simplify matching domains to their RCU schemas. | `domain1` |
-| `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
-| `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
+| `toolsDir` | The directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
+| `wdtVersion` | Version of WebLogic Deploy Tooling to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
 | `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
@@ -212,7 +212,7 @@ The create script will verify that the domain was created, and will report failu
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
 various Kubernetes objects that were created by the script.
 
-Note that the example results below use the `default` Kubernetes Namespace. If you are using a different
+Note that the following example results use the `default` Kubernetes Namespace. If you are using a different
 namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
 ##### Generated YAML files with the default inputs
@@ -526,7 +526,7 @@ $ docker rmi domain-home-in-image:12.2.1.4
 
 #### Delete the tools directory.
 
-When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
+When no longer needed, delete the directory where WebLogic Deploy Tooling and WebLogic Image Tool are installed.
 By default, they are installed under `/tmp/dhii-sample/tools` directory.
 
 ```shell

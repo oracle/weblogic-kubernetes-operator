@@ -122,8 +122,12 @@ Elements related to domain identification, container image, and domain home:
 Elements related to logging:
 
 * `includeServerOutInPodLog`: Specifies whether the server .out file will be included in the Pod's log. Defaults to true.
-* `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.
+* `logHome`: The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false. See also `logHomeLayout`.
 * `logHomeEnabled`: Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
+* `logHomeLayout`: Specifies how log files are organized under the `logHome` directory when `logHomeEnabled` is set to `true`.
+  Defaults to `BY_SERVER`, where domain logs and `introspector.out` are placed at root level
+  and all other log files are organized under `logHome/servers/<server-name>/logs`.
+  If `FLAT` is specified, then all files are placed at root level.
 * `httpAccessLogInLogHome`: Specifies whether the server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain configuration. Defaults to true.
 
 Elements related to security:
@@ -147,9 +151,9 @@ Elements related to specifying and overriding WebLogic domain configuration:
 
 * These elements are under `configuration`.
 
-  * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}). If this field is specified, then the value of `spec.configOverrides` is ignored.
+  * `overridesConfigMap`: The name of the ConfigMap for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
   * `overrideDistributionStrategy`: Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are DYNAMIC, which means that the operator will distribute updated configuration overrides dynamically to running servers, and ON_RESTART, which means that servers will use updated configuration overrides only after the server's next restart. The selection of ON_RESTART will not cause servers to restart when there are updated configuration overrides available. See also `introspectVersion`. Defaults to DYNAMIC.
-  * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) or model. If this field is specified, then the value of `spec.configOverrideSecrets` is ignored.
+  * `secrets`: A list of names of the Secrets for WebLogic [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) or model.
   * `introspectorJobActiveDeadlineSeconds`: The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.
 
 * These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
@@ -169,7 +173,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
       [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
       in the Runtime Updates section of the Model in Image user guide.
     * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for online update calls to the
-       WebLogic domain from the WebLogic Deploy Tool within the introspector job. All timeouts
+       WebLogic domain from WebLogic Deploy Tooling within the introspector job. All timeouts
        are specified in milliseconds and default to two or three minutes. For a full list of
        timeouts, call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
 
@@ -228,7 +232,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLST_EXTRA_PROPERTIES`: System properties appended to WLST_PROPERTIES for  WLST commands in introspector jobs or WebLogic Server instance containers.
-* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during Model in Image introspector jobs or WebLogic Server instance containers.
+* `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tooling commands during Model in Image introspector jobs or WebLogic Server instance containers.
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 

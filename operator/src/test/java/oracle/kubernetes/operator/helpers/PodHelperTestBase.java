@@ -66,6 +66,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -107,7 +108,6 @@ import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
@@ -160,6 +160,7 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -449,8 +450,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
-  protected DomainConfigurator defineFluentdConfiguration(boolean watchIntrospectorLog) {
-    return configureDomain()
+  protected void defineFluentdConfiguration(boolean watchIntrospectorLog) {
+    configureDomain()
             .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
                     null);
   }
@@ -1557,6 +1558,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
+  }
+
+  @Test
+  void whenPodCreated_withLogHomeLayoutFlat_hasLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.FLAT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString()));
+  }
+
+  @Test
+  void whenPodCreated_withoutLogHomeLayout_hasNoLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString())));
   }
 
   @Test

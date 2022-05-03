@@ -10,12 +10,12 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.FATAL;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
@@ -59,6 +59,10 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   // internal: used to select failure conditions for deletion
   private volatile boolean markedForDeletion;
 
+  @Description("The severity of the failure. Can be Fatal, Severe or Warning.")
+  @Expose
+  private DomainFailureSeverity severity;
+
   /**
    * Creates a new domain condition, initialized with its type.
    * @param conditionType the enum that designates the condition type
@@ -76,6 +80,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.reason = other.reason;
     this.status = other.status;
     this.markedForDeletion = other.markedForDeletion;
+    this.severity = other.severity;
   }
 
   /**
@@ -143,6 +148,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   public DomainCondition withMessage(String message) {
     lastTransitionTime = SystemClock.now();
     this.message = message;
+    if (reason != null && DomainFailureReason.isFatalError(reason, message)) {
+      severity = FATAL;
+    }
     return this;
   }
 
@@ -162,8 +170,13 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this
    */
   public DomainCondition withReason(DomainFailureReason reason) {
+    if (message != null) {
+      throw new IllegalStateException("May not set reason after message");
+    }
+    
     lastTransitionTime = SystemClock.now();
     this.reason = Optional.ofNullable(reason).map(Enum::toString).orElse(null);
+    this.severity = Optional.ofNullable(reason).map(DomainFailureReason::getDefaultSeverity).orElseThrow();
     return this;
   }
 
@@ -208,6 +221,22 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     return type;
   }
 
+  /**
+   * Set the severity for the current FAILED condition. This is not allowed for other types.
+   * @param severity the new severity value
+   */
+  public void setSeverity(DomainFailureSeverity severity) {
+    if (!type.equals(FAILED)) {
+      throw new IllegalStateException("May not set severity on a condition of type " + type);
+    }
+
+    this.severity = severity;
+  }
+
+  public DomainFailureSeverity getSeverity() {
+    return severity;
+  }
+
   public boolean hasType(DomainConditionType type) {
     return type == this.type;
   }
@@ -235,6 +264,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     Optional.ofNullable(type).ifPresent(sb::append);
     Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
     Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
+    Optional.ofNullable(severity).ifPresent(m -> sb.append(" severity: ").append(m));
     Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));
     return sb.toString();
   }
@@ -246,6 +276,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message)
         .append(type)
         .append(status)
+        .append(severity)
         .toHashCode();
   }
 
@@ -263,6 +294,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .append(message, rhs.message)
         .append(type, rhs.type)
         .append(status, rhs.status)
+        .append(severity, rhs.severity)
         .isEquals();
   }
 
@@ -272,16 +304,19 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    */
   @Override
   public int compareTo(DomainCondition o) {
-    return type == o.type
-          ? o.lastTransitionTime.compareTo(lastTransitionTime)
-          : type.compareTo(o.type);
+    return type != o.type ? type.compareTo(o.type) : type.compare(this, o);
+  }
+
+  int compareTransitionTime(DomainCondition thatCondition) {
+    return thatCondition.lastTransitionTime.compareTo(lastTransitionTime);
   }
 
   private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
         .withStringField("message", DomainCondition::getMessage)
         .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)
-        .withEnumField("type", DomainCondition::getType);
+        .withEnumField("type", DomainCondition::getType)
+        .withEnumField("severity", DomainCondition::getSeverity);
 
   static ObjectPatch<DomainCondition> getObjectPatch() {
     return conditionPatch;
@@ -294,5 +329,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   boolean isSpecifiedFailure(DomainFailureReason reason) {
     return hasType(FAILED) && reason.toString().equals(getReason());
+  }
+
+  public boolean isNotValid() {
+    return hasType(FAILED) && reason == null;
   }
 }
