@@ -27,6 +27,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
+import static oracle.kubernetes.operator.KubernetesConstants.BACKOFFLIMIT_EXCEEDED_REASON;
+import static oracle.kubernetes.operator.KubernetesConstants.DEADLINE_EXCEEDED_REASON;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static org.hamcrest.Matchers.both;
@@ -181,13 +183,12 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return setFailedConditionWithReason(job, null);
   }
 
-  private V1Job markJobTimedOut(V1Job job) {
-    return markJobTimedOut(job, "DeadlineExceeded");
+  private V1Job markJobTimedOutWithDeadlineExceeded(V1Job job) {
+    return setFailedWithReason(job, DEADLINE_EXCEEDED_REASON);
   }
 
-  @SuppressWarnings("SameParameterValue")
-  private V1Job markJobTimedOut(V1Job job, String reason) {
-    return setFailedWithReason(job, reason);
+  private V1Job markJobTimedOutWithBackoffLimitExceeded(V1Job job) {
+    return setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
   }
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
@@ -264,7 +265,15 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenWaitForReadyAppliedToTimedOutJobWithDeadlineExceeded_terminateWithException() {
-    startWaitForReady(job -> markJobTimedOut(job, "DeadlineExceeded"));
+    startWaitForReady(job -> markJobTimedOutWithDeadlineExceeded(job));
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  void whenWaitForReadyAppliedToTimedOutJobWithBackoffLimitExceeded_terminateWithException() {
+    startWaitForReady(job -> markJobTimedOutWithBackoffLimitExceeded(job));
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
@@ -319,9 +328,9 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     assertThat(terminalStep.wasRun(), is(true));
   }
 
-  @Test
+  @Test //xyz
   void whenJobTimedOutOnFirstRead_terminateWithException() {
-    startWaitForReadyThenReadJob(this::markJobTimedOut);
+    startWaitForReadyThenReadJob(this::markJobTimedOutWithDeadlineExceeded);
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
@@ -369,7 +378,15 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenReceivedDeadlineExceededResponse_terminateWithException() {
-    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOut);
+    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOutWithDeadlineExceeded);
+
+    assertThat(terminalStep.wasRun(), is(false));
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  void whenReceivedBackoffLimitExceededResponse_terminateWithException() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOutWithBackoffLimitExceeded);
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
