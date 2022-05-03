@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -277,6 +278,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getEffectiveLogHome() {
     return getDomain().getEffectiveLogHome();
+  }
+
+  private LogHomeLayoutType getLogHomeLayout() {
+    return getDomain().getLogHomeLayout();
   }
 
   private String isIncludeServerOutInPodLog() {
@@ -793,6 +798,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
+      addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
+    }
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));

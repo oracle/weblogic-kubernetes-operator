@@ -14,7 +14,7 @@ This project has adopted the following coding standards:
 * All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
 * All logged messages must be internationalized using the resource bundle `src/main/resources/Operator.properties` and using a key itemized in `src/main/java/oracle/kubernetes/operator/logging/MessageKeys.java`.
-* After operator initialization, all operator work must be implemented using the asynchronous call model (described below).  In particular, worker threads must not use `sleep()` or IO or lock-based blocking methods.
+* After operator initialization, all operator work must be implemented using the asynchronous call model.  In particular, worker threads must not use `sleep()` or IO or lock-based blocking methods.
 
 ### Code formatting plugins
 

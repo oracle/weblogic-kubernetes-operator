@@ -40,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -239,24 +240,17 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private DomainSpec createDomainSpec() {
-    Cluster cluster = new Cluster();
-    cluster.setClusterName("cluster-1");
-    cluster.setReplicas(1);
-    cluster.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
     DomainSpec spec =
         new DomainSpec()
             .withDomainUid(UID)
             .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
-            .withConfigOverrides(OVERRIDES_CM)
-            .withCluster(cluster)
+            .withConfiguration(new Configuration()
+                .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
+            .withCluster(new Cluster()
+                .withClusterName("cluster-1").withReplicas(1).withServerStartPolicy(ServerStartPolicy.IF_NEEDED))
             .withImage(LATEST_IMAGE)
-            .withDomainHomeInImage(false);
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
-
-    List<String> overrideSecrets = new ArrayList<>();
-    overrideSecrets.add(OVERRIDE_SECRET_1);
-    overrideSecrets.add(OVERRIDE_SECRET_2);
-    spec.setConfigOverrideSecrets(overrideSecrets);
 
     return spec;
   }
@@ -577,6 +571,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobCreatedWithMultipleAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
     getConfigurator()
+            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);

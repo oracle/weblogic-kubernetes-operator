@@ -32,7 +32,7 @@ The parameters are as follows:
 
 This creates a `generic` secret containing the user name and password as literal values.
 
-You can check the secret with the `kubectl get secret` command.  An example is shown below,
+You can check the secret with the `kubectl get secret` command.  The following example is shown,
 including the output:
 
 ```shell

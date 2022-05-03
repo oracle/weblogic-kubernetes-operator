@@ -44,7 +44,7 @@ Kubernetes namespace as an application that calls the resource, then:
     as the target resource, then the application
     can simply specify the JNDI name of the resource and
     _it should not specify a URL_.
-  - If the application is running outside of one of the above locations,
+  - If the application is running outside of one of the previously listed locations,
     but is still in the same Kubernetes namespace as the target resource,
     then, in addition to a JNDI name, the application must also specify a `t3`
     or `t3s` URL that includes the DNS name of the target
@@ -273,7 +273,7 @@ For example, here is a snippet of a WebLogic domain `config.xml` file for channe
 </cluster>
 ```
 
-Here is a snippet of offline WLST code that corresponds to the above `config.xml` file snippet:
+Here is a snippet of offline WLST code that corresponds to the previous `config.xml` file snippet:
 
 ```javascript
   templateName = "cluster-1-template"
@@ -293,7 +293,7 @@ Here is a snippet of offline WLST code that corresponds to the above `config.xml
   set('ClientCertificateEnforced', false)
 ```
 
-Here is a snippet of WDT model YAML file configuration that corresponds to the above snippets:
+Here is a snippet of WDT model YAML file configuration that corresponds to the previous snippets:
 
 ```yaml
 topology:

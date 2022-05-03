@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -511,6 +512,10 @@ public class Domain implements KubernetesObject {
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
   }
 
+  public LogHomeLayoutType getLogHomeLayout() {
+    return spec.getLogHomeLayout();
+  }
+
   boolean isLogHomeEnabled() {
     return Optional.ofNullable(spec.isLogHomeEnabled()).orElse(getDomainHomeSourceType().hasLogHomeByDefault());
   }
@@ -775,8 +780,7 @@ public class Domain implements KubernetesObject {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
+    return spec.getConfigOverrideSecrets();
   }
 
   /**
