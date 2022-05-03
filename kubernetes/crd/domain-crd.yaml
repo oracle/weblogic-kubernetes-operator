@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: efe84baf8c719aa695f95fb6c07ec7a7e8ee8301cb6c0a10ecbe62671703454e
+    weblogic.sha256: 9df415c46d3e7a62054da058749e62bc79e58087ad553ba13c68e46f6f40c9df
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -514,6 +514,17 @@ spec:
                   `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/
                   if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID>
                   if `domainHomeSourceType` is FromModel.
+                type: string
+              logHomeLayout:
+                description: Control how log files under `logHome` are organized when
+                  logHome is set and `logHomeEnabled` is true. `FLAT` - all files
+                  directly in the `logHome` root directory. `BY_SERVERS` (default)
+                  - domain log files and `introspector.out` are at the `logHome` root
+                  level, all other files are organized under the respective server
+                  name logs directory  `logHome/servers/<server name>/logs`.
+                enum:
+                - FLAT
+                - BY_SERVERS
                 type: string
               domainHomeSourceType:
                 description: 'Domain home file system source type: Legal values: Image,
@@ -3540,7 +3551,7 @@ spec:
                   the domain, Node Manager, server logs, server *.out, introspector
                   .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
                   is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled`
-                  is false.
+                  is false.See also `domains.spec.logHomeLayout`.
                 type: string
               includeServerOutInPodLog:
                 description: Specifies whether the server .out file will be included
