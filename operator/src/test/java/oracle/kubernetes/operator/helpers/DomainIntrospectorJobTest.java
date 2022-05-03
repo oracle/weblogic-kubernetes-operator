@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -117,6 +118,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_WDT_IN
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImage;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAuxiliaryImageVolume;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyDomainMap;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createResources;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
@@ -495,6 +497,50 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateInitContainers(job),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS));
+  }
+
+  @Test
+  void whenJobCreatedWithAuxiliaryImageWithResourceRequirements_createInitContainerHasResourceRequirements() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("cpu", "250m")
+        .withRequestRequirement("memory", "1Gi");
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
+  void whenJobCreatedWithAuxiliaryImageWithResourceLimits_createInitContainerHasResourceLimits() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("memory", "1Gi");
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
+  void whenJobCreatedWithAuxiliaryImageWithResourceRequests_createInitContainerHasResourceRequests() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withRequestRequirement("memory", "1Gi");
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi")))));
   }
 
   @Test
@@ -1358,6 +1404,25 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateInitContainers(job),
         hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageWithResourceRequirements_createJobPodHasResourceRequirements() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
+        DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage = createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
+
+    convertDomainWithLegacyAuxImages(
+        createLegacyDomainMap(
+            PodHelperTestBase.createDomainSpecMapWithResources(
+                Collections.singletonList(auxiliaryImageVolume),
+                List.of(auxiliaryImage), createResources())));
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+        hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+            new V1ResourceRequirements().limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi")))));
   }
 
   void convertDomainWithLegacyAuxImages(Map<String, Object> map) {
