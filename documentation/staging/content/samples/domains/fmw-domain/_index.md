@@ -68,7 +68,7 @@ The script will perform the following steps:
 * Create a Kubernetes Job that will start up a utility FMW Infrastructure container and run
   offline WLST scripts to create the domain on the shared storage.
 * Run and wait for the job to finish.
-* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -170,7 +170,7 @@ The create script will verify that the domain was created, and will report failu
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
 various Kubernetes objects that were created by the script.
 
-Note that the example results below use the `default` Kubernetes Namespace. If you are using a different
+Note that the following example results use the `default` Kubernetes Namespace. If you are using a different
 namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
 ##### Generated YAML files with the default inputs
