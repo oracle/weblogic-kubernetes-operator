@@ -546,14 +546,14 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    String uniquePath = "/shared/" + domainNamespace3 + "/domains/logHome";
+    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome";
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
-    logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, uniquePath);
+    logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, newLogHome);
 
     //change logHome from /shared/logs to /shared/logs/logHome
     String patchStr = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"" + uniquePath + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"" + newLogHome + "\"}"
         + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
@@ -567,7 +567,7 @@ class ItKubernetesDomainEvents {
 
     //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
-    assertEquals("/shared/logs/logHome", domain1.getSpec().getLogHome(), "logHome is not updated");
+    assertEquals(newLogHome, domain1.getSpec().getLogHome(), "logHome is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
