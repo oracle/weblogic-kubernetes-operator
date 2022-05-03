@@ -61,7 +61,7 @@ The script will perform the following steps:
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 
-* Create a properties file, `domain.properties`, in the directory that is created above.
+* Create a properties file, `domain.properties`, in the directory that was created previously.
   This properties file will be used to create a sample FMW Infrastructure domain.
   The `domain.properties` file will be removed upon successful completion of the script.
 
@@ -104,7 +104,7 @@ The script will perform the following steps:
   [Container image protection]({{<relref "/security/domain-security/image-protection.md">}}).
   {{% /notice %}}
 
-* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -212,7 +212,7 @@ The create script will verify that the domain was created, and will report failu
 However, it may be desirable to manually verify the domain, even if just to gain familiarity with the
 various Kubernetes objects that were created by the script.
 
-Note that the example results below use the `default` Kubernetes Namespace. If you are using a different
+Note that the following example results use the `default` Kubernetes Namespace. If you are using a different
 namespace, you need to replace `NAMESPACE` in the example `kubectl` commands with the actual Kubernetes Namespace.
 
 ##### Generated YAML files with the default inputs

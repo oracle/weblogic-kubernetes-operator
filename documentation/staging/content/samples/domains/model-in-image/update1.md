@@ -62,7 +62,7 @@ Here are the steps:
 
    ```
 
-   Place the above model snippet in a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where you deploy the model ConfigMap, or alternatively, use the same data source that's provided in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
+   Place the previous model snippet in a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where you deploy the model ConfigMap, or alternatively, use the same data source that's provided in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
 
 1. Create the data source secret.
 

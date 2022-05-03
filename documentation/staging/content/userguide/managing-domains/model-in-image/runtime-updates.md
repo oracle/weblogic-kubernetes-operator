@@ -23,7 +23,7 @@ description = "Updating a running Model in Image domain's images and model files
    - [Online update scenarios](#online-update-scenarios)
    - [Online update sample](#online-update-sample)
  - [Appendices](#appendices)
-   - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools) below.
+   - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
    - [Changing a Domain `restartVersion` or `introspectVersion`](#changing-a-domain-restartversion-or-introspectversion)
 
 ### Overview
@@ -81,7 +81,7 @@ the syntax for specifying your model file originally.
 
 The following updates are *supported* for offline or online updates,
 except when they reference an area that is specifically
-documented as [unsupported](#unsupported-updates) below:
+documented as [unsupported](#unsupported-updates):
 
  - You can add a new WebLogic cluster or standalone server.
 
@@ -164,7 +164,7 @@ and a description of workarounds and alternatives when applicable:
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file.
    The workaround is to do this using two model files:
    add a model file that deletes the named bean/resource that is a parent to
-   the attribute you want to delete using the `!` syntax as described above,
+   the attribute you want to delete using the `!` syntax as described previously,
    and add another model file that will be loaded after the first one,
    which fully defines the named bean/resource but without the attribute you want to delete.
 
@@ -540,7 +540,7 @@ resources:
     ...
 ```
 
-The above will fail as this implicitly removes
+This fails because it implicitly removes
 the MBean types `SelfTuning` and `WorkManager`.
 
 _Deleting cross-referenced MBeans_
@@ -882,7 +882,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   #      /tmp/compare_model_stdout
   ```
 
-**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
+**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the previous `discoverDomain.sh` commands.
 
 #### Changing a Domain `restartVersion` or `introspectVersion`
 
