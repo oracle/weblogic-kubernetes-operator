@@ -677,7 +677,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
-            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+            .map(c -> c.env(createEnv(c, tuningParameters)).resources(createResources()))
+        .collect(Collectors.toList()));
     return initContainers;
   }
 
