@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -904,6 +905,21 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenDomainHasAuxiliaryImagesWithResourceRequirements_createPodsWithAIInitContainerHavingResourceRequirements() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("cpu", "250m")
+        .withRequestRequirement("memory", "1Gi");
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
+  @Test
   void whenDomainHasAIWithCustomSourceWdtInstallHome_createPodsWithAIInitContainerHavingCustomSourceWdtInstallHome() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -1059,6 +1075,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                     serverName)));
   }
 
+  @Test
+  void whenDomainHasLegacyAuxiliaryImagesWithResources_createPodsWithAIInitContainerHavingResourceRequirements() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
+
+    convertDomainWithLegacyAuxImages(
+        createLegacyDomainMap(
+            createDomainSpecMapWithResources(Collections.singletonList(auxiliaryImageVolume),
+                Collections.singletonList(auxiliaryImage), createResources())));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS,
+            AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+            new V1ResourceRequirements().limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
   static ImmutableMap<String, Object> createLegacyDomainMap(Map<String, Object> spec) {
     return ImmutableMap.of("apiVersion", "weblogic.oracle/v8",
             "kind", "Domain",
@@ -1074,6 +1109,19 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     spec.put("image", "image:latest");
     spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
     spec.put("serverPod", createServerPod(auxiliaryImages));
+    return spec;
+  }
+
+  static Map<String, Object> createDomainSpecMapWithResources(List<Object> auxiliaryImageVolumes,
+                                                              List<Object> auxiliaryImages,
+                                                              Map<String, Object> resources) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages, resources));
     return spec;
   }
 
@@ -1142,6 +1190,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @NotNull
+  private static Map<String, Object> createServerPod(List<Object> auxiliaryImages, Map<String, Object> resources) {
+    Map<String, Object> serverPod = new LinkedHashMap<>();
+    serverPod.put("auxiliaryImages", auxiliaryImages);
+    serverPod.put("resources", resources);
+    return serverPod;
+  }
+
+  @NotNull
   private static Map<String, Object> createWebLogicCredentialsSecret() {
     Map<String, Object> webLogicCredentialsSecret = new LinkedHashMap<>();
     webLogicCredentialsSecret.put("name", "webLogicCredentialsSecretName");
@@ -1177,6 +1233,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     auxiliaryImage.put("volume", volume);
     auxiliaryImage.put("command", command);
     return auxiliaryImage;
+  }
+
+  static Map<String, Object> createResources() {
+    Map<String, Object> resources = new LinkedHashMap<>();
+    resources.put("requests", Collections.singletonMap("memory", "1Gi"));
+    resources.put("limits", Collections.singletonMap("cpu", "250m"));
+    return resources;
   }
 
   static Map<String, Object> createAuxiliaryImageVolume(String mountPath) {
