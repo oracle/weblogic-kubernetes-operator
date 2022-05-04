@@ -190,20 +190,30 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   private V1Job markJobTimedOutWithBackoffLimitExceeded(V1Job job) {
-    setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    OffsetDateTime now = SystemClock.now();
+    setFailedWithReasonAndLastTransitionTime(job, BACKOFFLIMIT_EXCEEDED_REASON, now);
     setActivateDeadline(job, 30L);
-    return setJobStartTime(job, SystemClock.now().minus(30, ChronoUnit.SECONDS));
+    return setJobStartTime(job, now.minus(30, ChronoUnit.SECONDS));
   }
 
   private V1Job markJobWithBackoffLimitExceeded(V1Job job) {
-    setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    OffsetDateTime now = SystemClock.now();
+    setFailedWithReasonAndLastTransitionTime(job, BACKOFFLIMIT_EXCEEDED_REASON, now);
     setActivateDeadline(job, 30L);
-    return setJobStartTime(job, SystemClock.now().minus(10, ChronoUnit.SECONDS));
+    return setJobStartTime(job, now.minus(10, ChronoUnit.SECONDS));
   }
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(
         createCondition(V1JobCondition.TypeEnum.FAILED).reason(reason)));
+  }
+
+  private V1Job setFailedWithReasonAndLastTransitionTime(V1Job job, String reason,
+      OffsetDateTime lastTransitionTime) {
+    return job.status(new V1JobStatus().failed(1).addConditionsItem(
+        createCondition(V1JobCondition.TypeEnum.FAILED)
+            .reason(reason)
+            .lastTransitionTime(lastTransitionTime)));
   }
 
   @SuppressWarnings("SameParameterValue")

@@ -15,7 +15,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -161,8 +160,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return getJobConditions(job).stream().anyMatch(JobWatcher::isJobConditionFailed);
   }
 
-  private static List<V1JobCondition> getJobConditions(@Nonnull V1Job job) {
-    return Optional.ofNullable(job.getStatus()).map(V1JobStatus::getConditions).orElse(Collections.emptyList());
+  private static List<V1JobCondition> getJobConditions(V1Job job) {
+    return Optional.ofNullable(job).map(V1Job::getStatus).map(V1JobStatus::getConditions)
+        .orElse(Collections.emptyList());
   }
 
   private static boolean isJobConditionFailed(V1JobCondition jobCondition) {
@@ -177,6 +177,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return Optional.ofNullable(jobCondition).map(V1JobCondition::getStatus).orElse("");
   }
 
+  private static boolean isJobConditionFailedBackoffLimitExceeded(V1JobCondition jobCondition) {
+    return isJobConditionFailed(jobCondition) && BACKOFFLIMIT_EXCEEDED_REASON.equals(jobCondition.getReason());
+  }
+
   /**
    * Get the reason for job failure.
    * @param job job
@@ -189,6 +193,14 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         .findAny()
         .map(V1JobCondition::getReason)
         .orElse(null);
+  }
+
+  static Optional<OffsetDateTime> getTimeOfBackoffLimitExceededCondition(V1Job job) {
+    return getJobConditions(job)
+        .stream()
+        .filter(JobWatcher::isJobConditionFailedBackoffLimitExceeded)
+        .findFirst()
+        .map(V1JobCondition::getLastTransitionTime);
   }
 
   @Override
@@ -416,23 +428,37 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   static boolean isDeadlineExceeded(V1Job job) {
-    String failedReason = getFailedReason(job);
-    return DEADLINE_EXCEEDED_REASON.equals(failedReason)
-        || (BACKOFFLIMIT_EXCEEDED_REASON.equals(failedReason) && hasJobReachedActivateDeadline(job));
+    return DEADLINE_EXCEEDED_REASON.equals(getFailedReason(job))
+        || isBackoffLimitExceededActiveDeadline(job);
   }
 
-  static boolean hasJobReachedActivateDeadline(@Nonnull V1Job job) {
-    return Optional.ofNullable(job.getSpec())
-        .map(V1JobSpec::getActiveDeadlineSeconds)
-        .map(activateDeadline -> getJobStartedSeconds(job) >= activateDeadline)
+  static boolean isBackoffLimitExceededActiveDeadline(V1Job job) {
+    return getTimeOfBackoffLimitExceededCondition(job)
+        .map(conditionTime -> getJobRuntime(conditionTime, job))
+        .map(jobRuntime -> isLongerThanActiveDeadline(jobRuntime, job))
         .orElse(false);
   }
 
-  static long getJobStartedSeconds(V1Job job) {
-    if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-      return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), SystemClock.now());
-    }
-    return -1;
+  static Long getJobRuntime(OffsetDateTime conditionTime, V1Job job) {
+    return getJobStatusStartTime(job)
+        .map(startTime -> ChronoUnit.SECONDS.between(startTime, conditionTime))
+        .orElse(null);
+  }
+
+  static Optional<OffsetDateTime> getJobStatusStartTime(V1Job job) {
+    return Optional.ofNullable(job)
+        .map(V1Job::getStatus)
+        .map(V1JobStatus::getStartTime);
+  }
+
+  static boolean isLongerThanActiveDeadline(Long jobActiveTime, V1Job job) {
+    return getActiveDeadlineSeconds(job).map(activeDeadline -> jobActiveTime >= activeDeadline).orElse(false);
+  }
+
+  static Optional<Long> getActiveDeadlineSeconds(V1Job job) {
+    return Optional.ofNullable(job)
+        .map(V1Job::getSpec)
+        .map(V1JobSpec::getActiveDeadlineSeconds);
   }
 
   static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
@@ -454,9 +480,14 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),
-          getJobStartedSeconds(job),
+          getJobStartedSeconds(),
           DomainPresence.getFailureRetryMaxCount());
     }
 
+    private long getJobStartedSeconds() {
+      return getJobStatusStartTime(job)
+          .map(startTime -> ChronoUnit.SECONDS.between(startTime, SystemClock.now()))
+          .orElse(-1L);
+    }
   }
 }
