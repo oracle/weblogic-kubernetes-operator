@@ -27,6 +27,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.AdmissionregistrationV1Api;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -79,6 +80,8 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1StorageClassList;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
@@ -118,6 +121,7 @@ public class Kubernetes {
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
+  private static AdmissionregistrationV1Api admissionregistrationApi = null;
   private static DeleteOptions deleteOptions = null;
 
   // Extended GenericKubernetesApi clients
@@ -148,6 +152,7 @@ public class Kubernetes {
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
+      admissionregistrationApi = new AdmissionregistrationV1Api();
       initializeGenericKubernetesApiClients();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
@@ -2614,6 +2619,36 @@ public class Kubernetes {
       throw apex;
     }
     return roleBindings;
+  }
+
+  /**
+   * List validating webhook configurations.
+   *
+   * @return V1ValidatingWebhookConfigurationList list of {@link V1ValidatingWebhookConfiguration} objects
+   * @throws ApiException when listing fails
+   */
+  public static V1ValidatingWebhookConfigurationList listValidatingWebhookConfiguration()
+      throws ApiException {
+    V1ValidatingWebhookConfigurationList validatingWebhookConfigurations;
+    try {
+
+      validatingWebhookConfigurations = admissionregistrationApi.listValidatingWebhookConfiguration(
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          null, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+      );
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+    return validatingWebhookConfigurations;
   }
 
 

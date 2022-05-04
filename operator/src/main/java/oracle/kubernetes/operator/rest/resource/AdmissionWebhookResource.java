@@ -19,7 +19,6 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public class AdmissionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  public static final String FAILED_STATUS = "Failed";
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookResource() {

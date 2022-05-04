@@ -25,7 +25,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.codec.binary.Base64;
 
-import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -36,6 +35,14 @@ public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook.v9";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
+  public static final String APP_GROUP = "weblogic.oracle";
+  public static final String API_VERSION = "v9";
+  public static final String ADMISSION_REVIEW_VERSION = "v1";
+  public static final String DOMAIN_RESOURCES = "domains";
+  public static final String OPERATION = "UPDATES";
+  public static final String SIDE_EFFECT_NONE = "None";
+  public static final String SCOPE = "Namespaced";
+
 
   private WebhookHelper() {
   }
@@ -82,16 +89,16 @@ public class WebhookHelper {
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       return AnnotationHelper.withSha256Hash(new V1ValidatingWebhookConfiguration()
-          .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).namespace(getWebhookNamespace()).labels(labels))
+          .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).labels(labels))
           .addWebhooksItem(new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
-              .admissionReviewVersions(Collections.singletonList("v1"))
-              .sideEffects("None")
+              .admissionReviewVersions(Collections.singletonList(ADMISSION_REVIEW_VERSION))
+              .sideEffects(SIDE_EFFECT_NONE)
               .addRulesItem(new V1RuleWithOperations()
-                  .addApiGroupsItem("weblogic.oracle")
-                  .apiVersions(Collections.singletonList(API_VERSION_V9))
-                  .operations(Collections.singletonList("UPDATE"))
-                  .resources(Collections.singletonList("domains"))
-                  .scope("Namespaced"))
+                  .addApiGroupsItem(APP_GROUP)
+                  .apiVersions(Collections.singletonList(API_VERSION))
+                  .operations(Collections.singletonList(OPERATION))
+                  .resources(Collections.singletonList(DOMAIN_RESOURCES))
+                  .scope(SCOPE))
               .clientConfig(new AdmissionregistrationV1WebhookClientConfig()
                   .service(new AdmissionregistrationV1ServiceReference()
                       .namespace(getWebhookNamespace())
