@@ -418,10 +418,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   static boolean isDeadlineExceeded(V1Job job) {
     String failedReason = getFailedReason(job);
     return DEADLINE_EXCEEDED_REASON.equals(failedReason)
-        || (BACKOFFLIMIT_EXCEEDED_REASON.equals(failedReason) && hasJobReachedActiveDeadline(job));
+        || (BACKOFFLIMIT_EXCEEDED_REASON.equals(failedReason) && hasJobReachedActivateDeadline(job));
   }
 
-  static boolean hasJobReachedActiveDeadline(@Nonnull V1Job job) {
+  static boolean hasJobReachedActivateDeadline(@Nonnull V1Job job) {
     return Optional.ofNullable(job.getSpec())
         .map(V1JobSpec::getActiveDeadlineSeconds)
         .map(activateDeadline -> getJobStartedSeconds(job) >= activateDeadline)
