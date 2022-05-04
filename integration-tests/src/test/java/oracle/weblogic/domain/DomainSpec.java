@@ -51,6 +51,13 @@ public class DomainSpec {
   private String logHome;
 
   @ApiModelProperty(
+      "Control how the log files under logHome is organized. "
+          + "FLAT - all files are under the logHome root directory. "
+          + "BY_SERVERS (default) - domain log file and introspector.out are at the logHome root level, all other files"
+          + "are organized under the respective server name logs directory.  logHome/servers/<server name>/logs.")
+  private String logHomeLayout;
+
+  @ApiModelProperty(
       "Specified whether the log home folder is enabled. Not required. "
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
@@ -91,22 +98,13 @@ public class DomainSpec {
       allowableValues = "range[0,infinity]")
   private Integer replicas;
 
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the image"
-          + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume.")
-  private Boolean domainHomeInImage;
-
   @ApiModelProperty(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is contained in the image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
-          + " unspecified then domainHomeSourceType defaults to Image.")
+          + " Defaults to Image.")
   private String domainHomeSourceType;
 
   @ApiModelProperty(
@@ -115,20 +113,6 @@ public class DomainSpec {
 
   @ApiModelProperty("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
-
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use configuration.overridesConfigMap instead."
-          + " Ignored if configuration.overridesConfigMap is specified."
-          + " The name of the config map for optional WebLogic configuration overrides.")
-  private String configOverrides;
-
-  @Deprecated
-  @ApiModelProperty(
-      "Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-          + " A list of names of the secrets for optional WebLogic configuration overrides.")
-  private List<String> configOverrideSecrets = new ArrayList<>();
-
 
   /**
    * The Fluentd configuration.
@@ -329,6 +313,19 @@ public class DomainSpec {
     this.logHome = logHome;
   }
 
+  public DomainSpec logHomeLayout(String logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
+    return this;
+  }
+
+  public String getLogHomeLayout() {
+    return logHomeLayout;
+  }
+
+  public void setLogHomeLayout(String logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
+  }
+
   public DomainSpec logHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
     return this;
@@ -478,23 +475,6 @@ public class DomainSpec {
     this.replicas = replicas;
   }
 
-  public DomainSpec domainHomeInImage(Boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-    return this;
-  }
-
-  public Boolean domainHomeInImage() {
-    return domainHomeInImage;
-  }
-
-  public Boolean getDomainHomeInImage() {
-    return domainHomeInImage;
-  }
-
-  public void setDomainHomeInImage(Boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-  }
-
   public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
     return this;
@@ -544,53 +524,6 @@ public class DomainSpec {
 
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
-  }
-
-  public DomainSpec configOverrides(String configOverrides) {
-    this.configOverrides = configOverrides;
-    return this;
-  }
-
-  public String configOverrides() {
-    return configOverrides;
-  }
-
-  public String getConfigOverrides() {
-    return configOverrides;
-  }
-
-  public void setConfigOverrides(String configOverrides) {
-    this.configOverrides = configOverrides;
-  }
-
-  public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
-    this.configOverrideSecrets = configOverrideSecrets;
-    return this;
-  }
-
-  public List<String> configOverrideSecrets() {
-    return configOverrideSecrets;
-  }
-
-  /**
-   * Adds config override secrets.
-   * @param configOverrideSecretsItem Config override secret
-   * @return this
-   */
-  public DomainSpec addConfigOverrideSecretsItem(String configOverrideSecretsItem) {
-    if (configOverrideSecrets == null) {
-      configOverrideSecrets = new ArrayList<>();
-    }
-    configOverrideSecrets.add(configOverrideSecretsItem);
-    return this;
-  }
-
-  public List<String> getConfigOverrideSecrets() {
-    return configOverrideSecrets;
-  }
-
-  public void setConfigOverrideSecrets(List<String> configOverrideSecrets) {
-    this.configOverrideSecrets = configOverrideSecrets;
   }
 
   public DomainSpec adminServer(AdminServer adminServer) {
@@ -803,12 +736,9 @@ public class DomainSpec {
             .append("imagePullSecrets", imagePullSecrets)
             .append("auxiliaryImageVolumes", auxiliaryImageVolumes)
             .append("replicas", replicas)
-            .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
             .append("introspectVersion", introspectVersion)
             .append("configuration", configuration)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
@@ -841,12 +771,9 @@ public class DomainSpec {
             .append(imagePullSecrets)
             .append(auxiliaryImageVolumes)
             .append(replicas)
-            .append(domainHomeInImage)
             .append(domainHomeSourceType)
             .append(introspectVersion)
             .append(configuration)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
@@ -887,12 +814,9 @@ public class DomainSpec {
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(auxiliaryImageVolumes, rhs.auxiliaryImageVolumes)
             .append(replicas, rhs.replicas)
-            .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
-            .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)

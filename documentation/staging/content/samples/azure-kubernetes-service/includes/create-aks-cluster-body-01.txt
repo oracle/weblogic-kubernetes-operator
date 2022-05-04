@@ -2,7 +2,7 @@
 
 An AKS cluster requires either an [Azure Active Directory (AD) service principal](https://docs.microsoft.com/azure/active-directory/develop/app-objects-and-service-principals) or a [managed identity](https://docs.microsoft.com/azure/aks/use-managed-identity) to interact with Azure resources.
 
-We will use a service principal to create an AKS cluster. Follow the commands below to create a new service principal.
+We will use a service principal to create an AKS cluster. Use the following commands to create a new service principal.
 
 Please run `az login` first. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
 

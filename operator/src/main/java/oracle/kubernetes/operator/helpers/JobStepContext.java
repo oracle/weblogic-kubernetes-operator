@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -281,6 +282,10 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getEffectiveLogHome();
   }
 
+  LogHomeLayoutType getLogHomeLayout() {
+    return getDomain().getLogHomeLayout();
+  }
+
   String getIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
@@ -386,7 +391,8 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
-            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+            .map(c -> c.env(createEnv(c, tuningParameters)).resources(createResources()))
+            .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
 
@@ -669,6 +675,9 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
+      addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
+    }
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
     addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());

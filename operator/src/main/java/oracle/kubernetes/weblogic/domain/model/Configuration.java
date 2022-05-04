@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -21,12 +21,10 @@ public class Configuration {
   private Opss opss;
 
   @Description(
-      "A list of names of the Secrets for WebLogic configuration overrides or model. If this field is specified,"
-          + " then the value of `spec.configOverrideSecrets` is ignored.")
+      "A list of names of the Secrets for WebLogic configuration overrides or model.")
   private List<String> secrets;
 
-  @Description("The name of the ConfigMap for WebLogic configuration overrides. If this field is specified,"
-          + " then the value of `spec.configOverrides` is ignored.")
+  @Description("The name of the ConfigMap for WebLogic configuration overrides.")
   private String overridesConfigMap;
 
   @Description("The introspector job timeout value in seconds. If this field is specified, "
@@ -77,12 +75,22 @@ public class Configuration {
     this.secrets = secrets;
   }
 
+  public Configuration withSecrets(List<String> secrets) {
+    setSecrets(secrets);
+    return this;
+  }
+
   public String getOverridesConfigMap() {
     return this.overridesConfigMap;
   }
 
   public void setOverridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
+  }
+
+  public Configuration withOverridesConfigMap(String overridesConfigMap) {
+    setOverridesConfigMap(overridesConfigMap);
+    return this;
   }
 
   public Long getIntrospectorJobActiveDeadlineSeconds() {

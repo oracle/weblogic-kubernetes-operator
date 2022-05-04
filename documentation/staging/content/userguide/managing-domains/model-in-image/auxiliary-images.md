@@ -297,7 +297,7 @@ Model In Image model files, application archives, and the WDT installation files
    $ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip ./models
    ```
 
-1. Use one of the two options listed below to create the auxiliary image using a small `busybox` image as the base image.
+1. Use one of the two following options to create the auxiliary image using a small `busybox` image as the base image.
    - Option 1 - Use the `createAuxImage` option of the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) (WIT) to create the auxiliary image. Run the following command:
 
      ```shell

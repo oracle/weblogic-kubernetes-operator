@@ -285,7 +285,8 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Check the server logs are written to PersistentVolume")
   void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
-    checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
+    checkLogsOnPV("grep RUNNING /shared/logs/servers/" + adminServerName + "/logs/"
+        + adminServerName + ".log", adminServerPodName);
   }
 
   /**
@@ -315,7 +316,8 @@ class ItMiiUpdateDomainConfig {
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
       logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
-      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/" + server + "_access.log", adminServerPodName);
+      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/servers/" + server + "/logs/"
+          + server + "_access.log",  adminServerPodName);
     }
   }
 

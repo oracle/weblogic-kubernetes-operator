@@ -56,7 +56,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
         --quota 100
     ```
 
-    The command provisions an NFS file share with NFS 4.1 or above.
+    The command provisions an NFS file share with NFS 4.1 or later.
 
 3. Configure network security.
 
@@ -236,4 +236,4 @@ NAME                       STATUS   VOLUME                                     C
 wls-azurefile-1612795811   Bound    pvc-b9c0dfbb-0cee-4362-809e-1621894c5794   100Gi      RWX            azurefile-csi-nfs   17s
 ```
 
-**Note**: Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.
+**Note**: Carefully inspect the output and verify it matches that shown previously. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.

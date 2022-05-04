@@ -575,7 +575,7 @@ Run the following command to create the domain custom resource:
 ```shell
 $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 ```
-**NOTE**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+**NOTE**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the previously listed command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Verify the WebLogic Server pods are all running:
 

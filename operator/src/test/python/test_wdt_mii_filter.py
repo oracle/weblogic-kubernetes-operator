@@ -128,7 +128,20 @@ class WdtUpdateFilterCase(unittest.TestCase):
     server_template = self.getServerTemplate(model)
     model_wdt_mii_filter.customizeLog("managed-server${id}", server_template)
     template_log_filename = server_template['Log']['FileName']
-    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}.log', template_log_filename, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
+    self.assertEqual('/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log',
+    template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log\'")
+
+  def test_customize_log_in_server_template_flatstructure(self):
+    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    model = self.getModel()
+
+    server_template = self.getServerTemplate(model)
+    model_wdt_mii_filter.customizeLog("managed-server${id}", server_template)
+    template_log_filename = server_template['Log']['FileName']
+    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}.log',
+                     template_log_filename, "Expected log file to be at \'/u01/logs/sample-domain1/managed-server${id}.log\'")
+    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
+
 
   def test_customize_access_log_in_server_template(self):
     model = self.getModel()
@@ -136,8 +149,20 @@ class WdtUpdateFilterCase(unittest.TestCase):
     server_template = self.getServerTemplate(model)
     model_wdt_mii_filter.customizeAccessLog("managed-server${id}", server_template)
     template_access_log = server_template['WebServer']['WebServerLog']['FileName']
-    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}_access.log', template_access_log, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
+    self.assertEqual('/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}_access.log',
+    template_access_log, "Expected log file at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}_access.log\'")
 
+
+  def test_customize_access_log_in_server_template_flatstructure(self):
+    os.environ['LOG_HOME_LAYOUT'] = 'FLAT'
+    model = self.getModel()
+
+    server_template = self.getServerTemplate(model)
+    model_wdt_mii_filter.customizeAccessLog("managed-server${id}", server_template)
+    template_access_log = server_template['WebServer']['WebServerLog']['FileName']
+    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}_access.log',
+                     template_access_log, "Expected log file at \'/u01/logs/sample-domain1/managed-server${id}_access.log\'")
+    os.environ['LOG_HOME_LAYOUT'] = 'BY_SERVERS'
 
   def test_customize_default_filestore_in_server_template(self):
     model = self.getModel()
@@ -262,11 +287,13 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     # verify custom log in server template
     template_log_filename = serverTemplate['Log']['FileName']
-    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}.log', template_log_filename, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
+    self.assertEqual('/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log',
+    template_log_filename, "Expected log file at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log\'")
 
     # verify custom access log in server template
     template_access_log = serverTemplate['WebServer']['WebServerLog']['FileName']
-    self.assertEqual('/u01/logs/sample-domain1/managed-server${id}_access.log', template_access_log, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
+    self.assertEqual('/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}_access.log',
+    template_access_log, "Expected log file at \'/u01/logs/sample-domain1/servers/managed-server${id}/logs/managed-server${id}.log\'")
 
     # verify listen address in server template
     listen_address = model['topology']['ServerTemplate'][template_name]['ListenAddress']

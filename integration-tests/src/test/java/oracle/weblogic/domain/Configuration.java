@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -20,13 +20,11 @@ public class Configuration {
   private Opss opss;
 
   @ApiModelProperty(
-      "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified"
-          + " it overrides the value of spec.configOverrideSecrets.")
+      "A list of names of the secrets for WebLogic configuration overrides or model.")
   private List<String> secrets;
 
   @ApiModelProperty(
-      "The name of the config map for WebLogic configuration overrides. If this field is specified"
-          + " it overrides the value of spec.configOverrides.")
+      "The name of the config map for WebLogic configuration overrides.")
   private String overridesConfigMap;
 
   @ApiModelProperty(

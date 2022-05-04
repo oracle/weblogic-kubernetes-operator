@@ -19,7 +19,7 @@ weight: 6
     ```
 
     The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
-    with the value specified by the `-d` flag.  For example, the command above would create a secret named
+    with the value specified by the `-d` flag.  For example, the previous command would create a secret named
     `sample-domain1-weblogic-credentials`.
 
 1.	Create a new image with a domain home, plus create a domain resource that the operator will use to deploy the image, by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
@@ -86,7 +86,7 @@ weight: 6
 
 1.	To confirm that the ingress controller noticed the new ingress and is successfully routing to the domain's server pods,
     you can send a request to the URL for the "WebLogic ReadyApp framework", as
-    shown in the example below, which will return an HTTP 200 status code.   
+    shown in the following example, which will return an HTTP 200 status code.   
 
     ```shell
     $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
