@@ -12,7 +12,7 @@ spec:
   webLogicCredentialsSecret: 
     name: weblogic-credentials
   imagePullSecrets:
-  - name: ocir-secret
+  - name: base-images-repo-secret
   includeServerOutInPodLog: true
   serverStartPolicy: "IF_NEEDED"
   auxiliaryImageVolumes:

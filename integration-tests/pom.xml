@@ -21,8 +21,7 @@
         <wko.it.skip.cleanup>${env.SKIP_CLEANUP}</wko.it.skip.cleanup>
         <wko.it.domain.version>${env.DOMAIN_VERSION}</wko.it.domain.version>
         <wko.it.kind.repo>${env.KIND_REPO}</wko.it.kind.repo>
-        <wko.it.ocir.registry>${env.BASE_IMAGES_REPO}</wko.it.ocir.registry>
-        <wko.it.repo.registry>${env.REPO_REGISTRY}</wko.it.repo.registry>
+        <wko.it.test.images.repo>${env.TEST_IMAGES_REPO}</wko.it.test.images.repo>
         <wko.it.base.images.repo>${env.BASE_IMAGES_REPO}</wko.it.base.images.repo>
         <wko.it.weblogic.image.name>${env.WEBLOGIC_IMAGE_NAME}</wko.it.weblogic.image.name>
         <wko.it.weblogic.image.tag>${env.WEBLOGIC_IMAGE_TAG}</wko.it.weblogic.image.tag>
@@ -185,8 +184,7 @@
                                 <wko.it.skip.cleanup>${wko.it.skip.cleanup}</wko.it.skip.cleanup>
                                 <wko.it.domain.version>${wko.it.domain.version}</wko.it.domain.version>
                                 <wko.it.kind.repo>${wko.it.kind.repo}</wko.it.kind.repo>
-                                <wko.it.ocir.registry>${wko.it.ocir.registry}</wko.it.ocir.registry>
-                                <wko.it.repo.registry>${wko.it.repo.registry}</wko.it.repo.registry>
+                                <wko.it.test.images.repo>${wko.it.test.images.repo}</wko.it.test.images.repo>
                                 <wko.it.base.images.repo>${wko.it.base.images.repo}</wko.it.base.images.repo>
                                 <wko.it.weblogic.image.name>${wko.it.weblogic.image.name}</wko.it.weblogic.image.name>
                                 <wko.it.weblogic.image.tag>${wko.it.weblogic.image.tag}</wko.it.weblogic.image.tag>

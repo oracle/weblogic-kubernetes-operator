@@ -183,9 +183,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           for (String image : images) {
             testUntil(
                 withVeryLongRetryPolicy,
-                pullImageFromOcrOrOcirAndPushToKind(image),
+                pullImageFromBaseRepoAndPushToKind(image),
                 logger,
-                "pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
+                "pullImageFromBaseRepoAndPushToKind for image {0} to be successful",
                 image);
           }
         }
@@ -239,7 +239,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               logger,
               "docker login to BASE_IMAGES_REPO to be successful");
 
-        // push the images to repo
+        // push the images to test images repository
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
 
           List<String> images = new ArrayList<>();
@@ -260,7 +260,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 withVeryLongRetryPolicy,
                 () -> dockerPush(image),
                 logger,
-                "docker push to REPO_REGISTRY/kind for image {0} to be successful",
+                "docker push to TEST_IMAGES_REPO/kind for image {0} to be successful",
                 image);
           }
 
@@ -348,7 +348,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       }
     }
 
-    // delete images from REPO_REGISTRY, if necessary
+    // delete images from TEST_IMAGES_REPO, if necessary
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
@@ -559,7 +559,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     });
   }
 
-  private Callable<Boolean> pullImageFromOcrOrOcirAndPushToKind(String image) {
+  private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);

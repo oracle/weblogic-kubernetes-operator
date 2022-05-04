@@ -308,10 +308,10 @@ class ItDedicatedMode {
     assertTrue(deleteServiceAccount(opServiceAccount,opNamespace),
         String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
 
-    // delete secret/ocir-secret
+    // delete secret/base-images-repo-secret
     Command
         .withParams(new CommandParams()
-            .command("kubectl delete secret/ocir-secret -n " + opNamespace + " --ignore-not-found"))
+            .command("kubectl delete secret/base-images-repo-secret -n " + opNamespace + " --ignore-not-found"))
         .execute();
   }
 }

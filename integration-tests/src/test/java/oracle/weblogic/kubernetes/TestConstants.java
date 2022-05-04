@@ -64,7 +64,7 @@ public interface TestConstants {
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
   public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
-  public static final String TEST_IMAGES_REPO_SECRET_NAME = "repo-registry-secret";
+  public static final String TEST_IMAGES_REPO_SECRET_NAME = "test-images-repo-secret";
 
   // ocir default image values, these values will be used while running locally
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
@@ -76,11 +76,11 @@ public interface TestConstants {
 
   // repository to push the domain images created during test execution
   // (a) for kind cluster push to kind repo
-  // (b) for OKD or OKE push to TEST_IMAGES_REPO_REGISTRY 
+  // (b) for OKD or OKE push to TEST_IMAGES_REPO 
   // (c) for local runs don't push the domain images to any repo
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
-      .orElse(getNonEmptySystemProperty("wko.it.repo.registry") != null
-          ? getNonEmptySystemProperty("wko.it.repo.registry") + "/weblogick8s/" : "");
+      .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
+          ? getNonEmptySystemProperty("wko.it.test.images.repo") + "/weblogick8s/" : "");
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images

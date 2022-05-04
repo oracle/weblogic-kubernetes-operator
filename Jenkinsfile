@@ -145,7 +145,7 @@ pipeline {
                description: 'URL to download WIT.',
                defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
         )
-        string(name: 'REPO_REGISTRY',
+        string(name: 'TEST_IMAGES_REPO',
                description: '',
                defaultValue: 'phx.ocir.io'
         )
@@ -500,7 +500,7 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.repo.registry=\"${REPO_REGISTRY}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config

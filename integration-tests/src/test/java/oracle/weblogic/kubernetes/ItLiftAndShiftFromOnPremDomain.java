@@ -410,7 +410,7 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "\\{\\{\\{imageName\\}\\}\\}", imageName);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
-          "name: ocir", "name: ocir-secret");
+          "name: ocir", "name: base-images-repo-secret");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
     } catch (IOException ioex) {
