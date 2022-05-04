@@ -189,13 +189,20 @@ public class DomainStatus {
 
   /**
    * Returns the domain condition that will be used to set the status summary information:
-   * reason, message and retry information.
+   * reason, message and retry information. Since failures are sorted first, a failure will always be returned
+   * if one is present.
    */
   @NotNull
   public DomainCondition getSummaryCondition() {
     return conditions.stream()
           .filter(this::maySupplyStatusMessage)
-          .findFirst().orElse(new DomainCondition(AVAILABLE));
+          .findFirst().orElse(createEmptyCondition());
+  }
+
+  // Returns a condition with null reason, message and retry information.
+  @NotNull
+  private DomainCondition createEmptyCondition() {
+    return new DomainCondition(AVAILABLE);
   }
 
   private boolean maySupplyStatusMessage(DomainCondition c) {

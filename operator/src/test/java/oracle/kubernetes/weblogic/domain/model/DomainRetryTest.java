@@ -76,8 +76,8 @@ class DomainRetryTest extends DomainTestBase {
     assertThat(domain.shouldRetry(), is(true));
   }
 
-  private void addFailureCondition(DomainFailureReason internal) {
-    domain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(internal).withMessage("oops"));
+  private void addFailureCondition(DomainFailureReason reason) {
+    domain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(reason).withMessage("oops"));
   }
 
   @Test
