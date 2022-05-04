@@ -48,7 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -168,7 +168,7 @@ class ItLogHomeFlatStructure {
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
