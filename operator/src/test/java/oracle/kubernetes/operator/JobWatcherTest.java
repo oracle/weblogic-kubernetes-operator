@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,6 +13,7 @@ import java.util.function.Function;
 
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -188,7 +190,9 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   private V1Job markJobTimedOutWithBackoffLimitExceeded(V1Job job) {
-    return setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    setActivateDeadline(job, 30L);
+    return setJobStartTime(job, SystemClock.now().minus(30, ChronoUnit.SECONDS));
   }
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
@@ -200,6 +204,16 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   private V1Job setFailedConditionWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().conditions(
             List.of(new V1JobCondition().type(V1JobCondition.TypeEnum.FAILED).status("True").reason(reason))));
+  }
+
+  private V1Job setActivateDeadline(V1Job job, Long activateDeadlineSeconds) {
+    job.spec(new V1JobSpec().activeDeadlineSeconds(activateDeadlineSeconds));
+    return job;
+  }
+
+  private V1Job setJobStartTime(V1Job job, OffsetDateTime jobStartTime) {
+    job.getStatus().startTime(jobStartTime);
+    return job;
   }
 
   @Test

@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -182,15 +183,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
    * @return Job failure reason.
    */
   public static String getFailedReason(V1Job job) {
-    V1JobStatus status = job.getStatus();
-    if (status != null && status.getConditions() != null) {
-      for (V1JobCondition cond : status.getConditions()) {
-        if (V1JobCondition.TypeEnum.FAILED.equals(cond.getType()) && "True".equals(cond.getStatus())) {
-          return cond.getReason();
-        }
-      }
-    }
-    return null;
+    return getJobConditions(job)
+        .stream()
+        .filter(JobWatcher::isJobConditionFailed)
+        .findAny()
+        .map(V1JobCondition::getReason)
+        .orElse(null);
   }
 
   @Override
@@ -414,11 +412,27 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   public static boolean isJobTimedOut(V1Job job) {
-    return isFailed(job) && isTimedOutReason(getFailedReason(job));
+    return isFailed(job) && isDeadlineExceeded(job);
   }
 
-  public static boolean isTimedOutReason(String reason) {
-    return DEADLINE_EXCEEDED_REASON.equals(reason) || BACKOFFLIMIT_EXCEEDED_REASON.equals(reason);
+  static boolean isDeadlineExceeded(V1Job job) {
+    String failedReason = getFailedReason(job);
+    return DEADLINE_EXCEEDED_REASON.equals(failedReason)
+        || (BACKOFFLIMIT_EXCEEDED_REASON.equals(failedReason) && hasJobReachedActiveDeadline(job));
+  }
+
+  static boolean hasJobReachedActiveDeadline(@Nonnull V1Job job) {
+    return Optional.ofNullable(job.getSpec())
+        .map(V1JobSpec::getActiveDeadlineSeconds)
+        .map(activateDeadline -> getJobStartedSeconds(job) >= activateDeadline)
+        .orElse(false);
+  }
+
+  static long getJobStartedSeconds(V1Job job) {
+    if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
+      return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), SystemClock.now());
+    }
+    return -1;
   }
 
   static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
@@ -440,15 +454,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),
-          getJobStartedSeconds(),
+          getJobStartedSeconds(job),
           DomainPresence.getFailureRetryMaxCount());
     }
 
-    private long getJobStartedSeconds() {
-      if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-        return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), SystemClock.now());
-      }
-      return -1;
-    }
   }
 }
