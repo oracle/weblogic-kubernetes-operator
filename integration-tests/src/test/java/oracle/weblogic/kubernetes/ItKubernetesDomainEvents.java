@@ -862,7 +862,9 @@ class ItKubernetesDomainEvents {
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
-        .addArgsItem("-x")
+        .addArgsItem("-c")
+        .addArgsItem("\"sleep 60\"")
+        .addArgsItem("&&")
         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
         .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
         .addArgsItem("-skipWLSModuleScanning")
