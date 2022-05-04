@@ -195,6 +195,12 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return setJobStartTime(job, SystemClock.now().minus(30, ChronoUnit.SECONDS));
   }
 
+  private V1Job markJobWithBackoffLimitExceeded(V1Job job) {
+    setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    setActivateDeadline(job, 30L);
+    return setJobStartTime(job, SystemClock.now().minus(10, ChronoUnit.SECONDS));
+  }
+
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(
         createCondition(V1JobCondition.TypeEnum.FAILED).reason(reason)));
@@ -399,11 +405,18 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   @Test
-  void whenReceivedBackoffLimitExceededResponse_terminateWithException() {
+  void whenReceivedTimedOutBackoffLimitExceededResponse_terminateWithException() {
     sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOutWithBackoffLimitExceeded);
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  @Test
+  void whenReceivedFailedWithBackoffLimitExceededResponse_performNextStep() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobWithBackoffLimitExceeded);
+
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
