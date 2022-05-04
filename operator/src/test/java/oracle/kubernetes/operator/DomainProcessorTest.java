@@ -93,8 +93,6 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.DomainFailureReason.ABORTED;
-import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -123,12 +121,16 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -190,8 +192,24 @@ class DomainProcessorTest {
         = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
 
-  private V1JobStatus jobStatus = createCompletedStatus();
-  private final Supplier<V1JobStatus> jobStatusSupplier = () -> jobStatus;
+  private final JobStatusSupplier jobStatusSupplier = new JobStatusSupplier(createCompletedStatus());
+
+  private static class JobStatusSupplier implements Supplier<V1JobStatus> {
+    private V1JobStatus jobStatus;
+
+    JobStatusSupplier(V1JobStatus jobStatus) {
+      this.jobStatus = jobStatus;
+    }
+
+    void setJobStatus(V1JobStatus jobStatus) {
+      this.jobStatus = jobStatus;
+    }
+
+    @Override
+    public V1JobStatus get() {
+      return jobStatus;
+    }
+  }
 
   V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
@@ -440,10 +458,9 @@ class DomainProcessorTest {
   void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
-
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
 
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+    createMakeRight(newDomain).execute();
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
@@ -872,9 +889,13 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+    createMakeRight(newDomain).execute();
 
     assertThat(job, notNullValue());
+  }
+
+  private MakeRightDomainOperation createMakeRight(Domain newDomain) {
+    return processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt();
   }
 
   @Test
@@ -882,8 +903,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
-    MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
-          new DomainPresenceInfo(newDomain)).interrupt();
+    MakeRightDomainOperation makeRight = createMakeRight(newDomain);
     makeRight.execute();
 
     assertThat(makeRight.wasInspectionRun(), is(true));
@@ -892,7 +912,7 @@ class DomainProcessorTest {
   @Test
   void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
     establishPreviousIntrospection(null);
-    jobStatus = createNotCompletedStatus();
+    jobStatusSupplier.setJobStatus(createNotCompletedStatus());
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
@@ -915,7 +935,7 @@ class DomainProcessorTest {
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
 
     establishPreviousIntrospection(null);
-    jobStatus = createTimedOutStatus();
+    jobStatusSupplier.setJobStatus(createTimedOutStatus());
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     processorDelegate.setMayRetry(true);
     testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
@@ -954,6 +974,41 @@ class DomainProcessorTest {
     assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
   }
 
+  @Test
+  void whenFluentdSpecified_verifyConfigMap() {
+    domainConfigurator
+            .withFluentdConfiguration(true, "fluentd-cred",
+                    null)
+            .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+            .map(V1ConfigMap::getData)
+            .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
+
+  }
+
+  @Test
+  void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
+    domainConfigurator
+            .withFluentdConfiguration(true, "fluentd-cred",
+                    "<match>me</match>")
+            .configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+
+    assertThat(Optional.ofNullable(fluentdConfigMap)
+            .map(V1ConfigMap::getData)
+            .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
+            .orElse(null), equalTo("<match>me</match>"));
+  }
+
   private void executeScheduledRetry() {
     testSupport.setTime(10, TimeUnit.SECONDS);
   }
@@ -973,7 +1028,7 @@ class DomainProcessorTest {
   void whenIntrospectionJobPodTimedOut_jobRecreatedAndFailedConditionCleared() throws Exception {
     consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    jobStatus = createBackoffStatus();
+    jobStatusSupplier.setJobStatus(createBackoffStatus());
     establishPreviousIntrospection(null);
     defineTimedoutIntrospection();
     testSupport.doOnDelete(JOB, j -> deletePod());
@@ -1031,7 +1086,8 @@ class DomainProcessorTest {
   void whenIntrospectionJobInitContainerHasImagePullFailure_jobRecreatedAndFailedConditionCleared() throws Exception {
     consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
-    jobStatus = createBackoffStatus();
+    jobStatusSupplier.setJobStatus(createBackoffStatus());
+
     establishPreviousIntrospection(null);
     defineIntrospectionWithInitContainerImagePullError();
     testSupport.doOnDelete(JOB, j -> deletePod());
@@ -1477,21 +1533,18 @@ class DomainProcessorTest {
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
           List.of(INDEPENDENT_SERVER));
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
-    domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
+    domainConfigurator.withDefaultReplicaCount(2);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
-    List<V1Pod> runningPods = getRunningPods();
-    //one introspector pod, one admin server pod, one independent server and four managed server pods for each cluster
-    assertThat(runningPods.size(), equalTo(11));
+    //one introspector pod, one admin server pod, one independent server and two managed server pods for each cluster
+    assertThat(getRunningPods().size(), equalTo(7));
 
     removeSecondClusterAndIndependentServerFromDomainTopology();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
-    runningPods = getRunningPods();
-    //one introspector pod, one admin server pod and four managed server pods for the one remaining cluster
-    assertThat(runningPods.size(), equalTo(6));
+    //one introspector pod, one admin server pod and two managed server pods for the one remaining cluster
+    assertThat(getRunningPods().size(), equalTo(4));
   }
 
   @Test

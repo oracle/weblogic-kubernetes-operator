@@ -134,7 +134,7 @@ $ kubectl get service domain1-admin-server-ext -n mynamespace -o jsonpath='{.spe
 ```
 
 If the Kubernetes node machine address is `kubernetes001`, then WLST can connect to
-the WebLogic Server Administration Server pod through the `NodePort` as shown below:
+the WebLogic Server Administration Server pod through the `NodePort` as follows:
 
 ```shell
 $ $ORACLE_HOME/oracle_common/common/bin/wlst.sh

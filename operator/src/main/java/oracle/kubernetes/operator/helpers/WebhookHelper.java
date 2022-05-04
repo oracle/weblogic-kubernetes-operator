@@ -39,7 +39,7 @@ public class WebhookHelper {
   public static final String API_VERSION = "v9";
   public static final String ADMISSION_REVIEW_VERSION = "v1";
   public static final String DOMAIN_RESOURCES = "domains";
-  public static final String OPERATION = "UPDATES";
+  public static final String OPERATION = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
   public static final String SCOPE = "Namespaced";
 

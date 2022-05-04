@@ -67,7 +67,7 @@ $ sudo chgrp -R 6789 logs/
 
 ### YAML files
 
-Persistent volumes and claims are described in YAML files. For each PersistentVolume, you should create one PersistentVolume YAML file and one PersistentVolumeClaim YAML file. In the example below, you will find two YAML templates, one for the volume and one for the claim. As stated above, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with `weblogic.domainUID=[domain name]`. This makes it easy to search for, and clean up resources associated with that particular domain.
+Persistent volumes and claims are described in YAML files. For each PersistentVolume, you should create one PersistentVolume YAML file and one PersistentVolumeClaim YAML file. In the following example, you will find two YAML templates, one for the volume and one for the claim. As stated previously, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with `weblogic.domainUID=[domain name]`. This makes it easy to search for, and clean up resources associated with that particular domain.
 
 For sample YAML templates, refer to the [PersistentVolumes example]({{< relref "/samples/storage/_index.md" >}}).
 
@@ -87,10 +87,10 @@ $ kubectl create -f pvc.yaml
 To confirm that the PersistentVolume was created, use these commands:
 
 ```shell
-$ kubectl describe pv [persistent volume name]
+$ kubectl describe pv <persistent volume name>
 ```
 ```shell
-$ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
+$ kubectl describe pvc -n NAMESPACE <persistent volume claim name>
 ```
 
 ### Common problems

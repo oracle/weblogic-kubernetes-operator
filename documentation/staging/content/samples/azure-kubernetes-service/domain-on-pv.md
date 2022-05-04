@@ -135,7 +135,7 @@ sh.helm.release.v1.weblogic-operator.v1   helm.sh/release.v1                    
 weblogic-operator-secrets                 Opaque                                1      5m41s
 ```
 
-**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+**Note**: If the `NAME` column in your output is missing any of the values shown previously, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown previously will have a different ending in your output.
 
 ##### Create WebLogic Domain
 You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume you created previously.
@@ -149,7 +149,7 @@ You need to set up the domain configuration for the WebLogic domain.
 
    If you used the automation script to create the AKS cluster, skip this step and go to step 2.
 
-   If you created Azure resources, step-by-step, according to the previous steps, then validate that all the resources above were created by using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
+   If you created Azure resources, step-by-step, according to the previous steps, then validate that all the previously shown resources were created by using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
 
    Use the following commands to check if the resources are ready:
 
@@ -485,7 +485,7 @@ To deploy a sample application on WLS, you may skip to the section [Deploy sampl
 
 #### Automation
 
-If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
+If you want to automate the previous steps of creating AKS cluster and WLS domain, you can use the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
 The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic to persist its configuration and data separately from the Kubernetes pods that run WLS workloads.

@@ -15,7 +15,6 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
-import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -28,6 +27,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -161,7 +161,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreated() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
 
     assertThat("Found DOMAIN_FAILED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILED_EVENT), is(true));
@@ -169,7 +169,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test this failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test this failure", null));
 
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -181,9 +181,9 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDTopologyMismatchTwice_domainFailedEventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
     dispatchAddedEventWatches();
-    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure", null));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).inNamespace(NS).withCount(2));
   }

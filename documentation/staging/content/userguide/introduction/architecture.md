@@ -42,7 +42,7 @@ For more details on acquiring the operator image and prerequisites for installin
 
 The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the Domain type defined by this CRD, including its schema, are available [here]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
-The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
+The following diagram shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
 {{< img "High level architecture" "images/high-level-architecture.png" >}}
 
@@ -104,7 +104,7 @@ more details about Domain UID name requirements, see
 
 ### Domain architecture
 
-The diagram below shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
+The following diagram shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
 
 {{< img "Domain architecture" "images/domain-architecture2.png" >}}
 
@@ -124,7 +124,7 @@ This diagram shows the following details:
 Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
 {{% /notice %}}
 
-The diagram below shows the components inside the containers running WebLogic Server instances:
+The following diagram shows the components inside the containers running WebLogic Server instances:
 
 {{< img "Inside a container" "images/inside-a-container.png" >}}
 

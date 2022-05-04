@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class HttpAsyncTestSupportTest {
   private final HttpAsyncTestSupport support = new HttpAsyncTestSupport();
@@ -77,15 +78,17 @@ class HttpAsyncTestSupportTest {
 
   @Test
   void whenMatchingRequestMeetsExpectations_returnMatch() {
-
+    assertDoesNotThrow(() -> {
+      // no-op
+    });
   }
 
   @Test
   void whenMatchingRequestHasUnexpectedContent_fail() {
-    support.defineResponse(createPostRequest("http://that", "abcd"),
-                                  createStub(HttpResponseStub.class, 200, "Wrong"));
-
-
+    assertDoesNotThrow(() -> {
+      support.defineResponse(createPostRequest("http://that", "abcd"),
+          createStub(HttpResponseStub.class, 200, "Wrong"));
+    });
   }
 
   @SuppressWarnings("SameParameterValue")

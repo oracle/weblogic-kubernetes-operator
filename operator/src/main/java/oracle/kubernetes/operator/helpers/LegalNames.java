@@ -16,6 +16,10 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
 
+  private LegalNames() {
+    // no-op
+  }
+
   public static final String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";

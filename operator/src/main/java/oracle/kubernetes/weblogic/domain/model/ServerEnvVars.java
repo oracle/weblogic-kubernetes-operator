@@ -11,6 +11,10 @@ import java.util.List;
  */
 public class ServerEnvVars {
 
+  private ServerEnvVars() {
+    // no-op
+  }
+  
   public static final String DOMAIN_UID = "DOMAIN_UID";
 
   /** The name of a WebLogic domain. */
@@ -48,6 +52,9 @@ public class ServerEnvVars {
 
   /** The location for the logs. */
   public static final String LOG_HOME = "LOG_HOME";
+
+  /** The layout for the logs. */
+  public static final String LOG_HOME_LAYOUT = "LOG_HOME_LAYOUT";
 
   /** The location for the centralized data directory. */
   public static final String DATA_HOME = "DATA_HOME";

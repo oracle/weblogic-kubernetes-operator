@@ -37,11 +37,11 @@ When your domain is created by the operator, a number of Kubernetes
 services are created by the operator, including one for the WebLogic Server
 Administration Server and one for each Managed Server and cluster.
 
-In the example below, there is a domain called `bobs-bookstore` in the
+In the following example, there is a domain called `bobs-bookstore` in the
 `bob` namespace.  This domain has a cluster called `cluster-1` which
 exposes traffic on port `31111`.
 
-The Kubernetes YAML file below defines a new `Service` in the same
+The following Kubernetes YAML file defines a new `Service` in the same
 namespace.  The `selector` targets all of the pods in this namespace
 which are part of the cluster `cluster-1`, using the annotations that
 are placed on those pods by the operator.  It also defines the port and

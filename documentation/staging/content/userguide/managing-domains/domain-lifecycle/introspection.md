@@ -38,7 +38,7 @@ Introspection automatically occurs when:
 
 #### Initiating introspection
 
-Sometimes, such as for the [use cases](#introspection-use-cases) described below, it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
+Sometimes, such as for the [use cases](#introspection-use-cases), it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
 
 Set `introspectVersion` to a new value.
 

@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -66,6 +67,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -107,7 +109,6 @@ import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
@@ -149,6 +150,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
@@ -159,6 +161,7 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -448,6 +451,12 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
+  protected void defineFluentdConfiguration(boolean watchIntrospectorLog) {
+    configureDomain()
+            .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
+                    null);
+  }
+
   @Test
   void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
     defineExporterConfiguration();
@@ -464,8 +473,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return getCreatedPodSpecContainers().stream().filter(this::isMonitoringExporterContainer).findFirst().orElse(null);
   }
 
+  protected V1Container getFluentdContainer() {
+    return getCreatedPodSpecContainers().stream().filter(this::isFluentdContainer).findFirst().orElse(null);
+  }
+
   private boolean isMonitoringExporterContainer(V1Container container) {
     return container.getName().contains(EXPORTER_CONTAINER_NAME);
+  }
+
+  private boolean isFluentdContainer(V1Container container) {
+    return container.getName().contains(FLUENTD_CONTAINER_NAME);
   }
 
   @Test
@@ -536,6 +553,66 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     defineExporterConfiguration();
 
     assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
+  }
+
+  @Test
+  void whenDomainHasFluentdInServerPod_createPodShouldHaveFluentdContainer() {
+    defineFluentdConfiguration(true);
+    
+    assertThat(getFluentdContainer(), notNullValue());
+  }
+
+  @Test
+  void whenDomainHasFluentdInServerPod_podRequiredEnvSet() {
+    defineFluentdConfiguration(true);
+
+    V1Container fluentContainer = getFluentdContainer();
+    assertThat(fluentContainer, notNullValue());
+
+    assertThat(hasContainerEnvName(fluentContainer, "FLUENTD_CONF"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "FLUENT_ELASTICSEARCH_SED_DISABLE"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "DOMAIN_UID"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "SERVER_NAME"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "LOG_PATH"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_HOST"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_PORT"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_USER"), equalTo(true));
+    assertThat(hasContainerEnvName(fluentContainer, "ELASTICSEARCH_PASSWORD"), equalTo(true));
+
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+            "ELASTICSEARCH_HOST","fluentd-cred", "elasticsearchhost"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_PORT","fluentd-cred", "elasticsearchport"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_USER","fluentd-cred", "elasticsearchuser"),
+            equalTo(true));
+    assertThat(hasContainerEnvNameReferenceSecretKey(fluentContainer,
+                    "ELASTICSEARCH_PASSWORD","fluentd-cred", "elasticsearchpassword"),
+            equalTo(true));
+  }
+
+  private boolean hasContainerEnvName(V1Container container, String name) {
+
+    return Optional.ofNullable(container)
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .anyMatch(e -> e.getName().equals(name));
+
+  }
+
+  private boolean hasContainerEnvNameReferenceSecretKey(V1Container container, String envName, String secretName,
+                                                        String secretKey) {
+
+    V1SecretKeySelector ref = Optional.ofNullable(container)
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .filter(c -> c.getName().equals(envName))
+            .findFirst()
+            .map(V1EnvVar::getValueFrom)
+            .map(V1EnvVarSource::getSecretKeyRef)
+            .orElse(null);
+
+    return ref != null && ref.getName().equals(secretName) && ref.getKey().equals(secretKey);
   }
 
   abstract void setServerPort(int port);
@@ -828,6 +905,21 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenDomainHasAuxiliaryImagesWithResourceRequirements_createPodsWithAIInitContainerHavingResourceRequirements() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("cpu", "250m")
+        .withRequestRequirement("memory", "1Gi");
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
+  @Test
   void whenDomainHasAIWithCustomSourceWdtInstallHome_createPodsWithAIInitContainerHavingCustomSourceWdtInstallHome() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -983,6 +1075,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                     serverName)));
   }
 
+  @Test
+  void whenDomainHasLegacyAuxiliaryImagesWithResources_createPodsWithAIInitContainerHavingResourceRequirements() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
+
+    convertDomainWithLegacyAuxImages(
+        createLegacyDomainMap(
+            createDomainSpecMapWithResources(Collections.singletonList(auxiliaryImageVolume),
+                Collections.singletonList(auxiliaryImage), createResources())));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS,
+            AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+            new V1ResourceRequirements().limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
   static ImmutableMap<String, Object> createLegacyDomainMap(Map<String, Object> spec) {
     return ImmutableMap.of("apiVersion", "weblogic.oracle/v8",
             "kind", "Domain",
@@ -998,6 +1109,19 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     spec.put("image", "image:latest");
     spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
     spec.put("serverPod", createServerPod(auxiliaryImages));
+    return spec;
+  }
+
+  static Map<String, Object> createDomainSpecMapWithResources(List<Object> auxiliaryImageVolumes,
+                                                              List<Object> auxiliaryImages,
+                                                              Map<String, Object> resources) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages, resources));
     return spec;
   }
 
@@ -1066,6 +1190,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @NotNull
+  private static Map<String, Object> createServerPod(List<Object> auxiliaryImages, Map<String, Object> resources) {
+    Map<String, Object> serverPod = new LinkedHashMap<>();
+    serverPod.put("auxiliaryImages", auxiliaryImages);
+    serverPod.put("resources", resources);
+    return serverPod;
+  }
+
+  @NotNull
   private static Map<String, Object> createWebLogicCredentialsSecret() {
     Map<String, Object> webLogicCredentialsSecret = new LinkedHashMap<>();
     webLogicCredentialsSecret.put("name", "webLogicCredentialsSecretName");
@@ -1101,6 +1233,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     auxiliaryImage.put("volume", volume);
     auxiliaryImage.put("command", command);
     return auxiliaryImage;
+  }
+
+  static Map<String, Object> createResources() {
+    Map<String, Object> resources = new LinkedHashMap<>();
+    resources.put("requests", Collections.singletonMap("memory", "1Gi"));
+    resources.put("limits", Collections.singletonMap("cpu", "250m"));
+    return resources;
   }
 
   static Map<String, Object> createAuxiliaryImageVolume(String mountPath) {
@@ -1482,6 +1621,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
+  }
+
+  @Test
+  void whenPodCreated_withLogHomeLayoutFlat_hasLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.FLAT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString()));
+  }
+
+  @Test
+  void whenPodCreated_withoutLogHomeLayout_hasNoLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString())));
   }
 
   @Test

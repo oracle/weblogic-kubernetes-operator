@@ -54,16 +54,20 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 
 public class JobHelper {
 
@@ -451,12 +455,12 @@ public class JobHelper {
       @Override
       public NextAction apply(Packet packet) {
         String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-
         return doNext(readDomainIntrospectorPodLog(jobPodName, getNext()), packet);
       }
 
       private Step readDomainIntrospectorPodLog(String jobPodName, Step next) {
         return new CallBuilder()
+                .withContainerName(getDomain().getDomainUid() + "-introspector")
                 .readPodLogAsync(
                         jobPodName, getNamespace(), getDomainUid(), new ReadPodLogResponseStep(next));
       }
@@ -495,7 +499,9 @@ public class JobHelper {
         Optional.ofNullable(callResponse.getResult()).ifPresent(result -> processIntrospectionResult(packet, result));
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
-        if (JobWatcher.isComplete(domainIntrospectorJob)) {
+        if (JobWatcher.isComplete(domainIntrospectorJob)
+                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
+                .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
           return doNext(packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
@@ -515,6 +521,12 @@ public class JobHelper {
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
+        // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+        //  Just set a flag and let the user know they can check the container log to determine unlikely
+        //  starting error, most likely a very bad formatted configuration.
+        if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+          severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
+        }
         if (!severeStatuses.isEmpty()) {
           return doNext(Step.chain(
               createIntrospectionFailureSteps(
@@ -667,10 +679,54 @@ public class JobHelper {
       }
     }
 
+
     private class PodListResponseStep extends ResponseStep<V1PodList> {
 
       PodListResponseStep(Step next) {
         super(next);
+      }
+
+      private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> FLUENTD_CONTAINER_NAME.equals(c.getName()))
+            .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+              jobPod.getMetadata().getNamespace(),
+              containerStatus.get().getState().getTerminated().getExitCode(),
+              containerStatus.get().getState().getTerminated().getReason(),
+              containerStatus.get().getState().getTerminated().getMessage());
+
+          packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+              LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                  jobPod.getMetadata().getNamespace(),
+                  containerStatus.get().getState().getTerminated().getExitCode(),
+                  containerStatus.get().getState().getTerminated().getReason(),
+                  containerStatus.get().getState().getTerminated().getMessage()));
+
+          return;
+
+        }
+
+        containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> jobName.equals(c.getName()))
+            .filter(c -> c.getState().getTerminated().getExitCode() == 0)
+            .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+        }
+
       }
 
       @Override
@@ -689,6 +745,7 @@ public class JobHelper {
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
+          addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }

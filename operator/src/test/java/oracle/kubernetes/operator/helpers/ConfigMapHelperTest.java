@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class ConfigMapHelperTest {
   private static final String DOMAIN_NS = "namespace";
@@ -135,9 +136,11 @@ class ConfigMapHelperTest {
 
   @Test
   void whenExistingConfigMapHasFutureVersion_dontReplaceIt() {
-    testSupport.defineResources(defineConfigMap(PRODUCT_VERSION_FUTURE));
+    assertDoesNotThrow(() -> {
+      testSupport.defineResources(defineConfigMap(PRODUCT_VERSION_FUTURE));
 
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));
+      testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));
+    });
   }
 
 }

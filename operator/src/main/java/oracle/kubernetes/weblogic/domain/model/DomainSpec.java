@@ -24,6 +24,7 @@ import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -102,8 +103,23 @@ public class DomainSpec extends BaseConfiguration {
           + "server *.out, introspector .out, and optionally HTTP access log files "
           + "if `httpAccessLogInLogHome` is true. "
           + "Default is `/shared/logs/DOMAIN-UID`. "
-          + "Ignored if `logHomeEnabled` is false.")
+          + "Ignored if `logHomeEnabled` is false."
+          + "See also `domains.spec.logHomeLayout`.")
   private String logHome;
+
+  /**
+   * The log files layout under `logHome`.
+   *   FLAT - all files is in one directory
+   *   BY_SERVERS - log files are organized under loghome/servers/server name/logs.
+   * */
+  @Description(
+      "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. "
+        + "`FLAT` - all files directly in the `logHome` root directory. "
+        + "`BY_SERVERS` (default) - domain log files and `introspector.out` are at the `logHome` root level, "
+        + "all other files are organized under the respective server name logs directory  "
+        + "`logHome/servers/<server name>/logs`.")
+  private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
+
 
   /**
    * Whether the log home is enabled.
@@ -240,22 +256,13 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Deprecated
-  @Description(
-      "Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified."
-          + " True indicates that the domain home file system is present in the container image"
-          + " specified by the image field. False indicates that the domain home file system is located"
-          + " on a persistent volume. Defaults to unset.")
-  private Boolean domainHomeInImage;
-
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is present in the container image"
           + " specified by the `image` field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume. FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are"
-          + " unspecified, then `domainHomeSourceType` defaults to Image.")
+          + " Defaults to Image.")
   private DomainSourceType domainHomeSourceType;
 
   /**
@@ -278,27 +285,6 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
-
-  /**
-   * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
-   *
-   * @since 2.0
-   */
-  @Deprecated
-  @Description("Deprecated. Use `configuration.overridesConfigMap` instead."
-      + " Ignored if `configuration.overridesConfigMap` is specified."
-      + " The name of the ConfigMap for optional WebLogic configuration overrides.")
-  private String configOverrides;
-
-  /**
-   * A list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
-   *
-   * @since 2.0
-   */
-  @Deprecated
-  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
-      + " A list of names of the Secrets for optional WebLogic configuration overrides.")
-  private List<String> configOverrideSecrets;
 
   /**
    * The WebLogic Monitoring Exporter configuration.
@@ -370,6 +356,36 @@ public class DomainSpec extends BaseConfiguration {
 
     monitoringExporter.setPort(port);
   }
+
+  /**
+   * The Fluentd configuration.
+   *
+   */
+  @Description("Automatic fluentd sidecar injection. If "
+          + "specified, the operator "
+          + "will deploy a sidecar container alongside each WebLogic Server instance that runs the fluentd, "
+          + "Optionally, the introspector job pod can be enabled to deploy with the fluentd sidecar container. "
+          + "WebLogic Server instances that are already running when the `fluentdSpecification` field is created "
+          + "or deleted, will not be affected until they are restarted. When any given server "
+          + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod "
+          + " will have the fluentd sidecar or not, as appropriate")
+  private FluentdSpecification fluentdSpecification;
+
+  public FluentdSpecification getFluentdSpecification() {
+    return fluentdSpecification;
+  }
+
+  DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
+                                String fluentdConfig) {
+    if (fluentdSpecification == null) {
+      fluentdSpecification = new FluentdSpecification();
+    }
+    fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
+    fluentdSpecification.setElasticSearchCredentials(credentialName);
+    fluentdSpecification.setFluentdConfiguration(fluentdConfig);
+    return this;
+  }
+
 
   /**
    * The configuration for the admin server.
@@ -585,6 +601,19 @@ public class DomainSpec extends BaseConfiguration {
     this.logHome = Optional.ofNullable(logHome).map(this::validatePath).orElse(null);
   }
 
+  /**
+   * Log Home Layout.
+   *
+   * @return The logHomeLayout value.
+   */
+  LogHomeLayoutType getLogHomeLayout() {
+    return logHomeLayout;
+  }
+
+  public void setLogHomeLayout(LogHomeLayoutType logHomeLayout) {
+    this.logHomeLayout = logHomeLayout;
+  }
+
   private String validatePath(String s) {
     if (s.isBlank()) {
       return null;
@@ -666,31 +695,6 @@ public class DomainSpec extends BaseConfiguration {
     this.httpAccessLogInLogHome = httpAccessLogInLogHome;
   }
 
-  /**
-   * Returns true if this domain's home is defined in the default docker image for the domain.
-   * Defaults to true.
-   *
-   * @return true or false
-   * @since 2.0
-   */
-  boolean isDomainHomeInImage() {
-    return Optional.ofNullable(domainHomeInImage).orElse(true);
-  }
-
-  /**
-   * Specifies whether the domain home is stored in the image.
-   *
-   * @param domainHomeInImage true if the domain home is in the image
-   */
-  public void setDomainHomeInImage(boolean domainHomeInImage) {
-    this.domainHomeInImage = domainHomeInImage;
-  }
-
-  public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
-    setDomainHomeInImage(domainHomeInImage);
-    return this;
-  }
-
   @Nonnull DomainSourceType getDomainHomeSourceType() {
     return Optional.ofNullable(domainHomeSourceType).orElse(inferDomainSourceType());
   }
@@ -698,15 +702,18 @@ public class DomainSpec extends BaseConfiguration {
   private DomainSourceType inferDomainSourceType() {
     if (getModel() != null) {
       return DomainSourceType.FROM_MODEL;
-    } else if (isDomainHomeInImage()) {
-      return DomainSourceType.IMAGE;
     } else {
-      return DomainSourceType.PERSISTENT_VOLUME;
+      return DomainSourceType.IMAGE;
     }
   }
 
   public void setDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
+    setDomainHomeSourceType(domainHomeSourceType);
+    return this;
   }
 
   public String getIntrospectVersion() {
@@ -723,6 +730,11 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
+  }
+
+  public DomainSpec withConfiguration(Configuration configuration) {
+    setConfiguration(configuration);
+    return this;
   }
 
   /**
@@ -774,21 +786,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   String getConfigOverrides() {
-    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(configOverrides);
-  }
-
-  public DomainSpec withConfigOverrides(@Nullable String overrides) {
-    this.configOverrides = overrides;
-    return this;
+    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(null);
   }
 
   @Nullable
   List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(configOverrideSecrets).orElse(Collections.emptyList());
-  }
-
-  public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
-    this.configOverrideSecrets = overridesSecretNames;
+    return Optional.ofNullable(configuration).map(Configuration::getSecrets).orElse(Collections.emptyList());
   }
 
   /**
@@ -993,11 +996,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("adminServer", adminServer)
             .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("clusters", clusters)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
             .append("configuration", configuration)
             .append("domainHome", domainHome)
-            .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
             .append("domainUID", domainUid)
             .append("image", image)
@@ -1006,6 +1006,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
+            .append("logHomeLayout", logHomeLayout)
             .append("logHomeEnabled", logHomeEnabled)
             .append("managedServers", managedServers)
             .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
@@ -1013,7 +1014,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("monitoringExporter", monitoringExporter)
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
-            .append("webLogicCredentialsSecret", webLogicCredentialsSecret);
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("fluentdSpecification", fluentdSpecification);
 
     return builder.toString();
   }
@@ -1026,11 +1028,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer)
             .append(allowReplicasBelowMinDynClusterSize)
             .append(clusters)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
             .append(configuration)
             .append(domainHome)
-            .append(domainHomeInImage)
             .append(domainHomeSourceType)
             .append(domainUid)
             .append(image)
@@ -1040,13 +1039,15 @@ public class DomainSpec extends BaseConfiguration {
             .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(logHomeLayout)
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
             .append(monitoringExporter)
             .append(replicas)
             .append(serverStartPolicy)
-            .append(webLogicCredentialsSecret);
+            .append(webLogicCredentialsSecret)
+            .append(fluentdSpecification);
 
     return builder.toHashCode();
   }
@@ -1066,7 +1067,6 @@ public class DomainSpec extends BaseConfiguration {
             .appendSuper(super.equals(other))
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
-            .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)
             .append(introspectVersion, rhs.introspectVersion)
             .append(configuration, rhs.configuration)
@@ -1080,17 +1080,16 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeLayout, rhs.logHomeLayout)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
-            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
+            .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
+            .append(fluentdSpecification, rhs.getFluentdSpecification());
     return builder.isEquals();
   }
-
 
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {

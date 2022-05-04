@@ -28,6 +28,9 @@ public interface ProcessingConstants {
 
   String DOMAIN_TOPOLOGY = "domainTopology";
   String JOB_POD_NAME = "jobPodName";
+  String JOB_POD_INTROSPECT_CONTAINER_TERMINATED = "JOB_POD_CONTAINER_TERMINATED";
+  String JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER = "done";
+  String JOB_POD_FLUENTD_CONTAINER_TERMINATED = "JOB_POD_FLUENTD_CONTAINER_TERMINATED";
   String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";

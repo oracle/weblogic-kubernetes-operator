@@ -3,11 +3,13 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import oracle.kubernetes.operator.KubernetesConstants;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainSpecTest {
@@ -98,6 +100,23 @@ class DomainSpecTest {
     assertThat("Expected null maxClusterConcurrentStartup not equal to explicit set to "
             + (KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP + 1),
         spec1.equals(spec2), equalTo(false));
+  }
+
+  @Test
+  void verifySettingFluentdSpecification() {
+    DomainSpec spec1 = new DomainSpec().withFluentdConfiguration(true,
+        "mycred", "<matcher/>");
+    spec1.getFluentdSpecification().setImage("myimage:v1");
+    spec1.getFluentdSpecification().setImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+
+    assertThat(spec1.getFluentdSpecification().getWatchIntrospectorLogs(), equalTo(true));
+    assertThat(spec1.getFluentdSpecification().getElasticSearchCredentials(), equalTo("mycred"));
+    assertThat(spec1.getFluentdSpecification().getFluentdConfiguration(), notNullValue());
+    assertThat(spec1.getFluentdSpecification().getFluentdConfiguration(), equalTo("<matcher/>"));
+    assertThat(spec1.getFluentdSpecification().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(spec1.getFluentdSpecification().getImage(), equalTo("myimage:v1"));
+
+
   }
 
   private String getLatestDefaultImage() {

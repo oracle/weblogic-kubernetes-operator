@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -59,6 +60,13 @@ public class Matchers {
             AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
+  static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, V1ResourceRequirements resources) {
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy,
+        AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
+        AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME, resources);
+  }
+
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
       String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String sourceWDTInstallHome) {
     return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
@@ -69,23 +77,39 @@ public class Matchers {
       String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
       String sourceWDTInstallHome, String sourceModelHome) {
     return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
-            sourceModelHome));
+            sourceModelHome, null));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+      String sourceWDTInstallHome, String sourceModelHome, V1ResourceRequirements resources) {
+    return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
+        sourceModelHome, resources));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
       String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command) {
-    return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, null, TEST_VOLUME_NAME);
+    return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, null, TEST_VOLUME_NAME, null);
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
+      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command,
+      V1ResourceRequirements resources) {
+    return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, null, TEST_VOLUME_NAME,
+        resources);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
       String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command, String serverName) {
-    return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, serverName, TEST_VOLUME_NAME);
+    return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, serverName,
+        TEST_VOLUME_NAME, null);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
       String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
-      String command, String serverName, String volume) {
-    return hasItem(createLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, volume, serverName));
+      String command, String serverName, String volume, V1ResourceRequirements resources) {
+    return hasItem(createLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command,
+        volume, serverName, resources));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -143,20 +167,23 @@ public class Matchers {
 
   private static V1Container createAuxiliaryImageInitContainer(String name, String image,
                                                                V1Container.ImagePullPolicyEnum imagePullPolicy,
-                                                               String sourceWDTInstallHome, String sourceModelHome) {
+                                                               String sourceWDTInstallHome, String sourceModelHome,
+                                                               V1ResourceRequirements resources) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
         .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
         .volumeMounts(Arrays.asList(
             new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                 .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
+        .resources(resources)
         .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, sourceWDTInstallHome, sourceModelHome, name));
   }
 
   private static V1Container createLegacyAuxiliaryImageInitContainer(String name, String image,
                                                                      V1Container.ImagePullPolicyEnum imagePullPolicy,
                                                                      String command, String volumeName,
-                                                                     String serverName) {
+                                                                     String serverName,
+                                                                     V1ResourceRequirements resources) {
     List<V1EnvVar> env = PodHelperTestBase.getLegacyAuxiliaryImageEnvVariables(image, name, command);
     //Optional.ofNullable(serverName).ifPresent(s -> env.addAll(PodHelperTestBase.getPredefinedEnvVariables(s)));
     return new V1Container().name(COMPATIBILITY_MODE + name).image(image).imagePullPolicy(imagePullPolicy)
@@ -166,6 +193,7 @@ public class Matchers {
                     new V1VolumeMount().name(COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
+            .resources(resources)
             .env(env);
   }
 

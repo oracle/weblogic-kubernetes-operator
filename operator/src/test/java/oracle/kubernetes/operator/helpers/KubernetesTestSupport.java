@@ -32,6 +32,11 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateRunning;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -47,6 +52,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
@@ -87,8 +94,10 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -307,6 +316,44 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   public void definePodLog(String name, String namespace, Object contents) {
     repositories.get(PODLOG).createResourceInNamespace(name, namespace, contents);
+  }
+
+  /**
+   * define the introspector job pod container status.
+   * @param jobPod jobPad object
+   * @param jobName job name
+   * @param terminateJobContainer set introspector container with terminate status if true, otherwise running.
+   * @param terminateFluentd set inrospector fluentd container with terminate status if true, otherwise running.
+   */
+  public void defineFluentdJobContainersCompleteStatus(V1Pod jobPod, String jobName, boolean terminateJobContainer,
+                                                       boolean terminateFluentd) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(JOBNAME_LABEL, jobName);
+    jobPod.getMetadata().setLabels(labels);
+    jobPod.spec(new V1PodSpec());
+    jobPod.getSpec().addContainersItem(new V1Container().name(FLUENTD_CONTAINER_NAME));
+    jobPod.getSpec().addContainersItem(new V1Container().name(jobName));
+    V1PodStatus podStatus = new V1PodStatus();
+    V1ContainerState jobContainerState = new V1ContainerState();
+    if (terminateJobContainer) {
+      jobContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(0));
+    } else {
+      jobContainerState.setRunning(new V1ContainerStateRunning());
+    }
+    podStatus.addContainerStatusesItem(new V1ContainerStatus()
+            .name(jobName).state(jobContainerState));
+
+    V1ContainerState fluentdContainerState = new V1ContainerState();
+    if (terminateFluentd) {
+      fluentdContainerState.setTerminated(new V1ContainerStateTerminated().exitCode(1));
+    } else {
+      fluentdContainerState.setRunning(new V1ContainerStateRunning());
+    }
+    podStatus.addContainerStatusesItem(new V1ContainerStatus()
+            .name(FLUENTD_CONTAINER_NAME).state(fluentdContainerState));
+
+    jobPod.setStatus(podStatus);
+
   }
 
   /**

@@ -16,6 +16,11 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */
 public class AnnotationHelper {
+
+  private AnnotationHelper() {
+    // no-op
+  }
+
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static final boolean DEBUG = false;
   private static final String HASHED_STRING = "hashedString";
