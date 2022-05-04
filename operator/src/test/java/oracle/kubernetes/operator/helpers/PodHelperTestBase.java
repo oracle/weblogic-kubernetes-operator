@@ -49,6 +49,7 @@ import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -893,6 +894,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                 "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  void whenDomainHasAuxiliaryImagesWithResourceRequirements_createPodsWithAIInitContainerHavingResourceRequirements() {
+    getConfigurator()
+        .withLimitRequirement("cpu", "250m")
+        .withRequestRequirement("memory", "1Gi")
+        .withAuxiliaryImageVolumes(Collections.singletonList(
+            new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy("ALWAYS")));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+            new V1ResourceRequirements()
+                .limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
   }
 
   @Test
