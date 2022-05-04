@@ -101,8 +101,10 @@ def main():
     usage()
     exit(exitcode=1)
   except:
+    print "Unexpected error:", sys.exc_info()[0]
     apply(traceback.print_exception, sys.exc_info())
-    exit(exitcode=1)
+    print "Raising an exception again"
+    raise
 
 #call main()
 main()
