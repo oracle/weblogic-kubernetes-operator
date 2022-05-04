@@ -861,16 +861,15 @@ class ItKubernetesDomainEvents {
 
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
-        .addCommandItem("/bin/bash")
+        .addCommandItem("/bin/sh")
         .addArgsItem("-c")
-        .addArgsItem("\"export WLST_PROPERTIES=\"-Dwlst.offline.log.priority=FINE\"")
+        .addArgsItem("export WLST_PROPERTIES=-Dwlst.offline.log.priority=FINE")
         .addArgsItem("&&")
         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
         .addArgsItem("/u01/weblogic/" + wlstScriptFile.getFileName()) //wlst.sh script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
-        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()) //domain property file
-        .addArgsItem("\"");
+        .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
