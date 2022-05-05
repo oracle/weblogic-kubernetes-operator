@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.operator.EventConstants;
@@ -119,20 +118,16 @@ public enum DomainFailureReason {
     public String getEventSuggestion(DomainPresenceInfo info) {
       return EventConstants.ABORTED_ERROR_SUGGESTION;
     }
+
+    @Override
+    DomainFailureSeverity getDefaultSeverity() {
+      return DomainFailureSeverity.FATAL;
+    }
   };
 
 
-  static boolean isFatalError(@Nonnull String reasonString, String message) {
-    return Optional.ofNullable(toValue(reasonString)).map(r -> r.hasFatalError(message)).orElse(false);
-  }
-
-  private static DomainFailureReason toValue(String reasonString) {
-    for (DomainFailureReason reason : values()) {
-      if (reason.value.equals(reasonString)) {
-        return reason;
-      }
-    }
-    return null;
+  static boolean isFatalError(DomainFailureReason reason, String message) {
+    return Optional.ofNullable(reason).map(r -> r.hasFatalError(message)).orElse(false);
   }
 
   public abstract String getEventError();

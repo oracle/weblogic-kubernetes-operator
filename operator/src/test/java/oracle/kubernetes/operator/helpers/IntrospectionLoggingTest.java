@@ -34,6 +34,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static org.hamcrest.Matchers.equalTo;
@@ -79,7 +80,7 @@ class IntrospectionLoggingTest {
 
   @Test
   void logIntrospectorMessages() {
-    IntrospectionTestUtils.defineResources(testSupport,
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport,
           onSeparateLines(SEVERE_MESSAGE_1, WARNING_MESSAGE, INFO_MESSAGE));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -93,7 +94,7 @@ class IntrospectionLoggingTest {
   @Test
   void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
-    IntrospectionTestUtils.defineResources(testSupport, extendedInfoMessage);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, extendedInfoMessage);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -103,20 +104,23 @@ class IntrospectionLoggingTest {
 
   @Test
   void whenJobLogContainsSevereError_copyToDomainStatus() {
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
-    assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
+    assertThat(updatedDomain.getStatus().getMessage(), equalTo(formatIntrospectionError(SEVERE_PROBLEM_1)));
+  }
+
+  private String formatIntrospectionError(String problem) {
+    return LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, problem, 1, MAX_RETRY_COUNT);
   }
 
   @Test
   void whenJobLogContainsSevereError_createDomainFailedIntrospectionEvent() {
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
@@ -143,7 +147,7 @@ class IntrospectionLoggingTest {
 
   @Test
   void whenJobLogContainsMultipleSevereErrors_copyToDomainStatus() {
-    IntrospectionTestUtils.defineResources(testSupport,
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport,
             onSeparateLines(SEVERE_MESSAGE_1, INFO_MESSAGE, INFO_EXTRA1, SEVERE_MESSAGE_2));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -153,6 +157,6 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));
+        equalTo(formatIntrospectionError(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2))));
   }
 }

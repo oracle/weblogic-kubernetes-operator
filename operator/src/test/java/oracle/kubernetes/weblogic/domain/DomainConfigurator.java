@@ -627,4 +627,18 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainType(ModelInImageDomainType type);
+
+  /**
+   * Specify the Severe error retry interval in seconds.
+   * @param retrySeconds the new value
+   * @return this object
+   */
+  public abstract DomainConfigurator withFailureRetryIntervalSeconds(int retrySeconds);
+
+  /**
+   * Specify the Severe error retry limit in minutes.
+   * @param limitMinutes the new value
+   * @return this object
+   */
+  public abstract DomainConfigurator withFailureRetryLimitMinutes(int limitMinutes);
 }

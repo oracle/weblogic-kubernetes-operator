@@ -1220,7 +1220,17 @@ window.onload = function() {
         },
         "reason": {
           "description": "Unique, one-word, CamelCase reason for the condition\u0027s last transition.",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "DomainInvalid",
+            "Introspection",
+            "Kubernetes",
+            "ServerPod",
+            "ReplicasTooHigh",
+            "TopologyMismatch",
+            "Internal",
+            "Aborted"
+          ]
         },
         "type": {
           "description": "The type of the condition. Valid types are Completed, Available, Failed, Rolling, and ConfigChangesPendingRestart.",
@@ -1316,9 +1326,19 @@ window.onload = function() {
           "description": "Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service.",
           "$ref": "#/definitions/AdminServer"
         },
+        "failureRetryIntervalSeconds": {
+          "description": "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "logHome": {
           "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.See also `domains.spec.logHomeLayout`.",
           "type": "string"
+        },
+        "failureRetryLimitMinutes": {
+          "description": "The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.",
+          "type": "number",
+          "minimum": 0.0
         },
         "includeServerOutInPodLog": {
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
@@ -1444,6 +1464,14 @@ window.onload = function() {
         },
         "startTime": {
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "initialFailureTime": {
+          "description": "RFC 3339 date and time at which a currently failing domain started automatic retries.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "lastFailureTime": {
+          "description": "RFC 3339 date and time at which a currently failing domain last experienced a Severe failure.",
           "$ref": "#/definitions/DateTime"
         },
         "conditions": {
