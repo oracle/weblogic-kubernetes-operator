@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorRoleBindingNamespace" }}
@@ -24,7 +24,7 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
-  {{- if (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
+  {{- if (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") }}
   kind: "Role"
   name: "weblogic-operator-role-namespace"
   {{- else }}
