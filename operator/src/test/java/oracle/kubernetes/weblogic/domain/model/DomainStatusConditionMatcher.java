@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
   private @Nonnull final DomainConditionType expectedType;
   private String expectedStatus;
-  private String expectedReason;
+  private DomainFailureReason expectedReason;
   private String expectedMessage;
   private OffsetDateTime expectedTransitionTime;
 
@@ -36,7 +36,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
   }
 
   DomainStatusConditionMatcher withReason(@NotNull DomainFailureReason reason) {
-    expectedReason = reason.toString();
+    expectedReason = reason;
     return this;
   }
 
@@ -76,7 +76,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     if (expectedTransitionTime != null && !expectedTransitionTime.equals(condition.getLastTransitionTime())) {
       return false;
     }
-    return expectedReason == null || expectedReason.equals(condition.getReason());
+    return expectedReason == null || expectedReason == condition.getReason();
   }
 
   private boolean messageContainsExpectedString(DomainCondition condition) {
@@ -99,7 +99,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
       expectations.add(expectation("status", expectedStatus));
     }
     if (expectedReason != null) {
-      expectations.add(expectation("reason", expectedReason));
+      expectations.add(expectation("reason", expectedReason.toString()));
     }
     if (expectedMessage != null) {
       expectations.add(expectation("reason", expectedMessage));

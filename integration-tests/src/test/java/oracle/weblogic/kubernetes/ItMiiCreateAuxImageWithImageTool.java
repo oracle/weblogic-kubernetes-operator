@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -55,12 +54,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -105,10 +104,6 @@ class ItMiiCreateAuxImageWithImageTool {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -165,7 +160,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain1Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         miiAuxiliaryImage);
 
@@ -249,7 +244,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain2Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
         miiAuxiliaryImage);
 
@@ -321,7 +316,7 @@ class ItMiiCreateAuxImageWithImageTool {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
             domain3Uid, miiAuxiliaryImage);
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()

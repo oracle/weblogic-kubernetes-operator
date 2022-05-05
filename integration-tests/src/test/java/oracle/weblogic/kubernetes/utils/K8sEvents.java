@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -24,10 +25,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -413,14 +414,67 @@ public class K8sEvents {
                                                          String type,
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
-    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event = getOpGeneratedEvent(domainNamespace, reason, type, timestamp);
-    if (event != null && event.getMessage() != null) {
-      assertTrue(event.getMessage().contains(expectedMsg),
-          String.format("The event message does not contain the expected msg %s", expectedMsg));
-    } else {
-      fail("event is null or event message is null");
+    testUntil(
+        withLongRetryPolicy,
+        domainEventContainsExpectedMsg(domainNamespace, domainUid, reason, type, timestamp, expectedMsg),
+        logger,
+        "domain event {0} in namespace {1} contains expected msg {2}",
+        reason,
+        domainNamespace,
+        expectedMsg);
+  }
+
+  private static Callable<Boolean> domainEventContainsExpectedMsg(String domainNamespace,
+                                                                  String domainUid,
+                                                                  String reason,
+                                                                  String type,
+                                                                  OffsetDateTime timestamp,
+                                                                  String expectedMsg) {
+    return () -> {
+      for (CoreV1Event event : getEvents(domainNamespace, domainUid, reason, type, timestamp)) {
+        if (event != null && event.getMessage() != null && event.getMessage().contains(expectedMsg)) {
+          return true;
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
+   * Get matching event object with specific reason and type.
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
+  public static List<CoreV1Event> getEvents(String domainNamespace,
+                                            String domainUid,
+                                            String reason,
+                                            String type,
+                                            OffsetDateTime timestamp) {
+
+    List<CoreV1Event> events = new ArrayList<>();
+
+    try {
+      List<CoreV1Event> allEvents = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : allEvents) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+            && (isEqualOrAfter(timestamp, event))
+            && event.getType().equals(type)
+            && (labels != null)
+            && (labels.get("weblogic.domainUID") != null)
+            && labels.get("weblogic.domainUID").equals(domainUid)) {
+
+          events.add(event);
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
+    return events;
   }
 
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {

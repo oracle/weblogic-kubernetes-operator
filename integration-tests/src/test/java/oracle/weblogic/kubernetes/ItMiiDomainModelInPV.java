@@ -44,7 +44,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -72,7 +71,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -82,6 +80,7 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPV
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -170,11 +169,6 @@ public class ItMiiDomainModelInPV {
     params.put("domain2", miiImageCustom);
     params.put("domain1", miiImagePV);
 
-    // create docker registry secret to pull the image from registry
-    // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
-
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     adminSecretName = "weblogic-credentials";
@@ -253,7 +247,8 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
-        image, adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
+        image, adminSecretName, createSecretsForImageRepos(domainNamespace), encryptionSecretName,
+        replicaCount, clusterName);
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
