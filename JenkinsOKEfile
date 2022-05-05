@@ -264,6 +264,8 @@ pipeline {
                         export OKE_CLUSTER_NAME=${OKE_CLUSTER_NAME}
                         export NODE_SHAPE=${NODE_SHAPE}
                         export LINUX_VER=${LINUX_VER}
+                        export OCIPK_FILE = ${OCIPK_FILE}
+                        export OCI_PROP_FILE = ${OCI_PROP_FILE}
 
                         #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
