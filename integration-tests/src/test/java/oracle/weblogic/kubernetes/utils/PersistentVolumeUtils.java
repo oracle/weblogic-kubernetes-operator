@@ -174,7 +174,7 @@ public class PersistentVolumeUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    if (!OKE_CLUSTER && !OKD) {
+    if (!OKE_CLUSTER) {
       pvHostPath = createPVHostPathDir(pvName, className);
     }
 
@@ -206,10 +206,8 @@ public class PersistentVolumeUtils {
     } else if (OKD) {
       v1pv.getSpec()
           .storageClassName("okd-nfsmnt")
-          .nfs(new V1NFSVolumeSource()
-              .path(PV_ROOT)
-              .server(NFS_SERVER)
-              .readOnly(false));
+          .hostPath(new V1HostPathVolumeSource()
+              .path(pvHostPath.toString()));
     } else {
       v1pv.getSpec()
           .storageClassName("weblogic-domain-storage-class")
