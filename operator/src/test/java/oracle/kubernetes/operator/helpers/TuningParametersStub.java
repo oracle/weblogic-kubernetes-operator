@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -40,6 +40,7 @@ public abstract class TuningParametersStub implements TuningParameters {
   public static final int CALL_REQUEST_LIMIT = 10;
   public static final int CALL_MAX_RETRY_COUNT = 3;
   public static final int CALL_TIMEOUT_SECONDS = 5;
+  public static final int MAX_RETRY_COUNT = 2;
   static Map<String, String> namedParameters;
 
   /**
@@ -86,7 +87,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public MainTuning getMainTuning() {
-    return new MainTuning(5, 2, 2, 2, 2, 2, 2, 30, 2L, 2L, 120);
+    return new MainTuning(5, 2, MAX_RETRY_COUNT, 2, 2, 2, 2, 30, 2L, 2L, 120);
   }
 
   @Override

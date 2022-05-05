@@ -430,6 +430,18 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withFailureRetryIntervalSeconds(int retrySeconds) {
+    getDomainSpec().setFailureRetryIntervalSeconds(retrySeconds);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withFailureRetryLimitMinutes(int limitMinutes) {
+    getDomainSpec().setFailureRetryLimitMinutes(limitMinutes);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
     DomainSpec spec = getDomainSpec();
     if (spec.getConfiguration() == null) {
