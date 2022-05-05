@@ -201,7 +201,8 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            export PATH=${runtime_path}
+                            export PATH=${runtime_path}:~/bin
+                            ls ~/bin
                             env|sort
                             java -version
                             mvn --version
