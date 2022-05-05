@@ -50,6 +50,15 @@ pipeline {
         ocir_username_creds = 'ocir-username'
         ocir_password_creds = 'ocir-token'
         image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
+        terraform_property_file = 'tvarsFile'
+        ocipk_file = 'ocipk'
+        wkobuild_oci_config = 'wkobuild_ociconfig'
+        wkobuild_cert_fingerprint = 'wkobuildcert_fingerprint'
+        weblogick8s_tenancy_ocid = 'WK8_TENANCY_OCID'
+        weblogick8s_qa_compartment_ocid = 'WK8_QA_COMP_OCID'
+        wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
+        wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
+        wkobuild_profile_oci_config_file = 'wkobuild_profile_oci_config_file'
 
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
@@ -91,30 +100,15 @@ pipeline {
                    '0.11.1'
                ]
         )
-        choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.10, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
-               choices: [
-                    // The first item in the list is the default value...
-                    '1.21.10',
-                    '1.23.4',
-                    '1.23.3',
-                    '1.23',
-                    '1.22.10',
-                    '1.22.5',
-                    '1.22',
-                    '1.21.1',
-                    '1.21',
-                    '1.20.15',
-                    '1.20.7',
-                    '1.20',
-                    '1.19.11',
-                    '1.19'
-               ]
-        )
-        string(name: 'KUBECTL_VERSION',
-               description: 'kubectl version',
+
+        string(name: 'KUBE_VERSION',
+               description: 'kube version for oke cluster',
                defaultValue: '1.21.5'
         )
+        string(name: 'KUBECTL_VERSION',
+                       description: 'kubectl version',
+                       defaultValue: '1.21.5'
+                )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
                defaultValue: '3.7.2'
@@ -191,7 +185,6 @@ pipeline {
                 anyOf {
                     changeRequest()
                     branch 'okejen'
-                    branch 'release/3.3'
                     branch 'release/3.4'
                 }
             }
@@ -216,6 +209,10 @@ pipeline {
                             docker version
                             ulimit -a
                             ulimit -aH
+                            which oci
+                            echo 'OCI version:'
+                            oci --version
+                            export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
                         '''
                         script {
                             def knd = params.KIND_VERSION
@@ -456,6 +453,18 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        TVARS_FILE = credentials("${terraform_property_file}")
+                        OCIPK_FILE = credentials("${ocipk_file}")
+                        OCICONFIG_WKOBUILD = credentials("${wkobuild_oci_config}")
+                        FINGERPRINT = credentials("${wkobuild_cert_fingerprint}")
+                        TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
+                        COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
+                        USER_OCID = credentials("${wkobuild_user_ocid}")
+                        WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
+                        DOCKER_USERNAME = credentials("${dockerhub_username_creds}"
+                        DOCKER_PASSWORD = credentials("${dockerhub_password_creds}"
+                        OCI_CLI_PROFILE = WKOBUILD
+                        OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}"
                     }
                     steps {
                         sh '''
