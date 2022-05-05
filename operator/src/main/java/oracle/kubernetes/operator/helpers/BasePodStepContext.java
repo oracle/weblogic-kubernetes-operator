@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -121,6 +122,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, info.getDomain().getAuxiliaryImageVolumes(), getName(index)))
+            .resources(createResources())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -156,6 +158,22 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   private boolean podHasMatchingVolumeName(V1Volume volume, AuxiliaryImageVolume auxiliaryImageVolume) {
     return volume.getName().equals(auxiliaryImageVolume.getName());
+  }
+
+  protected V1ResourceRequirements createResources() {
+    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resourceRequirements = null;
+    if (!resources.getLimits().isEmpty()) {
+      resourceRequirements = new V1ResourceRequirements()
+          .limits(resources.getLimits());
+    }
+
+    if (!resources.getRequests().isEmpty()) {
+      resourceRequirements = resourceRequirements == null
+          ? new V1ResourceRequirements().requests(resources.getRequests())
+          : resourceRequirements.requests(resources.getRequests());
+    }
+    return resourceRequirements;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
