@@ -434,7 +434,7 @@ pipeline {
                  stage('Setup OFSS') {
                                     environment {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
-                                        OCI_PROP_FILE = ""${WORKSPACE}/terraform/oci.prop"
+                                        OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         compartment_ocid = "${COMPARTMENT_OCID}"
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
