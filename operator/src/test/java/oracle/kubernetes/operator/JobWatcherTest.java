@@ -203,6 +203,25 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     return setJobStartTime(job, now.minus(10, ChronoUnit.SECONDS));
   }
 
+  private V1Job markJobWithBackoffLimitExceededWithoutJobStartTime(V1Job job) {
+    OffsetDateTime now = SystemClock.now();
+    setFailedWithReasonAndLastTransitionTime(job, BACKOFFLIMIT_EXCEEDED_REASON, now);
+    return setActivateDeadline(job, 30L);
+  }
+
+  private V1Job markJobWithBackoffLimitExceededWithoutActiveDeadline(V1Job job) {
+    OffsetDateTime now = SystemClock.now();
+    setFailedWithReasonAndLastTransitionTime(job, BACKOFFLIMIT_EXCEEDED_REASON, now);
+    return setJobStartTime(job, now.minus(10, ChronoUnit.SECONDS));
+  }
+
+  private V1Job markJobWithBackoffLimitExceededWithoutLastTransitionTime(V1Job job) {
+    OffsetDateTime now = SystemClock.now();
+    setFailedWithReason(job, BACKOFFLIMIT_EXCEEDED_REASON);
+    setActivateDeadline(job, 30L);
+    return setJobStartTime(job, now.minus(10, ChronoUnit.SECONDS));
+  }
+
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(
         createCondition(V1JobCondition.TypeEnum.FAILED).reason(reason)));
@@ -425,6 +444,26 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   @Test
   void whenReceivedFailedWithBackoffLimitExceededResponse_performNextStep() {
     sendJobModifiedWatchAfterWaitForReady(this::markJobWithBackoffLimitExceeded);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenReceivedFailedWithBackoffLimitExceededResponse_withoutActiveDeadline_performNextStep() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobWithBackoffLimitExceededWithoutActiveDeadline);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  void whenReceivedFailedWithBackoffLimitExceededResponse_withoutJobStartTime_performNextStep() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobWithBackoffLimitExceededWithoutJobStartTime);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  void whenReceivedFailedWithBackoffLimitExceededResponse_withoutLastTransitionTime_performNextStep() {
+    sendJobModifiedWatchAfterWaitForReady(this::markJobWithBackoffLimitExceededWithoutLastTransitionTime);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
