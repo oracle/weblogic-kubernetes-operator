@@ -236,7 +236,7 @@ pipeline {
                         LINUX_VER="Oracle-Linux-7.4"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
-                        OCIPK_FILE = credentials("${ocipk_file}")
+                        OCIPK_FILE = credentials('ocipk')
                         OCICONFIG_WKOBUILD = credentials("${wkobuild_oci_config}")
                         FINGERPRINT = credentials("${wkobuild_cert_fingerprint}")
                         TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
