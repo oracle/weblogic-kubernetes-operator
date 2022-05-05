@@ -201,8 +201,8 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            export PATH=${runtime_path}:~/bin
-                            ls ~/bin
+                            export PATH=${runtime_path}
+                            ls /var/lib/jenkins/
                             env|sort
                             java -version
                             mvn --version
