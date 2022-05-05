@@ -201,8 +201,8 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            export PATH=${runtime_path}
-                            sudo yum install python36-oci-cli
+                            sudo yum install -y python36-oci-cli
+                            export PATH=${runtime_path}:/bin
                             env|sort
                             java -version
                             mvn --version
