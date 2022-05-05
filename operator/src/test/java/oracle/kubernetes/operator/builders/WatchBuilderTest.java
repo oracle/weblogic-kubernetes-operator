@@ -142,9 +142,7 @@ class WatchBuilderTest {
   @Test
   void afterWatchError_closeDoesNotReturnClientToPool() throws ApiException {
     Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
-    assertThrows(NoSuchElementException.class, () -> {
-      domainWatch.next();
-    });
+    assertThrows(NoSuchElementException.class, domainWatch::next);
 
     assertThat(ClientPoolStub.getPooledClients(), is(empty()));
   }
@@ -166,7 +164,7 @@ class WatchBuilderTest {
 
     Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
-    assertThat(domainWatch, contains(modifyEvent(domain1), deleteEvent(domain2)));
+    assertThat(domainWatch, contains(List.of(modifyEvent(domain1), deleteEvent(domain2))));
   }
 
   @Test

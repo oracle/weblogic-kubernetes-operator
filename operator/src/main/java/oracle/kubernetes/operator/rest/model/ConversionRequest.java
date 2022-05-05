@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.rest.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
@@ -13,10 +14,13 @@ public class ConversionRequest {
 
   @Expose
   private String uid;
+
   @Expose
   private String desiredAPIVersion;
+
   @Expose
-  private List<Object> objects = new ArrayList<>();
+  // The domains to be converted. Note that the field name 'objects' is required by the conversion API.
+  private List<Map<String,Object>> objects = new ArrayList<>();
 
   public String getUid() {
     return uid;
@@ -30,16 +34,11 @@ public class ConversionRequest {
     return desiredAPIVersion;
   }
 
-  public void setDesiredAPIVersion(String desiredAPIVersion) {
-    this.desiredAPIVersion = desiredAPIVersion;
-  }
-
-  public List<Object> getObjects() {
+  /**
+   * Returns a list domains to be converted by the webhook.
+   */
+  public List<Map<String,Object>> getDomains() {
     return objects;
-  }
-
-  public void setObjects(List<Object> objects) {
-    this.objects = objects;
   }
 
   @Override

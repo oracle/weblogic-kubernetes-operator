@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -122,14 +123,15 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class JobHelperTest extends DomainValidationTestBase {
+
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   protected static final String LONG_RESOURCE_NAME
-            = "very-long-resource-name-very-long-resource-name-abcdefghi";
+        = "very-long-resource-name-very-long-resource-name-abcdefghi";
   protected static final String SECOND_LONG_RESOURCE_NAME
-            = "very-long-resource-name-very-long-resource-name-abcdefghijklmnopqrstuvwxyz";
+        = "very-long-resource-name-very-long-resource-name-abcdefghijklmnopqrstuvwxyz";
 
-  /** 
+  /**
    * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
    * It's used by the Model in Image introspector job to detect env var differences from the last
    * time the job ran.
@@ -140,11 +142,11 @@ class JobHelperTest extends DomainValidationTestBase {
   public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getMD5Hash(LONG_RESOURCE_NAME);
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
   public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = LONG_RESOURCE_NAME
-          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
+        .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
   public static final String VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME = SECOND_LONG_RESOURCE_NAME
-          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX2.length()) + SECRET_VOLUME_SUFFIX2;
+        .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX2.length()) + SECRET_VOLUME_SUFFIX2;
   public static final String VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME = LONG_RESOURCE_NAME
-          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
+        .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
   public static final int MODE_420 = 420;
   public static final int MODE_365 = 365;
   private Method getDomainSpec;
@@ -154,7 +156,7 @@ class JobHelperTest extends DomainValidationTestBase {
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
   private final V1Toleration toleration = createToleration("key", V1Toleration.OperatorEnum.EQUAL, "value",
-      V1Toleration.EffectEnum.NOSCHEDULE);
+        V1Toleration.EffectEnum.NOSCHEDULE);
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
@@ -165,9 +167,9 @@ class JobHelperTest extends DomainValidationTestBase {
   @BeforeEach
   public void setup() throws Exception {
     mementos.add(
-        TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
-            .withLogLevel(Level.FINE));
+          TestUtils.silenceOperatorLogger()
+                .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
+                .withLogLevel(Level.FINE));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
@@ -232,7 +234,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+          .withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -240,7 +242,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     configureDomain()
-        .withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
+          .withDefaultServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -248,7 +250,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ServerStartPolicy.NEVER);
+          .withServerStartPolicy(ServerStartPolicy.NEVER);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
@@ -256,7 +258,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+          .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -264,7 +266,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     configureServer("managed-server1")
-        .withServerStartPolicy(ServerStartPolicy.ALWAYS);
+          .withServerStartPolicy(ServerStartPolicy.ALWAYS);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
@@ -272,50 +274,50 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void whenDomainHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
-        .withEnvironmentVariable("item1", "value1")
-        .withEnvironmentVariable("item2", "value2")
-        .withEnvironmentVariable("WL_HOME", "/u01/custom_wl_home/")
-        .withEnvironmentVariable("MW_HOME", "/u01/custom_mw_home/");
+          .withEnvironmentVariable("item1", "value1")
+          .withEnvironmentVariable("item2", "value2")
+          .withEnvironmentVariable("WL_HOME", "/u01/custom_wl_home/")
+          .withEnvironmentVariable("MW_HOME", "/u01/custom_mw_home/");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasEnvVar("item1", "value1"),
-            hasEnvVar("item2", "value2"),
-            hasEnvVar("WL_HOME", "/u01/custom_wl_home/"),
-            hasEnvVar("MW_HOME", "/u01/custom_mw_home/")));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasEnvVar("item1", "value1"),
+                hasEnvVar("item2", "value2"),
+                hasEnvVar("WL_HOME", "/u01/custom_wl_home/"),
+                hasEnvVar("MW_HOME", "/u01/custom_mw_home/")));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            envVarOEVNContains("item1"),
-            envVarOEVNContains("item2"),
-            envVarOEVNContains("WL_HOME"),
-            envVarOEVNContains("MW_HOME")));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                envVarOEVNContains("item1"),
+                envVarOEVNContains("item2"),
+                envVarOEVNContains("WL_HOME"),
+                envVarOEVNContains("MW_HOME")));
   }
 
   @Test
   void whenDomainIsOnlineUpdate_introspectorPodStartupWithThem() {
     configureDomain()
-        .withMIIOnlineUpdate();
+          .withMIIOnlineUpdate();
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasEnvVar(MII_USE_ONLINE_UPDATE, "true"),
-            envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
-            envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
-            envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
-            ));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(List.of(
+                hasEnvVar(MII_USE_ONLINE_UPDATE, "true"),
+                envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
+                envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
+                envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
+                envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
+                envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
+          )));
   }
 
   @Test
@@ -324,25 +326,25 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        not(anyOf(envVarOEVNContains(MII_USE_ONLINE_UPDATE),
-            envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
-            envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
-            envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
-            envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
-            )));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          not(anyOf(List.of(envVarOEVNContains(MII_USE_ONLINE_UPDATE),
+                envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
+                envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
+                envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
+                envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
+                envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
+                envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
+          ))));
 
   }
 
   private V1JobSpec createJobSpec() {
     Packet packet = new Packet();
     packet
-        .getComponents()
-        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+          .getComponents()
+          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
     return JobHelper.createJobSpec(packet);
   }
 
@@ -351,9 +353,9 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(
-            "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          hasEnvVar(
+                "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"));
   }
 
 
@@ -364,10 +366,10 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("USER_MEM_ARGS", ""));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("USER_MEM_ARGS", ""));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("USER_MEM_ARGS"));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("USER_MEM_ARGS"));
   }
 
   @Test
@@ -377,49 +379,49 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("item1", END_VALUE_1));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec), hasEnvVar("item1", END_VALUE_1));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("item1"));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec), envVarOEVNContains("item1"));
 
   }
 
   @Test
   void whenFluentdWatchIntrospectLogsEnable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(true, "dummy-cred",
-        null);
+          null);
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(Optional.ofNullable(jobSpec)
-            .map(V1JobSpec::getTemplate)
-            .map(V1PodTemplateSpec::getSpec)
-            .map(V1PodSpec::getContainers)
-            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
-                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), notNullValue());
+          .map(V1JobSpec::getTemplate)
+          .map(V1PodTemplateSpec::getSpec)
+          .map(V1PodSpec::getContainers)
+          .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), notNullValue());
 
   }
 
   @Test
   void whenFluentdWatchIntrospectLogsDisable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-            null);
+          null);
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(Optional.ofNullable(jobSpec)
-            .map(V1JobSpec::getTemplate)
-            .map(V1PodTemplateSpec::getSpec)
-            .map(V1PodSpec::getContainers)
-            .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
-                    .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), equalTo(Optional.empty()));
+          .map(V1JobSpec::getTemplate)
+          .map(V1PodTemplateSpec::getSpec)
+          .map(V1PodSpec::getContainers)
+          .map(c -> c.isEmpty() ? null : c.stream().filter(v -> v.getName()
+                .equals(FLUENTD_CONTAINER_NAME)).findAny().orElse(null)), equalTo(Optional.empty()));
 
   }
 
   @Test
   void whenNoFluentdConfigmap_createIt() {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-        null);
+          null);
 
     testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
@@ -432,15 +434,15 @@ class JobHelperTest extends DomainValidationTestBase {
     Map<String, String> data = new HashMap<>();
     data.put(FLUENTD_CONFIG_DATA_NAME, "<fakedata/>");
     V1ObjectMeta metaData = new V1ObjectMeta()
-        .name(FLUENTD_CONFIGMAP_NAME)
-        .namespace(domainPresenceInfo.getNamespace());
+          .name(FLUENTD_CONFIGMAP_NAME)
+          .namespace(domainPresenceInfo.getNamespace());
     V1ConfigMap configMap = new V1ConfigMap()
-        .metadata(metaData)
-        .data(data);
+          .metadata(metaData)
+          .data(data);
     testSupport.defineResources(configMap);
 
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-        null);
+          null);
 
     testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_REPLACED));
@@ -453,13 +455,13 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-              not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+          not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasEnvVar(OEVN),
-            not(envVarOEVNContains(ServerEnvVars.DATA_HOME))));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasEnvVar(OEVN),
+                not(envVarOEVNContains(ServerEnvVars.DATA_HOME))));
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
@@ -472,10 +474,10 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
+          hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            envVarOEVNContains(ServerEnvVars.DATA_HOME));
+          envVarOEVNContains(ServerEnvVars.DATA_HOME));
   }
 
   @Test
@@ -485,12 +487,12 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
+          not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasEnvVar(OEVN),
-            not(envVarOEVNContains(ServerEnvVars.DATA_HOME))));
+          allOf(
+                hasEnvVar(OEVN),
+                not(envVarOEVNContains(ServerEnvVars.DATA_HOME))));
   }
 
   private static final String NULL_DATA_HOME = null;
@@ -502,82 +504,82 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
+          not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
 
   @Test
   void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
-        .withEnvironmentVariable("item1", "domain-value1")
-        .withEnvironmentVariable("item2", "domain-value2")
-        .configureAdminServer()
-        .withEnvironmentVariable("item2", "admin-value2")
-        .withEnvironmentVariable("item3", "admin-value3");
+          .withEnvironmentVariable("item1", "domain-value1")
+          .withEnvironmentVariable("item2", "domain-value2")
+          .configureAdminServer()
+          .withEnvironmentVariable("item2", "admin-value2")
+          .withEnvironmentVariable("item3", "admin-value3");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasEnvVar("item1", "domain-value1"),
-            hasEnvVar("item2", "admin-value2"),
-            hasEnvVar("item3", "admin-value3")));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasEnvVar("item1", "domain-value1"),
+                hasEnvVar("item2", "admin-value2"),
+                hasEnvVar("item3", "admin-value3")));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            envVarOEVNContains("item1"),
-            envVarOEVNContains("item2"),
-            envVarOEVNContains("item3")));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                envVarOEVNContains("item1"),
+                envVarOEVNContains("item2"),
+                envVarOEVNContains("item3")));
   }
 
   @Test
   void whenDomainHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
-        .withEnvironmentVariable(configMapKeyRefEnvVar)
-        .withEnvironmentVariable(secretKeyRefEnvVar)
-        .withEnvironmentVariable(fieldRefEnvVar);
+          .withEnvironmentVariable(configMapKeyRefEnvVar)
+          .withEnvironmentVariable(secretKeyRefEnvVar)
+          .withEnvironmentVariable(fieldRefEnvVar);
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasItem(configMapKeyRefEnvVar),
-            hasItem(secretKeyRefEnvVar),
-            hasItem(fieldRefEnvVar)));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasItem(configMapKeyRefEnvVar),
+                hasItem(secretKeyRefEnvVar),
+                hasItem(fieldRefEnvVar)));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            envVarOEVNContains(configMapKeyRefEnvVar.getName()),
-            envVarOEVNContains(secretKeyRefEnvVar.getName()),
-            envVarOEVNContains(fieldRefEnvVar.getName())));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                envVarOEVNContains(configMapKeyRefEnvVar.getName()),
+                envVarOEVNContains(secretKeyRefEnvVar.getName()),
+                envVarOEVNContains(fieldRefEnvVar.getName())));
   }
 
   @Test
   void whenAdminServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
-        .configureAdminServer()
-        .withEnvironmentVariable(configMapKeyRefEnvVar)
-        .withEnvironmentVariable(secretKeyRefEnvVar)
-        .withEnvironmentVariable(fieldRefEnvVar);
+          .configureAdminServer()
+          .withEnvironmentVariable(configMapKeyRefEnvVar)
+          .withEnvironmentVariable(secretKeyRefEnvVar)
+          .withEnvironmentVariable(fieldRefEnvVar);
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            hasItem(configMapKeyRefEnvVar),
-            hasItem(secretKeyRefEnvVar),
-            hasItem(fieldRefEnvVar)));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasItem(configMapKeyRefEnvVar),
+                hasItem(secretKeyRefEnvVar),
+                hasItem(fieldRefEnvVar)));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            envVarOEVNContains(configMapKeyRefEnvVar.getName()),
-            envVarOEVNContains(secretKeyRefEnvVar.getName()),
-            envVarOEVNContains(fieldRefEnvVar.getName())));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                envVarOEVNContains(configMapKeyRefEnvVar.getName()),
+                envVarOEVNContains(secretKeyRefEnvVar.getName()),
+                envVarOEVNContains(fieldRefEnvVar.getName())));
   }
 
   @Test
@@ -585,33 +587,29 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(hasEnvVar(OEVN),
-              not(envVarOEVNContains("ADMIN_USERNAME")),
-              not(envVarOEVNContains("ADMIN_PASSWORD"))));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(hasEnvVar(OEVN),
+                not(envVarOEVNContains("ADMIN_USERNAME")),
+                not(envVarOEVNContains("ADMIN_PASSWORD"))));
   }
 
   @Test
-  void
-      whenDomainHasEnvironmentItemsWithVariable_createIntrospectorPodShouldNotChangeItsValue()
-          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    DomainConfigurator domainConfigurator =
-        configureDomain().withEnvironmentVariable("item1", RAW_VALUE_1);
+  void whenDomainHasEnvironmentItemsWithVariable_createIntrospectorPodShouldNotChangeItsValue() throws Exception {
+    DomainConfigurator domainConfigurator = configureDomain().withEnvironmentVariable("item1", RAW_VALUE_1);
 
     createJobSpec();
 
-    assertThat(
-        getConfiguredDomainSpec(domainConfigurator).getEnv(), hasEnvVar("item1", RAW_VALUE_1));
+    assertThat(getConfiguredDomainSpec(domainConfigurator).getEnv(), hasEnvVar("item1", RAW_VALUE_1));
   }
 
   @Test
   void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
     configureDomain()
-        .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
+          .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
     runCreateJob();
     assertThat(getJobVolumeMounts(), hasVolumeMount("volume2", "/source-" + UID));
   }
@@ -628,10 +626,10 @@ class JobHelperTest extends DomainValidationTestBase {
 
   private List<V1Volume> getJobVolumes() {
     return Optional.ofNullable(job.getSpec())
-            .map(V1JobSpec::getTemplate)
-            .map(V1PodTemplateSpec::getSpec)
-            .map(V1PodSpec::getVolumes)
-            .orElseThrow();
+          .map(V1JobSpec::getTemplate)
+          .map(V1PodTemplateSpec::getSpec)
+          .map(V1PodSpec::getVolumes)
+          .orElseThrow();
   }
 
   @Test
@@ -641,10 +639,10 @@ class JobHelperTest extends DomainValidationTestBase {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
-        .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withAdditionalVolume("volume1", VOLUME_PATH_1)
-        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+          .withEnvironmentVariable(ENV_NAME1, GOOD_MY_ENV_VALUE)
+          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withAdditionalVolume("volume1", VOLUME_PATH_1)
+          .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
     runCreateJob();
 
@@ -661,10 +659,10 @@ class JobHelperTest extends DomainValidationTestBase {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
     configureDomain()
-        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
-        .withWebLogicCredentialsSecret(SECRET_NAME, null)
-        .withAdditionalVolume("volume1", VOLUME_PATH_1)
-        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+          .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+          .withWebLogicCredentialsSecret(SECRET_NAME, null)
+          .withAdditionalVolume("volume1", VOLUME_PATH_1)
+          .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
 
     runCreateJob();
 
@@ -678,17 +676,17 @@ class JobHelperTest extends DomainValidationTestBase {
     resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
 
     configureDomain()
-            .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
+          .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
 
     runCreateJob();
 
     assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
-            SECOND_LONG_RESOURCE_NAME, MODE_420));
+          SECOND_LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
-            "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
-            "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
   }
 
   @Test
@@ -696,13 +694,13 @@ class JobHelperTest extends DomainValidationTestBase {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
-            .withConfigOverrides(LONG_RESOURCE_NAME);
+          .withConfigOverrides(LONG_RESOURCE_NAME);
 
     runCreateJob();
 
     assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
-            "/weblogic-operator/config-overrides", true));
+          "/weblogic-operator/config-overrides", true));
   }
 
   @Test
@@ -710,14 +708,14 @@ class JobHelperTest extends DomainValidationTestBase {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
-            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
-            .withModelConfigMap(LONG_RESOURCE_NAME);
+          .withDomainHomeSourceType(DomainSourceType.FROM_MODEL)
+          .withModelConfigMap(LONG_RESOURCE_NAME);
 
     runCreateJob();
 
     assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
-            "/weblogic-operator/wdt-config-map", true));
+          "/weblogic-operator/wdt-config-map", true));
   }
 
   @Test
@@ -726,16 +724,16 @@ class JobHelperTest extends DomainValidationTestBase {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
 
     configureDomain()
-            .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
+          .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
 
     runCreateJob();
 
     assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, MODE_420));
     assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(SECRET_NAME + "-volume",
-            "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
+          "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
-            "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+          "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
   }
 
   @Test
@@ -744,9 +742,9 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(
           getActiveDeadlineSeconds(jobSpec),
-        is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   private static Long getActiveDeadlineSeconds(V1JobSpec jobSpec) {
@@ -760,14 +758,14 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
     domainPresenceInfo.getDomain()
-            .setStatus(new DomainStatus().withIntrospectJobFailureCount(1));
+          .setStatus(new DomainStatus().withIntrospectJobFailureCount(1));
     int failureCount = domainPresenceInfo.getDomain().getStatus().getIntrospectJobFailureCount();
 
     V1JobSpec jobSpec = createJobSpec();
 
     long expectedActiveDeadlineSeconds =
-        TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
-            + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
+          TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
+                + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
     assertThat(getActiveDeadlineSeconds(jobSpec), is(expectedActiveDeadlineSeconds));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
   }
@@ -775,7 +773,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
     configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
-   
+
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getActiveDeadlineSeconds(jobSpec), is(600L));
@@ -801,156 +799,162 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getTemplateLabel(jobSpec, LabelConstants.JOBNAME_LABEL),
-        equalTo(LegalNames.toJobIntrospectorName(UID)));
+          getTemplateLabel(jobSpec, LabelConstants.JOBNAME_LABEL),
+          equalTo(LegalNames.toJobIntrospectorName(UID)));
   }
 
   private String getTemplateLabel(V1JobSpec jobSpec, String labelKey) {
     return Optional.ofNullable(jobSpec.getTemplate())
-        .map(V1PodTemplateSpec::getMetadata)
-        .map(V1ObjectMeta::getLabels)
-        .map(m -> m.get(labelKey))
-        .orElse(null);
+          .map(V1PodTemplateSpec::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(m -> m.get(labelKey))
+          .orElse(null);
   }
 
   @Test
   void introspectorPodSpec_alwaysCreatedWithNeverRestartPolicy() {
     configureDomain()
-        .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
+          .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getRestartPolicy(),
-        is(V1PodSpec.RestartPolicyEnum.NEVER));
+          getPodSpec(jobSpec).getRestartPolicy(),
+          is(V1PodSpec.RestartPolicyEnum.NEVER));
   }
 
   @Test
   void introspectorPodSpec_createdWithoutConfiguredReadinessGates() {
     configureDomain()
-        .withReadinessGate(new V1PodReadinessGate().conditionType(V1PodReadinessGate.ConditionTypeEnum.READY));
+          .withReadinessGate(new V1PodReadinessGate().conditionType(V1PodReadinessGate.ConditionTypeEnum.READY));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getReadinessGates(),
-        nullValue());
+          getPodSpec(jobSpec).getReadinessGates(),
+          nullValue());
   }
 
   @Test
   void introspectorPodSpec_createdWithoutConfiguredNormalInitContainers() {
     configureDomain()
-        .withInitContainer(
-            createContainer(
-                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+          .withInitContainer(
+                createContainer(
+                      "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-        getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(0));
+  }
+
+  private int getNumPodSpecInitContainers(V1JobSpec jobSpec) {
+    return getPodSpecListSize(jobSpec, V1PodSpec::getInitContainers);
+  }
+
+  private int getPodSpecListSize(V1JobSpec jobSpec, Function<V1PodSpec, List<?>> getList) {
+    return Optional.of(getPodSpec(jobSpec)).map(getList).orElse(Collections.emptyList()).size();
   }
 
   @Test
   void introspectorPodSpec_createdWithConfiguredAuxImageInitContainers() {
     configureDomain()
-            .withInitContainer(
-                    createContainer(
-                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
-                            "echo managed server && sleep 120"));
+          .withInitContainer(
+                createContainer(
+                      COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                      "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
   }
 
   @Test
   void introspectorPodSpec_createdWithoutConfiguredContainers() {
     configureDomain()
-        .withContainer(
-            createContainer(
-                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+          .withContainer(
+                createContainer(
+                      "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getContainers(),
-        not(hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+          getPodSpec(jobSpec).getContainers(),
+          not(hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
     );
   }
 
   @Test
   void whenAdminServerHasLegacyAuxImageInitContainers_introspectorPodStartupWithThem() {
     configureDomain()
-            .configureAdminServer()
-            .withInitContainer(
-                    createContainer(
-                            COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
-                            "echo managed server && sleep 120"));
+          .configureAdminServer()
+          .withInitContainer(
+                createContainer(
+                      COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                      "echo managed server && sleep 120"));
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
   }
 
   @Test
   void whenAdminServerHasNormalInitContainers_introspectorPodStartupWithoutThem() {
     configureDomain()
-            .configureAdminServer()
-            .withInitContainer(
-                    createContainer(
-                            "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+          .configureAdminServer()
+          .withInitContainer(
+                createContainer(
+                      "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getPodSpec(jobSpec).getInitContainers().size(), equalTo(0));
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(0));
   }
 
   @Test
   void whenAdminServerHasNormalAdditionalVolume_introspectorPodStartupWithoutThem() {
     configureDomain()
-            .configureAdminServer()
-            .withAdditionalVolume("Test", "/test");
+          .configureAdminServer()
+          .withAdditionalVolume("Test", "/test");
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getPodSpec(jobSpec).getVolumes().size(), equalTo(3));
+    assertThat(getNumPodSpecVolumes(jobSpec), equalTo(3));
+  }
+
+  private int getNumPodSpecVolumes(V1JobSpec jobSpec) {
+    return getPodSpecListSize(jobSpec, V1PodSpec::getVolumes);
   }
 
   @Test
   void whenAdminServerHasLegacyAuxImageVolume_introspectorPodStartupWithoutThem() {
     configureDomain()
-            .configureAdminServer()
-            .withAdditionalVolume(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
+          .configureAdminServer()
+          .withAdditionalVolume(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-            getPodSpec(jobSpec).getVolumes().size(), equalTo(4));
+    assertThat(getNumPodSpecVolumes(jobSpec), equalTo(4));
   }
 
   @Test
   void whenAdminServerHasNormalAdditionalVolumeMount_introspectorPodStartupWithoutThem() {
     configureDomain()
-            .configureAdminServer()
-            .withAdditionalVolumeMount("Test", "/test");
+          .configureAdminServer()
+          .withAdditionalVolumeMount("Test", "/test");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
-            .orElse(null).size(), equalTo(3));
+          .orElse(Collections.emptyList()).size(), equalTo(3));
   }
 
   @Test
   void whenAdminServerHasLegacyAuxImageVolumeMount_introspectorPodStartupWithoutThem() {
     configureDomain()
-            .configureAdminServer()
-            .withAdditionalVolumeMount(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
+          .configureAdminServer()
+          .withAdditionalVolumeMount(COMPATIBILITY_MODE + "aux-image-container_volume", "/test");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
-                    .orElse(null).size(), equalTo(4));
+          .orElse(Collections.emptyList()).size(), equalTo(4));
   }
 
   @Test
@@ -958,8 +962,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getName).orElse(null),
-        is(JobStepContext.createJobName(UID)));
+          getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getName).orElse(null),
+          is(JobStepContext.createJobName(UID)));
   }
 
   @Test
@@ -983,8 +987,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getSecurityContext(),
-        is(podSecurityContext));
+          getPodSpec(jobSpec).getSecurityContext(),
+          is(podSecurityContext));
   }
 
   @Test
@@ -992,8 +996,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getSecurityContext(),
-        is(new V1PodSecurityContext()));
+          getPodSpec(jobSpec).getSecurityContext(),
+          is(new V1PodSecurityContext()));
   }
 
   @Test
@@ -1002,8 +1006,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getAffinity(),
-        is(podAffinity));
+          getPodSpec(jobSpec).getAffinity(),
+          is(podAffinity));
   }
 
   @Test
@@ -1011,8 +1015,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getAffinity(),
-        nullValue());
+          getPodSpec(jobSpec).getAffinity(),
+          nullValue());
   }
 
   @Test
@@ -1021,8 +1025,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getNodeSelector(),
-        hasEntry("os", "linux"));
+          getPodSpec(jobSpec).getNodeSelector(),
+          hasEntry("os", "linux"));
   }
 
   @Test
@@ -1030,8 +1034,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getNodeSelector(),
-        is(anEmptyMap()));
+          getPodSpec(jobSpec).getNodeSelector(),
+          is(anEmptyMap()));
   }
 
   @Test
@@ -1040,8 +1044,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getNodeName(),
-        is("kube-02"));
+          getPodSpec(jobSpec).getNodeName(),
+          is("kube-02"));
   }
 
   @Test
@@ -1049,8 +1053,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getNodeName(),
-        nullValue());
+          getPodSpec(jobSpec).getNodeName(),
+          nullValue());
   }
 
   @Test
@@ -1059,8 +1063,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getSchedulerName(),
-        is("my-scheduler"));
+          getPodSpec(jobSpec).getSchedulerName(),
+          is("my-scheduler"));
   }
 
   @Test
@@ -1068,8 +1072,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getSchedulerName(),
-        nullValue());
+          getPodSpec(jobSpec).getSchedulerName(),
+          nullValue());
   }
 
   @Test
@@ -1078,8 +1082,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getRuntimeClassName(),
-        is("MyRuntimeClass"));
+          getPodSpec(jobSpec).getRuntimeClassName(),
+          is("MyRuntimeClass"));
   }
 
   @Test
@@ -1087,8 +1091,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getRuntimeClassName(),
-        nullValue());
+          getPodSpec(jobSpec).getRuntimeClassName(),
+          nullValue());
   }
 
   @Test
@@ -1106,8 +1110,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getImagePullSecrets(),
-        empty());
+          getPodSpec(jobSpec).getImagePullSecrets(),
+          empty());
   }
 
   @Test
@@ -1116,8 +1120,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getPriorityClassName(),
-        is("MyPriorityClass"));
+          getPodSpec(jobSpec).getPriorityClassName(),
+          is("MyPriorityClass"));
   }
 
   @Test
@@ -1125,8 +1129,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getPriorityClassName(),
-        nullValue());
+          getPodSpec(jobSpec).getPriorityClassName(),
+          nullValue());
   }
 
   @Test
@@ -1135,8 +1139,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getTolerations(),
-        contains(toleration));
+          getPodSpec(jobSpec).getTolerations(),
+          contains(toleration));
   }
 
   @Test
@@ -1144,8 +1148,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getTolerations(),
-        nullValue());
+          getPodSpec(jobSpec).getTolerations(),
+          nullValue());
   }
 
   @Test
@@ -1154,7 +1158,7 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "false")
+          hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "false")
     );
   }
 
@@ -1163,7 +1167,7 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
+          hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
     );
   }
 
@@ -1173,7 +1177,7 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+          hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
     );
   }
 
@@ -1182,7 +1186,7 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-            not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
+          not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
     );
   }
 
@@ -1217,7 +1221,6 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
 
-
   @Test
   void whenIntrospectRequestSet_runIntrospector() {
     defineTopology();
@@ -1250,7 +1253,8 @@ class JobHelperTest extends DomainValidationTestBase {
           .collect(Collectors.toList());
   }
 
-  private @Nullable V1Container getFirst(@Nonnull List<V1Container> containers) {
+  @Nullable
+  private V1Container getFirst(@Nonnull List<V1Container> containers) {
     return containers.isEmpty() ? null : containers.get(0);
   }
 
@@ -1326,8 +1330,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
     );
   }
 
@@ -1338,8 +1342,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
     );
   }
 
@@ -1351,8 +1355,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
     );
   }
 
@@ -1363,8 +1367,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        not(hasEnvVar(ISTIO_REPLICATION_PORT, Integer.toString(Istio.DEFAULT_REPLICATION_PORT))));
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          not(hasEnvVar(ISTIO_REPLICATION_PORT, Integer.toString(Istio.DEFAULT_REPLICATION_PORT))));
   }
 
   @Test
@@ -1375,8 +1379,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
     );
   }
 
@@ -1388,8 +1392,8 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
     );
   }
 
@@ -1421,7 +1425,7 @@ class JobHelperTest extends DomainValidationTestBase {
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
-        .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+          .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
     return domainPresenceInfo;
   }
 
@@ -1448,17 +1452,17 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private Optional<V1Container> getMatchingContainer(
-      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+        DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
     return getContainerStream(jobSpec)
-        .filter(c -> hasCreateJobName(c, domainPresenceInfo.getDomainUid()))
-        .findFirst();
+          .filter(c -> hasCreateJobName(c, domainPresenceInfo.getDomainUid()))
+          .findFirst();
   }
 
   private List<V1EnvVar> getMatchingContainerEnv(
-      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+        DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
     return getMatchingContainer(domainPresenceInfo, jobSpec)
-        .map(V1Container::getEnv)
-        .orElse(Collections.emptyList());
+          .map(V1Container::getEnv)
+          .orElse(Collections.emptyList());
   }
 
   private boolean hasCreateJobName(V1Container container, String domainUid) {
@@ -1473,7 +1477,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private DomainSpec getConfiguredDomainSpec(DomainConfigurator domainConfigurator)
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     if (getDomainSpec == null) {
       getDomainSpec = DomainConfigurator.class.getDeclaredMethod("getDomainSpec");
       getDomainSpec.setAccessible(true);
