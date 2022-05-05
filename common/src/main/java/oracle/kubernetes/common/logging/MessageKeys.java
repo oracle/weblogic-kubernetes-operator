@@ -218,6 +218,7 @@ public class MessageKeys {
   public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
   public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
 
+  // Webhook messages
   public static final String VALIDATING_WEBHOOK_CONFIGURATION_CREATED = "WLSKOWH-0001";
   public static final String CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSKOWH-0002";
 

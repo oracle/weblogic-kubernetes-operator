@@ -85,9 +85,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   private final WebhookMainDelegateStub delegate =
           createStrictStub(WebhookMainDelegateStub.class, testSupport);
   private final WebhookMain main = new WebhookMain(delegate);
-  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
+  private static Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
 
 
   static {

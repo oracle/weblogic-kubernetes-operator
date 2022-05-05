@@ -230,7 +230,7 @@ public class LoggingUtil {
     // get validatingwebhookconfigurations
     try {
       writeToFile(Kubernetes.listValidatingWebhookConfiguration(), resultDir,
-          "list.validatingwebhookconfigurations.log");
+          "list.validating-webhook-configurations.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }

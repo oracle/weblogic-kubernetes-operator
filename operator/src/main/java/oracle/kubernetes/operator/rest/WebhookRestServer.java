@@ -104,8 +104,7 @@ public class WebhookRestServer extends BaseRestServer {
       webhookHttpsServer = createWebhookHttpsServer(container);
       LOGGER.info(
               "Started the webhook ssl REST server on "
-                      + getWebhookHttpsUri()
-                      + "/webhook"); // TBD .fine ?
+                      + getWebhookHttpsUri()); // TBD .fine ?
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {

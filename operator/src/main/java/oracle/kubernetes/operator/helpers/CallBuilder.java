@@ -301,8 +301,6 @@ public class CallBuilder {
                   (V1DeleteOptions) requestParams.body,
                   callback));
 
-
-
   private RetryStrategy retryStrategy;
 
   private String fieldSelector;
@@ -362,9 +360,7 @@ public class CallBuilder {
   private final CallFactory<V1Secret> readSecret =
       (requestParams, usage, cont, callback) ->
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1ValidatingWebhookConfiguration> readValidatingWebhookConfig =
-      (requestParams, usage, cont, callback) ->
-          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, requestParams.namespace, callback));
+
   private Integer gracePeriodSeconds = null;
   private final Boolean orphanDependents = null;
   private final String propagationPolicy = null;

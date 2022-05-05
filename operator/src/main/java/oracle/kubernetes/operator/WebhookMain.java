@@ -7,7 +7,6 @@ import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -39,12 +38,11 @@ public class WebhookMain extends BaseMain {
 
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
-  private RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
+  private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
-    private V1ValidatingWebhookConfiguration validatingWebhookConfiguration;
 
     public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);

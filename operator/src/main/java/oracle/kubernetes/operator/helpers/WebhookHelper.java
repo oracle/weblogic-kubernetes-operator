@@ -24,6 +24,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.codec.binary.Base64;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -33,7 +35,7 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPER
 
 public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook.v9";
+  public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
   public static final String APP_GROUP = "weblogic.oracle";
   public static final String API_VERSION = "v9";
@@ -59,19 +61,19 @@ public class WebhookHelper {
   }
 
   static class CreateValidatingWebhookConfigurationStep extends Step {
-    private final ValidatingWebhookConfigurationContext context;
+    private final Certificates certificates;
 
     CreateValidatingWebhookConfigurationStep(Certificates certificates) {
       super();
-      context = createContext(certificates);
+      this.certificates = certificates;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(context.verifyValidatingWebhookConfiguration(getNext()), packet);
+      return doNext(createContext().verifyValidatingWebhookConfiguration(getNext()), packet);
     }
 
-    protected ValidatingWebhookConfigurationContext createContext(Certificates certificates) {
+    protected ValidatingWebhookConfigurationContext createContext() {
       return new ValidatingWebhookConfigurationContext(this, certificates);
     }
   }
@@ -105,13 +107,26 @@ public class WebhookHelper {
                       .name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
                       .port(CONVERSION_WEBHOOK_HTTPS_PORT)
                       .path(VALIDATING_WEBHOOK_PATH))
-                  .caBundle(Optional.ofNullable(certificates).map(Certificates::getWebhookCertificateData)
-                      .map(Base64::decodeBase64).orElse(null)))));
+                  .caBundle(getCaBundle(certificates)))));
+    }
+
+    @Nullable
+    private byte[] getCaBundle(@NotNull Certificates certificates) {
+      return Optional.of(certificates).map(Certificates::getWebhookCertificateData)
+          .map(Base64::decodeBase64).orElse(null);
     }
 
     Step verifyValidatingWebhookConfiguration(Step next) {
       return new CallBuilder().readValidatingWebhookConfigurationAsync(
-          model.getMetadata().getName(), createReadResponseStep(next));
+          getName(model), createReadResponseStep(next));
+    }
+
+    @Nullable
+    private String getName(V1ValidatingWebhookConfiguration validatingWebhookConfiguration) {
+      return Optional.ofNullable(validatingWebhookConfiguration)
+          .map(V1ValidatingWebhookConfiguration::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse(null);
     }
 
     ResponseStep<V1ValidatingWebhookConfiguration> createReadResponseStep(Step next) {
@@ -166,7 +181,7 @@ public class WebhookHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        LOGGER.info(VALIDATING_WEBHOOK_CONFIGURATION_CREATED, callResponse.getResult().getMetadata().getName());
+        LOGGER.info(VALIDATING_WEBHOOK_CONFIGURATION_CREATED, getName(callResponse.getResult()));
         return doNext(packet);
       }
 
