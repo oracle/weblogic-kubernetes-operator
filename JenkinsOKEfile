@@ -70,7 +70,7 @@ pipeline {
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
         kubeconfig_file = "${result_root}/kubeconfig"
-        OCI_PROP_FILE=${WORKSPACE}/terraform/oci.prop"
+        OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
