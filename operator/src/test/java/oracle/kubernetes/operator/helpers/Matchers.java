@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -55,8 +56,19 @@ public class Matchers {
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+      String name, String image, String imagePullPolicy, String command, V1ResourceRequirements resources) {
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, TEST_VOLUME_NAME, resources);
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
           String name, String image, String imagePullPolicy, String command, String volumeName) {
     return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, volumeName));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+      String name, String image, String imagePullPolicy, String command, String volumeName,
+      V1ResourceRequirements resources) {
+    return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, volumeName, resources));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -120,6 +132,19 @@ public class Matchers {
             new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
                 .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
+        .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
+  }
+
+  private static V1Container createAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
+                                                               String command, String volumeName,
+                                                               V1ResourceRequirements resources) {
+    return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
+        .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
+        .volumeMounts(Arrays.asList(
+            new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
+                .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
+            new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
+        .resources(resources)
         .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
   }
 
