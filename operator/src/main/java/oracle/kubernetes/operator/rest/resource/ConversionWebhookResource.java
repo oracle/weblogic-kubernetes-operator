@@ -4,9 +4,9 @@
 package oracle.kubernetes.operator.rest.resource;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -102,11 +102,11 @@ public class ConversionWebhookResource extends BaseResource {
    * @return ConversionResponse The response to the conversion request.
    */
   private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
-    List<Object> convertedDomains = new ArrayList<>();
     SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    conversionRequest.getObjects()
-            .forEach(domain -> convertedDomains.add(schemaConversionUtils.convertDomainSchema(domain)));
+    List<Object> convertedDomains = conversionRequest.getDomains().stream()
+          .map(schemaConversionUtils::convertDomainSchema)
+          .collect(Collectors.toList());
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())

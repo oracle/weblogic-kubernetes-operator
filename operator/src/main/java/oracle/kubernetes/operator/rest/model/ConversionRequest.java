@@ -14,9 +14,12 @@ public class ConversionRequest {
 
   @Expose
   private String uid;
+
   @Expose
   private String desiredAPIVersion;
+
   @Expose
+  // The domains to be converted. Note that the field name 'objects' is required by the conversion API.
   private List<Map<String,Object>> objects = new ArrayList<>();
 
   public String getUid() {
@@ -31,16 +34,11 @@ public class ConversionRequest {
     return desiredAPIVersion;
   }
 
-  public void setDesiredAPIVersion(String desiredAPIVersion) {
-    this.desiredAPIVersion = desiredAPIVersion;
-  }
-
-  public List<Map<String,Object>> getObjects() {
+  /**
+   * Returns a list domains to be converted by the webhook.
+   */
+  public List<Map<String,Object>> getDomains() {
     return objects;
-  }
-
-  public void setObjects(List<Map<String,Object>> objects) {
-    this.objects = objects;
   }
 
   @Override
