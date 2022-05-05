@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -17,6 +19,11 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
+import io.kubernetes.client.openapi.models.V1RuleWithOperations;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
@@ -36,6 +43,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.junit.MatcherAssert;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +53,7 @@ import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
+import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
@@ -54,12 +63,18 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountO
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
+import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
+import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -210,6 +225,70 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     recheckCRD();
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
+  }
+
+  @Test
+  void whenValidatingWebhookCreated_logStartupMessage() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
+
+    WebhookMain main = new WebhookMain(delegate);
+    main.startDeployment(null);
+
+    assertThat(logRecords,
+        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookCreated_foundExpectedContents() {
+    WebhookMain main = new WebhookMain(delegate);
+
+    main.startDeployment(null);
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getLabels(generatedConfiguration), hasEntry(CREATEDBYOPERATOR_LABEL, "true"));
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getRuleOperation(generatedConfiguration), equalTo(UPDATE));
+    assertThat(getServiceName(generatedConfiguration), equalTo(WEBLOGIC_OPERATOR_WEBHOOK_SVC));
+  }
+
+  @Nullable
+  private String getName(V1ValidatingWebhookConfiguration configuration) {
+    return configuration.getMetadata().getName();
+  }
+
+  @Nullable
+  private Map<String, String> getLabels(V1ValidatingWebhookConfiguration configuration) {
+    return configuration.getMetadata().getLabels();
+  }
+
+  @Nullable
+  private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(configuration).map(V1ValidatingWebhookConfiguration::getWebhooks).get().get(0);
+  }
+
+  @Nullable
+  private V1RuleWithOperations getFirstRule(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getRules).get().get(0);
+  }
+
+  @Nullable
+  private String getRuleOperation(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstRule(configuration)).map(V1RuleWithOperations::getOperations).get().get(0);
+  }
+
+  @Nullable
+  private String getServiceName(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+        .map(AdmissionregistrationV1ServiceReference::getName)
+        .orElse("");
+  }
+
+  V1ValidatingWebhookConfiguration getCreatedValidatingWebhookConfiguration() {
+    return (V1ValidatingWebhookConfiguration)
+        testSupport.getResources(KubernetesTestSupport.VALIDATING_WEBHOOK_CONFIGURATION).get(0);
   }
 
   public abstract static class WebhookMainDelegateStub implements WebhookMainDelegate {

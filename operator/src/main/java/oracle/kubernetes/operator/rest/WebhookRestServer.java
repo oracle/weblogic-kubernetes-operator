@@ -70,13 +70,13 @@ public class WebhookRestServer extends BaseRestServer {
   @Override
   ResourceConfig createResourceConfig(RestConfig restConfig) {
     return new ResourceConfig()
-            .register(JacksonFeature.class)
-            .register(ErrorFilter.class)
-            .register(RequestDebugLoggingFilter.class)
-            .register(ResponseDebugLoggingFilter.class)
-            .register(ExceptionMapper.class)
-            .packages(ConversionWebhookResource.class.getPackageName(), AdmissionWebhookResource.class.getPackageName())
-            .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
+        .register(JacksonFeature.class)
+        .register(ErrorFilter.class)
+        .register(RequestDebugLoggingFilter.class)
+        .register(ResponseDebugLoggingFilter.class)
+        .register(ExceptionMapper.class)
+        .packages(ConversionWebhookResource.class.getPackageName(), AdmissionWebhookResource.class.getPackageName())
+        .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
   }
 
   /**

@@ -41,7 +41,7 @@ public class WebhookHelper {
   public static final String API_VERSION = "v9";
   public static final String ADMISSION_REVIEW_VERSION = "v1";
   public static final String DOMAIN_RESOURCES = "domains";
-  public static final String OPERATION = "UPDATE";
+  public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
   public static final String SCOPE = "Namespaced";
 
@@ -98,7 +98,7 @@ public class WebhookHelper {
               .addRulesItem(new V1RuleWithOperations()
                   .addApiGroupsItem(APP_GROUP)
                   .apiVersions(Collections.singletonList(API_VERSION))
-                  .operations(Collections.singletonList(OPERATION))
+                  .operations(Collections.singletonList(UPDATE))
                   .resources(Collections.singletonList(DOMAIN_RESOURCES))
                   .scope(SCOPE))
               .clientConfig(new AdmissionregistrationV1WebhookClientConfig()
