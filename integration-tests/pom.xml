@@ -587,12 +587,15 @@
             <id>wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
+                <groups>gate,samples-gate</groups>
+                <!--
                 <includes-failsafe>
                     **/ItKubernetesDomainEvents,
                     **/ItMiiAuxiliaryImage,
                     **/ItMultiDomainModels,
                     **/ItPodsRestart
                 </includes-failsafe>
+                -->
             </properties>
         </profile>
         <profile>
