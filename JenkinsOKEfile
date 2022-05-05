@@ -461,10 +461,10 @@ EOF
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
                         WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
-                        DOCKER_USERNAME = credentials("${dockerhub_username_creds}"
-                        DOCKER_PASSWORD = credentials("${dockerhub_password_creds}"
+                        DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
+                        DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         OCI_CLI_PROFILE = WKOBUILD
-                        OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}"
+                        OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}")
                     }
                     steps {
                         sh '''
