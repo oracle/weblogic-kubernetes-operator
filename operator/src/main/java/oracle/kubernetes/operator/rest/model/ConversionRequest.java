@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.rest.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
@@ -16,7 +17,7 @@ public class ConversionRequest {
   @Expose
   private String desiredAPIVersion;
   @Expose
-  private List<Object> objects = new ArrayList<>();
+  private List<Map<String,Object>> objects = new ArrayList<>();
 
   public String getUid() {
     return uid;
@@ -34,11 +35,11 @@ public class ConversionRequest {
     this.desiredAPIVersion = desiredAPIVersion;
   }
 
-  public List<Object> getObjects() {
+  public List<Map<String,Object>> getObjects() {
     return objects;
   }
 
-  public void setObjects(List<Object> objects) {
+  public void setObjects(List<Map<String,Object>> objects) {
     this.objects = objects;
   }
 

@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.rest.resource;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.google.gson.Gson;
@@ -67,9 +66,7 @@ public class ConversionWebhookResource extends BaseResource {
     } catch (Exception e) {
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
-          .uid(getUid(conversionReview))
-          .result(new Result().status(FAILED_STATUS)
-              .message("Exception: " + e.toString()));
+          .uid(getUid(conversionReview)).result(new Result().status(FAILED_STATUS).message("Exception: " + e));
       generateFailedEvent(e, getConversionRequest(conversionReview));
     }
     LOGGER.exiting(conversionResponse);
@@ -106,12 +103,10 @@ public class ConversionWebhookResource extends BaseResource {
    */
   private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
     List<Object> convertedDomains = new ArrayList<>();
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
     conversionRequest.getObjects()
-            .forEach(domain -> convertedDomains.add(
-                    schemaConversionUtils.convertDomainSchema(
-                            (Map<String,Object>) domain, conversionRequest.getDesiredAPIVersion())));
+            .forEach(domain -> convertedDomains.add(schemaConversionUtils.convertDomainSchema(domain)));
 
     return new ConversionResponse()
             .uid(conversionRequest.getUid())

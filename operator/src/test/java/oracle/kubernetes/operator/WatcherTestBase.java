@@ -161,7 +161,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-    assertThat(callBacks, contains(addEvent(object1), modifyEvent(object2)));
+    assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
   }
 
   @SuppressWarnings({"rawtypes"})
