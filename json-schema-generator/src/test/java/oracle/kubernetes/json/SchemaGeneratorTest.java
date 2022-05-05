@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SchemaGeneratorTest {
@@ -54,6 +54,7 @@ class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
   private TrafficLightColors otherTwoColorString;
+  @SuppressWarnings("unused")
   @Range(minimum = 7)
   private int valueWithMinimum;
   @SuppressWarnings("unused")
@@ -228,7 +229,7 @@ class SchemaGeneratorTest {
   }
 
   @Test
-  void generateSchemaForEnabledFeature() throws NoSuchFieldException {
+  void generateSchemaForEnabledFeature() {
     generator.defineEnabledFeatures(List.of("Binding"));
     Object schema = generator.generate(SimpleObject.class);
 
@@ -485,8 +486,4 @@ class SchemaGeneratorTest {
       return true;
     }
   }
-
-  // todo (future, maybe): generate $id nodes where they can simplify $ref urls
-  // todo (future, maybe): support oneOf, allOf, anyOf, not ? - would need annotations.
-  // todo access remote url if no cache found for kubernetes schema
 }

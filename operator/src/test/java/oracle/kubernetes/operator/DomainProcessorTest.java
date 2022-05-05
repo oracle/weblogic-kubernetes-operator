@@ -262,7 +262,7 @@ class DomainProcessorTest {
     mementos.add(NoopWatcherStarter.install());
 
     testSupport.defineResources(newDomain);
-    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(), jobStatusSupplier);
+    IntrospectionTestUtils.defineIntrospectionTopology(testSupport, createDomainConfig(), jobStatusSupplier);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     ScanCache.INSTANCE.registerScan(NS,UID, new Scan(domainConfig, SystemClock.now()));
   }
@@ -983,7 +983,6 @@ class DomainProcessorTest {
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
 
     assertThat(Optional.ofNullable(fluentdConfigMap)

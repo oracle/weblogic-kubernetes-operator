@@ -54,14 +54,15 @@ import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
-import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_REQUEST;
-import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.CONVERSION_REVIEW_RESPONSE;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 class RestTest extends JerseyTest {
+
+  private static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
+  private static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
   private static final String WEBHOOK_HREF = "/webhook";

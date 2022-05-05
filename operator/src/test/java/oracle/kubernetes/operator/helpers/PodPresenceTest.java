@@ -104,7 +104,7 @@ class PodPresenceTest {
         new WlsDomainConfigSupport(UID).withAdminServerName(ADMIN_SERVER_NAME);
     configSupport.addWlsServer("admin", 8001);
     configSupport.addWlsServer(SERVER, 7001);
-    IntrospectionTestUtils.defineResources(testSupport, configSupport.createDomainConfig());
+    IntrospectionTestUtils.defineIntrospectionTopology(testSupport, configSupport.createDomainConfig());
 
     packet.put(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     packet.put(CLUSTER_NAME, CLUSTER);
