@@ -48,7 +48,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Description("Unique, one-word, CamelCase reason for the condition's last transition.")
   @SerializedName("reason")
   @Expose
-  private String reason;
+  private DomainFailureReason reason;
 
   @Description("The status of the condition. Can be True, False, Unknown.")
   @SerializedName("status")
@@ -159,7 +159,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @return reason
    */
-  public String getReason() {
+  public DomainFailureReason getReason() {
     return reason;
   }
 
@@ -167,7 +167,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * Unique, one-word, CamelCase reason for the condition's last transition.
    *
    * @param reason reason
-   * @return this
+   * @return this object
    */
   public DomainCondition withReason(DomainFailureReason reason) {
     if (message != null) {
@@ -175,7 +175,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     }
     
     lastTransitionTime = SystemClock.now();
-    this.reason = Optional.ofNullable(reason).map(Enum::toString).orElse(null);
+    this.reason = reason;
     this.severity = Optional.ofNullable(reason).map(DomainFailureReason::getDefaultSeverity).orElseThrow();
     return this;
   }
@@ -313,8 +313,8 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
         .withStringField("message", DomainCondition::getMessage)
-        .withStringField("reason", DomainCondition::getReason)
         .withStringField("status", DomainCondition::getStatus)
+        .withEnumField("reason", DomainCondition::getReason)
         .withEnumField("type", DomainCondition::getType)
         .withEnumField("severity", DomainCondition::getSeverity);
 
@@ -328,7 +328,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   boolean isSpecifiedFailure(DomainFailureReason reason) {
-    return hasType(FAILED) && reason.toString().equals(getReason());
+    return hasType(FAILED) && reason == this.reason;
   }
 
   public boolean isNotValid() {

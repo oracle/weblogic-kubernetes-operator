@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: Domain
@@ -9,6 +9,8 @@ spec:
   # Identify which Secret contains the WebLogic Admin credentials
   webLogicCredentialsSecret:
     name: admin-secret
+  failureRetryIntervalSeconds: 90
+  failureRetryLimitMinutes: 1000
   monitoringExporter:
     image: monexp:latest
     imagePullPolicy: IfNotPresent
