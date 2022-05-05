@@ -546,13 +546,14 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
+    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome";
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
-    logger.info("Currently the log home used by the domain is: {0}", logHome);
+    logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, newLogHome);
 
     //change logHome from /shared/logs to /shared/logs/logHome
     String patchStr = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"" + newLogHome + "\"}"
         + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
@@ -566,7 +567,7 @@ class ItKubernetesDomainEvents {
 
     //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
-    assertEquals("/shared/logs/logHome", domain1.getSpec().getLogHome(), "logHome is not updated");
+    assertEquals(newLogHome, domain1.getSpec().getLogHome(), "logHome is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -739,6 +740,8 @@ class ItKubernetesDomainEvents {
   private static Domain createDomain(String domainNamespace, String domainUid,
                                      String pvName, String pvcName, String serverStartupPolicy) {
 
+    String uniquePath = "/shared/" + domainNamespace + "/domains";
+
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
@@ -757,7 +760,7 @@ class ItKubernetesDomainEvents {
             -> File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", uniquePath);
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", cluster1Name);
     p.setProperty("admin_server_name", adminServerName);
@@ -769,7 +772,7 @@ class ItKubernetesDomainEvents {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", uniquePath + "/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
             -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -792,7 +795,7 @@ class ItKubernetesDomainEvents {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+            .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
@@ -804,7 +807,7 @@ class ItKubernetesDomainEvents {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy(serverStartupPolicy)
             .serverPod(new ServerPod() //serverpod
