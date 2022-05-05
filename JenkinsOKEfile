@@ -190,7 +190,7 @@ pipeline {
             when {
                 anyOf {
                     changeRequest()
-                    branch 'main'
+                    branch 'okejen'
                     branch 'release/3.3'
                     branch 'release/3.4'
                 }
