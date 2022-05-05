@@ -202,7 +202,7 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            ls /var/lib/jenkins/
+                            sudo yum install python36-oci-cli
                             env|sort
                             java -version
                             mvn --version
