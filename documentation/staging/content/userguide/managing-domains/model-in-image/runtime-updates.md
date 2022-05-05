@@ -41,7 +41,7 @@ without first shutting down the domain:
 - _Offline updates_: [Offline updates](#offline-updates) are propagated to WebLogic pods by updating your model
   and then initiating a domain roll, which generates a new domain configuration,
   restarts the domain's WebLogic Server Administration Server with the updated configuration,
-  and then restarts the other pods in the cluster.
+  and then restarts other running servers.
 
  - _Online updates_: If model changes are configured to fully dynamic configuration MBean attributes,
    then you can optionally propagate changes to WebLogic pods without a roll using an [online update](#online-updates).
