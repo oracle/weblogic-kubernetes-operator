@@ -906,9 +906,8 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     AdminService adminService = domain.getAdminServerSpec().getAdminService();
 
-    assertThat(
-        adminService.getChannels(),
-        containsInAnyOrder(channelWith("default", 7001), channelWith("extra", 7011)));
+    assertThat(adminService.getChannels(), containsInAnyOrder(
+          List.of(channelWith("default", 7001), channelWith("extra", 7011))));
     assertThat(
         adminService.getLabels(), both(hasEntry("red", "maroon")).and(hasEntry("blue", "azure")));
     assertThat(
