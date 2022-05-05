@@ -391,6 +391,16 @@
             </properties>
         </profile>
         <profile>
+            <id>oke-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItOCILoadBalancer,
+                    **/ItManageNameSpace
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
