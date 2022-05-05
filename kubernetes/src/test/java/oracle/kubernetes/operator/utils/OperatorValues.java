@@ -19,7 +19,6 @@ public class OperatorValues {
   private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
   private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
-  private String dedicated = "";
   private String serviceAccount = "";
   private String namespace = "";
   private String domainNamespaceSelectionStrategy = "";
@@ -50,7 +49,6 @@ public class OperatorValues {
    */
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
-        .dedicated("false")
         .serviceAccount("test-operator-service-account")
         .domainNamespaceSelectionStrategy("List")
         .domainNamespaces("test-domain-namespace1,test-domain-namespace2")
@@ -360,19 +358,6 @@ public class OperatorValues {
 
   public OperatorValues elkIntegrationEnabled(String val) {
     setElkIntegrationEnabled(val);
-    return this;
-  }
-
-  public String getDedicated() {
-    return dedicated;
-  }
-
-  public void setDedicated(String val) {
-    dedicated = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues dedicated(String val) {
-    setDedicated(val);
     return this;
   }
 

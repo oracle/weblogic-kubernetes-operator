@@ -253,27 +253,10 @@ public class Namespaces {
    * @return Selection strategy
    */
   static SelectionStrategy getSelectionStrategy() {
-    SelectionStrategy strategy =
-          Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
+    return Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
                 .map(SelectionStrategy::fromValue)
                 .orElse(SelectionStrategy.LIST);
-
-    if (SelectionStrategy.LIST.equals(strategy) && isDeprecatedDedicated()) {
-      return SelectionStrategy.DEDICATED;
-    }
-    return strategy;
   }
-
-  // Returns true if the deprecated way to specify the dedicated namespace strategy is being used.
-  // This value will only be used if the 'list' namespace strategy is specified or defaulted.
-  private static boolean isDeprecatedDedicated() {
-    return "true".equalsIgnoreCase(getDeprecatedDedicatedSetting());
-  }
-
-  private static String getDeprecatedDedicatedSetting() {
-    return Optional.ofNullable(TuningParameters.getInstance().get("dedicated")).orElse("false");
-  }
-
 
   // checks the list of namespace names collected above. If any configured namespaces are not found, logs a warning.
   static class NamespaceListAfterStep extends Step {
