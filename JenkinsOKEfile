@@ -247,16 +247,16 @@ pipeline {
                         OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}")
                     }
                     steps {
-                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'USERPK_FILE')]) {
-                                                sh "cat \$USERPK_FILE "
-                                                sh "cp \$USERPK_FILE ${WORKSPACE}/terraform/oci_api_key.pem"
+                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
+                                                sh "mkdir -p ${WORKSPACE}/terraform"
+                                                writeFile file: '${WORKSPACE}/terraform/oci_api_key.pem', text: readFile(oci_private_key)
+                                                sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
+                                                #sh "cp \$USERPK_FILE ${WORKSPACE}/terraform/oci_api_key.pem"
                         }
 
                         sh '''
 
                         export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
-                        cat ${TVARS_FILE}
-                        cat ${OCIPK_FILE}
 
                         echo 'Set env vars needed for integration tests...'
 
@@ -275,10 +275,6 @@ pipeline {
 
                         #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
-
-                        mkdir -p ${WORKSPACE}/terraform
-
-                        chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem
 
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
@@ -424,17 +420,17 @@ pipeline {
                         sh '''
                             export PATH=${runtime_path}
                             echo 'Create a OKE cluster'
-                            mkdir -p "${WORKSPACE}/terraform"
+                            #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
-
-                            if ! sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ; then
-                              sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
-                              echo "OKE cluster creation failed"
-                            fi
+                            sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                            #if ! sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ; then
+                            #  sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                            #  echo "OKE cluster creation failed"
+                            #fi
                         '''
                     }
                 }
