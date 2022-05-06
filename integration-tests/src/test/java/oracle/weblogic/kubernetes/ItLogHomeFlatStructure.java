@@ -60,14 +60,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -125,9 +124,9 @@ class ItLogHomeFlatStructure {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the images from base repo and test repo
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createSecretsForImageRepos(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -153,11 +152,6 @@ class ItLogHomeFlatStructure {
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.sysresources.yaml"));
-
-
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
 
     // create PV, PVC for logs
     createPV(pvName, domainUid, ItLogHomeFlatStructure.class.getSimpleName());
