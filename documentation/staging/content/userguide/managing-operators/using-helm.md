@@ -689,8 +689,14 @@ If set to `true`, the `helm install` will install _only_ the conversion webhook 
 
 Defaults to `false`.
 
+##### `operatorOnly`
+Specifies whether only the operator should be installed during the `helm install` and that the conversion webhook installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
+If set to `true`, the `helm install` will install _only_ the operator (and not the conversion webhook).
+
+Defaults to `false`.
+
 ##### `preserveWebhook`
 Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using `helm uninstall`. By default, the `helm uninstall` removes both the webhook and the operator installation.
-If set to `true`, the `helm uninstall` command will not remove the webhook installation. Ignored when `webhookOnly` is set to `true`.
+If set to `true` in the `helm install` command, then the `helm uninstall` command will not remove the webhook installation. Ignored when `webhookOnly` is set to `true` in the `helm install` command.
 
 Defaults to `false`.

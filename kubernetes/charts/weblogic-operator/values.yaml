@@ -1,10 +1,10 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
-# If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
+# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
 serviceAccount: "default"
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
@@ -18,6 +18,13 @@ serviceAccount: "default"
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
 # where the operator itself is deployed, which is the namespace of the Helm release.
 domainNamespaceSelectionStrategy: List
+
+# This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
+# dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
+# which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
+# is ignored. This value is ignored if 'domainNamespaceSelectionStrategy' is set to a value other
+# than 'List'.
+# dedicated: false
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
@@ -153,12 +160,19 @@ javaLoggingFileCount: 10
 # for more information on node selectors.
 #nodeSelector:
  
-# webhookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
-# should be created during helm install and if the creation of the operator deployment should be skipped.
-# By default, the helm install will create both the webhook deployment and the operator deployment.
-# If set to true, the helm install will only create the webhook deployment.
+# webhookOnly specifies whether only the conversion webhook should be installed during the helm install
+# and that the operator installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the conversion webhook (and not the operator).
 # The default value is false.
 webhookOnly: false
+
+# operatorOnly specifies whether only the operator should be installed during the helm install and that 
+# the conversion webhook installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the operator (and not the conversion webhook).
+# The default value is false.
+operatorOnly: false
  
 # preserveWebhook specifies whether the previous webhook deployment should be preserved
 # when the chart is uninstalled using helm uninstall.
@@ -254,3 +268,6 @@ clusterSizePaddingValidationEnabled: true
 # Defaults to 5 retries and 10 seconds between each retry.
 # domainPresenceFailureRetryMaxCount: 5
 # domainPresenceFailureRetrySeconds: 10
+#
+
+operatorOnly: false
