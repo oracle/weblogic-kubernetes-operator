@@ -1219,7 +1219,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     private boolean canAdjustAuxImagesToMatchHash(String requiredHash) {
       V1Pod recipe = createPodRecipe();
       convertAuxImagesInitContainerVolumeAndMounts(recipe);
-      LOGGER.info("DEBUG: recipe is " + Yaml.dump(recipe));
       return requiredHash.equals(AnnotationHelper.createHash(recipe));
     }
 
