@@ -40,7 +40,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 #### Prerequisites
 
 1. Download and install [Terraform](https://www.terraform.io/) (v0.10.3 or later).
-2. Download and install the [Oracle Cloud Infrastructure Terraform Provider](https://github.com/terraform-providers/terraform-provider-oci/releases) (v2.0.0 or later).
+2. Download and install the [Terraform Provider for Oracle Cloud Infrastructure](https://github.com/terraform-providers/terraform-provider-oci) (v2.0.0 or later).
 3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the Oracle Cloud Infrastructure provider:
    ```
    providers {
@@ -51,7 +51,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
 #### Quick start
 
-1. Do a `git clone` of the Terraform Kubernetes installer project:
+1. Do a `git clone` of the Terraform Kubernetes Installer project:
 
     ```shell
     $ git clone https://github.com/oracle/terraform-kubernetes-installer.git
@@ -129,13 +129,13 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
 1. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
-In the current GA version, the Oracle Cloud Infrastructure Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only).
+In the current GA version, the Oracle Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only).
 If you choose to place your domain in a persistent volume,
 you must use a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes.
 Oracle recommends that you use the Oracle Cloud Infrastructure File Storage Service (or equivalent on other cloud providers).
 Alternatively, you may install an NFS server on one node and share the file system across all the nodes.
 
-{{% notice note %}} Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on Oracle Cloud Infrastructure Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
+{{% notice note %}} Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on Oracle Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and domain_home), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
 {{% /notice %}}
 
 ```shell
