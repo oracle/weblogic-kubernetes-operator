@@ -57,7 +57,7 @@ $ ./create-domain.sh \
   -o /<path to output-directory>
 ```
 
-{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and [WebLogic Deploy Tooling (WDT)](https://github.com/oracle/weblogic-deploy-tooling) (when applicable), and directly work with domain resource files instead.
 {{% /notice%}}
 
 The script will perform the following steps:
@@ -65,8 +65,12 @@ The script will perform the following steps:
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
-* Create a Kubernetes Job that will start up a utility FMW Infrastructure container and run
-  offline WLST scripts to create the domain on the shared storage.
+* Create a Kubernetes Job that will start up a utility FMW Infrastructure container and _either_:
+   * Run offline WLST scripts to create the domain on the shared storage.
+   * Or, use built-in WDT scripts to create the domain.
+
+   **NOTE**: Alternatively, you can use WDT to introspect an already existing domain, such as an on-premises domain,
+   and then create the same domain in a Persistent Volume (PV). For details, see this [Domain in PV sample using WebLogic Deploy Tooling](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README).
 * Run and wait for the job to finish.
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
