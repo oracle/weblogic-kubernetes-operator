@@ -362,8 +362,8 @@ pipeline {
                     }
                     steps {
                         sh '''
+                            export PATH=${runtime_path}
                             sudo yum install -y python36-oci-cli
-                            export ${PATH}
                             oci --version
                         '''
                     }
