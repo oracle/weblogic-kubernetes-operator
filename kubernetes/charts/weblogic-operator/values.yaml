@@ -1,10 +1,10 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
-# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
+# If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
 serviceAccount: "default"
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
@@ -18,13 +18,6 @@ serviceAccount: "default"
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
 # where the operator itself is deployed, which is the namespace of the Helm release.
 domainNamespaceSelectionStrategy: List
-
-# This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
-# dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
-# which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
-# is ignored. This value is ignored if 'domainNamespaceSelectionStrategy' is set to a value other
-# than 'List'.
-# dedicated: false
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
@@ -78,7 +71,7 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
-# externalRestEnabled specifies whether the the operator's REST interface is exposed
+# externalRestEnabled specifies whether the operator's REST interface is exposed
 # outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
@@ -253,7 +246,7 @@ externalServiceNameSuffix: "-ext"
 # The default value is true.
 clusterSizePaddingValidationEnabled: true
 
-# tokenReviewAuthentication, if set to true, specifies whether the the operator's REST API should use
+# tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
 #      patch, etc) on a resource.
@@ -268,6 +261,3 @@ clusterSizePaddingValidationEnabled: true
 # Defaults to 5 retries and 10 seconds between each retry.
 # domainPresenceFailureRetryMaxCount: 5
 # domainPresenceFailureRetrySeconds: 10
-#
-
-operatorOnly: false
