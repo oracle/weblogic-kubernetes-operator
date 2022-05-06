@@ -7,8 +7,7 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
-public class AdmissionReviewModel {
-
+public class AdmissionReview {
   @Expose
   private String kind;
   @Expose
@@ -26,7 +25,7 @@ public class AdmissionReviewModel {
     this.kind = kind;
   }
 
-  public AdmissionReviewModel kind(String kind) {
+  public AdmissionReview kind(String kind) {
     this.kind = kind;
     return this;
   }
@@ -39,7 +38,7 @@ public class AdmissionReviewModel {
     this.apiVersion = apiVersion;
   }
 
-  public AdmissionReviewModel apiVersion(String apiVersion) {
+  public AdmissionReview apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
     return this;
   }
@@ -60,7 +59,7 @@ public class AdmissionReviewModel {
     this.response = response;
   }
 
-  public AdmissionReviewModel response(AdmissionResponse response) {
+  public AdmissionReview response(AdmissionResponse response) {
     this.response = response;
     return this;
   }
@@ -83,7 +82,7 @@ public class AdmissionReviewModel {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AdmissionReviewModel that = (AdmissionReviewModel) o;
+    AdmissionReview that = (AdmissionReview) o;
     return Objects.equals(kind, that.kind)
             && Objects.equals(apiVersion, that.apiVersion)
             && Objects.equals(request, that.request)

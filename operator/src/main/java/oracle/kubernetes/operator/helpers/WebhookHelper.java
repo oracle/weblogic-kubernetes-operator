@@ -50,7 +50,7 @@ public class WebhookHelper {
   }
 
   /**
-   * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
+   * Factory for {@link Step} that verifies and creates validating webhook configuration if needed.
    *
    * @param certificates certificates for the webhook
    * @return Step for creating a validating webhook configuration

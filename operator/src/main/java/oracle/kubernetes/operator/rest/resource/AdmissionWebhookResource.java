@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
-import oracle.kubernetes.operator.rest.model.AdmissionReviewModel;
+import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.Status;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
@@ -52,7 +52,7 @@ public class AdmissionWebhookResource extends BaseResource {
     LOGGER.info("Validating webhook is invoked");
     LOGGER.entering(href());
 
-    AdmissionReviewModel admissionReview = null;
+    AdmissionReview admissionReview = null;
     AdmissionRequest admissionRequest = null;
     AdmissionResponse admissionResponse;
 
@@ -69,21 +69,21 @@ public class AdmissionWebhookResource extends BaseResource {
               .message("Exception: " + e));
     }
     LOGGER.exiting(admissionResponse);
-    return writeAdmissionReview(new AdmissionReviewModel()
-        .apiVersion(Optional.ofNullable(admissionReview).map(AdmissionReviewModel::getApiVersion).orElse(null))
-        .kind(Optional.ofNullable(admissionReview).map(AdmissionReviewModel::getKind).orElse(null))
+    return writeAdmissionReview(new AdmissionReview()
+        .apiVersion(Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null))
+        .kind(Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null))
         .response(admissionResponse));
   }
 
-  private AdmissionRequest getAdmissionRequest(AdmissionReviewModel admissionReview) {
+  private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
-        .map(AdmissionReviewModel::getRequest)
+        .map(AdmissionReview::getRequest)
         .orElse(null);
   }
 
-  private String getAdmissionRequestAsString(AdmissionReviewModel admissionReview) {
+  private String getAdmissionRequestAsString(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
-        .map(AdmissionReviewModel::getRequest)
+        .map(AdmissionReview::getRequest)
         .map(AdmissionRequest::toString)
         .orElse(null);
   }
@@ -92,8 +92,8 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(request).map(AdmissionRequest::getUid).orElse(null);
   }
 
-  private AdmissionReviewModel readAdmissionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, AdmissionReviewModel.class);
+  private AdmissionReview readAdmissionReview(String resourceName) {
+    return getGsonBuilder().fromJson(resourceName, AdmissionReview.class);
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest admissionRequest, boolean accept) {
@@ -103,8 +103,8 @@ public class AdmissionWebhookResource extends BaseResource {
         .status((new Status().message("Success")));
   }
 
-  private String writeAdmissionReview(AdmissionReviewModel admissionReviewModel) {
-    return getGsonBuilder().toJson(admissionReviewModel, AdmissionReviewModel.class);
+  private String writeAdmissionReview(AdmissionReview admissionReview) {
+    return getGsonBuilder().toJson(admissionReview, AdmissionReview.class);
   }
 
   private Gson getGsonBuilder() {

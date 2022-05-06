@@ -9,7 +9,6 @@ import java.util.Objects;
 import com.google.gson.annotations.Expose;
 
 public class AdmissionRequest {
-
   @Expose
   protected String uid;
   @Expose

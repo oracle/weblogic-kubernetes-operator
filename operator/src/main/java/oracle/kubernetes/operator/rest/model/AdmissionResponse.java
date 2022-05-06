@@ -10,10 +10,8 @@ import com.google.gson.annotations.Expose;
 public class AdmissionResponse {
   @Expose
   protected String uid;
-
   @Expose
   protected boolean allowed;
-
   @Expose
   private Status status;
 
@@ -59,9 +57,10 @@ public class AdmissionResponse {
   @Override
   public String toString() {
     return "AdmissionResponse{"
-            + "uid='" + uid + '\''
-            + ", status=" + status
-            + '}';
+        + "uid='" + uid + '\''
+        + ", status=" + status
+        + ", allowed=" + allowed
+        + '}';
   }
 
   @Override
@@ -73,12 +72,13 @@ public class AdmissionResponse {
       return false;
     }
     AdmissionResponse that = (AdmissionResponse) o;
-    return super.equals(o)
-            && Objects.equals(status, that.status);
+    return Objects.equals(uid, that.uid)
+        && Objects.equals(status, that.status)
+        && allowed == that.allowed;
   }
 
   @Override
   public int hashCode() {
-    return super.hashCode() + Objects.hash(status);
+    return Objects.hash(uid, status, allowed);
   }
 }
