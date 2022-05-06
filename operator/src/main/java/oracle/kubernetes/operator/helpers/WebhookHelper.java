@@ -195,16 +195,4 @@ public class WebhookHelper {
       }
     }
   }
-
-  /**
-   * Convert the domain schema to desired API version.
-   * @param oldObject object that needs to be validated against.
-   * @param object object that needs to be validated.
-   * @return true if valid, otherwise false
-   */
-  public static boolean validate(Object oldObject, Object object) {
-    LOGGER.fine("validate domain " + object + " against " + oldObject);
-    LOGGER.info("Validating webhook is invoked and returns true");
-    return true;
-  }
 }
