@@ -247,9 +247,8 @@ public interface TestConstants {
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
-  // TODO - why do we need a different variable for this and why is the default so old?
   public static final String WDT_TEST_VERSION =
-      getNonEmptySystemProperty("wko.it.wdt.test.version", "1.9.15");
+      getNonEmptySystemProperty("wko.it.wdt.test.version", "2.2.0");
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
