@@ -251,7 +251,7 @@ pipeline {
                                                 sh "mkdir -p ${WORKSPACE}/terraform"
                                                 writeFile file: '${WORKSPACE}/terraform/oci_api_key.pem', text: readFile(oci_private_key)
                                                 sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
-                                                #sh "cp \$USERPK_FILE ${WORKSPACE}/terraform/oci_api_key.pem"
+                                                
                         }
 
                         sh '''
