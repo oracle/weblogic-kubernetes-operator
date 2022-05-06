@@ -88,6 +88,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
@@ -96,8 +97,8 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -346,7 +347,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -1076,7 +1078,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
   }
 
   Domain getDomain() {

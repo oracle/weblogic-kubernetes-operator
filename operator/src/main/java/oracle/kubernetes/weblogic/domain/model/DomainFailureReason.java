@@ -9,7 +9,15 @@ import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 
-import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.WILL_RETRY_EVENT_SUGGESTION;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 
 public enum DomainFailureReason {
@@ -17,11 +25,11 @@ public enum DomainFailureReason {
   DOMAIN_INVALID("DomainInvalid") {
     @Override
     public String getEventError() {
-      return EventConstants.DOMAIN_INVALID_ERROR;
+      return DOMAIN_INVALID_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.DOMAIN_INVALID_ERROR_SUGGESTION;
     }
   },
@@ -29,11 +37,16 @@ public enum DomainFailureReason {
   INTROSPECTION("Introspection") {
     @Override
     public String getEventError() {
-      return EventConstants.INTROSPECTION_ERROR;
+      return INTROSPECTION_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
+      return WILL_RETRY_EVENT_SUGGESTION;
+    }
+
+    @Override
+    public String getEventSuggestionParams(DomainPresenceInfo info) {
       return getFailureRetryAdditionalMessage(info);
     }
 
@@ -46,11 +59,11 @@ public enum DomainFailureReason {
   KUBERNETES("Kubernetes") {
     @Override
     public String getEventError() {
-      return EventConstants.KUBERNETES_ERROR;
+      return KUBERNETES_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.KUBERNETES_ERROR_SUGGESTION;
     }
   },
@@ -58,11 +71,11 @@ public enum DomainFailureReason {
   SERVER_POD("ServerPod") {
     @Override
     public String getEventError() {
-      return EventConstants.SERVER_POD_ERROR;
+      return SERVER_POD_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.SERVER_POD_ERROR_SUGGESTION;
     }
   },
@@ -70,11 +83,11 @@ public enum DomainFailureReason {
   REPLICAS_TOO_HIGH("ReplicasTooHigh") {
     @Override
     public String getEventError() {
-      return EventConstants.REPLICAS_TOO_HIGH_ERROR;
+      return REPLICAS_TOO_HIGH_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
     }
 
@@ -87,11 +100,11 @@ public enum DomainFailureReason {
   TOPOLOGY_MISMATCH("TopologyMismatch") {
     @Override
     public String getEventError() {
-      return EventConstants.TOPOLOGY_MISMATCH_ERROR;
+      return TOPOLOGY_MISMATCH_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
     }
   },
@@ -99,11 +112,16 @@ public enum DomainFailureReason {
   INTERNAL("Internal") {
     @Override
     public String getEventError() {
-      return EventConstants.INTERNAL_ERROR;
+      return INTERNAL_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
+      return WILL_RETRY_EVENT_SUGGESTION;
+    }
+
+    @Override
+    public String getEventSuggestionParams(DomainPresenceInfo info) {
       return getFailureRetryAdditionalMessage(info);
     }
   },
@@ -111,11 +129,11 @@ public enum DomainFailureReason {
   ABORTED("Aborted") {
     @Override
     public String getEventError() {
-      return EventConstants.ABORTED_ERROR;
+      return ABORTED_EVENT_ERROR;
     }
 
     @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
+    public String getEventSuggestion() {
       return EventConstants.ABORTED_ERROR_SUGGESTION;
     }
 
@@ -132,10 +150,10 @@ public enum DomainFailureReason {
 
   public abstract String getEventError();
 
-  public abstract String getEventSuggestion(DomainPresenceInfo info);
+  public abstract String getEventSuggestion();
 
-  private static String getRetryMessage() {
-    return WILL_RETRY;
+  public String getEventSuggestionParams(DomainPresenceInfo info) {
+    return null;
   }
 
   private static String getAdditionalMessageFromStatus(DomainPresenceInfo info) {
@@ -147,7 +165,7 @@ public enum DomainFailureReason {
   }
 
   String getFailureRetryAdditionalMessage(DomainPresenceInfo info) {
-    return DomainFailureReason.getAdditionalMessageFromStatus(info) + getRetryMessage();
+    return DomainFailureReason.getAdditionalMessageFromStatus(info);
   }
 
   private final String value;

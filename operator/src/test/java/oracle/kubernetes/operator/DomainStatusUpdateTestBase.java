@@ -51,6 +51,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.ClusterStatusMatcher.hasStatusForCluster;
@@ -60,9 +62,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.SERVER_POD_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -768,7 +769,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(SERVER_POD_ERROR));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
+        .withMessageContaining(getLocalizedEventError(SERVER_POD_EVENT_ERROR)));
   }
 
   private void failPod(String serverName) {
@@ -983,7 +985,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(REPLICAS_TOO_HIGH_ERROR));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
+        .withMessageContaining(getLocalizedEventError(REPLICAS_TOO_HIGH_EVENT_ERROR)));
   }
 
   @Test

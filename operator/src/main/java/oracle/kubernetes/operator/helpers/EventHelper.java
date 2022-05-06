@@ -30,36 +30,42 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CHANGED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_COMPLETED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CREATED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_DELETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FAILED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FAILURE_RESOLVED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INCOMPLETE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_COMPLETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_STARTING_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UNAVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
+import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
-import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
@@ -116,7 +122,14 @@ public class EventHelper {
     }
 
     private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
-      return Optional.ofNullable(eventData.failureReason).map(f -> f.getEventSuggestion(info)).orElse("");
+      return Optional.ofNullable(eventData.failureReason)
+          .map(f -> getLocalizedAdditionalMessage(f, info))
+          .orElse("");
+    }
+
+    private static String getLocalizedAdditionalMessage(@Nonnull DomainFailureReason domainFailureReason,
+        DomainPresenceInfo info) {
+      return domainFailureReason.getEventSuggestion();
     }
 
     private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
@@ -334,7 +347,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_AVAILABLE_PATTERN;
+        return DOMAIN_AVAILABLE_EVENT_PATTERN;
       }
     },
     DOMAIN_CREATED {
@@ -345,7 +358,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_CREATED_PATTERN;
+        return DOMAIN_CREATED_EVENT_PATTERN;
       }
     },
     DOMAIN_CHANGED {
@@ -356,7 +369,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_CHANGED_PATTERN;
+        return DOMAIN_CHANGED_EVENT_PATTERN;
       }
     },
     DOMAIN_COMPLETE {
@@ -372,7 +385,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_COMPLETED_PATTERN;
+        return DOMAIN_COMPLETED_EVENT_PATTERN;
       }
     },
     DOMAIN_DELETED {
@@ -383,7 +396,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_DELETED_PATTERN;
+        return DOMAIN_DELETED_EVENT_PATTERN;
       }
     },
     DOMAIN_FAILED {
@@ -399,7 +412,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_FAILED_PATTERN;
+        return DOMAIN_FAILED_EVENT_PATTERN;
       }
 
       @Override
@@ -415,7 +428,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_FAILURE_RESOLVED_PATTERN;
+        return DOMAIN_FAILURE_RESOLVED_EVENT_PATTERN;
       }
     },
     DOMAIN_UNAVAILABLE {
@@ -431,7 +444,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_UNAVAILABLE_PATTERN;
+        return DOMAIN_UNAVAILABLE_EVENT_PATTERN;
       }
     },
     DOMAIN_INCOMPLETE {
@@ -447,7 +460,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return DOMAIN_INCOMPLETE_PATTERN;
+        return DOMAIN_INCOMPLETE_EVENT_PATTERN;
       }
     },
     DOMAIN_ROLL_STARTING {
@@ -458,7 +471,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.DOMAIN_ROLL_STARTING_PATTERN;
+        return DOMAIN_ROLL_STARTING_EVENT_PATTERN;
       }
 
       @Override
@@ -479,7 +492,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN;
+        return DOMAIN_ROLL_COMPLETED_EVENT_PATTERN;
       }
     },
     POD_CYCLE_STARTING {
@@ -490,7 +503,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return POD_CYCLE_STARTING_PATTERN;
+        return POD_CYCLE_STARTING_EVENT_PATTERN;
       }
 
       @Override
@@ -506,7 +519,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return NAMESPACE_WATCHING_STARTED_PATTERN;
+        return NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
       }
 
       @Override
@@ -527,7 +540,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN;
+        return NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
       }
 
       @Override
@@ -548,7 +561,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+        return START_MANAGING_NAMESPACE_EVENT_PATTERN;
       }
 
       @Override
@@ -579,7 +592,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.START_MANAGING_NAMESPACE_FAILED_PATTERN;
+        return START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
       }
 
       @Override
@@ -605,7 +618,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.STOP_MANAGING_NAMESPACE_PATTERN;
+        return STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
       }
 
       @Override
@@ -661,12 +674,12 @@ public class EventHelper {
     };
 
     private static String getMessageFromEventData(EventData eventData) {
-      return String.format(eventData.eventItem.getPattern(),
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
           eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
     }
 
     private static String getMessageFromFailedEventData(EventData eventData) {
-      return String.format(eventData.eventItem.getPattern(),
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
           eventData.getResourceNameFromInfo(),
           getEffectiveReasonDetail(eventData),
           getEffectiveMessage(eventData),
@@ -688,15 +701,18 @@ public class EventHelper {
     }
 
     private static String getFailureReason(EventData eventData) {
-      return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getEventError).orElse("");
+      return Optional.ofNullable(eventData.failureReason)
+          .map(DomainFailureReason::getEventError)
+          .map(EventItem::getLocalizedMessage)
+          .orElse("");
     }
-    
+
     private static String getEffectiveReasonDetail(EventData eventData) {
       return eventData.message == null ? "" : getFailureReason(eventData);
     }
 
     private static String getMessageFromEventDataWithPod(EventData eventData) {
-      return String.format(eventData.eventItem.getPattern(),
+      return LOGGER.formatMessage(eventData.eventItem.getPattern(),
           eventData.getPodName(), Optional.ofNullable(eventData.message).orElse(""));
     }
 
@@ -706,6 +722,10 @@ public class EventHelper {
 
     private static void addCreatedByWebhookLabel(V1ObjectMeta metadata) {
       metadata.putLabelsItem(LabelConstants.CREATEDBY_CONVERSION_WEBHOOK_LABEL, "true");
+    }
+
+    private static String getLocalizedMessage(String messageKey) {
+      return LOGGER.formatMessage(messageKey);
     }
 
     protected String generateEventName(EventData eventData) {
@@ -742,7 +762,7 @@ public class EventHelper {
     }
 
     public String getMessage(EventData eventData) {
-      return String.format(getPattern(), eventData.getResourceName());
+      return LOGGER.formatMessage(getPattern(), eventData.getResourceName());
     }
 
     OffsetDateTime getCurrentTimestamp() {

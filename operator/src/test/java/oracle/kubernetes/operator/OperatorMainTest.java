@@ -62,15 +62,16 @@ import static oracle.kubernetes.common.logging.MessageKeys.OPERATOR_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.common.logging.MessageKeys.OP_CONFIG_NAMESPACE;
 import static oracle.kubernetes.common.logging.MessageKeys.OP_CONFIG_SERVICE_ACCOUNT;
+import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.BaseMain.LOGGER;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
@@ -789,7 +790,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             START_MANAGING_NAMESPACE_EVENT,
-            String.format(START_MANAGING_NAMESPACE_PATTERN, NS_WEBLOGIC1)),
+            LOGGER.formatMessage(START_MANAGING_NAMESPACE_EVENT_PATTERN, NS_WEBLOGIC1)),
         is(true));
   }
 
