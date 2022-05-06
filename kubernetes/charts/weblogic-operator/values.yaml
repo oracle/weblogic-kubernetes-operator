@@ -71,8 +71,8 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
-# externalRestEnabled specifies whether the the operator's REST interface is exposed
-# outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
+# externalRestEnabled specifies whether the operator's REST interface is exposed
+# outside the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
 # If set to true, then the customer must provide the SSL certificate and private key for
@@ -92,7 +92,7 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 # externalRestIdentitySecret:
 
-# elkIntegrationEnabled specifies whether or not ELK integration is enabled.
+# elkIntegrationEnabled specifies whether ELK integration is enabled.
 elkIntegrationEnabled: false
 
 # logStashImage specifies the container image containing Logstash.
@@ -111,7 +111,7 @@ elasticSearchPort: 9200
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash
 # container running in the operator pod.
-# If set to true, a ConfigMap will be created during heml install using the
+# If set to true, a ConfigMap will be created during Helm install using the
 # logstash.conf file in the kubernetes/samples/charts/weblogic-operator directory.
 # Set createLogStashConfigMap to false if the ConfigMap
 # already exists in the operator's namespace with the Logstash 
@@ -176,7 +176,7 @@ preserveWebhook: false
 # Values related to debugging the operator.
 # Customers should not need to use the following properties
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will provide a Java remote debug interface on the
+# remoteDebugNodePortEnabled specifies whether the operator will provide a Java remote debug interface on the
 # provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
 # until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
@@ -231,7 +231,6 @@ introspectorJobNameSuffix: "-introspector"
 # The default suffix is '-ext'.
 # The default suffix in pre-3.1.0 is "-external".
 externalServiceNameSuffix: "-ext"
-
 
 # clusterSizePaddingValidationEnabled specifies if additional one or two characters
 # need to be reserved to account for longer managed server names because of an increased
