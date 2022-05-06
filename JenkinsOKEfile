@@ -51,7 +51,7 @@ pipeline {
         ocir_password_creds = 'ocir-token'
         image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
         terraform_property_file = 'tvarsFile'
-        ocipk_file = 'ocipk'
+        ocipk_file = 'oci_pk_file'
         wkobuild_oci_config = 'wkobuild_ociconfig'
         wkobuild_cert_fingerprint = 'wkobuildcert_fingerprint'
         weblogick8s_tenancy_ocid = 'WK8_TENANCY_OCID'
@@ -272,8 +272,8 @@ pipeline {
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
 
                         mkdir -p ${WORKSPACE}/terraform
-                        #cp ${OCIPK_FILE} ${WORKSPACE}/terraform/oci_api_key.pem
-                        #chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem
+                        cp ${OCIPK_FILE} ${WORKSPACE}/terraform/oci_api_key.pem
+                        chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem
 
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
