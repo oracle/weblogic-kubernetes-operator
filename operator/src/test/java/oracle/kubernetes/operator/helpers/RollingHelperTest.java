@@ -16,7 +16,6 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -295,6 +294,7 @@ class RollingHelperTest {
     assertThat(serversMarkedForRoll(testSupport.getPacket()), anEmptyMap());
   }
 
+  @SuppressWarnings("unchecked")
   private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
     return DomainPresenceInfo.fromPacket(packet)
         .map(DomainPresenceInfo::getServersToRoll)
@@ -371,10 +371,6 @@ class RollingHelperTest {
 
   private <T> T getFirst(List<T> list) {
     return list.get(0);
-  }
-
-  private List<CoreV1Event> getEvents() {
-    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
 }
