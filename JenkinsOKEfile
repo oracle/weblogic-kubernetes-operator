@@ -271,8 +271,8 @@ pipeline {
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
 
                         mkdir -p ${WORKSPACE}/terraform
-                        cp ${OCIPK_FILE} ${WORKSPACE}/terraform/oci_api_key.pem
-                        chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem
+                        #cp ${OCIPK_FILE} ${WORKSPACE}/terraform/oci_api_key.pem
+                        #chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem
 
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
