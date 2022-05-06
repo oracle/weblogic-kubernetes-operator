@@ -1238,10 +1238,10 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getEvents().stream().sorted(this::compareEventTimes).collect(Collectors.toList()),
-        containsInRelativeOrder(
+        containsInRelativeOrder(List.of(
               eventWithReason(DOMAIN_AVAILABLE_EVENT),
               eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
-              eventWithReason(DOMAIN_COMPLETED_EVENT)));
+              eventWithReason(DOMAIN_COMPLETED_EVENT))));
   }
 
   private void setUniqueCreationTimestamp(Object event) {
