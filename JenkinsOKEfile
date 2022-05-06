@@ -250,7 +250,8 @@ pipeline {
                         sh '''
 
                         export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
-
+                        cat ${TVARS_FILE}
+                        cat ${OCIPK_FILE}
 
                         echo 'Set env vars needed for integration tests...'
 
