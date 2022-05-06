@@ -8,16 +8,17 @@
 serviceAccount: "default"
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
-# that it will manage. Legal values are: List, LabelSelector, RegExp, and Dedicated. If set to 'List',
-# then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
+# that it will manage. Legal values are: LabelSelector, RegExp, List, and Dedicated.
 # If set to 'LabelSelector', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceLabelSelector' as a label selector.
 # If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
 # against the namespace names.
+# If set to 'List', then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
 # where the operator itself is deployed, which is the namespace of the Helm release.
-domainNamespaceSelectionStrategy: List
+# If not specified, the default is LabelSelector
+domainNamespaceSelectionStrategy: LabelSelector
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
