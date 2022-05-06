@@ -129,6 +129,7 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   private void addDomainNamespaces(HashMap<String, Object> map) {
+    map.put("domainNamespaceSelectionStrategy", "List");
     String domainNamespaces = getDomainNamespaces();
     if (domainNamespaces.length() > 0) {
       map.put("domainNamespaces", Arrays.asList(domainNamespaces.split(",")));

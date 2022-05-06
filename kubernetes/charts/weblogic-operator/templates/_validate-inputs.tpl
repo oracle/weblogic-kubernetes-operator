@@ -33,11 +33,11 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
-{{- if and .enableClusterRoleBinding (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") }}
+{{- if and .enableClusterRoleBinding (eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "Dedicated") }}
 {{-   $errorMsg := "The enableClusterRoleBinding value may not be true when domainNamespaceSelectionStrategy is Dedicated" -}}
 {{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
 {{- end -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "List" -}}
+{{- if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "List" -}}
 {{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
 {{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
@@ -49,10 +49,10 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
+{{- if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
 {{- end -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "RegExp" -}}
+{{- if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "RegExp" -}}
 {{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
