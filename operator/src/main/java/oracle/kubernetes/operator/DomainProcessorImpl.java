@@ -846,10 +846,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
-
-        if (getCurrentIntrospectFailureRetryCount(liveInfo) > 0) {
-          logRetryCount(cachedInfo);
-        }
         LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
         return true;
       }
@@ -857,21 +853,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
-      return Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(DomainStatus::getIntrospectJobFailureCount)
-              .orElse(0);
-    }
-
     private int getFailureRetryMaxCount() {
       return DomainPresence.getFailureRetryMaxCount();
-    }
-
-    private void logRetryCount(DomainPresenceInfo cachedInfo) {
-      LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-          getCurrentIntrospectFailureRetryCount(liveInfo), getFailureRetryMaxCount());
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {

@@ -81,11 +81,10 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
@@ -126,6 +125,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -1272,18 +1272,28 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(LOGGER.formatMessage(DOMAIN_FATAL_ERROR, FATAL_PROBLEM)));
+            equalTo(LOGGER.formatMessage(INTROSPECTOR_FATAL_ERROR, FATAL_PROBLEM)));
   }
 
   @Test
-  void whenJobLogContainsSevereErrorAndNumberOfRetriesReachesMaxLimit_domainStatusHasExpectedMessage() {
+  void whenJobLogContainsSevereErrorAndRetryLimitReached_domainStatusHasAbortedCondition() {
     createIntrospectionLog(SEVERE_MESSAGE);
-    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(1));
+    getUpdatedDomain().getOrCreateStatus().addCondition(createFailedCondition("first failure"));
+    SystemClockTestSupport.increment(getSecondsJustShortOfLimit());
+    getUpdatedDomain().getOrCreateStatus().addCondition(createFailedCondition("first failure"));
+    SystemClockTestSupport.increment(getUpdatedDomain().getFailureRetryIntervalSeconds());
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, SEVERE_PROBLEM, 2)));
+    assertThat(getUpdatedDomain(), hasCondition(FAILED).withReason(ABORTED));  // todo check updated status message
+  }
+
+  private DomainCondition createFailedCondition(String message) {
+    return new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage(message);
+  }
+
+  private long getSecondsJustShortOfLimit() {
+    return getUpdatedDomain().getFailureRetryLimitMinutes() * 60L - 1;
   }
 
   private void createIntrospectionLog(String logMessage) {
@@ -1298,12 +1308,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, logMessage);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
-  }
-
-  private DomainStatus createDomainStatusWithIntrospectJobFailureCount(int failureCount) {
-    final DomainStatus status = new DomainStatus();
-    status.withIntrospectJobFailureCount(failureCount);
-    return status;
   }
 
   @Test

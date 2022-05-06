@@ -633,12 +633,12 @@ public abstract class DomainConfigurator {
    * @param retrySeconds the new value
    * @return this object
    */
-  public abstract DomainConfigurator withFailureRetryIntervalSeconds(int retrySeconds);
+  public abstract DomainConfigurator withFailureRetryIntervalSeconds(long retrySeconds);
 
   /**
    * Specify the Severe error retry limit in minutes.
    * @param limitMinutes the new value
    * @return this object
    */
-  public abstract DomainConfigurator withFailureRetryLimitMinutes(int limitMinutes);
+  public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
 }

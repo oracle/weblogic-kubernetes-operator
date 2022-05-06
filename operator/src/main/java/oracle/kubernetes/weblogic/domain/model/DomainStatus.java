@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -28,7 +30,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
@@ -71,10 +73,10 @@ public class DomainStatus {
           + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureCount = 0;
+  private Integer introspectJobFailureCount = 0;  //todo remove this field
 
   @Description("Unique ID of the last failed introspection job.")
-  private String failedIntrospectionUid;
+  private String failedIntrospectionUid;  //todo remove this field
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -587,8 +589,39 @@ public class DomainStatus {
     return initialFailureTime;
   }
 
+  /**
+   * Returns the time that the last severe failure was reported.
+   */
   public OffsetDateTime getLastFailureTime() {
     return lastFailureTime;
+  }
+
+  /**
+   * Return the number of times that failure timeouts should be increased as a result of failures.
+   * Will be approximately the number of times a failure has been reported, assuming one failure per retry.
+   * @param retrySeconds the number of seconds between retries.
+   */
+  public int getNumDeadlineIncreases(long retrySeconds) {
+    if (initialFailureTime == null || lastFailureTime == null) {
+      return 0;
+    } else {
+      return (int) (1 + divideRoundingUp(getSecondsFromInitialToLastFailure(), retrySeconds));
+    }
+  }
+
+  private long divideRoundingUp(Long dividend, long divisor) {
+    return (dividend + divisor - 1) / divisor;
+  }
+
+  /**
+   * Returns the number of seconds between the first failure reported and the most recent one.
+   */
+  public Long getSecondsFromInitialToLastFailure() {
+    return Duration.between(initialFailureTime, lastFailureTime).getSeconds();
+  }
+
+  public long getMinutesFromInitialToLastFailure() {
+    return TimeUnit.SECONDS.toMinutes(getSecondsFromInitialToLastFailure());
   }
 
   @Override
@@ -600,6 +633,8 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
+        .append("initialFailureTime", initialFailureTime)
+        .append("lastFailureTime", lastFailureTime)
         .append("introspectJobFailureCount", introspectJobFailureCount)
         .append("failedIntrospectionUid", failedIntrospectionUid)
         .toString();
@@ -610,6 +645,8 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
+        .append(initialFailureTime)
+        .append(lastFailureTime)
         .append(Domain.sortOrNull(servers))
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
@@ -747,7 +784,7 @@ public class DomainStatus {
       @NotNull
       @Override
       String getMessageKey() {
-        return DOMAIN_FATAL_ERROR;
+        return INTROSPECTOR_FATAL_ERROR;
       }
     },
     WILL_RETRY {
