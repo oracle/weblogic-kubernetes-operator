@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.rest.model;
 
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
@@ -12,7 +13,11 @@ public class AdmissionRequest {
   @Expose
   protected String uid;
   @Expose
-  protected String kind;
+  protected Map<String, String> kind;
+  @Expose
+  protected Map<String, String> resource;
+  @Expose
+  protected Map<String, String> subResource;
   @Expose
   protected Object object;
   @Expose
@@ -26,12 +31,28 @@ public class AdmissionRequest {
     this.uid = uid;
   }
 
-  public String getKind() {
+  public Map<String, String> getKind() {
     return kind;
   }
 
-  public void setKind(String kind) {
+  public void setKind(Map<String, String> kind) {
     this.kind = kind;
+  }
+
+  public Map<String, String> getResource() {
+    return resource;
+  }
+
+  public void setResource(Map<String, String> resource) {
+    this.resource = resource;
+  }
+
+  public Map<String, String> getSubResource() {
+    return subResource;
+  }
+
+  public void setSubResource(Map<String, String> subResource) {
+    this.subResource = subResource;
   }
 
   public Object getObject() {
@@ -55,6 +76,8 @@ public class AdmissionRequest {
     return "AdmissionRequest{"
         + "uid='" + uid + '\''
         + ", kind='" + kind + '\''
+        + ", kind='" + resource + '\''
+        + ", kind='" + subResource + '\''
         + ", object=" + object + '\''
         + ", oldObject=" + oldObject
         + '}';
@@ -71,13 +94,15 @@ public class AdmissionRequest {
     AdmissionRequest that = (AdmissionRequest) o;
     return Objects.equals(uid, that.uid)
         && Objects.equals(kind, that.kind)
+        && Objects.equals(resource, that.resource)
+        && Objects.equals(subResource, that.subResource)
         && Objects.equals(object, that.object)
         && Objects.equals(oldObject, that.oldObject);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(uid, kind, object, oldObject);
+    return Objects.hash(uid, kind, resource, subResource, object, oldObject);
   }
 
 }

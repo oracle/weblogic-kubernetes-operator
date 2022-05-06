@@ -56,11 +56,6 @@ public class AdmissionResponse {
     return this;
   }
 
-  public AdmissionResponse result(Status status) {
-    this.status = status;
-    return this;
-  }
-
   @Override
   public String toString() {
     return "AdmissionResponse{"

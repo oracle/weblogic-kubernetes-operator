@@ -22,7 +22,9 @@ import oracle.kubernetes.operator.rest.model.AdmissionReviewModel;
 import oracle.kubernetes.operator.rest.model.Status;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.CREATE_RESPONSE_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.READ_ADMISSION_REVIEW_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.READ_REQUEST_FAILED;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 
@@ -55,16 +57,25 @@ public class AdmissionWebhookResource extends BaseResource {
   public String post(String body) {
     LOGGER.entering(href());
     AdmissionReviewModel admissionReview = null;
+    AdmissionRequest admissionRequest = null;
     AdmissionResponse admissionResponse;
 
     try {
       admissionReview = readAdmissionReview(body);
-      admissionResponse = createAdmissionResponse(getAdmissionRequest(admissionReview));
+      admissionRequest = getAdmissionRequest(admissionReview);
+      admissionResponse = createAdmissionResponse(
+          admissionRequest, validate(admissionRequest.getOldObject(), admissionRequest.getObject()));
     } catch (Exception e) {
-      LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
+      if (admissionReview == null) {
+        LOGGER.severe(READ_ADMISSION_REVIEW_FAILED, e.getMessage());
+      } else if (admissionRequest == null) {
+        LOGGER.severe(READ_REQUEST_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
+      } else {
+        LOGGER.severe(CREATE_RESPONSE_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
+      }
       admissionResponse = new AdmissionResponse()
           .uid(getUid(admissionReview))
-          .result(new Status().code(FAILED_STATUS)
+          .status(new Status().code(FAILED_STATUS)
               .message("Exception: " + e));
       generateFailedEvent(e, getAdmissionRequestAsString(admissionReview));
     }
@@ -91,7 +102,6 @@ public class AdmissionWebhookResource extends BaseResource {
   private void generateFailedEvent(Exception exception, String admissionRequest) {
     EventHelper.EventData eventData = new EventHelper.EventData(CONVERSION_WEBHOOK_FAILED, exception.getMessage())
         .resourceName(CONVERSION_WEBHOOK_COMPONENT).additionalMessage(admissionRequest);
-    //createAdmissionWebhookEvent(eventData);
   }
 
   private String getUid(AdmissionReviewModel admissionReview) {
@@ -106,12 +116,10 @@ public class AdmissionWebhookResource extends BaseResource {
   /**
    * Create the admission review response.
    * @param admissionRequest The request to be converted.
+   * @param accept True if the request is valid
    * @return AdmissionResponse The response to the admission request.
    */
-  private AdmissionResponse createAdmissionResponse(AdmissionRequest admissionRequest) {
-
-    boolean accept = validate(admissionRequest.getOldObject(), admissionRequest.getObject());
-
+  private AdmissionResponse createAdmissionResponse(AdmissionRequest admissionRequest, boolean accept) {
     return new AdmissionResponse()
         .uid(admissionRequest.getUid())
         .allowed(accept)
