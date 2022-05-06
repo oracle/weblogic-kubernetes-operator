@@ -576,11 +576,19 @@ class ItWlsSamples {
       createOcirRepoSecret(domainNamespace);
     }
 
+    // wait until domain.yaml file exits
+    String domainYamlFileString = Paths.get(sampleBase.toString(), "weblogic-domains/"
+        + domainName + "/domain.yaml").toString();
+    File domainYamlFile = new File(domainYamlFileString);
+    testUntil(() -> domainYamlFile.exists(),
+        logger,
+        "domain yaml file {0} exists",
+        domainYamlFileString);
+
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-            + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+    params.command("kubectl apply -f " + domainYamlFileString);
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
