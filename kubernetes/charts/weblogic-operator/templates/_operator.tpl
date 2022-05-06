@@ -8,7 +8,7 @@
 {{- define "operator.operator" -}}
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
-{{- if not (eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "Dedicated") }}
+{{- if not (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   include "operator.operatorClusterRoleNonResource" . }}
 {{- end }}
 {{- include "operator.operatorClusterRoleOperatorAdmin" . }}
@@ -16,7 +16,7 @@
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}
-{{- if not (eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "Dedicated") }}
+{{- if not (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   include "operator.clusterRoleBindingNonResource" . }}
 {{- end }}
 {{- include "operator.operatorRole" . }}
@@ -29,9 +29,9 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
-{{- if .enableClusterRoleBinding }}
-{{-   include "operator.operatorRoleBindingNamespace" . }}
-{{- else }}
+{{- if or (not .enableClusterRoleBinding) (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   include "operator.domainNamespaces" . }}
+{{- else }}
+{{-   include "operator.operatorRoleBindingNamespace" . }}
 {{- end }}
 {{- end }}

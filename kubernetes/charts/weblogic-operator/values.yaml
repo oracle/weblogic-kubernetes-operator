@@ -54,7 +54,9 @@ domainNamespaces:
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-enableClusterRoleBinding: false
+# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
+# case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
 image: "ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0"

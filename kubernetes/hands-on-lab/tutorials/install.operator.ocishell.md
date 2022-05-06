@@ -67,8 +67,6 @@ Note the arguments and values:
 - **namespace**: The namespace where the operator is to be deployed.
 - **image**: The prebuilt operator image, available on the public GitHub Container Registry.
 - **serviceAccount**: The service account required to run the operator.
-- **enableClusterRoleBinding**: Grants the operator privileges in all cluster namespaces.
-- **domainNamespaceSelectionStrategy**: Chooses how the operator will select namespaces it manages.
 - **domainNamespaceLabelSelector**: For label-based namespace selection, specifies the label selector.
 
 **Note**: Earlier versions of the operator's Helm chart only supported selecting namespaces that the operator would manage using a list. Now, namespaces may be chosen using a list, label selector, or regular expression.
@@ -80,8 +78,6 @@ $ helm install sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0" \
   --set "serviceAccount=sample-weblogic-operator-sa" \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
 ```
 The output will be similar to the following:

@@ -102,6 +102,8 @@ class HelmOperatorValues extends OperatorValues {
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
 
+    map.put("enableClusterRoleBinding", Boolean.FALSE);
+
     addStringMapEntry(map, this::getServiceAccount, "serviceAccount");
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");

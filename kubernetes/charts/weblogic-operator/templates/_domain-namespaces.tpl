@@ -2,12 +2,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainNamespaces" }}
-{{- if (eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "Dedicated") }}
+{{- if (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   $key := .Release.Namespace -}}
 {{-   $ignore := set $args "domainNamespace" $key -}}
 {{-   include "operator.operatorRoleBindingNamespace" $args -}}
-{{- else if eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "List" }}
+{{- else if eq .domainNamespaceSelectionStrategy "List" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $key := $args.domainNamespaces -}}
 {{-     $ignore := set $args "domainNamespace" $key -}}
@@ -121,7 +121,7 @@
 {{-       include "operator.operatorRoleBindingNamespace" $args -}}
 {{-     end }}
 {{-   end }}
-{{- else if eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "RegExp" }}
+{{- else if eq .domainNamespaceSelectionStrategy "RegExp" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $index, $namespace := (lookup "v1" "Namespace" "" "").items }}
 {{-     if regexMatch $args.domainNamespaceRegExp $namespace.metadata.name }}

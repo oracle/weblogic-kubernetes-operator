@@ -112,8 +112,6 @@ Install the operator.
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
