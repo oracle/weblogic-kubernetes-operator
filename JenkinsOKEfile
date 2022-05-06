@@ -247,10 +247,11 @@ pipeline {
                         OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}")
                     }
                     steps {
-                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'OCIPK_FILE')]) {
-                                                sh "cp \$OCIPK_FILE ${WORKSPACE}/terraform/oci_api_key.pem"
+                        withCredentials([file(credentialsId: 'oci_pk_file', variable: 'USERPK_FILE')]) {
+                                                sh "cat \$USERPK_FILE "
+                                                sh "cp \$USERPK_FILE ${WORKSPACE}/terraform/oci_api_key.pem"
                         }
-                                           
+
                         sh '''
 
                         export OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING=True
