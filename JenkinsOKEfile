@@ -249,9 +249,11 @@ pipeline {
                     steps {
                         withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
                                                 sh "mkdir -p ${WORKSPACE}/terraform"
-                                                writeFile file: '${WORKSPACE}/terraform/oci_api_key.pem', text: readFile(oci_private_key)
+                                                sh "cp -rf \$oci_private_key ${WORKSPACE}/terraform/oci_api_key.pem"
+                                                writeFile file: '${WORKSPACE}/terraform/oci_api_key1.pem', text: readFile(oci_private_key)
+                                                sh " ls -al ${WORKSPACE}/terraform/*"
                                                 sh "chmod 666 ${WORKSPACE}/terraform/oci_api_key.pem"
-                                                
+
                         }
 
                         sh '''
