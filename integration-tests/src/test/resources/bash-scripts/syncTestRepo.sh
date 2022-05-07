@@ -22,7 +22,7 @@ rm -rf pwd.txt
 # Alternatively use 
 # docker login ${TARGET_REPO} -u ${TARGET_USER} -p  ${TARGET_PASSWORD}
 
-function dockerPullPushMiddelwareImage() {
+dockerPullPushMiddelwareImage() {
  image=${1}
  docker pull ${SOURCE_REPO}/middleware/${image}
  docker tag ${SOURCE_REPO}/middelwarwe/${image} \
@@ -31,7 +31,7 @@ function dockerPullPushMiddelwareImage() {
  docker rmi -f ${SOURCE_REPO}/middleware/${image}
 }
 
-function dockerPullPushDbImage() {
+dockerPullPushDbImage() {
  image=${1}
  docker pull ${SOURCE_REPO}/database/${image}
  docker tag ${SOURCE_REPO}/database/${image} \
