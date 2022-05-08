@@ -111,6 +111,7 @@ class ItMultiDomainModels {
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @Tag("gate")
+  @Tag("ocir")
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
