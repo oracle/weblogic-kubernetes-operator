@@ -235,6 +235,7 @@ class ItTwoDomainsManagedByTwoOperators {
    */
   @Test
   @Tag("gate")
+  @Tag("crio")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createMultipleDomainsSharingPVUsingWlstAndVerify(

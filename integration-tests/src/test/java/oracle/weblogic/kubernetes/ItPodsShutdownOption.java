@@ -176,6 +176,7 @@ class ItPodsShutdownOption {
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   @Tag("gate")
+  @Tag("crio")
   void testShutdownPropsAllLevels() {
 
 
