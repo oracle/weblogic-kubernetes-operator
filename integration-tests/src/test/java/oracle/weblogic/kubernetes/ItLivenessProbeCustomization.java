@@ -135,6 +135,7 @@ class ItLivenessProbeCustomization {
   @Test
   @DisplayName("Test customization of the liveness probe")
   @Tag("gate")
+  @Tag("crio")
   void testCustomLivenessProbeTriggered() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",

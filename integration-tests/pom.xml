@@ -594,7 +594,7 @@
             <id>crio-pipeline</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>gate</groups>
+                <groups>crio</groups>
             </properties>
         </profile>
         <profile>
