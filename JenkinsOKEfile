@@ -415,12 +415,14 @@ pipeline {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
+                        KUBECONFIG ="${WORKSPACE}/terraform/mtcluster_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
                     }
                     steps {
                         sh '''
                             export PATH=${runtime_path}
+                            export KUBECONFIG=${KUBECONFIG}
                             echo 'Create a OKE cluster'
                             #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
@@ -428,6 +430,7 @@ pipeline {
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
+                            sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             #if ! sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ; then
                             #  sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
@@ -595,6 +598,7 @@ EOF
                 always {
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
+                        export KUBECONFIG=${kubeconfig_file}
                         echo 'Remove old OKE cluster (if any)...'
                         if ! ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform; then
                             echo "Failed to delete oke cluster ${clusterName}"

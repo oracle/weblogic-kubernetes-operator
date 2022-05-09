@@ -63,6 +63,7 @@ createCluster () {
     terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
     terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
     terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    ls -al ${terraformVarDir}/*
 }
 
 createRoleBindings () {
