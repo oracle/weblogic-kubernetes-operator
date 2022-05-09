@@ -308,8 +308,6 @@ Before installing your operator,
 choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
 See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
-Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
-then you should also set `enableClusterRoleBinding` to `false`.
 See [Choose a security strategy](#choose-a-security-strategy).
 
 For a description of common namespace management issues,

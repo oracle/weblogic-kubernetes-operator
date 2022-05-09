@@ -85,9 +85,6 @@ For example, using Helm 3.x, with the following settings:
 |Helm chart repo URL|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
 |Helm chart repo name|`weblogic-operator`|
 |`namespace`|`sample-weblogic-operator-ns`|
-|`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
-|`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
-|`domainNamespaceLabelSelector`|`weblogic-operator\=enabled` (the label and expected value for the label)|
 
 ```text
 $ kubectl create namespace sample-weblogic-operator-ns

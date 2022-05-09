@@ -54,7 +54,7 @@ $ helm install traefik-operator traefik/traefik \
       --wait
     ```
 
-    This Helm release deploys the operator and configures it to manage Domains in any Kubernetes namespace with the label, `weblogic-operator=enabled`. Because of the `enableClusterRoleBinding` option, the operator will have privilege in all Kubernetes namespaces. This simplifies adding and removing managed namespaces as you will only have to adjust labels on those namespaces. If you want to limit the operator's privilege to just the set of namespaces that it will manage, then remove this option, but this will mean that the operator has privilege only in the set of namespaces that match the selection strategy at the time the Helm release was installed or upgraded.
+    This Helm release deploys the operator and configures it with the default behavior to manage Domains in any Kubernetes namespace with the label, `weblogic-operator=enabled`.
 
 
 4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one
