@@ -2,13 +2,13 @@
 # Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/up
 
-SOURCE_REPO=container-registry.oracle.com
-SOURCE_USER=${OCR_USERNAME}
-SOURCE_PASSWORD=${OCR_PASSWORD}
+SOURCE_REPO=${BASE_IMAGES_REPO}
+SOURCE_USER=${BASE_IMAGES_REPO_USERNAME}
+SOURCE_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
 
-TARGET_REPO=phx.ocir.io
-TARGET_USER=${OCIR_USERNAME}
-TARGET_PASSWORD=${OCIR_PASSWORD}
+TARGET_REPO=${TEST_IMAGES_REPO}
+TARGET_USER=${TEST_IMAGES_REPO_USERNAME}
+TARGET_PASSWORD=${TEST_IMAGES_REPO_PASSWORD}
 
 echo ${SOURCE_PASSWORD} > pwd.txt
 cat pwd.txt | docker login ${SOURCE_REPO} -u ${SOURCE_USER} --password-stdin
@@ -44,3 +44,4 @@ dockerPullPushMiddelwareImage weblogic:14.1.1.0-11
 dockerPullPushMiddelwareImage fmw-infrastructure:12.2.1.4
 
 dockerPullPushDbImage enterprise:12.2.0.1-slim
+dockerPullPushDbImage operator:0.1.0
