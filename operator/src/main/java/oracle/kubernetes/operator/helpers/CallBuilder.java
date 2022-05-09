@@ -2113,7 +2113,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for patching ValidatingWebhookConfiguration.
+   * Asynchronous step for patching validating webhook configuration.
    *
    * @param name Name
    * @param patchBody instructions on what to patch
@@ -2130,7 +2130,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for replacing validating ebhook configuration.
+   * Asynchronous step for replacing validating webhook configuration.
    *
    * @param body Body
    * @param responseStep Response step for when call completes

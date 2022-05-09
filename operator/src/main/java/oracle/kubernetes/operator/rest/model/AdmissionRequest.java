@@ -75,8 +75,8 @@ public class AdmissionRequest {
     return "AdmissionRequest{"
         + "uid='" + uid + '\''
         + ", kind='" + kind + '\''
-        + ", kind='" + resource + '\''
-        + ", kind='" + subResource + '\''
+        + ", resource='" + resource + '\''
+        + ", subResource='" + subResource + '\''
         + ", object=" + object + '\''
         + ", oldObject=" + oldObject
         + '}';

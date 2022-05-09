@@ -59,8 +59,11 @@ public class AdmissionWebhookResource extends BaseResource {
     try {
       admissionReview = readAdmissionReview(body);
       admissionRequest = getAdmissionRequest(admissionReview);
+
       admissionResponse = createAdmissionResponse(
-          admissionRequest, validate(admissionRequest.getOldObject(), admissionRequest.getObject()));
+          admissionRequest,
+          admissionRequest != null ? validate(admissionRequest.getOldObject(), admissionRequest.getObject()) : true);
+
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
       admissionResponse = new AdmissionResponse()
