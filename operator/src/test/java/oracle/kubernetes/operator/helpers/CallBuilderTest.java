@@ -23,6 +23,8 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
+import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -46,6 +48,8 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import jakarta.json.Json;
@@ -102,6 +106,8 @@ class CallBuilderTest {
   private static final String SSRR_RESOURCE = "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews";
   private static final String TR_RESOURCE = "/apis/authentication.k8s.io/v1/tokenreviews";
   private static final String CRD_RESOURCE = "/apis/apiextensions.k8s.io/v1/customresourcedefinitions";
+  private static final String VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE
+      = "/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations";
   private static final String NAMESPACE_RESOURCE = "/api/v1/namespaces";
 
   private static final ApiClient apiClient = new ApiClient();
@@ -1027,12 +1033,120 @@ class CallBuilderTest {
     assertThat(received, equalTo(list));
   }
 
+  public static final String TEST_VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhooktest";
+
+  @Test
+  @ResourceLock(value = "server")
+  void readValidatingWebhookConfiguration_returnsResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpGetResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .readValidatingWebhookConfigurationAsync(TEST_VALIDATING_WEBHOOK_NAME, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createValidatingWebhookConfiguration_returnsNewResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpPostResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE,
+        resource, (json) -> fromJson(json, V1ValidatingWebhookConfiguration.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createValidatingWebhookConfigurationAsync(resource, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void replaceValodatingWebhookConfiguration_returnsUpdatedResource() throws InterruptedException {
+    V1ValidatingWebhookConfiguration validatingWebhookConfig
+        = new V1ValidatingWebhookConfiguration()
+        .metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook());
+    defineHttpPutResponse(
+        VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME,
+        validatingWebhookConfig, (json) -> fromJson(json, V1Secret.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder()
+        .replaceValidatingWebhookConfigurationAsync(
+            validatingWebhookConfig.getMetadata().getName(), validatingWebhookConfig, responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(validatingWebhookConfig));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void patchValidatingWebhookConfigurationAsync_returnsUpdatedResource() throws InterruptedException {
+    AtomicReference<Object> requestBody = new AtomicReference<>();
+    V1ValidatingWebhookConfiguration resource
+        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
+    defineHttpPatchResponse(
+        VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, TEST_VALIDATING_WEBHOOK_NAME,
+        resource, (json) -> requestBody.set(json));
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfiguration> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    patchBuilder.replace("/webhooks/0/timeoutSeconds",  5);
+    testSupport.runSteps(new CallBuilder().patchValidatingWebhookConfigurationAsync(TEST_VALIDATING_WEBHOOK_NAME,
+        new V1Patch(patchBuilder.build().toString()), responseStep));
+
+    V1ValidatingWebhookConfiguration received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void deleteValidatingWebhookConfiguration_returnsDeletedResource() throws InterruptedException {
+    V1Status response = new V1Status();
+    V1ValidatingWebhookConfiguration resource =
+        new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME));
+    defineHttpDeleteResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE,
+        TEST_VALIDATING_WEBHOOK_NAME, response, (Consumer<String>) null)
+        .expectingParameter("gracePeriodSeconds", "5");
+
+    KubernetesTestSupportTest.TestResponseStep<V1Status> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withGracePeriodSeconds(5)
+        .deleteValidatingWebhookConfigurationAsync(resource.getMetadata().getName(),
+            new DeleteOptions(), responseStep));
+
+    V1Status received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(response));
+  }
+
   private Object fromJson(String json, Class<?> aaClass) {
     return new GsonBuilder().create().fromJson(json, aaClass);
   }
 
   private V1ObjectMeta createMetadata() {
     return new V1ObjectMeta().namespace(NAMESPACE).name(UID);
+  }
+
+  private V1ObjectMeta createNameOnlyMetadata(String name) {
+    return new V1ObjectMeta().name(name);
   }
 
   /** defines a get request for an list of items. */

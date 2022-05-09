@@ -21,6 +21,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
@@ -253,6 +254,29 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getServiceName(generatedConfiguration), equalTo(WEBLOGIC_OPERATOR_WEBHOOK_SVC));
   }
 
+  @Test
+  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespace_replaceIt() {
+    V1ValidatingWebhookConfiguration resource
+        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
+    testSupport.defineResources(resource);
+
+    WebhookMain main = new WebhookMain(delegate);
+
+    main.startDeployment(null);
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo("webhook-namespace"));
+  }
+
+  private V1ObjectMeta createNameOnlyMetadata(String name) {
+    return new V1ObjectMeta().name(name);
+  }
+
   @Nullable
   private String getName(V1ValidatingWebhookConfiguration configuration) {
     return configuration.getMetadata().getName();
@@ -261,6 +285,14 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   @Nullable
   private Map<String, String> getLabels(V1ValidatingWebhookConfiguration configuration) {
     return configuration.getMetadata().getLabels();
+  }
+
+  @Nullable
+  private String getServiceNamespace(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+        .map(AdmissionregistrationV1ServiceReference::getNamespace)
+        .orElse("");
   }
 
   @Nullable

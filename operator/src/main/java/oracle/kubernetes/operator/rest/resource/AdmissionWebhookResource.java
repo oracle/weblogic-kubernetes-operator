@@ -114,7 +114,8 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private boolean validate(Object oldObject, Object object) {
-    LOGGER.fine("validating domain " + object + " against " + oldObject);
+    LOGGER.fine("validating " + object + " against " + oldObject);
+    // TODO add implementation of the validation in the next PR
     return true;
   }
 }

@@ -54,6 +54,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -63,9 +64,13 @@ class RestTest extends JerseyTest {
 
   private static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
   private static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
+  private static final String VALIDATING_REVIEW_RESPONSE_ACCEPT = "domain-validating-webhook-response-accept.yaml";
+  private static final String VALIDATING_REVIEW_REQUEST_1 = "domain-validating-webhook-request-1.yaml";
+  private static final String VALIDATING_REVIEW_REQUEST_2 = "domain-validating-webhook-request-2.yaml";
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
   private static final String WEBHOOK_HREF = "/webhook";
+  private static final String VALIDATING_WEBHOOK_HREF = "/admission";
   private static final String V1_HREF = OPERATOR_HREF + "/" + V1;
   private static final String LATEST_HREF = OPERATOR_HREF + "/latest";
 
@@ -323,7 +328,37 @@ class RestTest extends JerseyTest {
 
   private Response sendConversionWebhookRequest(String conversionReview) {
     return createRequest(WEBHOOK_HREF)
-            .post(createConversionRequest(conversionReview));
+            .post(createWebhookRequest(conversionReview));
+  }
+
+  @Test
+  void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {
+    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_1);
+    Response response = sendCValidatingWebhookRequest(admissionReview);
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+
+    assertThat(responseString, equalTo(getAsString(VALIDATING_REVIEW_RESPONSE_ACCEPT)));
+  }
+
+  @Test
+  void whenInvalidValidatingWebhookRequestSent_hasExpectedResponse() {
+    String resultAllowed = "\"allowed\":false";
+    String resultCode = "\"code\":\"Failed\"";
+    String resultMessage = "\"message\":\"Exception: com.google.gson.JsonSyntaxException";
+
+    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
+    Response response = sendCValidatingWebhookRequest(admissionReview);
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+
+    assertThat(responseString, containsString(resultAllowed));
+    assertThat(responseString, containsString(resultCode));
+    assertThat(responseString, containsString(resultMessage));
+
+  }
+
+  private Response sendCValidatingWebhookRequest(String admissionReview) {
+    return createRequest(VALIDATING_WEBHOOK_HREF)
+        .post(createWebhookRequest(admissionReview));
   }
 
   private String getAsString(String fileName) {
@@ -337,7 +372,7 @@ class RestTest extends JerseyTest {
             .collect(Collectors.joining("\n"));
   }
 
-  private Entity<String> createConversionRequest(String jsonStr) {
+  private Entity<String> createWebhookRequest(String jsonStr) {
     return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
   }
 

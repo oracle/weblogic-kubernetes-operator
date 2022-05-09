@@ -38,5 +38,5 @@ rules:
   verbs: ["create"]
 - apiGroups: ["admissionregistration.k8s.io"]
   resources: ["validatingwebhookconfigurations"]
-  verbs: ["get", "create"]
+  verbs: ["get", "create", "update", "patch"]
 {{- end }}

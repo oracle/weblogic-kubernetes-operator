@@ -150,13 +150,35 @@ public class WebhookHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        V1ValidatingWebhookConfiguration existingCrd = callResponse.getResult();
-        if (existingCrd == null) {
+        V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
+        if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
+        } else if (shouldUpdate(existingWebhookConfig, model)) {
+          return doNext(replaceValidatingWebhookConfiguration(getNext()), packet);
         } else {
-          // TODO handle existing non-matching configuration
           return doNext(packet);
         }
+      }
+
+      private boolean shouldUpdate(
+          V1ValidatingWebhookConfiguration existingWebhookConfig, V1ValidatingWebhookConfiguration model) {
+        return !getServiceNamespace(existingWebhookConfig).equals(getServiceNamespace(model));
+      }
+
+      private Object getServiceNamespace(V1ValidatingWebhookConfiguration webhookConfig) {
+        return getServiceNameSpace(getFirstWebhook(webhookConfig));
+      }
+
+      private Object getServiceNameSpace(V1ValidatingWebhook webhook) {
+        return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getService)
+            .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .orElse(Collections.emptyList())
+            .get(0);
       }
 
       @Override
@@ -190,6 +212,40 @@ public class WebhookHelper {
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
+        return isNotAuthorizedOrForbidden(callResponse)
+            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+      }
+    }
+
+    Step replaceValidatingWebhookConfiguration(Step next) {
+      return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
+          VALIDATING_WEBHOOK_NAME, model, createReplaceResponseStep(next));
+    }
+
+    ResponseStep<V1ValidatingWebhookConfiguration> createReplaceResponseStep(Step next) {
+      return new ReplaceResponseStep(next);
+    }
+
+    private class ReplaceResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+      ReplaceResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(
+          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        return super.onFailure(conflictStep, packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(
+          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }

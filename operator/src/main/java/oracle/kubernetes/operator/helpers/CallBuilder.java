@@ -276,7 +276,7 @@ public class CallBuilder {
           wrap(listValidatingWebhookConfigurationAsync(usage, cont, callback));
   private final CallFactory<V1ValidatingWebhookConfiguration> readValidatingWebhookConfiguration =
       (requestParams, usage, cont, callback) ->
-          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, requestParams.namespace, callback));
+          wrap(readValidatingWebhookConfigurationAsync(usage, requestParams.name, callback));
   private final CallFactory<V1ValidatingWebhookConfiguration> createValidatingWebhookConfiguration =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -291,13 +291,20 @@ public class CallBuilder {
                   requestParams.name,
                   (V1Patch) requestParams.body,
                   callback));
+  private final CallFactory<V1ValidatingWebhookConfiguration> replaceValidatingWebhookConfiguration =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceValidatingWebhookConfigurationAsync(
+                  usage,
+                  requestParams.name,
+                  (V1ValidatingWebhookConfiguration) requestParams.body,
+                  callback));
   private final CallFactory<V1Status> deleteValidatingWebhookConfiguration =
       (requestParams, usage, cont, callback) ->
           wrap(
               deleteValidatingWebhookConfigurationAsync(
                   usage,
                   requestParams.name,
-                  requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
 
@@ -2054,10 +2061,9 @@ public class CallBuilder {
   }
 
   private Call readValidatingWebhookConfigurationAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      ApiClient client, String name, ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
-    return new AdmissionregistrationV1Api(client)
-        .readValidatingWebhookConfigurationAsync(name, pretty, callback);
+    return new AdmissionregistrationV1Api(client).readValidatingWebhookConfigurationAsync(name, pretty, callback);
   }
 
   /**
@@ -2103,21 +2109,19 @@ public class CallBuilder {
       ApiCallback<V1ValidatingWebhookConfiguration> callback)
       throws ApiException {
     return new AdmissionregistrationV1Api(client)
-        .patchValidatingWebhookConfigurationAsync(name, patch, pretty, null,
-            null, null, null, callback);
+        .patchValidatingWebhookConfigurationAsync(name, patch, pretty, null, null, null, null, callback);
   }
 
   /**
    * Asynchronous step for patching ValidatingWebhookConfiguration.
    *
    * @param name Name
-   * @param namespace Namespace
    * @param patchBody instructions on what to patch
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step patchValidatingWebhookConfigurationAsync(
-      String name, String namespace, V1Patch patchBody,
+      String name, V1Patch patchBody,
       ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
     return createRequestAsync(
         responseStep,
@@ -2125,10 +2129,34 @@ public class CallBuilder {
         patchValidatingWebhookConfiguration);
   }
 
+  /**
+   * Asynchronous step for replacing validating ebhook configuration.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceValidatingWebhookConfigurationAsync(
+      String name, V1ValidatingWebhookConfiguration body, ResponseStep<V1ValidatingWebhookConfiguration> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceValidatingWebhookConfiguration", null, name, body, (String) null),
+        replaceValidatingWebhookConfiguration);
+  }
+
+  private Call replaceValidatingWebhookConfigurationAsync(
+      ApiClient client,
+      String name,
+      V1ValidatingWebhookConfiguration body,
+      ApiCallback<V1ValidatingWebhookConfiguration> callback)
+      throws ApiException {
+    return new AdmissionregistrationV1Api(client)
+        .replaceValidatingWebhookConfigurationAsync(name, body, pretty, dryRun, null, null, callback);
+  }
+
   private Call deleteValidatingWebhookConfigurationAsync(
       ApiClient client,
       String name,
-      String namespace,
       V1DeleteOptions deleteOptions,
       ApiCallback<V1Status> callback)
       throws ApiException {
@@ -2148,21 +2176,17 @@ public class CallBuilder {
    * Asynchronous step for deleting validating webhook configuration.
    *
    * @param name Name
-   * @param namespace Namespace
-   * @param domainUid Identifier of the domain that the service is associated with
    * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
   public Step deleteValidatingWebhookConfigurationAsync(
       String name,
-      String namespace,
-      String domainUid,
       V1DeleteOptions deleteOptions,
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("deleteValidatingWebhookConfiguration", namespace, name, deleteOptions, domainUid),
+        new RequestParams("deleteValidatingWebhookConfiguration", null, name, deleteOptions, (String) null),
         deleteValidatingWebhookConfiguration);
   }
 
