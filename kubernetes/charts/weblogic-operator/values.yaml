@@ -71,7 +71,7 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
-# externalRestEnabled specifies whether the the operator's REST interface is exposed
+# externalRestEnabled specifies whether the operator's REST interface is exposed
 # outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
@@ -153,12 +153,19 @@ javaLoggingFileCount: 10
 # for more information on node selectors.
 #nodeSelector:
  
-# webhookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
-# should be created during helm install and if the creation of the operator deployment should be skipped.
-# By default, the helm install will create both the webhook deployment and the operator deployment.
-# If set to true, the helm install will only create the webhook deployment.
+# webhookOnly specifies whether only the conversion webhook should be installed during the helm install
+# and that the operator installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the conversion webhook (and not the operator).
 # The default value is false.
 webhookOnly: false
+
+# operatorOnly specifies whether only the operator should be installed during the helm install and that 
+# the conversion webhook installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the operator (and not the conversion webhook).
+# The default value is false.
+operatorOnly: false
  
 # preserveWebhook specifies whether the previous webhook deployment should be preserved
 # when the chart is uninstalled using helm uninstall.
@@ -239,7 +246,7 @@ externalServiceNameSuffix: "-ext"
 # The default value is true.
 clusterSizePaddingValidationEnabled: true
 
-# tokenReviewAuthentication, if set to true, specifies whether the the operator's REST API should use
+# tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
 #      patch, etc) on a resource.
