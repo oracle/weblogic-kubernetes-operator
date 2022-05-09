@@ -5,7 +5,7 @@
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
 # If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
-serviceAccount: "default"
+serviceAccount: default
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
 # that it will manage. Legal values are: LabelSelector, RegExp, List, and Dedicated.
@@ -20,6 +20,22 @@ serviceAccount: "default"
 # If not specified, the default is LabelSelector
 domainNamespaceSelectionStrategy: LabelSelector
 
+# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'. If not specified, the default is "weblogic-operator=enabled"
+#
+# Example: manage any namespace with a label named "weblogic-operator" that has value "enabled".
+#
+# domainNamespaceLabelSelector: 'weblogic-operator=enabled'
+
+# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
+#
+# Example: manage any namespace where the namespace name starts with "prod".
+#
+# domainNamespaceRegExp: ^prod
+
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
 # namespaces. If not specified, then the operator will manage WebLogic Domains in the Kubernetes 'default' namespace.
@@ -29,33 +45,12 @@ domainNamespaceSelectionStrategy: LabelSelector
 # domainNamespaces:
 # - "namespace1"
 # - "namespace2"
-domainNamespaces:
-- "default"
-
-# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'.
-#
-# Example: manage any namespace with a label named "weblogic-operator".
-#
-# domainNamespaceLabelSelector: "weblogic-operator"
-#
-# domainNamespaceLabelSelector:
-
-# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
-#
-# Example: manage any namespace where the namespace name starts with "prod".
-#
-# domainNamespaceRegExp: "^prod"
-#
-# domainNamespaceRegExp:
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 # If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
 # case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+#
 enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.

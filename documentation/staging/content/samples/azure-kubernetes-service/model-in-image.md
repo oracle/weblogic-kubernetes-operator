@@ -79,9 +79,7 @@ Install the operator. Ensure your current directory is `weblogic-kubernetes-oper
 ```
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1 \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
 ```

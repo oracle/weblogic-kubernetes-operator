@@ -119,24 +119,6 @@ Install the operator using this format: `helm install <helm-release-name> <helm-
 $ helm install sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
-  --wait
-```
-
-Or, instead of using the previous `helm install` command,
-create a YAML file named `custom-values.yaml` with the following contents:
-
-```
-domainNamespaceLabelSelector: "weblogic-operator=enabled"
-```
-
-And call:
-
-```text
-$ helm install sample-weblogic-operator \
-  weblogic-operator/weblogic-operator \
-  --namespace sample-weblogic-operator-ns \
-  --values custom-values.yaml \
   --wait
 ```
 

@@ -50,9 +50,7 @@ $ helm install traefik-operator traefik/traefik \
     ```shell
     $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
       --namespace sample-weblogic-operator-ns \
-      --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
       --set serviceAccount=sample-weblogic-operator-sa \
-      --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
       --wait
     ```
 

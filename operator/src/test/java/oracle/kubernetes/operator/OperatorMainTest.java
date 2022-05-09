@@ -733,6 +733,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterNamespaceAdded_WatchersAreDefined() {
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
 
@@ -753,6 +754,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterNamespaceAdded_scriptConfigMapIsDefined() {
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
     operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());

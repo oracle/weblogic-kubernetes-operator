@@ -123,7 +123,7 @@ public class Namespaces {
       private String[] getLabelSelectors() {
         return Optional.ofNullable(TuningParameters.getInstance().get("domainNamespaceLabelSelector"))
             .map(s -> new String[]{s})
-            .orElse(new String[0]); // HERE
+            .orElse(new String[] { "weblogic-operator=enabled" });
       }
 
       private boolean matchSpecifiedLabelSelectors(@NotNull V1ObjectMeta nsMetadata, String[] selectors) {

@@ -65,9 +65,7 @@ Note the arguments and values:
 - The name of the Helm release.
 - The relative path to the Helm chart.
 - **namespace**: The namespace where the operator is to be deployed.
-- **image**: The prebuilt operator image, available on the public GitHub Container Registry.
 - **serviceAccount**: The service account required to run the operator.
-- **domainNamespaceLabelSelector**: For label-based namespace selection, specifies the label selector.
 
 **Note**: Earlier versions of the operator's Helm chart only supported selecting namespaces that the operator would manage using a list. Now, namespaces may be chosen using a list, label selector, or regular expression.
 
@@ -76,9 +74,7 @@ Execute the following `helm install`:
 $ helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0" \
-  --set "serviceAccount=sample-weblogic-operator-sa" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
+  --set "serviceAccount=sample-weblogic-operator-sa"
 ```
 The output will be similar to the following:
 ```shell
