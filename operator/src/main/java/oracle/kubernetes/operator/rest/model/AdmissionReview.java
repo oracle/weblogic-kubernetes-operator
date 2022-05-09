@@ -71,7 +71,7 @@ public class AdmissionReview {
 
   @Override
   public String toString() {
-    return "AdmissionReviewParamsModel{" 
+    return "AdmissionReview{"
             + "kind='" + kind + '\'' 
             + ", apiVersion='" + apiVersion + '\'' 
             + ", request=" + request 

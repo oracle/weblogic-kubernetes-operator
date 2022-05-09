@@ -77,14 +77,14 @@ public class AdmissionWebhookResource extends BaseResource {
   private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
         .map(AdmissionReview::getRequest)
-        .orElse(null);
+        .orElse(new AdmissionRequest());
   }
 
   private String getAdmissionRequestAsString(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
         .map(AdmissionReview::getRequest)
         .map(AdmissionRequest::toString)
-        .orElse(null);
+        .orElse("");
   }
 
   private String getUid(AdmissionRequest request) {
