@@ -719,7 +719,7 @@ It is important to avoid applying unsupported model updates to a running domain.
 
 The following summarizes the types of runtime update configuration that are _not_ supported in Model in Image unless a workaround or alternative is documented:
 
-  - Decreasing dynamic cluster size:
+  - Altering cluster size:
      - You have a limited ability to change an existing WebLogic cluster's membership.
      - Specifically, do _not_ apply runtime updates for:
         - Adding WebLogic Servers to a configured cluster. As an alternative, consider using dynamic clusters instead of configured clusters.

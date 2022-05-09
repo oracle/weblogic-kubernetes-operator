@@ -9,8 +9,8 @@ weight: 3
 
 - [Overview](#overview)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
-  - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
-  - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
+  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
+  - [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
   - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
   - [Microsoft Azure](#microsoft-azure)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
@@ -32,9 +32,9 @@ offerings where Kubernetes is supplied for you or you set up Kubernetes
 yourself. These include, but are not limited to:
 
 - WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
-  - Oracle Cloud Infrastructure (OCI)
+  - Oracle Cloud Infrastructure
   - Oracle Container Engine for Kubernetes (OKE)
-  - Oracle Linux Cloud Native Environment (OLCNE)
+  - Oracle Cloud Native Environment
   - Oracle Private Cloud Appliance (PCA)
   - Oracle Private Cloud at Customer (OPCC)
 
@@ -70,8 +70,8 @@ see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.m
 
 Here are some important considerations for specific environments:
 
-- [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
-- [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
+- [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
+- [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
 - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
 - [Microsoft Azure](#microsoft-azure)
 - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
@@ -82,33 +82,32 @@ Here are some important considerations for specific environments:
 **Note:** This section does not list all supported environments.
 See the [Overview](#overview) for a list of all supported environments.
 
-#### Oracle Cloud Infrastructure (OCI)
+#### Oracle Cloud Infrastructure
 
 The operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Services for use with Kubernetes* on OCI Compute, and on
-any other OCI "Authorized Cloud Environments"
+Container Services for use with Kubernetes* on Oracle Cloud Infrastructure Compute, and on
+any other Oracle Cloud Infrastructure "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
-#### Oracle Linux Cloud Native Environment (OLCNE)
+#### Oracle Cloud Native Environment
 
-[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
+[Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
-WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment:
-- Operator v2.6.0 is certified on OLCNE 1.1 and v3.2.5 is certified on OLCNE 1.3.
-- Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
+WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment:
+- Operator v2.6.0 is certified on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified on Oracle Cloud Native Environment 1.3.
+- Operator v3.2.5 provides certified support of Oracle Cloud Native Environment 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
 
 #### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
 The [Oracle Private Cloud Appliance](https://www.oracle.com/servers/technologies/private-cloud-appliance.html) (PCA)
 and
 [Oracle Private Cloud at Customer](https://docs.oracle.com/en/cloud/cloud-at-customer/private-cloud-at-customer/index.html) (OPCC)
-fully support Oracle
-Linux Cloud Native Environment (OLCNE), including Oracle Container Runtime for Docker and
+fully support Oracle Cloud Native Environment, including Oracle Container Runtime for Docker and
 Oracle Container Services for Use with Kubernetes.  They provide an ideal runtime for Oracle
 WebLogic Server applications to run in Docker and Kubernetes with full, integrated system
 support from Oracle. For operator certifications that are specific
-to OLCNE, see [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne).
+to Oracle Cloud Native Environment, see [Oracle Cloud Native Environment](#oracle-cloud-native-environment).
 
 The [Oracle WebLogic Server on Oracle Private Cloud Appliance and Kubernetes](https://www.oracle.com/a/ocom/docs/engineered-systems/oracle-weblogic-server-on-pca.pdf)
 document describes how to deploy Oracle WebLogic Server applications on Kubernetes
@@ -140,7 +139,7 @@ AKS support and limitations:
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes Service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
-  Infrastructure MDS data stores only when accessed through an OCI FastConnect.
+  Infrastructure MDS data stores only when accessed through an Oracle Cloud Infrastructure FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
 
 See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
