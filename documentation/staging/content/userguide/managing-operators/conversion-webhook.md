@@ -36,7 +36,7 @@ Beginning with  operator version 4.0, when you [install the operator]({{<relref 
 
 {{% notice note %}}
 **Security Considerations:**
-The `helm install` step requires cluster-level permissions for listing and reading all Namespaces and Deployments to search for existing conversion webhook deployments. In addition, the webhook uses a service account that is usually the same service account as an operator running in the same namespace. This service account requires permissions to create and read events in the conversion webhook namespace. For more information, see [RBAC]({{<relref "/userguide/managing-operators/rbac.md" >}}).
+The `helm install` step requires cluster-level permissions for listing and reading all Namespaces and Deployments to search for existing conversion webhook deployments. If you cannot grant the cluster-level permissions and have multiple operators deployed, then install the conversion webhook separately and set the Helm configuration value `operatorOnly` to `true` in the `helm install` command to prevent multiple conversion webhook deployments. In addition, the webhook uses a service account that is usually the same service account as an operator running in the same namespace. This service account requires permissions to create and read events in the conversion webhook namespace. For more information, see [RBAC]({{<relref "/userguide/managing-operators/rbac.md" >}}).
 {{% /notice %}}
 
 
@@ -64,12 +64,13 @@ The following table describes the behavior of different operator `Helm` chart co
 | --- | --- | --- |
 | Helm install | None specified | Operator and conversion webhook installed. |
 | Helm install | `webhookOnly=true` | Only conversion webhook installed. |
+| Helm install | `operatorOnly=true` | Only operator installed. |
 | Helm install | `preserveWebhook=true` | Operator and webhook installed and a future uninstall will not remove the webhook. |
 | Helm uninstall | | Operator and webhook deployment uninstalled. |
 | Helm uninstall with `preserveWebhook=true` set during `helm install` | | Operator deployment uninstalled and webhook deployment preserved. |
 
 **Note:**
-A webhook install is skipped if there's already a webhook deployment at the same or newer version.
+A webhook install is skipped if there's already a webhook deployment at the same or newer version. The `helm install` step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces. 
 
 ### Uninstall the conversion webhook
 
