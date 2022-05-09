@@ -20,8 +20,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -46,7 +44,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
@@ -83,8 +81,6 @@ class PodDisruptionBudgetHelperTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   static String getTestCluster() {
     return TEST_CLUSTER;
@@ -273,7 +269,7 @@ class PodDisruptionBudgetHelperTest {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test

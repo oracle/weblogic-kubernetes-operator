@@ -51,7 +51,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -345,7 +345,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(DOMAIN_INVALID_EVENT_ERROR)));
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Test

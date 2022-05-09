@@ -296,15 +296,15 @@ public class EventTestUtils {
 
   public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && e.getMessage().contains(getLocalizedEventError(ABORTED_EVENT_ERROR));
+        && e.getMessage().contains(getLocalizedString(ABORTED_EVENT_ERROR));
   }
 
   public static boolean isDomainInternalFailedEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && e.getMessage().contains(getLocalizedEventError(INTERNAL_EVENT_ERROR));
+        && e.getMessage().contains(getLocalizedString(INTERNAL_EVENT_ERROR));
   }
 
-  public static String getLocalizedEventError(String msgId) {
+  public static String getLocalizedString(String msgId) {
     return LOGGER.formatMessage(msgId);
   }
 

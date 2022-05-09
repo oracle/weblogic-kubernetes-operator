@@ -48,7 +48,7 @@ import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -261,7 +261,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -492,7 +492,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(DOMAIN_INVALID_EVENT_ERROR)));
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Test

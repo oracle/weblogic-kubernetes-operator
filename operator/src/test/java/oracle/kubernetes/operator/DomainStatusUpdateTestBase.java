@@ -63,7 +63,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -770,7 +770,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedEventError(SERVER_POD_EVENT_ERROR)));
+        .withMessageContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
   }
 
   private void failPod(String serverName) {
@@ -986,7 +986,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedEventError(REPLICAS_TOO_HIGH_EVENT_ERROR)));
+        .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR)));
   }
 
   @Test

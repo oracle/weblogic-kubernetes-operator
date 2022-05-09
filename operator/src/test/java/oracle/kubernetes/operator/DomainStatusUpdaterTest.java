@@ -38,7 +38,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailu
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -167,7 +167,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-        .withMessageContaining(getLocalizedEventError(INTERNAL_EVENT_ERROR)));
+        .withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -197,7 +197,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedEventError(INTERNAL_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -223,7 +223,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedEventError(INTERNAL_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -231,7 +231,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR, job));
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedEventError(ABORTED_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(ABORTED_EVENT_ERROR)));
   }
 
   @SuppressWarnings("SameParameterValue")

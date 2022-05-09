@@ -28,8 +28,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -66,7 +64,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -92,7 +90,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings("ConstantConditions")
 abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int TEST_NODE_PORT = 30001;
   private static final int TEST_NODE_SSL_PORT = 30002;
   private static final int NAP1_NODE_PORT = 30012;
@@ -409,7 +406,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-           getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
+           getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {

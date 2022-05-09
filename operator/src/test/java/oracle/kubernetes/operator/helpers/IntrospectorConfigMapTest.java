@@ -37,7 +37,7 @@ import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -198,7 +198,7 @@ class IntrospectorConfigMapTest {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         EventTestUtils.getExpectedEventMessage(testSupport, DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(DOMAIN_INVALID_EVENT_ERROR)));
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Nonnull

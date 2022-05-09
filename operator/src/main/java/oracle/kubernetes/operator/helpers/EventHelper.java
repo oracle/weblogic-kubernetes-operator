@@ -129,7 +129,9 @@ public class EventHelper {
 
     private static String getLocalizedAdditionalMessage(@Nonnull DomainFailureReason domainFailureReason,
         DomainPresenceInfo info) {
-      return domainFailureReason.getEventSuggestion();
+      return Optional.ofNullable(domainFailureReason.getEventSuggestion())
+          .map(k -> LOGGER.formatMessage(k, domainFailureReason.getEventSuggestionParam(info)))
+          .orElse("");
     }
 
     private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {

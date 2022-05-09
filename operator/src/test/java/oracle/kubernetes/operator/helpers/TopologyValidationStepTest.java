@@ -50,7 +50,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ServerStartPolicy.IF_NEEDED;
@@ -395,7 +395,7 @@ class TopologyValidationStepTest {
     assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
     assertThat(testSupport,
         hasEvent(DOMAIN_FAILED_EVENT)
-            .withMessageContaining(getLocalizedEventError(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
+            .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
   }
 
   @Test
@@ -929,7 +929,7 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-                .withMessageContaining(getLocalizedEventError(TOPOLOGY_MISMATCH_EVENT_ERROR),
+                .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
                       getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster"),
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
@@ -945,7 +945,7 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedEventError(TOPOLOGY_MISMATCH_EVENT_ERROR)));
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR)));
   }
 
 

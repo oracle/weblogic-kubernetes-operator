@@ -6,16 +6,19 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import com.google.gson.annotations.SerializedName;
-import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.WILL_RETRY_EVENT_SUGGESTION;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -30,7 +33,7 @@ public enum DomainFailureReason {
 
     @Override
     public String getEventSuggestion() {
-      return EventConstants.DOMAIN_INVALID_ERROR_SUGGESTION;
+      return DOMAIN_INVALID_ERROR_EVENT_SUGGESTION;
     }
   },
   @SerializedName("Introspection")
@@ -46,8 +49,8 @@ public enum DomainFailureReason {
     }
 
     @Override
-    public String getEventSuggestionParams(DomainPresenceInfo info) {
-      return getFailureRetryAdditionalMessage(info);
+    public String getEventSuggestionParam(DomainPresenceInfo info) {
+      return getAdditionalMessageFromStatus(info);
     }
 
     @Override
@@ -61,11 +64,6 @@ public enum DomainFailureReason {
     public String getEventError() {
       return KUBERNETES_EVENT_ERROR;
     }
-
-    @Override
-    public String getEventSuggestion() {
-      return EventConstants.KUBERNETES_ERROR_SUGGESTION;
-    }
   },
   @SerializedName("ServerPod")
   SERVER_POD("ServerPod") {
@@ -74,10 +72,6 @@ public enum DomainFailureReason {
       return SERVER_POD_EVENT_ERROR;
     }
 
-    @Override
-    public String getEventSuggestion() {
-      return EventConstants.SERVER_POD_ERROR_SUGGESTION;
-    }
   },
   @SerializedName("ReplicasTooHigh")
   REPLICAS_TOO_HIGH("ReplicasTooHigh") {
@@ -88,7 +82,7 @@ public enum DomainFailureReason {
 
     @Override
     public String getEventSuggestion() {
-      return EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
+      return REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
     }
 
     @Override
@@ -105,7 +99,7 @@ public enum DomainFailureReason {
 
     @Override
     public String getEventSuggestion() {
-      return EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
+      return TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION;
     }
   },
   @SerializedName("Internal")
@@ -121,8 +115,8 @@ public enum DomainFailureReason {
     }
 
     @Override
-    public String getEventSuggestionParams(DomainPresenceInfo info) {
-      return getFailureRetryAdditionalMessage(info);
+    public String getEventSuggestionParam(DomainPresenceInfo info) {
+      return getAdditionalMessageFromStatus(info);
     }
   },
   @SerializedName("Aborted")
@@ -134,7 +128,7 @@ public enum DomainFailureReason {
 
     @Override
     public String getEventSuggestion() {
-      return EventConstants.ABORTED_ERROR_SUGGESTION;
+      return ABORTED_ERROR_EVENT_SUGGESTION;
     }
 
     @Override
@@ -150,9 +144,11 @@ public enum DomainFailureReason {
 
   public abstract String getEventError();
 
-  public abstract String getEventSuggestion();
+  public String getEventSuggestion() {
+    return null;
+  }
 
-  public String getEventSuggestionParams(DomainPresenceInfo info) {
+  public String getEventSuggestionParam(DomainPresenceInfo info) {
     return null;
   }
 
@@ -162,10 +158,6 @@ public enum DomainFailureReason {
         .map(Domain::getStatus)
         .map(DomainStatus::getMessage)
         .orElse("");
-  }
-
-  String getFailureRetryAdditionalMessage(DomainPresenceInfo info) {
-    return DomainFailureReason.getAdditionalMessageFromStatus(info);
   }
 
   private final String value;

@@ -98,7 +98,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedEventError;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -348,7 +348,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -1079,7 +1079,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
         stringContainsInOrder("Domain", UID, "failed due to",
-            getLocalizedEventError(KUBERNETES_EVENT_ERROR)));
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   Domain getDomain() {

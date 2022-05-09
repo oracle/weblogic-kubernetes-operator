@@ -32,13 +32,4 @@ public interface EventConstants {
   String START_MANAGING_NAMESPACE_EVENT = "StartManagingNamespace";
   String STOP_MANAGING_NAMESPACE_EVENT = "StopManagingNamespace";
   String START_MANAGING_NAMESPACE_FAILED_EVENT = "StartManagingNamespaceFailed";
-  String ABORTED_ERROR_SUGGESTION = "The reported problem should be corrected, and the domain will not be retried "
-      + "until the domain resource is updated.";
-  String DOMAIN_INVALID_ERROR_SUGGESTION = "Update the domain resource to correct the validation error.";
-  String TOPOLOGY_MISMATCH_ERROR_SUGGESTION
-      = "Update the domain resource or change the WebLogic domain configuration to correct the error.";
-  String KUBERNETES_ERROR_SUGGESTION = "";
-  String SERVER_POD_ERROR_SUGGESTION = "";
-  String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase the number "
-      + "of WebLogic servers in the WebLogic domain configuration for the cluster.";
 }
