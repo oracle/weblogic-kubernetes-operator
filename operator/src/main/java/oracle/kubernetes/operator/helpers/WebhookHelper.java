@@ -236,8 +236,7 @@ public class WebhookHelper {
     }
 
     private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
-      AdmissionregistrationV1ServiceReference service = getServiceFromConfig(existing);
-      service.namespace(getWebhookNamespace());
+      Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
     }
 
     ResponseStep<V1ValidatingWebhookConfiguration> createReplaceResponseStep(Step next) {
