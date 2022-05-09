@@ -1189,7 +1189,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
       container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
-      if (initContainer) {
+      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)) {
         container.resources(null);
       }
       convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
