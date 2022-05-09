@@ -197,7 +197,7 @@ Here are the steps:
 
 - In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using OKE/OCI to host your Kubernetes cluster, also see [Using an OCI Load Balancer]({{<relref "/faq/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/faq/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
