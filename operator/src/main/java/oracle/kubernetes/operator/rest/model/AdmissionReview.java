@@ -26,7 +26,7 @@ public class AdmissionReview {
   }
 
   public AdmissionReview kind(String kind) {
-    this.kind = kind;
+    setKind(kind);
     return this;
   }
 
@@ -39,7 +39,7 @@ public class AdmissionReview {
   }
 
   public AdmissionReview apiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
+    setApiVersion(apiVersion);
     return this;
   }
 
@@ -51,6 +51,11 @@ public class AdmissionReview {
     this.request = request;
   }
 
+  public AdmissionReview request(AdmissionRequest request) {
+    setRequest(request);
+    return this;
+  }
+
   public AdmissionResponse getResponse() {
     return response;
   }
@@ -60,7 +65,7 @@ public class AdmissionReview {
   }
 
   public AdmissionReview response(AdmissionResponse response) {
-    this.response = response;
+    setResponse(response);
     return this;
   }
 

@@ -154,7 +154,7 @@ public class WebhookHelper {
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
         } else if (shouldUpdate(existingWebhookConfig, model)) {
-          return doNext(replaceValidatingWebhookConfiguration(getNext()), packet);
+          return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
         } else {
           return doNext(packet);
         }
@@ -169,16 +169,10 @@ public class WebhookHelper {
         return getServiceNamespace(getFirstWebhook(webhookConfig));
       }
 
-      private Object getServiceNamespace(V1ValidatingWebhook webhook) {
+      private String getServiceNamespace(V1ValidatingWebhook webhook) {
         return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
             .map(AdmissionregistrationV1WebhookClientConfig::getService)
             .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
-      }
-
-      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
-            .orElse(Collections.emptyList())
-            .get(0);
       }
 
       @Override
@@ -187,6 +181,20 @@ public class WebhookHelper {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
+    }
+
+    private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+      return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
+          .orElse(Collections.emptyList())
+          .get(0);
+    }
+
+    private AdmissionregistrationV1ServiceReference getServiceFromConfig(
+        V1ValidatingWebhookConfiguration webhookConfig) {
+      return Optional.ofNullable(getFirstWebhook(webhookConfig))
+          .map(V1ValidatingWebhook::getClientConfig)
+          .map(AdmissionregistrationV1WebhookClientConfig::getService)
+          .orElse(null);
     }
 
     private class CreateResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
@@ -217,9 +225,19 @@ public class WebhookHelper {
       }
     }
 
-    Step replaceValidatingWebhookConfiguration(Step next) {
+    Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
       return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
-          VALIDATING_WEBHOOK_NAME, model, createReplaceResponseStep(next));
+          VALIDATING_WEBHOOK_NAME, updateModel(existing), createReplaceResponseStep(next));
+    }
+
+    private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
+      setServiceNamespace(existing);
+      return existing;
+    }
+
+    private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
+      AdmissionregistrationV1ServiceReference service = getServiceFromConfig(existing);
+      service.namespace(getWebhookNamespace());
     }
 
     ResponseStep<V1ValidatingWebhookConfiguration> createReplaceResponseStep(Step next) {

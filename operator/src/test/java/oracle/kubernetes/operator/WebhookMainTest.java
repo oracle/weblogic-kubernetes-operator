@@ -270,7 +270,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
 
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
-    assertThat(getServiceNamespace(generatedConfiguration), equalTo("webhook-namespace"));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
   }
 
   private V1ObjectMeta createNameOnlyMetadata(String name) {

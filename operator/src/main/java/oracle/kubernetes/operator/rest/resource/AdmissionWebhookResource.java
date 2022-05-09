@@ -59,11 +59,7 @@ public class AdmissionWebhookResource extends BaseResource {
     try {
       admissionReview = readAdmissionReview(body);
       admissionRequest = getAdmissionRequest(admissionReview);
-
-      admissionResponse = createAdmissionResponse(
-          admissionRequest,
-          admissionRequest != null ? validate(admissionRequest.getOldObject(), admissionRequest.getObject()) : true);
-
+      admissionResponse = createAdmissionResponse(admissionRequest);
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
       admissionResponse = new AdmissionResponse()
@@ -99,10 +95,10 @@ public class AdmissionWebhookResource extends BaseResource {
     return getGsonBuilder().fromJson(resourceName, AdmissionReview.class);
   }
 
-  private AdmissionResponse createAdmissionResponse(AdmissionRequest admissionRequest, boolean accept) {
+  private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
     return new AdmissionResponse()
-        .uid(admissionRequest.getUid())
-        .allowed(accept)
+        .uid(request.getUid())
+        .allowed(request == null || validate(request.getOldObject(), request.getObject()))
         .status((new Status().message("Success")));
   }
 
