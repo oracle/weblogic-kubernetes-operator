@@ -81,7 +81,6 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -1271,8 +1270,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(LOGGER.formatMessage(INTROSPECTOR_FATAL_ERROR, FATAL_PROBLEM)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(FATAL_PROBLEM));
   }
 
   @Test

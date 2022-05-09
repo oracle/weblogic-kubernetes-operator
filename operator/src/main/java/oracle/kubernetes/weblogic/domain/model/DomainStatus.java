@@ -30,7 +30,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FATAL_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
@@ -784,7 +784,7 @@ public class DomainStatus {
       @NotNull
       @Override
       String getMessageKey() {
-        return INTROSPECTOR_FATAL_ERROR;
+        return DOMAIN_FATAL_ERROR;
       }
     },
     WILL_RETRY {
