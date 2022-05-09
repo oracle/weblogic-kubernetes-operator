@@ -162,14 +162,14 @@ public class WebhookHelper {
 
       private boolean shouldUpdate(
           V1ValidatingWebhookConfiguration existingWebhookConfig, V1ValidatingWebhookConfiguration model) {
-        return !getServiceNamespace(existingWebhookConfig).equals(getServiceNamespace(model));
+        return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model));
       }
 
-      private Object getServiceNamespace(V1ValidatingWebhookConfiguration webhookConfig) {
-        return getServiceNameSpace(getFirstWebhook(webhookConfig));
+      private Object getServiceNamespaceFromConfig(V1ValidatingWebhookConfiguration webhookConfig) {
+        return getServiceNamespace(getFirstWebhook(webhookConfig));
       }
 
-      private Object getServiceNameSpace(V1ValidatingWebhook webhook) {
+      private Object getServiceNamespace(V1ValidatingWebhook webhook) {
         return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
             .map(AdmissionregistrationV1WebhookClientConfig::getService)
             .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");

@@ -457,7 +457,17 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             newPolicyRule()
                 .addApiGroupsItem("authorization.k8s.io")
                 .resources(singletonList("selfsubjectrulesreviews"))
-                .verbs(singletonList("create")));
+                .verbs(singletonList("create")))
+        .addRulesItem(
+                    newPolicyRule()
+                        .addApiGroupsItem("admissionregistration.k8s.io")
+                        .resources(asList("validatingwebhookconfigurations"))
+                        .verbs(
+                            asList(
+                                "get",
+                                "create",
+                                "update",
+                                "patch")));
   }
 
   @Test
@@ -736,7 +746,17 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         "update",
                         "patch",
                         "delete",
-                        "deletecollection")));
+                        "deletecollection")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("admissionregistration.k8s.io")
+                .resources(asList("validatingwebhookconfigurations"))
+                .verbs(
+                    asList(
+                        "get",
+                        "create",
+                        "update",
+                        "patch")));
   }
 
   @Test
