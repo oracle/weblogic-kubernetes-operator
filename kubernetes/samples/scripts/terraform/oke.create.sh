@@ -78,6 +78,8 @@ createRoleBindings () {
 checkClusterRunning () {
 
     echo 'Confirm we have kubectl working...'
+    ls -al ${terraformVarDir}/${okeclustername}_kubeconfig
+    export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
     myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
     status="NotReady"
     max=50
