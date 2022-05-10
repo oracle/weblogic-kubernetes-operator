@@ -144,10 +144,19 @@ public enum DomainFailureReason {
 
   public abstract String getEventError();
 
+  /**
+   * Return the ID for the message containing suggested actions for this event.
+   * @return Message ID for the suggestion message
+   */
   public String getEventSuggestion() {
     return null;
   }
 
+  /**
+   * Return a String which is used as parameter for the event suggestion message.
+   * @param info DomainPresenceInfo may be use by overriding classes to obtain the message
+   *             parameter String from
+   */
   public String getEventSuggestionParam(DomainPresenceInfo info) {
     return null;
   }
