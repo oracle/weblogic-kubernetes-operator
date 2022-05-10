@@ -92,8 +92,6 @@ class TopologyValidationStepTest {
   private static final String CLUSTER1 = "cluster1";
   private static final String CLUSTER2 = "cluster2";
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
