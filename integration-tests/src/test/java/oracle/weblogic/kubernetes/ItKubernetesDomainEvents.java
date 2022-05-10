@@ -46,8 +46,11 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -138,6 +141,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and finally deletes it to generate all the domain related events.
  */
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
 class ItKubernetesDomainEvents {
@@ -550,6 +554,7 @@ class ItKubernetesDomainEvents {
   /**
    * The test modifies the logHome property and verifies the domain roll events are logged.
    */
+  @Order(1)
   @Test
   @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
   void testLogHomeChangeEvents() {

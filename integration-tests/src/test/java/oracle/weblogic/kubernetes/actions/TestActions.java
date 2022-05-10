@@ -1666,6 +1666,6 @@ public class TestActions {
    * @return Current time.
    */
   public static OffsetDateTime now() {
-    return OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    return OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS).minusSeconds(10);
   }
 }
