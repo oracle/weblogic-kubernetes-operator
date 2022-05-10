@@ -42,8 +42,8 @@ class DomainRetryTest extends DomainTestBase {
 
   @Test
   void failureRetryParameters_haveDefaultValues() {
-    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(120));
-    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1440));
+    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(120L));
+    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1440L));
   }
 
   @Test
@@ -52,16 +52,16 @@ class DomainRetryTest extends DomainTestBase {
           .withFailureRetryIntervalSeconds(73)
           .withFailureRetryLimitMinutes(103);
 
-    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(73));
-    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(103));
+    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(73L));
+    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(103L));
   }
 
   @Test
   void readFailureRetryParametersFromYaml() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
-    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(90));
-    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1000));
+    assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(90L));
+    assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1000L));
   }
 
   @Test
