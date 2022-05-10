@@ -1094,7 +1094,7 @@ class ItMiiAuxiliaryImage {
    * One auxiliary image (image1) contains the domain configuration and
    * another auxiliary image (image2) with WDT only,
    * update WDT version by patching with another auxiliary image (image3)
-   * and verify the domain is running.
+   * and verify the WDT version is updated to the one bundled with image3
    */
   @Test
   @DisplayName("Test to update WDT version using  auxiliary images")
@@ -1137,6 +1137,7 @@ class ItMiiAuxiliaryImage {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage9Tag, witParams);
 
     // create second auxiliary image with older wdt installation files only
+    logger.info("Create Auxiliary image with older wdt installation {0}", WDT_TEST_VERSION);
     witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -1145,6 +1146,8 @@ class ItMiiAuxiliaryImage {
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage10Tag, witParams);
 
     // create third auxiliary image with newest wdt installation files only
+    logger.info("Create AUX IMAGE with latest wdt installation");
+    logger.info("Create Auxiliary image with latest wdt installation");
     witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
@@ -1190,6 +1193,7 @@ class ItMiiAuxiliaryImage {
       String wdtVersion = checkWDTVersion(wdtDomainNamespace,
           adminServerPodName, "/aux",
           this.getClass().getSimpleName());
+      logger.info("(before patch) Returned WDT Version {0}", wdtVersion);
       assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image does not match the expected");
     }, "Can't retrieve wdt version file or version does match the expected");
@@ -1198,10 +1202,11 @@ class ItMiiAuxiliaryImage {
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage10,
         miiAuxiliaryImage11, domainUid, wdtDomainNamespace);
 
-    //check that WDT version is changed
+    //check that WDT version is updated to latest 
     assertDoesNotThrow(() -> {
       String wdtVersion = checkWDTVersion(wdtDomainNamespace, adminServerPodName,
           "/aux", this.getClass().getSimpleName());
+      logger.info("(after patch) Returned WDT Version {0}", wdtVersion);
       assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
           " Used WDT in the auxiliary image was not updated");
     }, "Can't retrieve wdt version file "

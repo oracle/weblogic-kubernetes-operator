@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -161,17 +160,6 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.0.4 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.0.4 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom304ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom304ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.0.4", OLD_DOMAIN_VERSION, OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
    * Operator upgrade from 3.1.4 to current.
    */
   @ParameterizedTest
@@ -205,14 +193,54 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operartor v3.3.8 to current.
+   * Operator upgrade from 3.4.0 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.4.0 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom340ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom340ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.0", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
    */
   @Test
-  @DisplayName("Upgrade 3.3.8 Domain(v8 schema) with Auxiliary Image to current")
+  @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
   void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
     logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.3.8");
+  }
 
-    installOldOperator("3.3.8");
+  /**
+   * Auxiliary Image Domain upgrade from Operator v3.4.0 to current.
+   */
+  @Test
+  @DisplayName("Upgrade 3.4.0 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom340ToCurrent() {
+    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.4.0");
+  }
+
+  /**
+   * Cleanup Kubernetes artifacts in the namespaces used by the test and
+   * delete CRD.
+   */
+  @AfterEach
+  public void tearDown() {
+    if (!SKIP_CLEANUP) {
+      CleanupUtil.cleanup(namespaces);
+      Command
+          .withParams(new CommandParams()
+              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+          .execute();
+    }
+  }
+
+  void upgradeWlsAuxDomain(String oldVersion) {
+    logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
+    installOldOperator(oldVersion);
     createSecrets();
 
     // Creating an aux image domain with v8 version
@@ -272,20 +300,6 @@ class ItOperatorWlsUpgrade {
     scaleClusterUpAndDown();
   }
 
-  /**
-   * Cleanup Kubernetes artifacts in the namespaces used by the test and
-   * delete CRD.
-   */
-  @AfterEach
-  public void tearDown() {
-    if (!SKIP_CLEANUP) {
-      CleanupUtil.cleanup(namespaces);
-      Command
-          .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
-    }
-  }
 
   private void installOldOperator(String operatorVersion) {
     logger.info("Assign a unique namespace for operator");

@@ -64,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.PODS_FAILED;
@@ -98,6 +99,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERN
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by
@@ -505,8 +507,24 @@ public class DomainStatusUpdater {
     }
 
     void addFailure(DomainStatus status, DomainCondition condition) {
+      addFailureCondition(status, condition);
+      if (hasReachedRetryLimit(status, condition)) {
+        addFailureCondition(status, new DomainCondition(FAILED).withReason(ABORTED).withMessage(getFatalMessage()));
+      }
+    }
+
+    private void addFailureCondition(DomainStatus status, DomainCondition condition) {
       status.addCondition(condition);
       addDomainEvent(condition);
+    }
+
+    private boolean hasReachedRetryLimit(DomainStatus status, DomainCondition condition) {
+      return condition.getSeverity() == SEVERE
+          && status.getMinutesFromInitialToLastFailure() > getDomain().getFailureRetryLimitMinutes();
+    }
+
+    private String getFatalMessage() {
+      return LOGGER.formatMessage(DOMAIN_FATAL_ERROR, getDomain().getFailureRetryLimitMinutes());
     }
 
     void addDomainEvent(DomainCondition condition) {

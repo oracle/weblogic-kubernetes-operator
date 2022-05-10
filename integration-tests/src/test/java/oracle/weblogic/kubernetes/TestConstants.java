@@ -247,8 +247,11 @@ public interface TestConstants {
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
+  // Here we need a old version of WDT to build a Auxiliary Image with 
+  // WDT binary only. Later it will be overwritten by latest WDT version
+  // See ItMiiAuxiliaryImage.testUpdateWDTVersionUsingMultipleAuxiliaryImages
   public static final String WDT_TEST_VERSION =
-      getNonEmptySystemProperty("wko.it.wdt.test.version", "2.2.0");
+      getNonEmptySystemProperty("wko.it.wdt.test.version", "1.9.20");
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =

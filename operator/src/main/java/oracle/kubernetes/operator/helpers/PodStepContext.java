@@ -1177,6 +1177,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void adjustContainer(List<V1Container> convertedContainers, V1Container container) {
+      adjustContainer(convertedContainers, container, false);
+    }
+
+    private void adjustContainer(List<V1Container> convertedContainers, V1Container container, boolean initContainer) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
       List<V1EnvVar> env = container.getEnv();
       List<V1EnvVar> newEnv = new ArrayList<>();
@@ -1185,6 +1189,9 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       List<V1VolumeMount> convertedVolumeMounts = new ArrayList<>();
       container.getVolumeMounts().forEach(i -> adjustVolumeMountName(convertedVolumeMounts, i));
+      if (initContainer && container.getName().startsWith(COMPATIBILITY_MODE)) {
+        container.resources(null);
+      }
       convertedContainers.add(new V1ContainerBuilder(container).build().name(convertedName).env(newEnv)
           .volumeMounts(convertedVolumeMounts));
     }
@@ -1196,7 +1203,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod pod) {
       V1PodSpec podSpec = pod.getSpec();
       List<V1Container> convertedInitContainers = new ArrayList<>();
-      podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i));
+      podSpec.getInitContainers().forEach(i -> adjustContainer(convertedInitContainers, i, true));
       podSpec.initContainers(convertedInitContainers);
 
       List<V1Container> convertedContainers = new ArrayList<>();
