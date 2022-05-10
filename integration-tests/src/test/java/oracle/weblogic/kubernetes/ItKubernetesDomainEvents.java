@@ -265,6 +265,7 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
   void testDomainK8sEventsNonExistingManagedServer() {
+    getAndValidateInitialDomain(domainNamespace3, domainUid);
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with non-existing managed server");
     String patchStr
@@ -303,6 +304,7 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
+    getAndValidateInitialDomain(domainNamespace3, domainUid);
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with new cluster");
     String patchStr
@@ -411,6 +413,7 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsScalePastMax() {
     OffsetDateTime timestamp = now();
     try {
+      getAndValidateInitialDomain(domainNamespace3, domainUid);
       logger.info("Scaling cluster using patching");
       String patchStr
           = "["
@@ -496,6 +499,7 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsProcessingFailed() {
     OffsetDateTime timestamp = now();
     try {
+      getAndValidateInitialDomain(domainNamespace3, domainUid);
       String pvName = getUniqueName("sample-pv-");
       String pvcName = getUniqueName("sample-pvc-");
       createPV(pvName, domainUid, this.getClass().getSimpleName());
@@ -1014,7 +1018,7 @@ class ItKubernetesDomainEvents {
     Command.withParams(params.command("timedatectl")).execute();
   }
   
-  private static void dumpEvents(String domainNamespace, String domainUid, OffsetDateTime timestamp) {
+  public static void dumpEvents(String domainNamespace, String domainUid, OffsetDateTime timestamp) {
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {

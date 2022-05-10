@@ -39,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -813,6 +814,7 @@ public class DomainUtils {
 
     assertNotNull(domain, "Got null domain resource");
     assertNotNull(domain.getSpec(), domain + "/spec is null");
+    getLogger().info(Yaml.dump(domain));
     return domain;
   }
 }

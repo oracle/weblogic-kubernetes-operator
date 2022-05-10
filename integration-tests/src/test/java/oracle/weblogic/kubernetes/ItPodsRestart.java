@@ -39,6 +39,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.ItKubernetesDomainEvents.dumpEvents;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -248,6 +249,8 @@ class ItPodsRestart {
         domainUid, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    
+    dumpEvents(domainNamespace, domainUid, timestamp);
 
     //verify the resource change causes the domain restart and domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
@@ -318,9 +321,11 @@ class ItPodsRestart {
     logger.info("In the new patched domain IncludeServerOutInPodLog is: {0}",
         includeServerOutInPodLog);
     assertFalse(includeServerOutInPodLog, "IncludeServerOutInPodLog was not updated");
-
+    
     //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
+    
+    dumpEvents(domainNamespace, domainUid, timestamp);
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -660,6 +665,8 @@ class ItPodsRestart {
         domainUid, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+    
+    dumpEvents(domainNamespace, domainUid, timestamp);
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
