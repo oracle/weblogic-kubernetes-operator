@@ -206,8 +206,10 @@ public class PersistentVolumeUtils {
     } else if (OKD) {
       v1pv.getSpec()
           .storageClassName("okd-nfsmnt")
-          .hostPath(new V1HostPathVolumeSource()
-              .path(PV_ROOT));
+          .nfs(new V1NFSVolumeSource()
+              .path(PV_ROOT)
+              .server(NFS_SERVER)
+              .readOnly(false));
     } else {
       v1pv.getSpec()
           .storageClassName("weblogic-domain-storage-class")

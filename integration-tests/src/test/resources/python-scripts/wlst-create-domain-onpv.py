@@ -15,13 +15,6 @@ def create_domain():
   print('Reading default domain template')
   readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")
 
-  if (production_mode_enabled == 'true'):
-    print('Setting production mode to true')
-    setOption('ServerStartMode', 'prod')
-  else:
-    print('Setting dev mode to true')
-    setOption('ServerStartMode', 'dev')
-
   print('Set domain name')
   set('Name', domain_name)
   setOption('DomainName', domain_name)
@@ -87,9 +80,20 @@ def create_domain():
 
   print('Writing domain in disk %s' % domain_path + os.path.sep + domain_name)
   writeDomain(domain_path + os.path.sep + domain_name)
-  print('Closing domain template')
   closeTemplate()
   print('Domain Created')
+
+  print('Update domain to enable production mode')
+  readDomain(domain_path + os.path.sep + domain_name)
+  cd('/')
+  if production_mode_enabled == "true":
+    cmo.setProductionModeEnabled(true)
+  else: 
+    cmo.setProductionModeEnabled(false)
+  updateDomain()
+  closeDomain()
+  print 'Domain Updated'
+
 
 def main():
   try:
@@ -101,11 +105,9 @@ def main():
     usage()
     exit(exitcode=1)
   except:
-    print "Unexpected error:", sys.exc_info()[0]
     apply(traceback.print_exception, sys.exc_info())
-    print "Raising an exception again"
-    raise
+    exit(exitcode=1)
 
 #call main()
 main()
-print('Exiting wlst script')
+exit()
