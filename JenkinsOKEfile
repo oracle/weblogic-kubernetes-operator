@@ -414,6 +414,7 @@ pipeline {
                 stage('Create OKE cluster') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
+                        oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         KUBECONFIG ="${WORKSPACE}/terraform/mtcluster_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
@@ -423,6 +424,7 @@ pipeline {
                         sh '''
                             export PATH=${runtime_path}
                             export KUBECONFIG=${KUBECONFIG}
+                            export OCI_CLI_CONFIG_FILE=${oci_config_file}
                             echo 'Create a OKE cluster'
                             #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
@@ -443,6 +445,7 @@ pipeline {
                                     environment {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
+                                        oci_config_file = credentials("${wkobuild_oci_config}")
                                         compartment_ocid = "${COMPARTMENT_OCID}"
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
@@ -453,6 +456,7 @@ pipeline {
                                         sh '''
                                         cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
+                                        export OCI_CLI_CONFIG_FILE=${oci_config_file}
                                         export PATH=${WORKSPACE}/terraform/terraforminstall:$PATH
 
                                         echo "creating storage class to setup OFSS ..."
@@ -485,6 +489,7 @@ EOF
                 stage('Run integration tests') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        oci_config_file = credentials("${wkobuild_oci_config}")
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
                         OCR_USERNAME = credentials("${ocr_username_creds}")
                         OCR_PASSWORD = credentials("${ocr_password_creds}")
@@ -501,6 +506,7 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
+                            export OCI_CLI_CONFIG_FILE=${oci_config_file}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
@@ -551,7 +557,7 @@ EOF
                             export OCR_EMAIL=${OCR_EMAIL}
                             export OCIR_USERNAME=${OCIR_USERNAME}
                             export OCIR_PASSWORD=${OCIR_PASSWORD}
-                            export OCIR_EMAIL=$OCIR_EMAIL}
+                            export OCIR_EMAIL=${OCIR_EMAIL}
                             export OKE_CLUSTER="true"
 
                             if [ ! -z "${http_proxy}" ]; then
