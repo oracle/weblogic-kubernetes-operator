@@ -742,8 +742,12 @@ public class JobHelper {
 
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
-        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
+        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
+        } else if (isJobPodTimedOut(jobPod)) {
+          return doTerminate(
+              new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB)),
+              packet);
         } else {
           addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPodName(packet, getName(jobPod));
