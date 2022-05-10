@@ -52,13 +52,13 @@ pipeline {
         image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
         terraform_property_file = 'tvarsFile'
         ocipk_file = 'oci_pk_file'
-        wkobuild_oci_config = 'wkobuild_ociconfig'
+        wkobuild_oci_config = 'wkobuild_profile_oci_config_file'
         wkobuild_cert_fingerprint = 'wkobuildcert_fingerprint'
         weblogick8s_tenancy_ocid = 'WK8_TENANCY_OCID'
         weblogick8s_qa_compartment_ocid = 'WK8_QA_COMP_OCID'
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
         wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
-        wkobuild_profile_oci_config_file = 'wkobuild_profile_oci_config_file'
+
 
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
@@ -425,6 +425,7 @@ pipeline {
                             export PATH=${runtime_path}
                             export KUBECONFIG=${KUBECONFIG}
                             export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                            export OCI_CLI_PROFILE="WKOBUILD"
                             echo 'Create a OKE cluster'
                             #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
@@ -457,6 +458,7 @@ pipeline {
                                         cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                                        export OCI_CLI_PROFILE="WKOBUILD"
                                         export PATH=${WORKSPACE}/terraform/terraforminstall:$PATH
 
                                         echo "creating storage class to setup OFSS ..."
@@ -507,6 +509,7 @@ EOF
                         sh '''
                             export PATH=${runtime_path}
                             export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                            export OCI_CLI_PROFILE="WKOBUILD"
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
