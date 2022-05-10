@@ -174,9 +174,6 @@ You may run into a timeout while installing the operator and get the following e
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
-   --set "enableClusterRoleBinding=true" \
-   --set "domainNamespaceSelectionStrategy=LabelSelector" \
-   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
 --wait
 ```
 ```
@@ -204,9 +201,6 @@ $ git checkout main
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
-   --set "enableClusterRoleBinding=true" \
-   --set "domainNamespaceSelectionStrategy=LabelSelector" \
-   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
    --wait
 ```
 
