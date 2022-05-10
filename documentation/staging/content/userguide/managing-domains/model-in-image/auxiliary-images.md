@@ -793,7 +793,7 @@ their corresponding values in their domain resource.
   ```
   {{% /expand %}}
 
-If you see an error, then consult [Domain debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+If you see an error, then consult [Domain debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
 
 #### Step 4: Invoke the web application
 

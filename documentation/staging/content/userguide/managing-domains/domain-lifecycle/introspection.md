@@ -76,7 +76,7 @@ When introspection fails, the operator will not start any WebLogic Server instan
 
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
 
-Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/debugging.md">}}).
 
 {{% notice tip %}}
 The introspector log is mirrored to the Domain resource `spec.logHome` directory
