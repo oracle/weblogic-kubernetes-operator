@@ -1,6 +1,6 @@
 ---
 title: "Prerequisites"
-date: 2019-02-23T17:32:31-05:00
+diate: 2019-02-23T17:32:31-05:00
 weight: 1
 ---
 
@@ -284,7 +284,7 @@ When you follow the instructions in the samples, avoid instructions that are `WL
 
 For example, in this sample:
 
-  - JRF Domain YAML files have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`.
+  - JRF Domain YAML files have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `walletPassword=welcome1`.
 
   - JRF image models have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
