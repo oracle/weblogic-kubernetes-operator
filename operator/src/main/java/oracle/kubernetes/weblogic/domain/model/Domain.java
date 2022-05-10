@@ -834,14 +834,14 @@ public class Domain implements KubernetesObject {
   /**
    * Returns the interval in seconds at which Severe failures will be retried.
    */
-  public int getFailureRetryIntervalSeconds() {
+  public long getFailureRetryIntervalSeconds() {
     return spec.getFailureRetryIntervalSeconds();
   }
 
   /**
    * Returns the time in minutes after the first severe failure when the operator will stop retrying Severe failures.
    */
-  public int getFailureRetryLimitMinutes() {
+  public long getFailureRetryLimitMinutes() {
     return spec.getFailureRetryLimitMinutes();
   }
 

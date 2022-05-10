@@ -178,7 +178,7 @@ A domain roll begins by restarting the domain's Administration Server and
 then proceeds to restart each Managed Server in the domain.
 
 If the job reports a failure, see
-[Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}})
+[Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}})
 for advice.
 
 #### Offline update sample
@@ -236,7 +236,7 @@ and runs WebLogic Deploy Tooling to process the differences:
 
 
 If the introspector job reports a failure or any other failure occurs, then
-see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) for advice.
+see [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}) for advice.
 When recovering from a failure, please keep the following points in mind:
 
  - The operator cannot automatically revert changes to resources that are under
@@ -328,7 +328,7 @@ spec:
      * The expected behavior is often undefined, but in some cases there will be helpful error in the introspector job, events, and/or domain status, and the job will periodically retry until the error is corrected or its maximum error count exceeded.
    * Actions required:
      * Use offline updates if they are supported, or, if not, shutdown the entire domain and restart it.
-     * See [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+     * See [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
 
 1. Errors in the model; for example, a syntax error.
    * Expected outcome after the introspector job completes:
@@ -345,7 +345,7 @@ spec:
      * The domain status `Failed` condition will have a `Status` of `True`.
      * If there's a failed introspector job, the job will retry periodically until the error is corrected or until it exceeds its maximum error count. Other types of errors will also usually incur periodic retries.
    * Actions required:
-     * See [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+     * See [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
      * Make corrections to the domain resource and/or model.
      * If retries have halted, then alter the `spec.introspectVersion`.
 

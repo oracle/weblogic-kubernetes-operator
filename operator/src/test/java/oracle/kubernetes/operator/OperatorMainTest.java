@@ -82,6 +82,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_E
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.Namespaces.SELECTION_STRATEGY_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
@@ -724,6 +725,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   @Test
   void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
+    HelmAccessStub.defineVariable(SELECTION_STRATEGY_KEY, Namespaces.SelectionStrategy.LIST.toString());
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
     operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());
 
@@ -732,6 +734,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterNamespaceAdded_WatchersAreDefined() {
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
 
@@ -752,6 +755,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
   @Test
   void afterNamespaceAdded_scriptConfigMapIsDefined() {
+    defineSelectionStrategy(SelectionStrategy.LIST);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
     V1Namespace namespace = new V1Namespace().metadata(new V1ObjectMeta().name(ns));
     operatorMain.dispatchNamespaceWatch(WatchEvent.createAddedEvent(namespace).toWatchResponse());

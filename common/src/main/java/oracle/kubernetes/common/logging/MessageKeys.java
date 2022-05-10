@@ -140,7 +140,6 @@ public class MessageKeys {
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
   public static final String DOMAIN_ROLL_START = "WLSKO-0190";
-  public static final String DOMAIN_ROLL_COMPLETE = "WLSKO-0191";
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
@@ -193,7 +192,6 @@ public class MessageKeys {
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
   public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
-  public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
   public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";

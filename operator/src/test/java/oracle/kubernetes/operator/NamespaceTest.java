@@ -40,6 +40,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.CREATING_EVENT_FORBID
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
+import static oracle.kubernetes.operator.Namespaces.SELECTION_STRATEGY_KEY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
@@ -109,6 +110,7 @@ class NamespaceTest {
   }
 
   private void initializeNamespaces() {
+    HelmAccessStub.defineVariable(SELECTION_STRATEGY_KEY, Namespaces.SelectionStrategy.LIST.toString());
     defineNamespaces(NS, ADDITIONAL_NS1, ADDITIONAL_NS2);
     specifyDomainNamespaces(NS, ADDITIONAL_NS2);
     processNamespaces();
