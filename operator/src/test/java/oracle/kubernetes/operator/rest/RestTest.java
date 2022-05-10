@@ -11,7 +11,6 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -90,6 +89,7 @@ class RestTest extends JerseyTest {
   private static final String DOMAIN2_HREF = DOMAINS_HREF + "/uid2";
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
+  private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -105,7 +105,9 @@ class RestTest extends JerseyTest {
   private AdmissionRequest createAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
     request.setUid("abcd");
-    request.setKind(Collections.EMPTY_MAP);
+    request.setKind(new HashMap<String, String>());
+    request.setResource(new HashMap<String, String>());
+    request.setSubResource(new HashMap<String, String>());
     request.setObject(new Object());
     request.setOldObject(new Object());
     return request;
@@ -378,13 +380,15 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
+    AdmissionResponse expectedResponse = new AdmissionResponse().uid(RESPONSE_UID)
+        .allowed(true).status(new Status().code("200"));
     String admissionReview = writeAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
     Response response = sendCValidatingWebhookRequest(admissionReview);
 
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
-    assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(responseReview.getResponse(), equalTo(expectedResponse));
   }
 
   @Test
@@ -409,11 +413,35 @@ class RestTest extends JerseyTest {
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
     assertThat(getAllowed(responseReview), equalTo(true));
+    assertThat(getResultCode(responseReview), equalTo("200"));
+  }
+
+  @Test
+  void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
+    Status expectedStatus = new Status().code("200");
+    admissionReview.request(null);
+    String admissionReviewString = writeAdmissionReview(admissionReview);
+    Response response = sendCValidatingWebhookRequest(admissionReviewString);
+
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    AdmissionReview responseReview = readAdmissionReview(responseString);
+
+    assertThat(getResultStatus(responseReview), equalTo(expectedStatus));
+  }
+
+  private Status getResultStatus(AdmissionReview responseReview) {
+    return Optional.ofNullable(responseReview)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).orElse(null);
   }
 
   private String getResultMessage(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getMessage).orElse("");
+  }
+
+  private String getResultCode(AdmissionReview responseReview) {
+    return Optional.ofNullable(responseReview)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse("");
   }
 
   private boolean getAllowed(AdmissionReview admissionResponse) {

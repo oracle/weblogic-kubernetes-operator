@@ -137,10 +137,6 @@ public class WebhookHelper {
       return new ReadResponseStep(next);
     }
 
-    private ResponseStep<V1ValidatingWebhookConfiguration> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
-    }
-
     private class ReadResponseStep extends DefaultResponseStep<V1ValidatingWebhookConfiguration> {
       ReadResponseStep(Step next) {
         super(next);
@@ -179,26 +175,44 @@ public class WebhookHelper {
             model, createCreateResponseStep(next));
       }
 
+      private ResponseStep<V1ValidatingWebhookConfiguration> createCreateResponseStep(Step next) {
+        return new CreateResponseStep(next);
+      }
+
+      private Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
+        return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
+            VALIDATING_WEBHOOK_NAME, updateModel(existing), createReplaceResponseStep(next));
+      }
+
+      private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
+        setServiceNamespace(existing);
+        return existing;
+      }
+
+      private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
+        Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
+      }
+
+      private AdmissionregistrationV1ServiceReference getServiceFromConfig(
+          V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.ofNullable(getFirstWebhook(webhookConfig))
+            .map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getService)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .orElse(Collections.emptyList())
+            .get(0);
+      }
+
       @Override
       protected NextAction onFailureNoRetry(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
-    }
-
-    private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
-      return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
-          .orElse(Collections.emptyList())
-          .get(0);
-    }
-
-    private AdmissionregistrationV1ServiceReference getServiceFromConfig(
-        V1ValidatingWebhookConfiguration webhookConfig) {
-      return Optional.ofNullable(getFirstWebhook(webhookConfig))
-          .map(V1ValidatingWebhook::getClientConfig)
-          .map(AdmissionregistrationV1WebhookClientConfig::getService)
-          .orElse(null);
     }
 
     private class CreateResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
@@ -227,20 +241,6 @@ public class WebhookHelper {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
-    }
-
-    private Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
-      return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
-          VALIDATING_WEBHOOK_NAME, updateModel(existing), createReplaceResponseStep(next));
-    }
-
-    private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
-      setServiceNamespace(existing);
-      return existing;
-    }
-
-    private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
-      Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
     }
 
     ResponseStep<V1ValidatingWebhookConfiguration> createReplaceResponseStep(Step next) {
