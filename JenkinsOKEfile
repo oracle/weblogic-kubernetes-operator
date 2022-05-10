@@ -243,7 +243,6 @@ pipeline {
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
                         WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
-                        OCI_CLI_PROFILE="WKOBUILD"
                         OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}")
                     }
                     steps {
@@ -424,7 +423,7 @@ pipeline {
                             export PATH=${runtime_path}
                             export KUBECONFIG=${KUBECONFIG}
                             export OCI_CLI_CONFIG_FILE=${oci_config_file}
-                            export OCI_CLI_PROFILE="WKOBUILD"
+                            export OCI_CLI_PROFILE=WKOBUILD
                             echo 'Create a OKE cluster'
                             #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
@@ -457,7 +456,7 @@ pipeline {
                                         cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${oci_config_file}
-                                        export OCI_CLI_PROFILE="WKOBUILD"
+                                        export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${WORKSPACE}/terraform/terraforminstall:$PATH
 
                                         echo "creating storage class to setup OFSS ..."
@@ -508,7 +507,7 @@ EOF
                         sh '''
                             export PATH=${runtime_path}
                             export OCI_CLI_CONFIG_FILE=${oci_config_file}
-                            export OCI_CLI_PROFILE="WKOBUILD"
+                            export OCI_CLI_PROFILE=WKOBUILD
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
@@ -607,7 +606,10 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
                         export KUBECONFIG=${kubeconfig_file}
                         echo 'Remove old OKE cluster (if any)...'
-                        ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                        if [[ -f "$OCI_PROP_FILE" && -f ${WORKSPACE}/terraform/oke.delete.sh]]; then
+                            ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+                        fi
+
                     '''
                 }
             }
