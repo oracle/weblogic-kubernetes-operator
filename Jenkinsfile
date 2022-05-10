@@ -15,6 +15,8 @@ def kind_k8s_map = [
         '1.19':    'kindest/node:v1.19.11@sha256:07db187ae84b4b7de440a73886f008cf903fcf5764ba8106a9fd5243d6f32729'
     ],
     '0.12.0': [
+        '1.24.0':  'kindest/node:v1.24.0@sha256:8166691f9c2bf655494f43ab42bd34102b9dbf72461562e93d921169c01f1a5e',
+        '1.24':    'kindest/node:v1.24.0@sha256:8166691f9c2bf655494f43ab42bd34102b9dbf72461562e93d921169c01f1a5e',
         '1.23.4':  'kindest/node:v1.23.4@sha256:0e34f0d0fd448aa2f2819cfd74e99fe5793a6e4938b328f657c8e3f81ee0dfb9',
         '1.23':    'kindest/node:v1.23.4@sha256:0e34f0d0fd448aa2f2819cfd74e99fe5793a6e4938b328f657c8e3f81ee0dfb9',
         '1.22.7':  'kindest/node:v1.22.7@sha256:1dfd72d193bf7da64765fd2f2898f78663b9ba366c2aa74be1fd7498a1873166',
