@@ -1,7 +1,7 @@
 +++
 title = "Domain debugging"
 date = 2020-03-11T16:45:16-05:00
-weight = 60
+weight = 11
 pre = "<b> </b>"
 description = "Debugging a deployed domain."
 +++
@@ -14,7 +14,6 @@ Here are some suggestions for debugging problems with a domain after your Domain
  - [Check the Domain events](#check-the-domain-events)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
- - [Check the operator log](#check-the-operator-log)
  - [Check the docs](#check-the-docs)
  - [Check the operator](#check-the-operator)
 
@@ -77,7 +76,7 @@ Here we see a failed introspector job pod among the domain's pods:
 - Here's an alternative log command that will have same output as shown in the previous command.
   `$ kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k`
 
-A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
+A common reason for the introspector job to fail in a Model in Image domain is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
  ```
   ...
 
@@ -103,37 +102,6 @@ If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods hav
 If you are performing an online update to a running domain's WebLogic configuration,
 then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
 
-### Check the operator log
-
-Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
-
-
-- Find your operator.
-  ```shell
-  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-  ```
-  ```
-  NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-  sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
-
-  ```
-- Use `grep` on the operator log; look for `SEVERE` and `WARNING` level messages.
-
-  ```shell
-  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
-    | egrep -e "level...(SEVERE|WARNING)"
-  ```
-  ```json
-  {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
-  ```
-
-- You can filter out operator log messages specific to your `domainUID` by piping the previous logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
-
-  ```shell
-  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
-    | egrep -e "level...(SEVERE|WARNING)" \
-    | grep "domainUID...sample-domain1"
-  ```
 
 ### Check the docs
 
