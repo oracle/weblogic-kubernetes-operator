@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -343,6 +344,8 @@ public abstract class DomainConfigurator {
   }
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
+
+  public abstract DomainConfigurator withAdditionalVolume(V1Volume volume);
 
   public abstract DomainConfigurator withAdditionalPvClaimVolume(String name, String claimName);
 
