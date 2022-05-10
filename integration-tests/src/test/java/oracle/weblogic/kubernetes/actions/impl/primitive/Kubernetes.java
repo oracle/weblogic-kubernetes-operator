@@ -1401,8 +1401,8 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
-              + patchFormat);
+          "Failed to with code " + response.getHttpStatusCode() + " when patching " + domainUid + " in namespace "
+              + namespace + " using patch format: " + patchFormat);
       return false;
     }
 
