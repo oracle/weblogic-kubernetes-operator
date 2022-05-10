@@ -6,7 +6,7 @@
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.12.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.13.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -133,6 +133,9 @@ case "${kind_version}" in
     ;;
   "kind v0.12."*)
     kind_series="0.12.0"
+    ;;
+  "kind v0.13."*)
+    kind_series="0.13.0"
     ;;
 esac
 
