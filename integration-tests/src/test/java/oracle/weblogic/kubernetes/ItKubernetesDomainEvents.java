@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -373,6 +374,10 @@ class ItKubernetesDomainEvents {
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
+      
+      getAndValidateInitialDomain(domainNamespace3, domainUid);
+      assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(2));
+      dumpEvents(domainNamespace5, domainUid, timestamp);
 
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
