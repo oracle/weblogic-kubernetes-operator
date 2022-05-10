@@ -51,11 +51,6 @@ public class AdmissionReview {
     this.request = request;
   }
 
-  public AdmissionReview request(AdmissionRequest request) {
-    setRequest(request);
-    return this;
-  }
-
   public AdmissionResponse getResponse() {
     return response;
   }
