@@ -386,7 +386,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-
   /**
    * The configuration for the admin server.
    *

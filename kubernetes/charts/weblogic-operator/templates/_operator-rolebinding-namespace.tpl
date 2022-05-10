@@ -3,14 +3,14 @@
 
 {{- define "operator.operatorRoleBindingNamespace" }}
 ---
-{{- if .enableClusterRoleBinding }}
+{{- if and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (ne .domainNamespaceSelectionStrategy "Dedicated") }}
 kind: "ClusterRoleBinding"
 {{- else }}
 kind: "RoleBinding"
 {{- end }}
 apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
-  {{- if .enableClusterRoleBinding }}
+  {{- if and (or .enableClusterRoleBinding (not (hasKey . "enableClusterRoleBinding"))) (ne .domainNamespaceSelectionStrategy "Dedicated") }}
   name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-namespace" | join "-" | quote }}
   {{- else }}
   name: "weblogic-operator-rolebinding-namespace"
@@ -24,7 +24,7 @@ subjects:
   namespace: {{ .Release.Namespace | quote }}
   apiGroup: ""
 roleRef:
-  {{- if (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") }}
+  {{- if (eq .domainNamespaceSelectionStrategy "Dedicated") }}
   kind: "Role"
   name: "weblogic-operator-role-namespace"
   {{- else }}
