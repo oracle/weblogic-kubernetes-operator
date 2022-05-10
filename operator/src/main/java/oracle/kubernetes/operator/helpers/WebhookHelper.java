@@ -87,7 +87,7 @@ public class WebhookHelper {
       this.model = createModel(certificates);
     }
 
-    V1ValidatingWebhookConfiguration createModel(Certificates certificates) {
+    private V1ValidatingWebhookConfiguration createModel(Certificates certificates) {
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       return AnnotationHelper.withSha256Hash(new V1ValidatingWebhookConfiguration()
@@ -116,7 +116,7 @@ public class WebhookHelper {
           .map(Base64::decodeBase64).orElse(null);
     }
 
-    Step verifyValidatingWebhookConfiguration(Step next) {
+    private Step verifyValidatingWebhookConfiguration(Step next) {
       return new CallBuilder().readValidatingWebhookConfigurationAsync(
           getName(model), createReadResponseStep(next));
     }
@@ -129,20 +129,19 @@ public class WebhookHelper {
           .orElse(null);
     }
 
-    ResponseStep<V1ValidatingWebhookConfiguration> createReadResponseStep(Step next) {
+    private Step getConflictStep() {
+      return conflictStep;
+    }
+
+    private ResponseStep<V1ValidatingWebhookConfiguration> createReadResponseStep(Step next) {
       return new ReadResponseStep(next);
     }
 
-    Step createValidatingWebhookConfiguration(Step next) {
-      return new CallBuilder().createValidatingWebhookConfigurationAsync(
-          model, createCreateResponseStep(next));
-    }
-
-    ResponseStep<V1ValidatingWebhookConfiguration> createCreateResponseStep(Step next) {
+    private ResponseStep<V1ValidatingWebhookConfiguration> createCreateResponseStep(Step next) {
       return new CreateResponseStep(next);
     }
 
-    class ReadResponseStep extends DefaultResponseStep<V1ValidatingWebhookConfiguration> {
+    private class ReadResponseStep extends DefaultResponseStep<V1ValidatingWebhookConfiguration> {
       ReadResponseStep(Step next) {
         super(next);
       }
@@ -175,6 +174,11 @@ public class WebhookHelper {
             .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
       }
 
+      private Step createValidatingWebhookConfiguration(Step next) {
+        return new CallBuilder().createValidatingWebhookConfigurationAsync(
+            model, createCreateResponseStep(next));
+      }
+
       @Override
       protected NextAction onFailureNoRetry(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
@@ -205,7 +209,7 @@ public class WebhookHelper {
       @Override
       public NextAction onFailure(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
+        return super.onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
@@ -225,7 +229,7 @@ public class WebhookHelper {
       }
     }
 
-    Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
+    private Step replaceValidatingWebhookConfiguration(Step next, V1ValidatingWebhookConfiguration existing) {
       return new CallBuilder().replaceValidatingWebhookConfigurationAsync(
           VALIDATING_WEBHOOK_NAME, updateModel(existing), createReplaceResponseStep(next));
     }
@@ -251,7 +255,7 @@ public class WebhookHelper {
       @Override
       public NextAction onFailure(
           Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
+        return super.onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override

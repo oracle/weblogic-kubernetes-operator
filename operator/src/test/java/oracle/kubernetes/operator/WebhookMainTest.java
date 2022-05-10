@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestConfig;
@@ -70,14 +71,18 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.VALIDATING_WEBHOOK_CONFIGURATION;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
+import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
+import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class WebhookMainTest extends ThreadFactoryTestBase {
@@ -104,6 +109,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
+  private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
 
   static {
@@ -235,6 +241,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     WebhookMain main = new WebhookMain(delegate);
     main.startDeployment(null);
 
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
     assertThat(logRecords,
         containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
   }
@@ -252,6 +259,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
     assertThat(getRuleOperation(generatedConfiguration), equalTo(UPDATE));
     assertThat(getServiceName(generatedConfiguration), equalTo(WEBLOGIC_OPERATOR_WEBHOOK_SVC));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+    assertThat(getServicePort(generatedConfiguration), equalTo(CONVERSION_WEBHOOK_HTTPS_PORT));
+    assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH));
   }
 
   @Test
@@ -265,6 +275,74 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     WebhookMain main = new WebhookMain(delegate);
 
     main.startDeployment(null);
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAfterFailure401_logStartupMessage() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
+
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, 401);
+    WebhookMain main = new WebhookMain(delegate);
+    main.startDeployment(null);
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespaceAfterFailure401_replaceIt() {
+    V1ValidatingWebhookConfiguration resource
+        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
+    testSupport.defineResources(resource);
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 401);
+
+    WebhookMain main = new WebhookMain(delegate);
+
+    main.startDeployment(null);
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAfterFailure400_logStartupMessage() {
+    testSupport.addRetryStrategy(retryStrategy);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
+
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, 400);
+
+    WebhookMain main = new WebhookMain(delegate);
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespaceAfterFailure404_replaceIt() {
+    testSupport.addRetryStrategy(retryStrategy);
+    V1ValidatingWebhookConfiguration resource
+        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
+        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
+    testSupport.defineResources(resource);
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 404);
+
+    WebhookMain main = new WebhookMain(delegate);
+    testSupport.runSteps(main.createStartupSteps());
 
     logRecords.clear();
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
@@ -296,6 +374,22 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Nullable
+  private Integer getServicePort(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+        .map(AdmissionregistrationV1ServiceReference::getPort)
+        .orElse(0);
+  }
+
+  @Nullable
+  private String getServicePath(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+        .map(AdmissionregistrationV1ServiceReference::getPath)
+        .orElse("");
+  }
+
+  @Nullable
   private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration configuration) {
     return Optional.of(configuration).map(V1ValidatingWebhookConfiguration::getWebhooks).get().get(0);
   }
@@ -320,7 +414,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   V1ValidatingWebhookConfiguration getCreatedValidatingWebhookConfiguration() {
     return (V1ValidatingWebhookConfiguration)
-        testSupport.getResources(KubernetesTestSupport.VALIDATING_WEBHOOK_CONFIGURATION).get(0);
+        testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION).get(0);
   }
 
   public abstract static class WebhookMainDelegateStub implements WebhookMainDelegate {

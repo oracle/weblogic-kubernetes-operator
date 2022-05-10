@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
@@ -94,6 +96,20 @@ class RestTest extends JerseyTest {
   private final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
   private boolean includeRequestedByHeader = true;
   private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
+  private AdmissionReview admissionReview = createAdmissionReview();
+
+  private AdmissionReview createAdmissionReview() {
+    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createAdmissionRequest());
+  }
+
+  private AdmissionRequest createAdmissionRequest() {
+    AdmissionRequest request = new AdmissionRequest();
+    request.setUid("abcd");
+    request.setKind(Collections.EMPTY_MAP);
+    request.setObject(new Object());
+    request.setOldObject(new Object());
+    return request;
+  }
 
   @BeforeEach
   public void setupRestTest() throws Exception {
@@ -372,7 +388,7 @@ class RestTest extends JerseyTest {
   }
 
   @Test
-  void whenInvalidValidatingWebhookRequestSentUsingJavaReponse_hasExpectedResponse() {
+  void whenInvalidValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
     String resultMessage = "Exception: com.google.gson.JsonSyntaxException";
 
     String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
@@ -382,6 +398,17 @@ class RestTest extends JerseyTest {
 
     assertThat(getAllowed(responseReview), equalTo(false));
     assertThat(getResultMessage(responseReview), containsString(resultMessage));
+  }
+
+  @Test
+  void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
+    String admissionReviewString = writeAdmissionReview(admissionReview);
+    Response response = sendCValidatingWebhookRequest(admissionReviewString);
+
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    AdmissionReview responseReview = readAdmissionReview(responseString);
+
+    assertThat(getAllowed(responseReview), equalTo(true));
   }
 
   private String getResultMessage(AdmissionReview responseReview) {

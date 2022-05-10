@@ -42,7 +42,7 @@ public class Status {
   @Override
   public String toString() {
     return "Status{"
-            + "code=" + code
+            + "code='" + code + '\''
             + ", message='" + message + '\''
             + '}';
   }

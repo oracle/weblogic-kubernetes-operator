@@ -58,8 +58,8 @@ public class AdmissionResponse {
   public String toString() {
     return "AdmissionResponse{"
         + "uid='" + uid + '\''
-        + ", status=" + status
-        + ", allowed=" + allowed
+        + ", status='" + status + '\''
+        + ", allowed='" + allowed + '\''
         + '}';
   }
 

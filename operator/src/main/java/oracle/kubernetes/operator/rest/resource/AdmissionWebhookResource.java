@@ -74,7 +74,7 @@ public class AdmissionWebhookResource extends BaseResource {
   private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
     return Optional.ofNullable(admissionReview)
         .map(AdmissionReview::getRequest)
-        .orElse(new AdmissionRequest());
+        .orElse(null);
   }
 
   private String getAdmissionRequestAsString(AdmissionReview admissionReview) {
@@ -90,8 +90,8 @@ public class AdmissionWebhookResource extends BaseResource {
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
     return new AdmissionResponse()
-        .uid(request.getUid())
-        .allowed(validate(request.getOldObject(), request.getObject()))
+        .uid(getUid(request))
+        .allowed(request == null || validate(request.getOldObject(), request.getObject()))
         .status(new Status().code(SUCCESS_CODE));
   }
 

@@ -51,6 +51,11 @@ public class AdmissionReview {
     this.request = request;
   }
 
+  public AdmissionReview request(AdmissionRequest request) {
+    setRequest(request);
+    return this;
+  }
+
   public AdmissionResponse getResponse() {
     return response;
   }
@@ -67,11 +72,11 @@ public class AdmissionReview {
   @Override
   public String toString() {
     return "AdmissionReview{"
-            + "kind='" + kind + '\'' 
-            + ", apiVersion='" + apiVersion + '\'' 
-            + ", request=" + request 
-            + ", response=" + response 
-            + '}';
+        + "kind='" + kind + '\''
+        + ", apiVersion='" + apiVersion + '\''
+        + ", request='" + request + '\''
+        + ", response='" + response + '\''
+        + '}';
   }
 
   @Override
@@ -84,9 +89,9 @@ public class AdmissionReview {
     }
     AdmissionReview that = (AdmissionReview) o;
     return Objects.equals(kind, that.kind)
-            && Objects.equals(apiVersion, that.apiVersion)
-            && Objects.equals(request, that.request)
-            && Objects.equals(response, that.response);
+        && Objects.equals(apiVersion, that.apiVersion)
+        && Objects.equals(request, that.request)
+        && Objects.equals(response, that.response);
   }
 
   @Override

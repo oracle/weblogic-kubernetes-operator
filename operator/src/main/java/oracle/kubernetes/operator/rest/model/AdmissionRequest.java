@@ -77,8 +77,8 @@ public class AdmissionRequest {
         + ", kind='" + kind + '\''
         + ", resource='" + resource + '\''
         + ", subResource='" + subResource + '\''
-        + ", object=" + object + '\''
-        + ", oldObject=" + oldObject
+        + ", object='" + object + '\''
+        + ", oldObject='" + oldObject + '\''
         + '}';
   }
 

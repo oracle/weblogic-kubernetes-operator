@@ -50,6 +50,7 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import jakarta.json.Json;
@@ -1034,6 +1035,24 @@ class CallBuilderTest {
   }
 
   public static final String TEST_VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhooktest";
+
+  @Test
+  @ResourceLock(value = "server")
+  void listValidatingWebhookConfigurations_returnsList() throws InterruptedException {
+    V1ValidatingWebhookConfigurationList list = new V1ValidatingWebhookConfigurationList()
+        .items(Arrays.asList(new V1ValidatingWebhookConfiguration(), new V1ValidatingWebhookConfiguration()));
+    defineHttpGetResponse(VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE, list)
+        .expectingParameter("fieldSelector", "xxx");
+
+    KubernetesTestSupportTest.TestResponseStep<V1ValidatingWebhookConfigurationList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().withFieldSelector("xxx")
+        .listValidatingWebhookConfigurationAsync(responseStep));
+
+    V1ValidatingWebhookConfigurationList received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(list));
+  }
 
   @Test
   @ResourceLock(value = "server")
