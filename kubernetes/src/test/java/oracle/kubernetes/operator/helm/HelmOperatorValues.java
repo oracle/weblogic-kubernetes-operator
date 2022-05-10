@@ -102,6 +102,8 @@ class HelmOperatorValues extends OperatorValues {
   Map<String, Object> createMap() {
     HashMap<String, Object> map = new HashMap<>();
 
+    map.put("enableClusterRoleBinding", Boolean.FALSE);
+
     addStringMapEntry(map, this::getServiceAccount, "serviceAccount");
     addStringMapEntry(map, this::getWeblogicOperatorImage, "image");
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
@@ -129,6 +131,7 @@ class HelmOperatorValues extends OperatorValues {
   }
 
   private void addDomainNamespaces(HashMap<String, Object> map) {
+    map.put("domainNamespaceSelectionStrategy", "List");
     String domainNamespaces = getDomainNamespaces();
     if (domainNamespaces.length() > 0) {
       map.put("domainNamespaces", Arrays.asList(domainNamespaces.split(",")));
