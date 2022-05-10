@@ -237,13 +237,11 @@ pipeline {
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
                         OCIPK_FILE = credentials("${ocipk_file}")
-                        OCICONFIG_WKOBUILD = credentials("${wkobuild_oci_config}")
                         FINGERPRINT = credentials("${wkobuild_cert_fingerprint}")
                         TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
                         WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
-                        OCI_CONFIG_FILE=credentials("${wkobuild_profile_oci_config_file}")
                     }
                     steps {
                         withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
@@ -606,7 +604,7 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
                         export KUBECONFIG=${kubeconfig_file}
                         echo 'Remove old OKE cluster (if any)...'
-                        if [[ -f "$OCI_PROP_FILE" && -f ${WORKSPACE}/terraform/oke.delete.sh]]; then
+                        if [[ -f "$OCI_PROP_FILE" && -f "${WORKSPACE}/terraform/oke.delete.sh"]]; then
                             ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                         fi
 
