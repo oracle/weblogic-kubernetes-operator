@@ -8,10 +8,8 @@ import java.util.Objects;
 import com.google.gson.annotations.Expose;
 
 public class Status {
-
   @Expose
   private String code;
-
   @Expose
   private String message;
 

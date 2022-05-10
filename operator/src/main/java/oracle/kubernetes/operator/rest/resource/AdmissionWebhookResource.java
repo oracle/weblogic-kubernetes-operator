@@ -3,16 +3,12 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
-import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.AdmissionRequest;
@@ -21,6 +17,8 @@ import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.Status;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
@@ -31,7 +29,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
 public class AdmissionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  public static final String FAILED_STATUS = "Failed";
+  private static final String SUCCESS_CODE = "200";
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookResource() {
@@ -64,8 +62,7 @@ public class AdmissionWebhookResource extends BaseResource {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
       admissionResponse = new AdmissionResponse()
           .uid(getUid(admissionRequest))
-          .status(new Status().code(FAILED_STATUS)
-              .message("Exception: " + e));
+          .status(new Status().message("Exception: " + e));
     }
     LOGGER.exiting(admissionResponse);
     return writeAdmissionReview(new AdmissionReview()
@@ -91,25 +88,11 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(request).map(AdmissionRequest::getUid).orElse(null);
   }
 
-  private AdmissionReview readAdmissionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, AdmissionReview.class);
-  }
-
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
     return new AdmissionResponse()
         .uid(request.getUid())
-        .allowed(request == null || validate(request.getOldObject(), request.getObject()))
-        .status((new Status().message("Success")));
-  }
-
-  private String writeAdmissionReview(AdmissionReview admissionReview) {
-    return getGsonBuilder().toJson(admissionReview, AdmissionReview.class);
-  }
-
-  private Gson getGsonBuilder() {
-    return new GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            .create();
+        .allowed(validate(request.getOldObject(), request.getObject()))
+        .status(new Status().code(SUCCESS_CODE));
   }
 
   private boolean validate(Object oldObject, Object object) {

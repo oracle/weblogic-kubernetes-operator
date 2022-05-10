@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,7 +32,10 @@ import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.rest.model.AdmissionResponse;
+import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
+import oracle.kubernetes.operator.rest.model.Status;
 import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
@@ -53,6 +57,8 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountO
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -343,7 +349,6 @@ class RestTest extends JerseyTest {
   @Test
   void whenInvalidValidatingWebhookRequestSent_hasExpectedResponse() {
     String resultAllowed = "\"allowed\":false";
-    String resultCode = "\"code\":\"Failed\"";
     String resultMessage = "\"message\":\"Exception: com.google.gson.JsonSyntaxException";
 
     String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
@@ -351,9 +356,42 @@ class RestTest extends JerseyTest {
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
 
     assertThat(responseString, containsString(resultAllowed));
-    assertThat(responseString, containsString(resultCode));
     assertThat(responseString, containsString(resultMessage));
 
+  }
+
+  @Test
+  void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
+    String admissionReview = writeAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
+    Response response = sendCValidatingWebhookRequest(admissionReview);
+
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    AdmissionReview responseReview = readAdmissionReview(responseString);
+
+    assertThat(getAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenInvalidValidatingWebhookRequestSentUsingJavaReponse_hasExpectedResponse() {
+    String resultMessage = "Exception: com.google.gson.JsonSyntaxException";
+
+    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
+    Response response = sendCValidatingWebhookRequest(admissionReview);
+    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    AdmissionReview responseReview = readAdmissionReview(responseString);
+
+    assertThat(getAllowed(responseReview), equalTo(false));
+    assertThat(getResultMessage(responseReview), containsString(resultMessage));
+  }
+
+  private String getResultMessage(AdmissionReview responseReview) {
+    return Optional.ofNullable(responseReview)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getMessage).orElse("");
+  }
+
+  private boolean getAllowed(AdmissionReview admissionResponse) {
+    return Optional.ofNullable(admissionResponse)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getAllowed).orElse(false);
   }
 
   private Response sendCValidatingWebhookRequest(String admissionReview) {
