@@ -438,13 +438,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withFailureRetryIntervalSeconds(int retrySeconds) {
+  public DomainConfigurator withFailureRetryIntervalSeconds(long retrySeconds) {
     getDomainSpec().setFailureRetryIntervalSeconds(retrySeconds);
     return this;
   }
 
   @Override
-  public DomainConfigurator withFailureRetryLimitMinutes(int limitMinutes) {
+  public DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes) {
     getDomainSpec().setFailureRetryLimitMinutes(limitMinutes);
     return this;
   }
