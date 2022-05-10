@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.concurrent.TimeoutException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -43,7 +41,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -131,6 +128,7 @@ public class LoggingUtil {
     }
 
     // archive persistent volume contents
+    /*
     List<V1PersistentVolume> pvList = new ArrayList<>();
     for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
       for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
@@ -155,12 +153,14 @@ public class LoggingUtil {
         }
       }
     }
+    
     // write pv list
     try {
       writeToFile(pvList, resultDir, "list.persistent-volumes.log");
     } catch (IOException ex) {
       logger.warning(ex.getMessage());
     }
+    */
 
     // get secrets
     try {
