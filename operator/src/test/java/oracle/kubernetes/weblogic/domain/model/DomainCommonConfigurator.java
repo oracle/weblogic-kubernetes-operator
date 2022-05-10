@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -119,6 +120,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withAdditionalVolume(String name, String path) {
     getDomainSpec().addAdditionalVolume(name, path);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAdditionalVolume(V1Volume volume) {
+    getDomainSpec().addAdditionalVolume(volume);
     return this;
   }
 
