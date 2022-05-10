@@ -55,6 +55,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
@@ -96,6 +97,8 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
@@ -337,7 +340,6 @@ class JobHelperTest extends DomainValidationTestBase {
                 envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
                 envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
           ))));
-
   }
 
   private V1JobSpec createJobSpec() {
@@ -741,13 +743,13 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-          getActiveDeadlineSeconds(jobSpec),
+          getPodSpecActiveDeadlineSeconds(jobSpec),
           is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
           jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
-  private static Long getActiveDeadlineSeconds(V1JobSpec jobSpec) {
+  private static Long getPodSpecActiveDeadlineSeconds(V1JobSpec jobSpec) {
     return getTemplateSpec(jobSpec).getActiveDeadlineSeconds();
   }
 
@@ -757,16 +759,21 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
-    domainPresenceInfo.getDomain()
-          .setStatus(new DomainStatus().withIntrospectJobFailureCount(1));
-    int failureCount = domainPresenceInfo.getDomain().getStatus().getIntrospectJobFailureCount();
-
-    V1JobSpec jobSpec = createJobSpec();
-
+    int failureCount = 2;
     long expectedActiveDeadlineSeconds =
           TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
                 + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
-    assertThat(getActiveDeadlineSeconds(jobSpec), is(expectedActiveDeadlineSeconds));
+
+    final DomainStatus status = new DomainStatus();
+    for (int i = 0; i < failureCount; i++) {
+      SystemClockTestSupport.increment(domainPresenceInfo.getDomain().getFailureRetryIntervalSeconds());
+      status.addCondition(new DomainCondition(FAILED).withReason(SERVER_POD).withMessage("failure " + (i + 1)));
+    }
+    domainPresenceInfo.getDomain().setStatus(status);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getPodSpecActiveDeadlineSeconds(jobSpec), is(expectedActiveDeadlineSeconds));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
   }
 
@@ -776,7 +783,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(getActiveDeadlineSeconds(jobSpec), is(600L));
+    assertThat(getPodSpecActiveDeadlineSeconds(jobSpec), is(600L));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(600L));
   }
 
