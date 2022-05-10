@@ -430,7 +430,6 @@ pipeline {
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
-                            sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             #if ! sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ; then
                             #  sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
@@ -600,9 +599,7 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
                         export KUBECONFIG=${kubeconfig_file}
                         echo 'Remove old OKE cluster (if any)...'
-                        if ! ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform; then
-                            echo "Failed to delete oke cluster ${clusterName}"
-                        fi
+                        ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                     '''
                 }
             }
