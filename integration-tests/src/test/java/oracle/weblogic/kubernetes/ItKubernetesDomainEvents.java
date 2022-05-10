@@ -13,8 +13,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -23,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -31,6 +35,9 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -95,6 +102,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventW
 import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.isEqualOrAfter;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -536,8 +544,10 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
   void testLogHomeChangeEvents() {
-
+    
+    printTimeInfo();
     OffsetDateTime timestamp = now();
+    logger.info("From this timestamp {0} events will be compared", timestamp);
 
     // get the original domain resource before update
     Domain domain1 = getAndValidateInitialDomain(domainNamespace3, domainUid);
@@ -546,7 +556,7 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome";
+    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome/" + domainUid;
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
     logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, newLogHome);
@@ -596,6 +606,7 @@ class ItKubernetesDomainEvents {
   void testIncludeServerOutInPodLog() {
 
     OffsetDateTime timestamp = now();
+    logger.info("From this timestamp {0} events will be compared", timestamp);
 
     // get the original domain resource before update
     Domain domain1 = getAndValidateInitialDomain(domainNamespace3, domainUid);
@@ -984,6 +995,7 @@ class ItKubernetesDomainEvents {
 
   private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp, String domainNamespace) {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
+    dumpEvents(domainNamespace, domainUid, timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -995,5 +1007,26 @@ class ItKubernetesDomainEvents {
         "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
         domainUid,
         domainNamespace);
+  }
+  
+  private static void printTimeInfo() {
+    CommandParams params = new CommandParams().defaults();
+    Command.withParams(params.command("timedatectl")).execute();
+  }
+  
+  private static void dumpEvents(String domainNamespace, String domainUid, OffsetDateTime timestamp) {
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (((domainUid != null && (event.getMetadata().getLabels() != null
+            && event.getMetadata().getLabels().containsValue(domainUid)))
+            || domainUid == null)
+            && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+        }
+      }
+    } catch (ApiException ex) {
+      logger.log(Level.SEVERE, null, ex);
+    }
   }
 }

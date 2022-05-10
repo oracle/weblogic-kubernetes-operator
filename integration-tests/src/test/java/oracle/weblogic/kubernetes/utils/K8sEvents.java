@@ -468,7 +468,7 @@ public class K8sEvents {
     };
   }
 
-  private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
+  public static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
     return event.getLastTimestamp().isEqual(timestamp)
             || event.getLastTimestamp().isAfter(timestamp);
   }
