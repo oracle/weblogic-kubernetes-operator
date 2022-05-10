@@ -1348,6 +1348,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getReferenceMiiAuxImagePodYaml_3_3() {
+    return ReferenceObjects.MANAGED_MII_AUX_IMAGE_POD_3_3;
+  }
+
+  @Override
   protected void verifyPodReplaced() {
     assertThat(computePodsToRoll(), not(anEmptyMap()));
   }

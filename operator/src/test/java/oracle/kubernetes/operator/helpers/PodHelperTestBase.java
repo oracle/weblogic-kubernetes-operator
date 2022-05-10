@@ -102,10 +102,15 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
@@ -287,18 +292,18 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME, sourceWDTInstallHome));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_MODEL_HOME, sourceModelHome));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_NAME, name));
     return envVars;
   }
 
   static List<V1EnvVar> getLegacyAuxiliaryImageEnvVariables(String image, String name, String command) {
     List<V1EnvVar> envVars = new ArrayList<>();
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, command));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name));
     return envVars;
   }
 
@@ -688,6 +693,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.1 Mii Pod.
   abstract String getReferenceMiiPodYaml();
 
+  // Returns the YAML for a 3.3 Mii pod with aux image.
+  abstract String getReferenceMiiAuxImagePodYaml_3_3();
+
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
     useProductionHash();
@@ -698,6 +706,40 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
     assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
     assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWithAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiAuxImagePodYaml_3_3()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  private V1Container createInitContainer() {
+    return new V1Container().name("compatibility-mode-operator-aux-container1").image("model-in-image:WLS-AI-v1")
+        .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
+        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+        .addEnvItem(envItem(AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH))
+        .addEnvItem(envItem(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_COMMAND, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_IMAGE, "model-in-image:WLS-AI-v1"))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_NAME, "compatibility-mode-operator-aux-container1"))
+        .addVolumeMountsItem(new V1VolumeMount().mountPath(AUXILIARY_IMAGE_TARGET_PATH)
+            .name("aux-image-volume-auxiliaryimagevolume1"))
+        .addVolumeMountsItem(new V1VolumeMount().mountPath("/weblogic-operator/scripts")
+            .name("weblogic-scripts-cm-volume"));
   }
 
   @Test
