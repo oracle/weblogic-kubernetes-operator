@@ -165,7 +165,7 @@ kubernetesPlatform: OpenShift
 Specifies whether the roles necessary for the operator to manage domains
 will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 
-Defaults to `false`.
+Defaults to `true`.
 
 This option greatly simplifies managing namespaces when the selection is done using label selectors or
 regular expressions as the operator will already have privilege in any namespace.
@@ -176,7 +176,7 @@ privilege in _all_ Kubernetes namespaces. If you want to limit the operator's pr
 then remove this option; this will mean that the operator has privilege only in the set of namespaces that match the selection strategy
 at the time the Helm release was installed or upgraded.
 
-**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 then a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
@@ -425,7 +425,7 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
         - If you set `enableClusterRoleBinding` to `true` when selecting namespaces by list or regular expression,
           then the Helm chart doesn't need to do anything special per namespace.
      - Or, create the necessary RoleBindings outside of Helm.
-- If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+- If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
   then a running operator will _not_ have privilege to manage a newly added namespace
   that matches its regular expression until you upgrade
   the operator's Helm release.

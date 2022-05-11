@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainStatusTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final int RETRY_SECONDS = 100;
 
   private DomainStatus domainStatus;
   private final List<Memento> mementos = new ArrayList<>();
@@ -341,6 +342,29 @@ class DomainStatusTest {
 
     assertThat(domainStatus.getInitialFailureTime(), nullValue());
     assertThat(domainStatus.getLastFailureTime(), nullValue());
+  }
+
+  @Test
+  void whenNoFailures_numDeadlineIncreasesIsZero() {
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(0));
+  }
+
+  @Test
+  void afterFirstSevereFailure_numDeadlineIncreasesIsOne() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(1));
+  }
+
+  @Test
+  void afterMultipleSevereFailures_numDeadlineIncreasesIsCount() {
+    final int numFailures = 3;
+    for (int i = 0; i < numFailures; i++) {
+      domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+      SystemClockTestSupport.increment(RETRY_SECONDS);
+    }
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(numFailures));
   }
 
   @Test

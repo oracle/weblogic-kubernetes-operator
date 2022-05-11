@@ -884,7 +884,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   {{% /expand %}}
 
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
 
 #### Invoke the web application
 

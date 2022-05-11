@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -44,11 +45,8 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HO
 @Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
 
-  private static final int SECONDS_PER_MINUTE = 60;
-  private static final int MINUTES_PER_HOUR = 60;
-  private static final int HOURS_PER_DAY = 24;
-  private static final int DEFAULT_RETRY_INTERVAL_SECONDS = 2 * SECONDS_PER_MINUTE;
-  private static final int DEFAULT_RETRY_LIMIT_MINUTES = HOURS_PER_DAY * MINUTES_PER_HOUR;
+  private static final long DEFAULT_RETRY_INTERVAL_SECONDS = TimeUnit.MINUTES.toSeconds(2);
+  private static final long DEFAULT_RETRY_LIMIT_MINUTES = TimeUnit.HOURS.toMinutes(24);
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
@@ -259,11 +257,11 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description("The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.")
   @Range(minimum = 0)
-  private Integer failureRetryIntervalSeconds;
+  private Long failureRetryIntervalSeconds;
 
   @Description("The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.")
   @Range(minimum = 0)
-  private Integer failureRetryLimitMinutes;
+  private Long failureRetryLimitMinutes;
 
   /**
    * Whether the domain home is part of the image.
@@ -385,7 +383,6 @@ public class DomainSpec extends BaseConfiguration {
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
     return this;
   }
-
 
   /**
    * The configuration for the admin server.
@@ -1141,19 +1138,19 @@ public class DomainSpec extends BaseConfiguration {
     return clusters;
   }
 
-  void setFailureRetryIntervalSeconds(Integer retryIntervalSeconds) {
+  void setFailureRetryIntervalSeconds(Long retryIntervalSeconds) {
     this.failureRetryIntervalSeconds = retryIntervalSeconds;
   }
 
-  int getFailureRetryIntervalSeconds() {
+  long getFailureRetryIntervalSeconds() {
     return Optional.ofNullable(failureRetryIntervalSeconds).orElse(DEFAULT_RETRY_INTERVAL_SECONDS);
   }
 
-  void setFailureRetryLimitMinutes(Integer retryLimitMinutes) {
+  void setFailureRetryLimitMinutes(Long retryLimitMinutes) {
     this.failureRetryLimitMinutes = retryLimitMinutes;
   }
 
-  int getFailureRetryLimitMinutes() {
+  long getFailureRetryLimitMinutes() {
     return Optional.ofNullable(failureRetryLimitMinutes).orElse(DEFAULT_RETRY_LIMIT_MINUTES);
   }
 

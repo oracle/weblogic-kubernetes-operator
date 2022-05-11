@@ -5,19 +5,36 @@
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
 # If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
-serviceAccount: "default"
+serviceAccount: default
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
-# that it will manage. Legal values are: List, LabelSelector, RegExp, and Dedicated. If set to 'List',
-# then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
+# that it will manage. Legal values are: LabelSelector, RegExp, List, and Dedicated.
 # If set to 'LabelSelector', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceLabelSelector' as a label selector.
 # If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
 # against the namespace names.
+# If set to 'List', then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
 # where the operator itself is deployed, which is the namespace of the Helm release.
-domainNamespaceSelectionStrategy: List
+# If not specified, the default is LabelSelector
+domainNamespaceSelectionStrategy: LabelSelector
+
+# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'. If not specified, the default is "weblogic-operator=enabled"
+#
+# Example: manage any namespace with a label named "weblogic-operator" that has value "enabled".
+#
+# domainNamespaceLabelSelector: 'weblogic-operator=enabled'
+
+# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
+#
+# Example: manage any namespace where the namespace name starts with "prod".
+#
+# domainNamespaceRegExp: ^prod
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
@@ -28,32 +45,13 @@ domainNamespaceSelectionStrategy: List
 # domainNamespaces:
 # - "namespace1"
 # - "namespace2"
-domainNamespaces:
-- "default"
-
-# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'.
-#
-# Example: manage any namespace with a label named "weblogic-operator".
-#
-# domainNamespaceLabelSelector: "weblogic-operator"
-#
-# domainNamespaceLabelSelector:
-
-# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
-#
-# Example: manage any namespace where the namespace name starts with "prod".
-#
-# domainNamespaceRegExp: "^prod"
-#
-# domainNamespaceRegExp:
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-enableClusterRoleBinding: false
+# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
+# case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+#
+enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
 image: "ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0"
@@ -72,7 +70,7 @@ imagePullPolicy: IfNotPresent
 # - name: "my-operator-secret"
 
 # externalRestEnabled specifies whether the operator's REST interface is exposed
-# outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
+# outside the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
 # If set to true, then the customer must provide the SSL certificate and private key for
@@ -92,7 +90,7 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 # externalRestIdentitySecret:
 
-# elkIntegrationEnabled specifies whether or not ELK integration is enabled.
+# elkIntegrationEnabled specifies whether ELK integration is enabled.
 elkIntegrationEnabled: false
 
 # logStashImage specifies the container image containing Logstash.
@@ -111,7 +109,7 @@ elasticSearchPort: 9200
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash
 # container running in the operator pod.
-# If set to true, a ConfigMap will be created during heml install using the
+# If set to true, a ConfigMap will be created during Helm install using the
 # logstash.conf file in the kubernetes/samples/charts/weblogic-operator directory.
 # Set createLogStashConfigMap to false if the ConfigMap
 # already exists in the operator's namespace with the Logstash 
@@ -183,7 +181,7 @@ preserveWebhook: false
 # Values related to debugging the operator.
 # Customers should not need to use the following properties
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will provide a Java remote debug interface on the
+# remoteDebugNodePortEnabled specifies whether the operator will provide a Java remote debug interface on the
 # provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
 # until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
@@ -238,7 +236,6 @@ introspectorJobNameSuffix: "-introspector"
 # The default suffix is '-ext'.
 # The default suffix in pre-3.1.0 is "-external".
 externalServiceNameSuffix: "-ext"
-
 
 # clusterSizePaddingValidationEnabled specifies if additional one or two characters
 # need to be reserved to account for longer managed server names because of an increased
