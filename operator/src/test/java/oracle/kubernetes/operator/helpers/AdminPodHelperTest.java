@@ -38,16 +38,17 @@ import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.common.logging.MessageKeys.ADMIN_POD_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -150,6 +151,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   String getReferenceMiiPodYaml() {
     return ReferenceObjects.ADMIN_MII_POD_3_1;
+  }
+
+  @Override
+  String getReferenceMiiAuxImagePodYaml_3_3() {
+    return ReferenceObjects.ADMIN_MII_AUX_IMAGE_POD_3_3;
   }
 
   String getDomainValidationFailedKey() {
@@ -259,7 +265,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -489,7 +496,8 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Test

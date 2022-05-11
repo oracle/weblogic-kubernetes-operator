@@ -27,7 +27,6 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.ShutdownType;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +51,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainV2Test extends DomainTestBase {
 
+  private static final String SERVER2 = "ms2";
   private static final int DEFAULT_REPLICA_LIMIT = 0;
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
@@ -65,13 +65,6 @@ class DomainV2Test extends DomainTestBase {
   @BeforeEach
   public void setUp() {
     configureDomain(domain);
-  }
-
-  @Override
-  protected DomainConfigurator configureDomain(Domain domain) {
-    DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
-    commonConfigurator.configureAdminServer();
-    return commonConfigurator;
   }
 
   @Test
@@ -913,9 +906,8 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     AdminService adminService = domain.getAdminServerSpec().getAdminService();
 
-    assertThat(
-        adminService.getChannels(),
-        containsInAnyOrder(channelWith("default", 7001), channelWith("extra", 7011)));
+    assertThat(adminService.getChannels(), containsInAnyOrder(
+          List.of(channelWith("default", 7001), channelWith("extra", 7011))));
     assertThat(
         adminService.getLabels(), both(hasEntry("red", "maroon")).and(hasEntry("blue", "azure")));
     assertThat(

@@ -4,6 +4,8 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.File;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -827,6 +829,42 @@ public class Domain implements KubernetesObject {
    */
   public String getAuxiliaryImageVolumeSizeLimit() {
     return spec.getAuxiliaryImageVolumeSizeLimit();
+  }
+
+  /**
+   * Returns the interval in seconds at which Severe failures will be retried.
+   */
+  public long getFailureRetryIntervalSeconds() {
+    return spec.getFailureRetryIntervalSeconds();
+  }
+
+  /**
+   * Returns the time in minutes after the first severe failure when the operator will stop retrying Severe failures.
+   */
+  public long getFailureRetryLimitMinutes() {
+    return spec.getFailureRetryLimitMinutes();
+  }
+
+  /**
+   * Returns true if the operator should retry a failed make-right on this domain.
+   */
+  public boolean shouldRetry() {
+    return getNextRetryTime() != null;
+  }
+
+  /**
+   * Return the next time a retry should be done.
+   */
+  public OffsetDateTime getNextRetryTime() {
+    return Optional.ofNullable(getStatus())
+          .map(DomainStatus::getLastFailureTime)
+          .map(this::addRetryInterval)
+          .orElse(null);
+  }
+
+  // Adds the domain retry interval to the specified time.
+  private OffsetDateTime addRetryInterval(@Nonnull OffsetDateTime startTime) {
+    return startTime.plus(getFailureRetryIntervalSeconds(), ChronoUnit.SECONDS);
   }
 
   @Override

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -43,6 +44,9 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HO
 /** DomainSpec is a description of a domain. */
 @Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
+
+  private static final long DEFAULT_RETRY_INTERVAL_SECONDS = TimeUnit.MINUTES.toSeconds(2);
+  private static final long DEFAULT_RETRY_LIMIT_MINUTES = TimeUnit.HOURS.toMinutes(24);
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
@@ -251,6 +255,14 @@ public class DomainSpec extends BaseConfiguration {
   @Range(minimum = 0)
   private Integer maxClusterConcurrentShutdown;
 
+  @Description("The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.")
+  @Range(minimum = 0)
+  private Long failureRetryIntervalSeconds;
+
+  @Description("The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.")
+  @Range(minimum = 0)
+  private Long failureRetryLimitMinutes;
+
   /**
    * Whether the domain home is part of the image.
    *
@@ -323,10 +335,6 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
-  public Integer getMonitoringExporterPort() {
-    return monitoringExporter == null ? null : monitoringExporter.getPort();
-  }
-
   /**
    * Specifies the image for the monitoring exporter sidecar.
    * @param imageName the name of the docker image
@@ -335,16 +343,6 @@ public class DomainSpec extends BaseConfiguration {
     assert monitoringExporter != null : "May not set image without configuration";
 
     monitoringExporter.setImage(imageName);
-  }
-
-  /**
-   * Specifies the pull policy for the exporter image.
-   * @param pullPolicy a Kubernetes pull policy
-   */
-  public void setMonitoringExporterImagePullPolicy(V1Container.ImagePullPolicyEnum pullPolicy) {
-    assert monitoringExporter != null : "May not set image pull policy without configuration";
-
-    monitoringExporter.setImagePullPolicy(pullPolicy);
   }
 
   /**
@@ -385,7 +383,6 @@ public class DomainSpec extends BaseConfiguration {
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
     return this;
   }
-
 
   /**
    * The configuration for the admin server.
@@ -439,9 +436,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private AdminServer createAdminServer() {
-    AdminServer adminServer = new AdminServer();
-    setAdminServer(adminServer);
-    return adminServer;
+    AdminServer newAdminServer = new AdminServer();
+    setAdminServer(newAdminServer);
+    return newAdminServer;
   }
 
   @SuppressWarnings("unused")
@@ -1139,6 +1136,22 @@ public class DomainSpec extends BaseConfiguration {
 
   public List<Cluster> getClusters() {
     return clusters;
+  }
+
+  void setFailureRetryIntervalSeconds(Long retryIntervalSeconds) {
+    this.failureRetryIntervalSeconds = retryIntervalSeconds;
+  }
+
+  long getFailureRetryIntervalSeconds() {
+    return Optional.ofNullable(failureRetryIntervalSeconds).orElse(DEFAULT_RETRY_INTERVAL_SECONDS);
+  }
+
+  void setFailureRetryLimitMinutes(Long retryLimitMinutes) {
+    this.failureRetryLimitMinutes = retryLimitMinutes;
+  }
+
+  long getFailureRetryLimitMinutes() {
+    return Optional.ofNullable(failureRetryLimitMinutes).orElse(DEFAULT_RETRY_LIMIT_MINUTES);
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {

@@ -721,6 +721,10 @@ public class DomainPresenceInfo implements PacketComponent {
     return result;
   }
 
+  long getNumDeadlineIncreases() {
+    return getDomain().getOrCreateStatus().getNumDeadlineIncreases(getDomain().getFailureRetryIntervalSeconds());
+  }
+
   @Nonnull
   private Set<String> getExpectedRunningManagedServers() {
     return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());

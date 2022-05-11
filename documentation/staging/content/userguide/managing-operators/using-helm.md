@@ -22,6 +22,10 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`labels`](#labels)
     - [`nodeSelector`](#nodeselector)
     - [`affinity`](#affinity)
+  - [WebLogic domain conversion webhook](#weblogic-domain-conversion-webhook)
+    - [`webhookOnly`](#webhookonly)
+    - [`operatorOnly`](#operatoronly)
+    - [`preserveWebhook`](#preservewebhook)
   - [WebLogic domain management](#weblogic-domain-management)
     - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
     - [`domainNamespaces`](#domainnamespaces)
@@ -49,9 +53,6 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
     - [`internalDebugHttpPort`](#internaldebughttpport)
     - [`externalDebugHttpPort`](#externaldebughttpport)
-  - [WebLogic Domain conversion webhook Helm configuration values](#weblogic-domain-conversion-webhook-helm-configuration-values)
-    - [`webhookOnly`](#webhookonly)
-    - [`preserveWebhook`](#preservewebhook)
 
 ### Introduction
 
@@ -164,7 +165,7 @@ kubernetesPlatform: OpenShift
 Specifies whether the roles necessary for the operator to manage domains
 will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 
-Defaults to `false`.
+Defaults to `true`.
 
 This option greatly simplifies managing namespaces when the selection is done using label selectors or
 regular expressions as the operator will already have privilege in any namespace.
@@ -175,7 +176,7 @@ privilege in _all_ Kubernetes namespaces. If you want to limit the operator's pr
 then remove this option; this will mean that the operator has privilege only in the set of namespaces that match the selection strategy
 at the time the Helm release was installed or upgraded.
 
-**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 then a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
@@ -292,6 +293,30 @@ affinity:
           - another-node-label-value
 ```
 
+#### WebLogic domain conversion webhook
+
+The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
+
+**Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
+
+##### `webhookOnly`
+Specifies whether only the conversion webhook should be installed during the `helm install` and that the operator installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
+If set to `true`, the `helm install` will install _only_ the conversion webhook (and not the operator).
+
+Defaults to `false`.
+
+##### `operatorOnly`
+Specifies whether only the operator should be installed during the `helm install` and that the conversion webhook installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
+If set to `true`, the `helm install` will install _only_ the operator (and not the conversion webhook).
+
+Defaults to `false`.
+
+##### `preserveWebhook`
+Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using `helm uninstall`. By default, the `helm uninstall` removes both the webhook and the operator installation.
+If set to `true` in the `helm install` command, then the `helm uninstall` command will not remove the webhook installation. Ignored when `webhookOnly` is set to `true` in the `helm install` command.
+
+Defaults to `false`.
+
 #### WebLogic domain management
 
 The settings in this section determine the namespaces that an operator
@@ -400,7 +425,7 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
         - If you set `enableClusterRoleBinding` to `true` when selecting namespaces by list or regular expression,
           then the Helm chart doesn't need to do anything special per namespace.
      - Or, create the necessary RoleBindings outside of Helm.
-- If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+- If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
   then a running operator will _not_ have privilege to manage a newly added namespace
   that matches its regular expression until you upgrade
   the operator's Helm release.
@@ -676,21 +701,3 @@ externalDebugHttpPort:  30777
 ```
 
 **Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.
-
-### WebLogic Domain conversion webhook Helm configuration values
-
-The WebLogic Domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
-
-**Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
-
-##### `webhookOnly`
-Specifies whether only the conversion webhook should be installed during the `helm install` and that the operator installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
-If set to `true`, the `helm install` will install _only_ the conversion webhook (and not the operator).
-
-Defaults to `false`.
-
-##### `preserveWebhook`
-Specifies whether the existing conversion webhook deployment should be preserved (not removed) when the release is uninstalled using `helm uninstall`. By default, the `helm uninstall` removes both the webhook and the operator installation.
-If set to `true`, the `helm uninstall` command will not remove the webhook installation. Ignored when `webhookOnly` is set to `true`.
-
-Defaults to `false`.

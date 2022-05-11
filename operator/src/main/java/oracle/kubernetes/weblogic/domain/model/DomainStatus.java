@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -34,9 +36,13 @@ import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTO
 import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
 import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity.SEVERE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -67,10 +73,10 @@ public class DomainStatus {
           + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureCount = 0;
+  private Integer introspectJobFailureCount = 0;  //todo remove this field
 
   @Description("Unique ID of the last failed introspection job.")
-  private String failedIntrospectionUid;
+  private String failedIntrospectionUid;  //todo remove this field
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -87,6 +93,12 @@ public class DomainStatus {
           + "the operator begins processing and will precede when the various servers "
           + "or clusters are available.")
   private OffsetDateTime startTime = SystemClock.now();
+
+  @Description("RFC 3339 date and time at which a currently failing domain started automatic retries.")
+  private OffsetDateTime initialFailureTime;
+
+  @Description("RFC 3339 date and time at which a currently failing domain last experienced a Severe failure.")
+  private OffsetDateTime lastFailureTime;
 
   @Description(
       "The number of running cluster member Managed Servers in the WebLogic cluster if there is "
@@ -111,6 +123,8 @@ public class DomainStatus {
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
     clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
     startTime = that.startTime;
+    initialFailureTime = that.initialFailureTime;
+    lastFailureTime = that.lastFailureTime;
     replicas = that.replicas;
     introspectJobFailureCount = that.introspectJobFailureCount;
     failedIntrospectionUid = that.failedIntrospectionUid;
@@ -135,7 +149,10 @@ public class DomainStatus {
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (newCondition.isNotValid()) {
       throw new IllegalArgumentException("May not add condition " + newCondition);
+    } else if (isRetriableFailure(newCondition)) {
+      lastFailureTime = newCondition.getLastTransitionTime();
     }
+
 
     if (conditions.contains(newCondition)) {
       unmarkMatchingCondition(newCondition);
@@ -149,20 +166,45 @@ public class DomainStatus {
 
     conditions.add(newCondition);
     Collections.sort(conditions);
-    setReasonAndMessage();
+    setStatusSummary();
     return this;
+  }
+
+  private boolean isRetriableFailure(DomainCondition selected) {
+    return selected.getType() == FAILED && selected.getSeverity() == SEVERE;
   }
 
   private void unmarkMatchingCondition(DomainCondition newCondition) {
     conditions.stream().filter(c -> c.equals(newCondition)).forEach(DomainCondition::unMarkForDeletion);
   }
 
-  private void setReasonAndMessage() {
-    DomainCondition selected = conditions.stream()
+  private void setStatusSummary() {
+    final DomainCondition selected = getSummaryCondition();
+    reason = Optional.ofNullable(selected.getReason()).map(DomainFailureReason::toString).orElse(null);
+    message = failedIntrospectionUid != null ? createDomainStatusMessage(selected.getMessage()) : selected.getMessage();
+    if (isRetriableFailure(selected)) {
+      initialFailureTime = Optional.ofNullable(initialFailureTime).orElse(selected.getLastTransitionTime());
+    } else {
+      initialFailureTime = lastFailureTime = null;
+    }
+  }
+
+  /**
+   * Returns the domain condition that will be used to set the status summary information:
+   * reason, message and retry information. Since failures are sorted first, a failure will always be returned
+   * if one is present.
+   */
+  @NotNull
+  public DomainCondition getSummaryCondition() {
+    return conditions.stream()
           .filter(this::maySupplyStatusMessage)
-          .findFirst().orElse(new DomainCondition(FAILED));
-    reason = selected.getReason();
-    message = selected.getMessage();
+          .findFirst().orElse(createEmptyCondition());
+  }
+
+  // Returns a condition with null reason, message and retry information.
+  @NotNull
+  private DomainCondition createEmptyCondition() {
+    return new DomainCondition(AVAILABLE);
   }
 
   private boolean maySupplyStatusMessage(DomainCondition c) {
@@ -214,7 +256,7 @@ public class DomainStatus {
    */
   public void removeCondition(@Nonnull DomainCondition condition) {
     conditions.remove(condition);
-    setReasonAndMessage();
+    setStatusSummary();
   }
 
   /**
@@ -540,6 +582,48 @@ public class DomainStatus {
     return this;
   }
 
+  /**
+   * Returns the time that the current domain started automatic retries in response to a severe failure.
+   */
+  public OffsetDateTime getInitialFailureTime() {
+    return initialFailureTime;
+  }
+
+  /**
+   * Returns the time that the last severe failure was reported.
+   */
+  public OffsetDateTime getLastFailureTime() {
+    return lastFailureTime;
+  }
+
+  /**
+   * Return the number of times that failure timeouts should be increased as a result of failures.
+   * Will be approximately the number of times a failure has been reported, assuming one failure per retry.
+   * @param retrySeconds the number of seconds between retries.
+   */
+  public int getNumDeadlineIncreases(long retrySeconds) {
+    if (initialFailureTime == null || lastFailureTime == null) {
+      return 0;
+    } else {
+      return (int) (1 + divideRoundingUp(getSecondsFromInitialToLastFailure(), retrySeconds));
+    }
+  }
+
+  private long divideRoundingUp(Long dividend, long divisor) {
+    return (dividend + divisor - 1) / divisor;
+  }
+
+  /**
+   * Returns the number of seconds between the first failure reported and the most recent one.
+   */
+  public Long getSecondsFromInitialToLastFailure() {
+    return Duration.between(initialFailureTime, lastFailureTime).getSeconds();
+  }
+
+  public long getMinutesFromInitialToLastFailure() {
+    return TimeUnit.SECONDS.toMinutes(getSecondsFromInitialToLastFailure());
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -549,6 +633,8 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
+        .append("initialFailureTime", initialFailureTime)
+        .append("lastFailureTime", lastFailureTime)
         .append("introspectJobFailureCount", introspectJobFailureCount)
         .append("failedIntrospectionUid", failedIntrospectionUid)
         .toString();
@@ -559,6 +645,8 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
+        .append(initialFailureTime)
+        .append(lastFailureTime)
         .append(Domain.sortOrNull(servers))
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
@@ -580,6 +668,8 @@ public class DomainStatus {
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
+        .append(initialFailureTime, rhs.initialFailureTime)
+        .append(lastFailureTime, rhs.lastFailureTime)
         .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
@@ -610,8 +700,8 @@ public class DomainStatus {
     return this;
   }
 
-  public String createDomainStatusMessage(String jobUid, String message) {
-    return LOGGER.formatMessage(getMessageKey(jobUid, message),
+  public String createDomainStatusMessage(String message) {
+    return LOGGER.formatMessage(getMessageKey(failedIntrospectionUid, message),
           message, getIntrospectJobFailureCount(), getFailureRetryMaxCount());
   }
 
@@ -642,6 +732,50 @@ public class DomainStatus {
    */
   public boolean hasReachedMaximumFailureCount() {
     return getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
+  }
+
+  /**
+   * Computes a failure condition that accounts for retries and failed inspection messages.
+   * @param reason the underlying reason
+   * @param message the underlying message
+   * @param jobUid the uid of the failed introspection job. May be null.
+   */
+  public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message, String jobUid) {
+    DomainFailureReason effectiveReason = reason;
+    String effectiveMessage = message;
+    if (hasJustGotFatalIntrospectorError(effectiveMessage)) {
+      effectiveReason = ABORTED;
+      effectiveMessage = FATAL_INTROSPECTOR_ERROR_MSG + effectiveMessage;
+    } else if (hasJustExceededMaxRetryCount(jobUid)) {
+      effectiveReason = ABORTED;
+    }
+    return new DomainCondition(FAILED).withReason(effectiveReason).withMessage(effectiveMessage);
+  }
+
+  private boolean hasJustGotFatalIntrospectorError(String message) {
+    return isFatalIntrospectorMessage(message) && lacksFatalIntrospectorError();
+  }
+
+  private boolean lacksFatalIntrospectorError() {
+    return !isFatalIntrospectorMessage(getMessage());
+  }
+
+  private boolean isFatalIntrospectorMessage(String statusMessage) {
+    return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
+  }
+
+  /**
+   * Increments the failure count associated with the specified introspection job and returns true
+   * if doing so results in the count reaching its maximum value.
+   * @param jobUid the UID of a failed introspection job
+   */
+  private boolean hasJustExceededMaxRetryCount(String jobUid) {
+    if (jobUid == null || hasReachedMaximumFailureCount()) {
+      return false;
+    } else {
+      incrementIntrospectJobFailureCount(jobUid);
+      return hasReachedMaximumFailureCount();
+    }
   }
 
   private enum FailureLevel {

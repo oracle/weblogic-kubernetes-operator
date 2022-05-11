@@ -34,6 +34,8 @@ See [Prepare for installation]({{<relref "/userguide/managing-operators/preparat
 By default, installing the operator also configures a deployment and supporting resources for the
 [conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook">}})
 and deploys the conversion webhook.
+To skip the conversion webhook installation, set helm configuration value `operatorOnly` to `true` 
+in the `helm install` command.
 For more details, see [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook">}}).
 {{% /notice %}}
 
@@ -83,9 +85,6 @@ For example, using Helm 3.x, with the following settings:
 |Helm chart repo URL|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
 |Helm chart repo name|`weblogic-operator`|
 |`namespace`|`sample-weblogic-operator-ns`|
-|`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
-|`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
-|`domainNamespaceLabelSelector`|`weblogic-operator\=enabled` (the label and expected value for the label)|
 
 ```text
 $ kubectl create namespace sample-weblogic-operator-ns
@@ -117,28 +116,6 @@ Install the operator using this format: `helm install <helm-release-name> <helm-
 $ helm install sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
-  --wait
-```
-
-Or, instead of using the previous `helm install` command,
-create a YAML file named `custom-values.yaml` with the following contents:
-
-```
-enableClusterRoleBinding: true
-domainNamespaceSelectionStrategy: LabelSelector
-domainNamespaceLabelSelector: "weblogic-operator=enabled"
-```
-
-And call:
-
-```text
-$ helm install sample-weblogic-operator \
-  weblogic-operator/weblogic-operator \
-  --namespace sample-weblogic-operator-ns \
-  --values custom-values.yaml \
   --wait
 ```
 
