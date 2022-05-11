@@ -90,6 +90,7 @@ class RestTest extends JerseyTest {
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
+  private static final Integer SUCCESS_CODE = 200;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -380,15 +381,17 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
-    AdmissionResponse expectedResponse = new AdmissionResponse().uid(RESPONSE_UID)
-        .allowed(true).status(new Status().code("200"));
+    AdmissionResponse expectedResponse = new AdmissionResponse();
+    expectedResponse.setUid(RESPONSE_UID);
+    expectedResponse.setAllowed(true);
+    expectedResponse.setStatus(new Status().code(SUCCESS_CODE));
     String admissionReview = writeAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
     Response response = sendCValidatingWebhookRequest(admissionReview);
 
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
-    assertThat(responseReview.getResponse(), equalTo(expectedResponse));
+    assertThat(responseReview.getResponse().equals(expectedResponse), equalTo(true));
   }
 
   @Test
@@ -413,12 +416,14 @@ class RestTest extends JerseyTest {
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
     assertThat(getAllowed(responseReview), equalTo(true));
-    assertThat(getResultCode(responseReview), equalTo("200"));
+    assertThat(getResultCode(responseReview), equalTo(SUCCESS_CODE));
   }
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
-    Status expectedStatus = new Status().code("200");
+    Status expectedStatus = new Status();
+    expectedStatus.setCode(SUCCESS_CODE);
+    expectedStatus.setMessage(null);
     admissionReview.request(null);
     String admissionReviewString = writeAdmissionReview(admissionReview);
     Response response = sendCValidatingWebhookRequest(admissionReviewString);
@@ -426,7 +431,7 @@ class RestTest extends JerseyTest {
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
-    assertThat(getResultStatus(responseReview), equalTo(expectedStatus));
+    assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
   }
 
   private Status getResultStatus(AdmissionReview responseReview) {
@@ -439,9 +444,9 @@ class RestTest extends JerseyTest {
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getMessage).orElse("");
   }
 
-  private String getResultCode(AdmissionReview responseReview) {
+  private int getResultCode(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse("");
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse(SUCCESS_CODE);
   }
 
   private boolean getAllowed(AdmissionReview admissionResponse) {

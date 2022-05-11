@@ -9,19 +9,19 @@ import com.google.gson.annotations.Expose;
 
 public class Status {
   @Expose
-  private String code;
+  private Integer code;
   @Expose
   private String message;
 
-  public String getCode() {
+  public Integer getCode() {
     return code;
   }
 
-  public void setCode(String code) {
+  public void setCode(Integer code) {
     this.code = code;
   }
 
-  public Status code(String code) {
+  public Status code(Integer code) {
     this.code = code;
     return this;
   }

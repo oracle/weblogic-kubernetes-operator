@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionRe
 public class AdmissionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  private static final String SUCCESS_CODE = "200";
+  private static final Integer SUCCESS_CODE = 200;
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookResource() {
