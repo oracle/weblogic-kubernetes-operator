@@ -206,7 +206,7 @@ public interface TestConstants {
   public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
 
   // ELK Stack and WebLogic logging exporter constants
-  public static final String ELASTICSEARCH_NAME = "elasticsearch";
+  public static final String ELASTICSEARCH_NAME = "phx.ocir.io/weblogick8s/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5-debian-elasticsearch7-1.1");

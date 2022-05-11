@@ -504,18 +504,18 @@ public class Kubernetes {
    * @param serviceName name of the service to check for
    * @param label the key value pair with which the service is decorated with
    * @param namespace the namespace in which to check for the service
-   * @return true if the service is found otherwise false
-   * @throws ApiException when there is error in querying the cluster
+   * @return true if the service is found, otherwise false. If there is
+   *              an error in querying the cluster, it returns false.
    */
-  public static boolean doesServiceExist(
-      String serviceName, Map<String, String> label, String namespace)
-      throws ApiException {
-    boolean exist = false;
-    V1Service service = getService(serviceName, label, namespace);
-    if (service != null) {
-      exist = true;
+  public static boolean doesServiceExist(String serviceName, Map<String, String> label, String namespace) {
+    try {
+      if (getService(serviceName, label, namespace) != null) {
+        return true;
+      }
+    } catch (ApiException aie) {
+      //ignore
     }
-    return exist;
+    return false;
   }
 
 
