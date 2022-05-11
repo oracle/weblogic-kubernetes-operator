@@ -105,7 +105,7 @@ class RestTest extends JerseyTest {
 
   private AdmissionRequest createAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
-    request.setUid("abcd");
+    request.setUid(RESPONSE_UID);
     request.setKind(new HashMap<String, String>());
     request.setResource(new HashMap<String, String>());
     request.setSubResource(new HashMap<String, String>());
@@ -398,7 +398,6 @@ class RestTest extends JerseyTest {
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
     assertThat(responseReview.getResponse().equals(expectedResponse), equalTo(true));
-    assertThat(responseReview.equals(expectedReview), equalTo(true));
   }
 
   @Test
@@ -425,6 +424,7 @@ class RestTest extends JerseyTest {
 
     assertThat(getAllowed(responseReview), equalTo(true));
     assertThat(getResultCode(responseReview), equalTo(SUCCESS_CODE));
+    assertThat(getUid(responseReview), equalTo(RESPONSE_UID));
   }
 
   @Test
@@ -456,6 +456,11 @@ class RestTest extends JerseyTest {
   private int getResultCode(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse(SUCCESS_CODE);
+  }
+
+  private String getUid(AdmissionReview admissionReview) {
+    return Optional.ofNullable(admissionReview)
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getUid).orElse("");
   }
 
   private boolean getAllowed(AdmissionReview admissionResponse) {

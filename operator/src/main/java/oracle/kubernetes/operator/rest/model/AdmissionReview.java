@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.rest.model;
 
-import java.util.Objects;
-
 import com.google.gson.annotations.Expose;
 
 public class AdmissionReview {
@@ -77,25 +75,5 @@ public class AdmissionReview {
         + ", request='" + request + '\''
         + ", response='" + response + '\''
         + '}';
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    AdmissionReview that = (AdmissionReview) o;
-    return Objects.equals(kind, that.kind)
-        && Objects.equals(apiVersion, that.apiVersion)
-        && Objects.equals(request, that.request)
-        && Objects.equals(response, that.response);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(kind, apiVersion, request, response);
   }
 }

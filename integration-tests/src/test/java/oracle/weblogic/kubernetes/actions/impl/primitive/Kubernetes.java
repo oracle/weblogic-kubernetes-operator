@@ -78,6 +78,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1StorageClassList;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
@@ -1401,7 +1402,9 @@ public class Kubernetes {
 
     if (!response.isSuccess()) {
       getLogger().warning(
-          "Failed with response " + response + " when patching " + domainUid + " in namespace "
+          "Failed with response code " + response.getHttpStatusCode() + " response message "
+              + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
+              + " when patching " + domainUid + " in namespace "
               + namespace + " with " + patch + " using patch format: " + patchFormat);
       return false;
     }

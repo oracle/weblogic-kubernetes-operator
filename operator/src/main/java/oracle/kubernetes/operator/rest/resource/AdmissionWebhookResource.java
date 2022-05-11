@@ -91,12 +91,19 @@ public class AdmissionWebhookResource extends BaseResource {
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
     return new AdmissionResponse()
         .uid(getUid(request))
-        .allowed(request == null || validate(request.getOldObject(), request.getObject()))
+        .allowed(validate(request))
         .status(new Status().code(SUCCESS_CODE));
   }
 
-  private boolean validate(Object oldObject, Object object) {
-    LOGGER.fine("validating " + object + " against " + oldObject);
+  private boolean validate(AdmissionRequest request) {
+    if (request == null) {
+      return true;
+    }
+
+    LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
+        + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
+        + " subResource = " + request.getSubResource());
+
     // TODO add implementation of the validation in the next PR
     return true;
   }
