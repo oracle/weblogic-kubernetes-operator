@@ -848,7 +848,7 @@ public class MonitoringUtils {
             ADMIN_PASSWORD_DEFAULT,
             K8S_NODEPORT_HOST,
             nodeport);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 100))
         .as("Verify NGINX can access the monitoring exporter metrics "
             + "from all managed servers in the domain via http")
         .withFailMessage("NGINX can not access the monitoring exporter metrics "
