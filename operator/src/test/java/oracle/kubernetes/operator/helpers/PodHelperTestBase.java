@@ -112,13 +112,14 @@ import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_I
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
@@ -187,6 +188,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase extends DomainValidationTestBase {
+
   public static final String EXPORTER_IMAGE = "monexp:latest";
   public static final String CUSTOM_WDT_INSTALL_SOURCE_HOME = "/myaux/weblogic-deploy";
   public static final String CUSTOM_MODEL_SOURCE_HOME = "/myaux/models";
@@ -1532,7 +1534,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -1566,7 +1569,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   private ApiException createQuotaExceededException() {
@@ -2234,7 +2238,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private boolean isKubernetesFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(KUBERNETES_ERROR);
+    return DOMAIN_FAILED_EVENT.equals(e.getReason())
+        && e.getMessage().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
   }
 
   @Test
