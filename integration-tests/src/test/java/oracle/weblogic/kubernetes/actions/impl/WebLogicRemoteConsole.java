@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
@@ -97,14 +98,15 @@ public class WebLogicRemoteConsole {
   }
 
   private static boolean accessRemoteconsole() {
-
     String curlCmd = "curl -s -L --show-error --noproxy '*' "
         + " http://localhost:8012"
         + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
+    CommonTestUtils.testUntil((() -> {
+      return callWebAppAndWaitTillReady(curlCmd, 1);
+    }), logger, "Waiting for remote console access to return 200 status code");
 
-    return callWebAppAndWaitTillReady(curlCmd, 10);
-
+    return true;
   }
 
 }
