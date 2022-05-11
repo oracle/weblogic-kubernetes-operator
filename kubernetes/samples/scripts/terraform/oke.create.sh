@@ -25,7 +25,6 @@ generateTFVarFile() {
     sed -i -e "s:@NODEPOOLIMAGENAME@:${nodepool_imagename}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
-    sed -i -e "s/@AVAILABILITYDOMAIN@/"${availability_domain}"/g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
 }
 
@@ -142,7 +141,6 @@ nodepool_imagename=$(prop 'nodepool.imagename')
 nodepool_ssh_pubkey=$(prop 'nodepool.ssh.pubkey')
 region=$(prop 'region')
 terraformDir=$(prop 'terraform.installdir')
-availability_domain=$(prop 'availability.domain')
 
 # generate terraform configuration file with name $(clusterTFVarsFile).tfvar
 generateTFVarFile

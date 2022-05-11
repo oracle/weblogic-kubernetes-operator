@@ -229,7 +229,6 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         FSS_DIR="/oketest"
-                        AVAILABILITY_DOMAIN_NAME="VPGL\\:PHX-AD-1"
                         VCN_CIDR_PREFIX="10.1"
                         OKE_CLUSTER_NAME="mtcluster"
                         NODE_SHAPE="VM.Standard2.4"
@@ -261,7 +260,6 @@ pipeline {
 
                         export OKE_CLUSTER="true"
                         export FSS_DIR="/oketest"
-                        export AVAILABILITY_DOMAIN_NAME="${AVAILABILITY_DOMAIN_NAME}"
 
                         export VCN_CIDR_PREFIX=${VCN_CIDR_PREFIX}
 
@@ -295,7 +293,6 @@ pipeline {
                         k8s.version=v${KUBE_VERSION}
                         nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
                         terraform.installdir=${WORKSPACE}/terraform/terraforminstall
-                        availability.domain=${AVAILABILITY_DOMAIN_NAME}
 EOF
 
                         ##################
@@ -426,6 +423,8 @@ EOF
                             echo 'Create a OKE cluster'
                             #mkdir -p "${WORKSPACE}/terraform"
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
+                            cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
                             cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
                             chmod 777 ${WORKSPACE}/terraform/*.sh

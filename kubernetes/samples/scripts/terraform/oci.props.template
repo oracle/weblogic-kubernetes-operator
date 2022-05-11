@@ -32,7 +32,6 @@ ocipk.path=
 # BE SURE TO SET BOTH VARS -- the first 2 octets for each variable have to match
 vcn.cidr.prefix=
 vcn.cidr=
-availability.domain=
 
 # Node pool info
 nodepool.shape=

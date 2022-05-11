@@ -27,7 +27,6 @@ region="@REGION@"
 # BE SURE TO SET BOTH VARS -- the first 2 octets for each variable have to match
 vcn_cidr_prefix="@VCNCIDRPREFIX@"
 vcn_cidr="@VCNCIDR@"
-availability_domain="@AVAILABILITYDOMAIN@"
 
 # Cluster name and k8s version
 cluster_kubernetes_version="@OKEK8SVERSION@"
