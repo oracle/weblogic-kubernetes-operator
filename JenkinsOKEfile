@@ -443,10 +443,10 @@ pipeline {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         oci_config_file = credentials("${wkobuild_oci_config}")
-                                        compartment_ocid = "${COMPARTMENT_OCID}"
+                                        compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}"
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
-                                        availability_domain = "${AVAILABILITY_DOMAIN_NAME}"
+                                        availability_domain = "VPGL:PHX-AD-1"
 
                                     }
                                     steps {
@@ -604,7 +604,8 @@ EOF
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
                         export KUBECONFIG=${kubeconfig_file}
                         echo 'Remove old OKE cluster (if any)...'
-                        if [[ -f "$OCI_PROP_FILE" && -f "${WORKSPACE}/terraform/oke.delete.sh"]]; then
+
+                        if [ -f "$OCI_PROP_FILE" ] && [ -f "${WORKSPACE}/terraform/oke.delete.sh" ]; then
                             ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                         fi
 
