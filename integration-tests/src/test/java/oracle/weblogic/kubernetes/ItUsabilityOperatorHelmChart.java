@@ -113,6 +113,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItUsabilityOperatorHelmChart {
 
+  private static final String LIST_STRATEGY = "List";
+
   private static String opNamespace = null;
   private static String op2Namespace = null;
   private static String op3Namespace = null;
@@ -129,7 +131,6 @@ class ItUsabilityOperatorHelmChart {
   private final String domain5Uid = "usabdomain5";
 
   private final String clusterName = "cluster-1";
-  private final int managedServerPort = 8001;
   private final int replicaCount = 2;
   private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPrefix = "-" + MANAGED_SERVER_NAME_BASE;
@@ -139,8 +140,6 @@ class ItUsabilityOperatorHelmChart {
   private int replicaCountDomain2 = 2;
   private String adminSvcExtRouteHost = null;
 
-  // ingress host list
-  private List<String> ingressHostList;
   private static LoggingFacade logger = null;
 
   /**
@@ -314,8 +313,7 @@ class ItUsabilityOperatorHelmChart {
   @DisplayName("Install operator helm chart and domain, then uninstall operator helm chart, "
       + " install operator helm chart again and verify it can still manage domain")
   void testCreateDeleteCreateOperatorButNotDomain() {
-    String opReleaseName = OPERATOR_RELEASE_NAME;
-    HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
+    HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
     String opServiceAccount = opNamespace + "-sa";
@@ -338,7 +336,7 @@ class ItUsabilityOperatorHelmChart {
 
       //install second time
       opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, false, true, false,
-          null,"deployed", 0, opHelmParams, domain1Namespace);
+          null,"deployed", 0, opHelmParams, LIST_STRATEGY, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
       String opExtRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
@@ -383,9 +381,7 @@ class ItUsabilityOperatorHelmChart {
   @DisplayName("Create domain1, managed by operator and domain2, upgrade operator to add domain2,"
       + "delete domain1 , verify operator management for domain2 and no access to domain1")
   void testAddRemoveDomainNameSpacesOnOperator() {
-
-    String opReleaseName = OPERATOR_RELEASE_NAME;
-    HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
+    HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(op2Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
@@ -449,7 +445,7 @@ class ItUsabilityOperatorHelmChart {
           .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
-          .domainNamespaces(java.util.Arrays.asList(domain2Namespace));
+          .domainNamespaces(List.of(domain2Namespace));
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
       assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
@@ -506,7 +502,7 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = opNamespace + "-sa2";
     HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
         .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);;
+        .chartDir(OPERATOR_CHART_DIR);
 
     // install and verify operator will fail with expected error message
     logger.info("Installing and verifying operator will fail with expected error message");
@@ -515,7 +511,7 @@ class ItUsabilityOperatorHelmChart {
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false, expectedError,"failed", 0,
-          op2HelmParams, domain2Namespace);
+          op2HelmParams, LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
@@ -561,7 +557,7 @@ class ItUsabilityOperatorHelmChart {
       String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
-          expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
+          expectedError,"failed", 0, op2HelmParams,  LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
       uninstallOperator(opHelmParams);
@@ -591,7 +587,8 @@ class ItUsabilityOperatorHelmChart {
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
     HelmParams opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, true, true,
-        true,null,"deployed", 0, op1HelmParams,  domain1Namespace);
+        true,null,"deployed", 0, op1HelmParams,
+        LIST_STRATEGY, domain1Namespace);
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
@@ -609,7 +606,7 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
           true, true, true,
           expectedError,"failed",
-          externalRestHttpsPort, op2HelmParams,  domain2Namespace);
+          externalRestHttpsPort, op2HelmParams,  LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
       uninstallOperator(op2HelmParams);
     } finally {
@@ -632,7 +629,7 @@ class ItUsabilityOperatorHelmChart {
     String opReleaseName = OPERATOR_RELEASE_NAME + "2";
     HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
         .namespace("ns-somens")
-        .chartDir(OPERATOR_CHART_DIR);;
+        .chartDir(OPERATOR_CHART_DIR);
 
     // install operator
     logger.info("Installing and verifying operator will fail with expected error message");
@@ -640,7 +637,8 @@ class ItUsabilityOperatorHelmChart {
     try {
       String expectedError = "create: failed to create: namespaces \"ns-somens\" not found";
       HelmParams opHelmParam2 = installOperatorHelmChart("ns-somens", opServiceAccount, false, false,
-          false, expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
+          false, expectedError,"failed", 0, op2HelmParams,
+          LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
       uninstallOperator(op2HelmParams);
@@ -657,17 +655,17 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Test to create the operator with empty string for domains namespace")
   void testCreateWithEmptyDomainNamespaceInstall() {
-    String opReleaseName = OPERATOR_RELEASE_NAME;
     String opServiceAccount = op2Namespace + "-sa";
-    HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
+    HelmParams op2HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(op2Namespace)
-        .chartDir(OPERATOR_CHART_DIR);;
+        .chartDir(OPERATOR_CHART_DIR);
 
     try {
       // install and verify operator
       logger.info("Installing and verifying operator");
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, true,
-          true,null, "deployed", 0, op2HelmParams,  "");
+          true,null, "deployed", 0, op2HelmParams,
+          LIST_STRATEGY, "");
       assertNotNull(opHelmParam2, "FAILURE: Helm can't installs operator with empty set for target domainnamespaces ");
 
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
@@ -685,7 +683,7 @@ class ItUsabilityOperatorHelmChart {
           .externalRestHttpsPort(externalRestHttpsPort)
           .serviceAccount(opServiceAccount)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME)
-          .domainNamespaces(java.util.Arrays.asList(domain2Namespace));
+          .domainNamespaces(List.of(domain2Namespace));
 
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
@@ -731,7 +729,7 @@ class ItUsabilityOperatorHelmChart {
   void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() {
     String opServiceAccount = op2Namespace + "-sa";
     String opReleaseName = OPERATOR_RELEASE_NAME + "1";
-    String errorMsg = null;
+    String errorMsg;
     HelmParams opHelmParams =
         new HelmParams().releaseName(opReleaseName)
             .namespace(op2Namespace)
@@ -742,7 +740,8 @@ class ItUsabilityOperatorHelmChart {
         logger.info("Installing  operator %s in namespace %s", opReleaseName, op2Namespace);
         errorMsg = String.format("ServiceAccount %s not found in namespace %s", opServiceAccount, op2Namespace);
         HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-            true, errorMsg,"failed", 0, opHelmParams,  domain2Namespace);
+            true, errorMsg,"failed", 0, opHelmParams,
+            LIST_STRATEGY, domain2Namespace);
         assertNull(opHelmParam2, "FAILURE: Helm installs operator with not preexisted service account ");
       } catch (AssertionError ex) {
         logger.info(" Receieved assertion error " + ex.getMessage());
@@ -758,7 +757,8 @@ class ItUsabilityOperatorHelmChart {
 
       logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, false, false,
-          false,null,"deployed", 0, opHelmParams,  domain2Namespace);
+          false,null,"deployed", 0, opHelmParams,
+          LIST_STRATEGY, domain2Namespace);
 
       // list Helm releases matching operator release name in operator namespace
       logger.info("Checking operator release {0} status in namespace {1}",
@@ -799,9 +799,7 @@ class ItUsabilityOperatorHelmChart {
   @DisplayName("Create domain4, domain5 in the same namespace managed by operator ,"
       + " verify scaling via scalingAction.sh script and restAPI")
   void testTwoDomainsInSameNameSpaceOnOperator() {
-
-    String opReleaseName = OPERATOR_RELEASE_NAME;
-    HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
+    HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(op3Namespace)
         .chartDir(OPERATOR_CHART_DIR);
     try {
@@ -810,7 +808,6 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParams = installAndVerifyOperator(op3Namespace, opServiceAccount, true,
           0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
-
 
       String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op3Namespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", op3Namespace);
@@ -1034,19 +1031,21 @@ class ItUsabilityOperatorHelmChart {
    * @param helmStatus expected helm status
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
+   * @param domainNamespaceSelectionStrategy Domain namespace selection strategy
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   private static HelmParams installOperatorHelmChart(String operNamespace,
-                                                    String opServiceAccount,
-                                                    boolean createOpSA,
-                                                    boolean withRestAPI,
-                                                    boolean createSecret,
-                                                    String errMsg,
-                                                    String helmStatus,
-                                                    int externalRestHttpsPort,
-                                                    HelmParams opHelmParams,
-                                                    String... domainNamespace) {
+                                                     String opServiceAccount,
+                                                     boolean createOpSA,
+                                                     boolean withRestAPI,
+                                                     boolean createSecret,
+                                                     String errMsg,
+                                                     String helmStatus,
+                                                     int externalRestHttpsPort,
+                                                     HelmParams opHelmParams,
+                                                     String domainNamespaceSelectionStrategy,
+                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
     String opReleaseName = opHelmParams.getReleaseName();
 
@@ -1079,6 +1078,7 @@ class ItUsabilityOperatorHelmChart {
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
+        .domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy)
         .domainNamespaces(java.util.Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount);
 
@@ -1237,18 +1237,19 @@ class ItUsabilityOperatorHelmChart {
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkManagedServerConfiguration(String domainNamespace, String domainUid) {
-    ExecResult result = null;
+    ExecResult result;
     String adminServerPodName = domainUid + adminServerPrefix;
     String managedServer = "managed-server1";
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
+    StringBuilder checkCluster = new StringBuilder("status=$(curl --user ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)
         .append(" ")
-        .append("http://" + hostAndPort)
+        .append("http://")
+        .append(hostAndPort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
@@ -1263,11 +1264,7 @@ class ItUsabilityOperatorHelmChart {
       return false;
     }
     logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    if (result.stdout().equals("200")) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.stdout().equals("200");
   }
 
   private void cleanUpDomainSecrets(String domainNamespace) {
