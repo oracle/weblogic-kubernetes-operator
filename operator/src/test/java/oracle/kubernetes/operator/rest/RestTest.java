@@ -397,7 +397,7 @@ class RestTest extends JerseyTest {
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
-    assertThat(responseReview.getResponse().equals(expectedResponse), equalTo(true));
+    assertThat(responseReview.getResponse().toString().equals((expectedResponse).toString()), equalTo(true));
   }
 
   @Test
