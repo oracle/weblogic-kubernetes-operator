@@ -443,7 +443,7 @@ pipeline {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         oci_config_file = credentials("${wkobuild_oci_config}")
-                                        compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}"
+                                        compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
                                         availability_domain = "VPGL:PHX-AD-1"
