@@ -268,7 +268,11 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
-    return doTerminate(UnrecoverableErrorBuilder.createExceptionFromFailedCall(callResponse), packet);
+    return doTerminate(createTerminationException(packet, callResponse), packet);
+  }
+
+  protected Throwable createTerminationException(Packet packet, CallResponse<T> callResponse) {
+    return UnrecoverableErrorBuilder.createExceptionFromFailedCall(callResponse);
   }
 
   protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {

@@ -745,14 +745,20 @@ public class JobHelper {
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (isJobPodTimedOut(jobPod)) {
-          return doTerminate(
-              new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB)),
-              packet);
+          // process job pod timed out same way as job timed out, which is to
+          // terminate current fiber
+          return onFailureNoRetry(packet, callResponse);
         } else {
           addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }
+      }
+
+      @Override
+      protected Throwable createTerminationException(Packet packet,
+          CallResponse<V1PodList> callResponse) {
+        return new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB));
       }
 
       private boolean isJobPodTimedOut(V1Pod jobPod) {

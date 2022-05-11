@@ -42,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.TuningParameters;
@@ -995,6 +996,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(asFailedJobPodWithImagePullError(createIntrospectorJobPod(), imagePullError));
   }
 
+  private void defineFailedIntrospectionWithDeadlineExceeded() {
+    testSupport.defineResources(createIntrospectorJob());
+    testSupport.defineResources(asFailedJobPodWithDeadlineExceeded(createIntrospectorJobPod()));
+  }
+
   private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
     List<V1ContainerStatus> statuses = List.of(createImagePullContainerStatus(imagePullError));
     return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
@@ -1003,6 +1009,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private V1ContainerStatus createImagePullContainerStatus(String imagePullError) {
     return new V1ContainerStatus().state(
           new V1ContainerState().waiting(new V1ContainerStateWaiting().reason(imagePullError)));
+  }
+
+  private V1Pod asFailedJobPodWithDeadlineExceeded(V1Pod introspectorJobPod) {
+    return introspectorJobPod.status(new V1PodStatus().reason("DeadlineExceeded"));
   }
 
   private V1Pod createIntrospectorJobPod() {
@@ -1018,6 +1028,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return job;
   }
 
+  private V1Job asFailedJobWithDeadlineExceeded(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+            .reason("DeadlineExceeded")));
+    return job;
+  }
+
   @Test
   void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
@@ -1030,6 +1047,20 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
     assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenPreviousFailedJobWithDeadlineExceeded_terminateWithException() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithDeadlineExceeded();
+    testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
   private V1Job affectedJob;
