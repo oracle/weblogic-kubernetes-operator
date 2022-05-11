@@ -307,6 +307,8 @@ class ItSystemResOverrides {
 
   //create a standard WebLogic domain.
   private void createDomain() {
+    
+    String uniquePath = "/shared/" + domainNamespace + "/domains";
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -322,7 +324,7 @@ class ItSystemResOverrides {
         -> File.createTempFile("domain", ".properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_path", uniquePath);
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
@@ -334,7 +336,7 @@ class ItSystemResOverrides {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("domain_logs", uniquePath + "/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
         -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -359,7 +361,7 @@ class ItSystemResOverrides {
             .configuration(new Configuration()
                 .overrideDistributionStrategy("DYNAMIC"))
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+            .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
@@ -371,7 +373,7 @@ class ItSystemResOverrides {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
