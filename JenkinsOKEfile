@@ -229,7 +229,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         FSS_DIR="/oketest"
-                        AVAILABILITY_DOMAIN_NAME="VPGL:PHX-AD-1"
+                        AVAILABILITY_DOMAIN_NAME="VPGL\:PHX-AD-1"
                         VCN_CIDR_PREFIX="10.1"
                         OKE_CLUSTER_NAME="mtcluster"
                         NODE_SHAPE="VM.Standard2.4"
@@ -295,7 +295,8 @@ pipeline {
                         k8s.version=v${KUBE_VERSION}
                         nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
                         terraform.installdir=${WORKSPACE}/terraform/terraforminstall
-                        EOF
+                        availability.domain=${AVAILABILITY_DOMAIN_NAME}
+EOF
 
                         ##################
 
@@ -446,7 +447,7 @@ pipeline {
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
-                                        availability_domain = "VPGL:PHX-AD-1"
+                                        availability_domain = "VPGL\:PHX-AD-1"
 
                                     }
                                     steps {

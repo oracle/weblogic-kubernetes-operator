@@ -14,4 +14,5 @@ nodepool.imagename=Oracle-Linux-7.4
 k8s.version=v1.10.11
 nodepool.ssh.pubkey=ssh-rsa AAAAB3NzaC1yc2EAAAAQABAAABAQC9FSfGdjjL+EZre2p5yLTAgtLsnp49AUVX1yY9V8guaXHol6UkvJWnyFHhL7s0qvWj2M2BYo6WAROVc0/054UFtmbd9zb2oZtGVk82VbT6aS74cMlqlY91H/rt9/t51Om9Sp5AvbJEzN0mkI4ndeG/5p12AUyg9m5XOdkgI2n4J8KFnDAI33YSGjxXb7UrkWSGl6XZBGUdeaExo3t2Ow8Kpl9T0Tq19qI+IncOecsCFj1tbM5voD8IWE2l0SW7V6oIqFJDMecq4IZusXdO+bPc+TKak7g82RUZd8PARpvYB5/7EOfVadxsXGRirGAKPjlXDuhwJYVRj1+IjZ+5Suxz mkogan@slc13kef
 terraform.installdir=/scratch/mkogan/myterraformtest
+availability.domain=VPGL\:PHX-AD-1
 
