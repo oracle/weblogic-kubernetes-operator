@@ -457,7 +457,6 @@
                   **/ItIntrospectVersion,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
-                  **/ItManageNameSpace,
                   **/ItManagedCoherence,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiCustomSslStore,
@@ -476,8 +475,7 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples,
-                  **/ItUsabilityOperatorHelmChart
+                  **/ItMonitoringExporterSamples
                 </includes-failsafe>
             </properties>
         </profile>
@@ -520,7 +518,6 @@
                   **/ItIntrospectVersion,
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
-                  **/ItManageNameSpace,
                   **/ItManagedCoherence,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiCustomSslStore,
@@ -539,8 +536,7 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples,
-                  **/ItUsabilityOperatorHelmChart            
+                  **/ItMonitoringExporterSamples
                 </includes-failsafe>
           </properties>
         </profile>
