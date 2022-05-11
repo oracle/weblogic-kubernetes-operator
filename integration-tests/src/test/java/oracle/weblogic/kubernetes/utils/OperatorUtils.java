@@ -292,6 +292,7 @@ public class OperatorUtils {
         "INFO",
         -1,
         -1,
+        false,
         domainNamespace);
   }
 
@@ -386,6 +387,7 @@ public class OperatorUtils {
         loggingLevel,
         domainPresenceFailureRetryMaxCount,
         domainPresenceFailureRetrySeconds,
+        false,
         domainNamespace);
   }
 
@@ -397,7 +399,9 @@ public class OperatorUtils {
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
+   * @param elasticSearchHost Elasticsearchhost 
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param createLogStashConfigMap boolean indicating creating logstash
    * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
    *                                  how to select the set of namespaces that it will manage
    * @param domainNamespaceSelector the label or expression value to manage namespaces
@@ -405,6 +409,7 @@ public class OperatorUtils {
    * @param loggingLevel logging level of operator
    * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
    * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param webhookOnly boolean indicating install webHookOnly operator 
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -422,6 +427,7 @@ public class OperatorUtils {
                                                         String loggingLevel,
                                                         int domainPresenceFailureRetryMaxCount,
                                                         int domainPresenceFailureRetrySeconds,
+                                                        boolean webhookOnly,
                                                         String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -455,6 +461,10 @@ public class OperatorUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
+    
+    if (webhookOnly) {
+      opParams.webHookOnly(webhookOnly);
+    }
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
