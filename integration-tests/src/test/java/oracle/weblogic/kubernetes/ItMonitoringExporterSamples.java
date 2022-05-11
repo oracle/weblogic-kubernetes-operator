@@ -305,40 +305,11 @@ class ItMonitoringExporterSamples {
         String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
-        checkPromGrafanaLatestVersion();
       }
     } finally {
       shutdownDomain(domain1Namespace, domain1Uid);
       shutdownDomain(domain2Namespace, domain2Uid);
     }
-  }
-
-  /**
-   * Test covers the following use cases.
-   * Create Prometheus, Grafana from latest version of helm chart
-   * verify access to monitoring exporter WebLogic metrics via nginx
-   * check WebLogic metrics via Prometheus
-   */
-  private void checkPromGrafanaLatestVersion() throws Exception {
-    //uninstall prometheus and grafana if running
-    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
-    promHelmParams = null;
-    grafanaHelmParams = null;
-    prometheusDomainRegexValue = null;
-
-    installPrometheusGrafana(null, null,
-        domain2Namespace,
-        domain2Uid);
-
-    if (!OKD) {
-      //verify access to Monitoring Exporter
-      logger.info("verify http access");
-      verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
-    }
-    //verify metrics via prometheus
-    String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",hostPortPrometheus);
   }
 
   private void fireAlert() throws ApiException {
