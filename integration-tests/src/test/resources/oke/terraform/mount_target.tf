@@ -3,9 +3,6 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
 
-variable "availability_domain" {
-}
-
 resource "oci_file_storage_mount_target" "oketest_mount_target" {
   #Required
   #availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[1]["name"]
