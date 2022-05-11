@@ -13,7 +13,7 @@ prop() {
 }
 
 cleanupLB() {
-  echo 'Clean up left over LB'
+  echo 'Clean up left over LB $compartment_ocid ${clusterName}_vcn'
   myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
   declare -a vcnidarray
   vcnidarray=(${myvcn_id// /})
@@ -56,6 +56,6 @@ export KUBECONFIG=${terraform_script_dir}/${clusterName}_kubeconfig
 export PATH=${terraform_script_dir}/terraforminstall:$PATH
 echo 'Deleting cluster'
 #check and cleanup any left over running Load Balancers
-cleanupLB Subnet01
-cleanupLB Subnet02
+#cleanupLB Subnet01
+#cleanupLB Subnet02
 deleteOKE
