@@ -81,9 +81,11 @@ public class WebhookHelper {
   static class ValidatingWebhookConfigurationContext {
     private final Step conflictStep;
     private final V1ValidatingWebhookConfiguration model;
+    private final Certificates certificates;
 
     ValidatingWebhookConfigurationContext(Step conflictStep, Certificates certificates) {
       this.conflictStep = conflictStep;
+      this.certificates = certificates;
       this.model = createModel(certificates);
     }
 
@@ -186,6 +188,7 @@ public class WebhookHelper {
 
       private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
         setServiceNamespace(existing);
+        setCaBundle(existing);
         return existing;
       }
 
@@ -193,11 +196,21 @@ public class WebhookHelper {
         Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
       }
 
+      private void setCaBundle(V1ValidatingWebhookConfiguration existing) {
+        Optional.ofNullable(getClientConfig(existing)).ifPresent(s -> s.caBundle(getCaBundle(certificates)));
+      }
+
       private AdmissionregistrationV1ServiceReference getServiceFromConfig(
+          V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.ofNullable(getClientConfig(webhookConfig))
+            .map(AdmissionregistrationV1WebhookClientConfig::getService)
+            .orElse(null);
+      }
+
+      private AdmissionregistrationV1WebhookClientConfig getClientConfig(
           V1ValidatingWebhookConfiguration webhookConfig) {
         return Optional.ofNullable(getFirstWebhook(webhookConfig))
             .map(V1ValidatingWebhook::getClientConfig)
-            .map(AdmissionregistrationV1WebhookClientConfig::getService)
             .orElse(null);
       }
 

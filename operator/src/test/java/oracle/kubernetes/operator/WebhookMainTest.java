@@ -298,9 +298,13 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreatedWithClientServiceDifferentNamespaceAfterFailure401_replaceIt() {
+    byte[] caBundle = new byte[] { (byte)0xe0, 0x4f, (byte)0xd0,
+        0x20, (byte)0xea, 0x3a, 0x69, 0x10, (byte)0xa2, (byte)0xd8, 0x08, 0x00, 0x2b,
+        0x30, 0x30, (byte)0x9d };
     V1ValidatingWebhookConfiguration resource
         = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
         .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
+            .caBundle(caBundle)
             .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
     testSupport.defineResources(resource);
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 401);
@@ -313,6 +317,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
 
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getCaBundle(generatedConfiguration), not(equalTo(caBundle)));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
   }
 
@@ -410,6 +415,13 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
         .map(AdmissionregistrationV1WebhookClientConfig::getService)
         .map(AdmissionregistrationV1ServiceReference::getName)
         .orElse("");
+  }
+
+  @Nullable
+  private byte[] getCaBundle(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+        .map(AdmissionregistrationV1WebhookClientConfig::getCaBundle)
+        .orElse(null);
   }
 
   V1ValidatingWebhookConfiguration getCreatedValidatingWebhookConfiguration() {
