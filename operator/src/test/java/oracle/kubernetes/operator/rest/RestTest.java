@@ -52,6 +52,7 @@ import org.junit.jupiter.api.Test;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
@@ -90,7 +91,6 @@ class RestTest extends JerseyTest {
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
-  private static final Integer SUCCESS_CODE = 200;
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -384,7 +384,7 @@ class RestTest extends JerseyTest {
     AdmissionResponse expectedResponse = new AdmissionResponse();
     expectedResponse.setUid(RESPONSE_UID);
     expectedResponse.setAllowed(true);
-    expectedResponse.setStatus(new Status().code(SUCCESS_CODE));
+    expectedResponse.setStatus(new Status().code(HTTP_OK));
     AdmissionReview expectedReview = new AdmissionReview();
     expectedReview.setResponse(expectedResponse);
     expectedReview.setApiVersion("admission.k8s.io/v1");
@@ -423,14 +423,14 @@ class RestTest extends JerseyTest {
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
     assertThat(getAllowed(responseReview), equalTo(true));
-    assertThat(getResultCode(responseReview), equalTo(SUCCESS_CODE));
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
     assertThat(getUid(responseReview), equalTo(RESPONSE_UID));
   }
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
     Status expectedStatus = new Status();
-    expectedStatus.setCode(SUCCESS_CODE);
+    expectedStatus.setCode(HTTP_OK);
     expectedStatus.setMessage(null);
     admissionReview.request(null);
     String admissionReviewString = writeAdmissionReview(admissionReview);
@@ -455,7 +455,7 @@ class RestTest extends JerseyTest {
 
   private int getResultCode(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse(SUCCESS_CODE);
+        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse(HTTP_OK);
   }
 
   private String getUid(AdmissionReview admissionReview) {

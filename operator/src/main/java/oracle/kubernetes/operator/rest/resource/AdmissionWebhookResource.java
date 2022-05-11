@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.Status;
 
+import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
@@ -29,7 +30,6 @@ import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionRe
 public class AdmissionWebhookResource extends BaseResource {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
-  private static final Integer SUCCESS_CODE = 200;
 
   /** Construct a AdmissionWebhookResource. */
   public AdmissionWebhookResource() {
@@ -47,7 +47,7 @@ public class AdmissionWebhookResource extends BaseResource {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
-    LOGGER.info("Validating webhook is invoked");
+    LOGGER.fine("Validating webhook is invoked");
     LOGGER.entering(href());
 
     AdmissionReview admissionReview = null;
@@ -92,7 +92,7 @@ public class AdmissionWebhookResource extends BaseResource {
     return new AdmissionResponse()
         .uid(getUid(request))
         .allowed(validate(request))
-        .status(new Status().code(SUCCESS_CODE));
+        .status(new Status().code(HTTP_OK));
   }
 
   private boolean validate(AdmissionRequest request) {
