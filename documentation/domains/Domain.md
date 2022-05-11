@@ -57,7 +57,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `conditions` | Array of [Domain Condition](#domain-condition) | Current service state of the domain. |
 | `failedIntrospectionUid` | string | Unique ID of the last failed introspection job. |
 | `initialFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain started automatic retries. |
-| `introspectJobFailureCount` | number | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `lastFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain last experienced a Severe failure. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |

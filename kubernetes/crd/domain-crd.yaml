@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 4424293c3c408cb5c457be82ec8e36d1d2c0b2b1b4eb85dce435435af3ed121f
+    weblogic.sha256: f0dca33a101d04ac261a8734a5e3fa543871e6970b7ae91f1513d156caf6e4e5
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -12613,15 +12613,6 @@ spec:
                       description: Current state of this WebLogic Server instance.
                       type: string
                 type: array
-              introspectJobFailureCount:
-                description: Non-zero if the introspector job fails for any reason.
-                  You can configure an introspector job retry limit for jobs that
-                  log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
-                  (default 5). You cannot configure a limit for other types of failures,
-                  such as a Domain resource reference to an unknown secret name; in
-                  which case, the retries are unlimited.
-                minimum: 0.0
-                type: number
               replicas:
                 description: The number of running cluster member Managed Servers
                   in the WebLogic cluster if there is exactly one cluster defined

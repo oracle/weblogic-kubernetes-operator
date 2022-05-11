@@ -164,6 +164,15 @@ class SchemaConversionUtilsTest {
           hasJsonPath("$.status.conditions[?(@.type=='Failed')].message", contains("whoops")));
   }
 
+  @Test
+  void whenOldDomainHasIntrospectionFailureCount_removeIt() {
+    getStatus().put("introspectJobFailureCount", "3");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.status.introspectJobFailureCount"));
+  }
+
   @ParameterizedTest
   @CsvSource({"true,, Image", "false,, PersistentVolume", "true, FromModel, FromModel"})
   void whenOldDomainHasDomainHomeInImageBoolean_convertToDomainSourceType(

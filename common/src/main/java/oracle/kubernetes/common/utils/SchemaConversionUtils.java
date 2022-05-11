@@ -81,6 +81,7 @@ public class SchemaConversionUtils {
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     removeObsoleteConditionsFromDomainStatus(domain);
+    removeObsoleteFieldsFromDomainStatus(domain);
     removeUnsupportedDomainStatusConditionReasons(domain);
     convertDomainHomeInImageToDomainHomeSourceType(domain);
     moveConfigOverrides(domain);
@@ -145,6 +146,15 @@ public class SchemaConversionUtils {
 
   private void removeUnsupportedDomainStatusConditionReasons(Map<String, Object> domain) {
     getStatusConditions(domain).forEach(this::removeReasonIfUnsupported);
+  }
+
+  private void removeObsoleteFieldsFromDomainStatus(Map<String, Object> domain) {
+    Optional.ofNullable(domain.get("status")).ifPresent(this::removeObsoleteStatusFields);
+  }
+
+  private void removeObsoleteStatusFields(@Nonnull Object domainStatus) {
+    Map<String,Object> statusMap = (Map<String, Object>) domainStatus;
+    statusMap.remove("introspectJobFailureCount");
   }
 
   private void removeReasonIfUnsupported(Map<String, String> condition) {

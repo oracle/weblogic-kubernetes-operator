@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -99,9 +100,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
-import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -294,6 +292,36 @@ class DomainProcessorTest {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpec_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecButProcessingAborted_dontRunUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainChangedSpecAndProcessingAbortedButInspectionVersionChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withIntrospectVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
@@ -922,14 +950,6 @@ class DomainProcessorTest {
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
   }
 
-
-  @Test
-  void whenIntrospectionJobTimedOut_failureCountIncremented() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
-  }
-
   private void runMakeRight_withIntrospectionTimeout() throws JsonProcessingException {
     consoleHandlerMemento.ignoringLoggedExceptions(JobWatcher.DeadlineExceededException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
@@ -948,30 +968,13 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
+  void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
     runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
-  }
-
-  @Test
-  void whenIntrospectionJobTimedOut_createFailureWithAbortedReason() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(ABORTED));
-  }
-
-  @Test
-  void whenIntrospectionJobTimedOut_activeDeadlineIncremented() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+    assertThat(
+        Optional.ofNullable(getJob().getSpec()).map(V1JobSpec::getActiveDeadlineSeconds).orElse(0L), is(240L));
   }
 
   @Test

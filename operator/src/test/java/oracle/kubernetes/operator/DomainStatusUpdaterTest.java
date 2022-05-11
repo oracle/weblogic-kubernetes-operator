@@ -54,6 +54,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERN
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -66,6 +67,7 @@ class DomainStatusUpdaterTest {
   private static final String NAME = UID;
   private static final String ADMIN = "admin";
   public static final String CLUSTER = "cluster1";
+  private static final String JOB_UID = "JOB";
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
@@ -74,7 +76,7 @@ class DomainStatusUpdaterTest {
   private final String message = generator.getUniqueString();
   private final RuntimeException failure = new RuntimeException(message);
   private final String validationWarning = generator.getUniqueString();
-  private final V1Job job = createIntrospectorJob("JOB");
+  private final V1Job job = createIntrospectorJob(JOB_UID);
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
@@ -253,6 +255,13 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR, job));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
+  }
+
+  @Test
+  void afterIntrospectionFailure_statusIncludesFailedJobUid() {
+    testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR, job));
+
+    assertThat(getRecordedDomain().getOrCreateStatus().getFailedIntrospectionUid(), equalTo(JOB_UID));
   }
 
   @SuppressWarnings("SameParameterValue")
