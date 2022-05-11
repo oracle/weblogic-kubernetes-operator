@@ -385,13 +385,20 @@ class RestTest extends JerseyTest {
     expectedResponse.setUid(RESPONSE_UID);
     expectedResponse.setAllowed(true);
     expectedResponse.setStatus(new Status().code(SUCCESS_CODE));
+    AdmissionReview expectedReview = new AdmissionReview();
+    expectedReview.setResponse(expectedResponse);
+    expectedReview.setApiVersion("admission.k8s.io/v1");
+    expectedReview.setKind("AdmissionReview");
+
     String admissionReview = writeAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
+
     Response response = sendCValidatingWebhookRequest(admissionReview);
 
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
     AdmissionReview responseReview = readAdmissionReview(responseString);
 
     assertThat(responseReview.getResponse().equals(expectedResponse), equalTo(true));
+    assertThat(responseReview.equals(expectedReview), equalTo(true));
   }
 
   @Test
@@ -410,6 +417,7 @@ class RestTest extends JerseyTest {
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
     String admissionReviewString = writeAdmissionReview(admissionReview);
+
     Response response = sendCValidatingWebhookRequest(admissionReviewString);
 
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
@@ -426,6 +434,7 @@ class RestTest extends JerseyTest {
     expectedStatus.setMessage(null);
     admissionReview.request(null);
     String admissionReviewString = writeAdmissionReview(admissionReview);
+
     Response response = sendCValidatingWebhookRequest(admissionReviewString);
 
     String responseString = getAsString((ByteArrayInputStream)response.getEntity());
