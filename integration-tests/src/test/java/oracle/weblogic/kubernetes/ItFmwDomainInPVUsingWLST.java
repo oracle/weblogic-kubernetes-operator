@@ -228,6 +228,7 @@ class ItFmwDomainInPVUsingWLST {
         pvName, pvcName, jrfDomainNamespace);
 
     // create a domain custom resource configuration object
+    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains";
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -237,7 +238,7 @@ class ItFmwDomainInPVUsingWLST {
             .namespace(jrfDomainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome(uniquePath + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
@@ -249,7 +250,7 @@ class ItFmwDomainInPVUsingWLST {
                 .namespace(jrfDomainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome(uniquePath + "/logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod

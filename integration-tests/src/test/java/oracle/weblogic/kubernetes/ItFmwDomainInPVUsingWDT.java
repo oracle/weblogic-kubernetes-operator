@@ -78,8 +78,7 @@ class ItFmwDomainInPVUsingWDT {
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
-
-  private static final String DOMAINHOMEPREFIX = "/shared/domains/";
+  private static final String DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains";
 
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
