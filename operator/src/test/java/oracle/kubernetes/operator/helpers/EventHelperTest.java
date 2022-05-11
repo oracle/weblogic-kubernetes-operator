@@ -37,7 +37,35 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_ERROR_EVENT_SUGGESTION;
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CHANGED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_COMPLETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CREATED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_DELETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FAILED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FAILURE_RESOLVED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INCOMPLETE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_ERROR_EVENT_SUGGESTION;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_COMPLETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_STARTING_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UNAVAILABLE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION;
+import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.WILL_RETRY_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -45,28 +73,19 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.WILL_NOT_RETRY;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
@@ -76,12 +95,15 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespa
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.containsOneEventWithCount;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.EventTestUtils.getFormattedMessage;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.EventTestUtils.getNumberOfEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -120,6 +142,9 @@ class EventHelperTest {
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
   private TestUtils.ConsoleHandlerMemento loggerControl;
+  private static final String WILL_NOT_RETRY =
+      "The reported problem should be corrected, and the domain will not be retried "
+          + "until the domain resource is updated.";
 
   @BeforeEach
   void setUp() throws Exception {
@@ -174,9 +199,9 @@ class EventHelperTest {
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_FAILED_EVENT,
-            String.format(DOMAIN_FAILED_PATTERN, UID,
-                TOPOLOGY_MISMATCH_ERROR, "Test this failure",
-                EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION)), is(true));
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), "Test this failure",
+                getLocalizedString(TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION))), is(true));
   }
 
   @Test
@@ -203,9 +228,9 @@ class EventHelperTest {
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_FAILED_EVENT,
-            String.format(DOMAIN_FAILED_PATTERN, UID,
-                EventConstants.DOMAIN_INVALID_ERROR, "Test this failure",
-                EventConstants.DOMAIN_INVALID_ERROR_SUGGESTION)), is(true));
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(DOMAIN_INVALID_EVENT_ERROR), "Test this failure",
+                getLocalizedString(DOMAIN_INVALID_ERROR_EVENT_SUGGESTION))), is(true));
   }
 
   @Test
@@ -215,6 +240,70 @@ class EventHelperTest {
     testSupport.runSteps(createDomainInvalidFailureSteps("Test failure"));
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).inNamespace(NS).withCount(2));
+  }
+
+  @Test
+  void whenCreateEventStepCalledWithFailedReasonReplicasTooHigh_domainFailedEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test failure message")
+            .failureReason(DomainFailureReason.REPLICAS_TOO_HIGH))));
+
+    assertThat("Found DOMAIN_FAILED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_FAILED_EVENT,
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR), "Test failure message",
+                getLocalizedString(REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION))), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledWithFailedReasonAborted_domainFailedEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test failure message")
+            .failureReason(DomainFailureReason.ABORTED))));
+
+    assertThat("Found DOMAIN_FAILED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_FAILED_EVENT,
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(ABORTED_EVENT_ERROR), "Test failure message",
+                getFormattedMessage(ABORTED_ERROR_EVENT_SUGGESTION))), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledWithFailedReasonInternal_domainFailedEventCreatedWithExpectedMessage() {
+    domain.getStatus().setMessage("message from domain status");
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test failure message")
+            .failureReason(DomainFailureReason.INTERNAL))));
+
+    assertThat("Found DOMAIN_FAILED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_FAILED_EVENT,
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(INTERNAL_EVENT_ERROR), "Test failure message",
+                getFormattedMessage(WILL_RETRY_EVENT_SUGGESTION, "message from domain status"))), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledWithFailedReasonIntrospection_domainFailedEventCreatedWithExpectedMessage() {
+    domain.getStatus().setMessage("message from domain status");
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test failure message")
+            .failureReason(DomainFailureReason.INTROSPECTION))));
+
+    assertThat("Found DOMAIN_FAILED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_FAILED_EVENT,
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(INTROSPECTION_EVENT_ERROR), "Test failure message",
+                getFormattedMessage(WILL_RETRY_EVENT_SUGGESTION, "message from domain status"))), is(true));
   }
 
   @Test
@@ -232,7 +321,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_CREATED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_CREATED_EVENT,
-            String.format(DOMAIN_CREATED_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_CREATED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -250,7 +339,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_CHANGED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_CHANGED_EVENT,
-            String.format(DOMAIN_CHANGED_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_CHANGED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -275,13 +364,23 @@ class EventHelperTest {
   }
 
   @Test
+  void whenMakeRightCalled_withCompletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(DOMAIN_COMPLETE, null).execute();
+
+    assertThat("Found DOMAIN_COMPLETED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_COMPLETED_EVENT,
+            getFormattedMessage(DOMAIN_COMPLETED_EVENT_PATTERN, UID)), is(true));
+  }
+
+  @Test
   void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
     assertThat("Found DOMAIN_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_DELETED_EVENT,
-            String.format(DOMAIN_DELETED_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_DELETED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -309,8 +408,8 @@ class EventHelperTest {
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_FAILED_EVENT,
-            String.format(EventConstants.DOMAIN_FAILED_PATTERN, UID,
-                EventConstants.ABORTED_ERROR, "Test this failure", WILL_NOT_RETRY)),
+            getFormattedMessage(DOMAIN_FAILED_EVENT_PATTERN, UID,
+                getLocalizedString(ABORTED_EVENT_ERROR), "Test this failure", WILL_NOT_RETRY)),
         is(true));
   }
 
@@ -329,7 +428,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_AVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_AVAILABLE_EVENT,
-            String.format(DOMAIN_AVAILABLE_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_AVAILABLE_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -347,7 +446,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_UNAVAILABLE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_UNAVAILABLE_EVENT,
-            String.format(DOMAIN_UNAVAILABLE_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_UNAVAILABLE_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -365,7 +464,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_INCOMPLETE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_INCOMPLETE_EVENT,
-            String.format(DOMAIN_INCOMPLETE_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_INCOMPLETE_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -383,7 +482,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_FAILURE_RESOLVED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_FAILURE_RESOLVED_EVENT,
-            String.format(DOMAIN_FAILURE_RESOLVED_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_FAILURE_RESOLVED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -392,7 +491,16 @@ class EventHelperTest {
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.START_MANAGING_NAMESPACE_EVENT,
-            String.format(EventConstants.START_MANAGING_NAMESPACE_PATTERN, NS)), is(true));
+            getFormattedMessage(START_MANAGING_NAMESPACE_EVENT_PATTERN, NS)), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledForStOPManagingNamespace_eventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            EventConstants.STOP_MANAGING_NAMESPACE_EVENT,
+            getFormattedMessage(STOP_MANAGING_NAMESPACE_EVENT_PATTERN, NS)), is(true));
   }
 
   @Test
@@ -467,7 +575,7 @@ class EventHelperTest {
     assertThat("Found 1 NAMESPACE_WATCHING_STARTED_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT,
-            String.format(EventConstants.START_MANAGING_NAMESPACE_FAILED_PATTERN, NS)), is(true));
+            getFormattedMessage(START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN, NS)), is(true));
   }
 
   @Test
@@ -574,7 +682,16 @@ class EventHelperTest {
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN, NS)), is(true));
+            getFormattedMessage(NAMESPACE_WATCHING_STARTED_EVENT_PATTERN, NS)), is(true));
+  }
+
+  @Test
+  void whenCreateEventStepCalledForNSWatchStoppedEvent_eventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            NAMESPACE_WATCHING_STOPPED_EVENT,
+            getFormattedMessage(NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN, NS)), is(true));
   }
 
   @Test
@@ -724,7 +841,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_ROLL_STARTING event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_ROLL_STARTING_EVENT,
-            String.format(EventConstants.DOMAIN_ROLL_STARTING_PATTERN, UID, "abcde")), is(true));
+            getFormattedMessage(DOMAIN_ROLL_STARTING_EVENT_PATTERN, UID, "abcde")), is(true));
   }
 
   @Test
@@ -742,7 +859,7 @@ class EventHelperTest {
     assertThat("Found DOMAIN_ROLL_COMPLETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_ROLL_COMPLETED_EVENT,
-            String.format(EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN, UID)), is(true));
+            getFormattedMessage(DOMAIN_ROLL_COMPLETED_EVENT_PATTERN, UID)), is(true));
   }
 
   @Test
@@ -760,7 +877,7 @@ class EventHelperTest {
     assertThat("Found POD_CYCLE_STARTING event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             POD_CYCLE_STARTING_EVENT,
-            String.format(EventConstants.POD_CYCLE_STARTING_PATTERN, "12345", "abcde")), is(true));
+            getFormattedMessage(POD_CYCLE_STARTING_EVENT_PATTERN, "12345", "abcde")), is(true));
   }
 
   private void dispatchAddedEventWatches() {
