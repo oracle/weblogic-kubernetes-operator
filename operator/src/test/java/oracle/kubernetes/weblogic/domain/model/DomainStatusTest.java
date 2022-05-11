@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import org.hamcrest.Description;
@@ -17,9 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
-import static oracle.kubernetes.operator.DomainFailureReason.INTERNAL;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
@@ -29,6 +28,14 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.PROGRESSING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
@@ -40,8 +47,15 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+// todo if fatal error, append 'no retry' comment to message (will already be set to fatal)
+// if severe error, append 'retry until XXX' message
+// message is now always taken from first sorted condition(?)
+
 
 class DomainStatusTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final int RETRY_SECONDS = 100;
 
   private DomainStatus domainStatus;
   private final List<Memento> mementos = new ArrayList<>();
@@ -73,20 +87,27 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenAddedConditionIsFailedWithoutReason_rejectIt() {
+    final DomainCondition badCondition = new DomainCondition(FAILED).withStatus("True");
+
+    assertThrows(IllegalArgumentException.class, () -> domainStatus.addCondition(badCondition));
+  }
+
+  @Test
   void whenAddedConditionEqualsPresentCondition_ignoreIt() {
-    DomainCondition originalCondition = new DomainCondition(FAILED).withStatus("True");
+    DomainCondition originalCondition = new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH);
     domainStatus.addCondition(originalCondition);
 
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH));
 
     assertThat(domainStatus.getConditions().get(0), sameInstance(originalCondition));
   }
 
   @Test
   void whenAddedConditionIsFailed_retainOldFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("problem 1"));
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("problem 2"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("problem 1"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(SERVER_POD).withMessage("problem 2"));
 
     assertThat(domainStatus, hasCondition(FAILED).withMessageContaining("problem 1"));
     assertThat(domainStatus, hasCondition(FAILED).withMessageContaining("problem 2"));
@@ -124,7 +145,6 @@ class DomainStatusTest {
   @Test
   void whenAddedConditionIsAvailable_replaceOldAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("False"));
-
     domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
     assertThat(domainStatus, hasCondition(AVAILABLE).withStatus("True"));
@@ -133,7 +153,7 @@ class DomainStatusTest {
 
   @Test
   void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL));
 
     domainStatus.addCondition(new DomainCondition(CONFIG_CHANGES_PENDING_RESTART).withStatus("True"));
 
@@ -164,17 +184,23 @@ class DomainStatusTest {
   }
 
   @Test
-  void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("msg").withReason(INTERNAL));
+  void afterFailedConditionAdded_copyReasonToStatus() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("msg"));
 
-    assertThat(domainStatus.getMessage(), equalTo("msg"));
     assertThat(domainStatus.getReason(), equalTo("Internal"));
   }
 
   @Test
+  void afterFatalFailedConditionAdded_copyReasonToStatusWithRetryMessage() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("msg"));
+
+    assertThat(domainStatus.getMessage(), equalTo("msg"));
+  }
+
+  @Test
   void mayHaveMultipleFailedConditions_withDifferentReasonsOrMessages() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message2").withReason(KUBERNETES));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message1"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withMessage("message2"));
 
     assertThat(domainStatus.getConditions(), hasSize(2));
   }
@@ -182,10 +208,10 @@ class DomainStatusTest {
   @Test
   void duplicateFailuresAreIgnored() {
     final OffsetDateTime initialTime = SystemClock.now();
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message"));
 
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message"));
 
     assertThat(domainStatus.getConditions(), hasSize(1));
     assertThat(domainStatus.getConditions().get(0).getLastTransitionTime(), equalTo(initialTime));
@@ -193,9 +219,9 @@ class DomainStatusTest {
 
   @Test
   void failedConditionsAreListedBeforeNoneFailures() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message1"));
     domainStatus.addCondition(new DomainCondition(AVAILABLE).withMessage("message2"));
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message3").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message3"));
 
     assertThat(domainStatus.getConditions().get(0).getType(), equalTo(FAILED));
     assertThat(domainStatus.getConditions().get(1).getType(), equalTo(FAILED));
@@ -204,18 +230,18 @@ class DomainStatusTest {
 
   @Test
   void conditionsAddedLater_areListedBeforeEarlierConditions() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("message1"));
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(FAILED).withMessage("message2").withReason(KUBERNETES));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withMessage("message2"));
 
-    assertThat(domainStatus.getConditions().get(0).getReason(), equalTo("Kubernetes"));
+    assertThat(domainStatus.getConditions().get(0).getReason(), equalTo(KUBERNETES));
   }
 
   @Test
   void whenMultipleConditionsHaveReason_domainStatusReasonIsTakeFromTheMostRecentlyAdded() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("m1"));
     SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m2").withReason(KUBERNETES));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withMessage("m2"));
 
     assertThat(domainStatus.getReason(), equalTo("Kubernetes"));
     assertThat(domainStatus.getMessage(), equalTo("m2"));
@@ -241,7 +267,7 @@ class DomainStatusTest {
 
   @Test
   void whenConditionRemoved_setDomainStatusMessageFromFirstValidRemaining() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("m1"));
     domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("True").withMessage("Got 'em all"));
     domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
@@ -253,7 +279,7 @@ class DomainStatusTest {
 
   @Test
   void whenConditionRemovedAndNoOtherHasMessage_setDomainStatusMessageNull() {
-    domainStatus.addCondition(new DomainCondition(FAILED).withStatus("True").withMessage("m1").withReason(INTERNAL));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTERNAL).withMessage("m1"));
     domainStatus.addCondition(new DomainCondition(COMPLETED).withStatus("True"));
     domainStatus.addCondition(new DomainCondition(AVAILABLE).withStatus("True"));
 
@@ -261,6 +287,84 @@ class DomainStatusTest {
 
     assertThat(domainStatus.getMessage(), nullValue());
     assertThat(domainStatus.getReason(), nullValue());
+  }
+
+  @Test
+  void whenSevereFailureAddedToStatusWithNoPrexistingFailure_defineInitialAndLastFailureTimes() {
+    final OffsetDateTime updateTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("No good"));
+
+    assertThat(domainStatus.getInitialFailureTime(), equalTo(updateTime));
+    assertThat(domainStatus.getLastFailureTime(), equalTo(updateTime));
+  }
+
+  @Test
+  void whenWarningFailureAddedToStatusWithNoPrexistingFailure_dontDefineInitialOrLastFailureTime() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessage("uh oh"));
+
+    assertThat(domainStatus.getInitialFailureTime(), nullValue());
+    assertThat(domainStatus.getLastFailureTime(), nullValue());
+  }
+
+  @Test
+  void whenANewSevereFailureIsAddedToStatusWithAPreexistingFailure_changeLastFailureTimeButNotInitialTime() {
+    final OffsetDateTime initialTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("No good"));
+
+    SystemClockTestSupport.increment();
+    final OffsetDateTime updateTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessage("A different one"));
+
+    assertThat(domainStatus.getInitialFailureTime(), equalTo(initialTime));
+    assertThat(domainStatus.getLastFailureTime(), equalTo(updateTime));
+  }
+
+  @Test
+  void whenAMatchingSevereFailureIsAddedToStatusWithAPreexistingFailure_changeLastFailureTimeButNotInitialTime() {
+    final OffsetDateTime initialTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("No good"));
+
+    SystemClockTestSupport.increment();
+    final OffsetDateTime updateTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("No good"));
+
+    assertThat(domainStatus.getInitialFailureTime(), equalTo(initialTime));
+    assertThat(domainStatus.getLastFailureTime(), equalTo(updateTime));
+  }
+
+  @Test
+  void whenLastSevereFailureRemoved_clearInitialAndLastFailureTimes() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("No good"));
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(REPLICAS_TOO_HIGH).withMessage("Oops"));
+
+    domainStatus.markFailuresForRemoval(DOMAIN_INVALID);
+    domainStatus.removeMarkedFailures();
+
+    assertThat(domainStatus.getInitialFailureTime(), nullValue());
+    assertThat(domainStatus.getLastFailureTime(), nullValue());
+  }
+
+  @Test
+  void whenNoFailures_numDeadlineIncreasesIsZero() {
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(0));
+  }
+
+  @Test
+  void afterFirstSevereFailure_numDeadlineIncreasesIsOne() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(1));
+  }
+
+  @Test
+  void afterMultipleSevereFailures_numDeadlineIncreasesIsCount() {
+    final int numFailures = 3;
+    for (int i = 0; i < numFailures; i++) {
+      domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+      SystemClockTestSupport.increment(RETRY_SECONDS);
+    }
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(numFailures));
   }
 
   @Test

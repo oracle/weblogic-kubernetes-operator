@@ -22,11 +22,11 @@ import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.ShutdownType;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +51,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainV2Test extends DomainTestBase {
 
+  private static final String SERVER2 = "ms2";
   private static final int DEFAULT_REPLICA_LIMIT = 0;
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
@@ -66,37 +67,30 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain);
   }
 
-  @Override
-  protected DomainConfigurator configureDomain(Domain domain) {
-    DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
-    commonConfigurator.configureAdminServer();
-    return commonConfigurator;
-  }
-
   @Test
   void whenDomainOnPV_logHomeDefaultsToEnabled() {
-    configureDomain(domain).withDomainHomeInImage(false);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
 
     assertThat(domain.isLogHomeEnabled(), is(true));
   }
 
   @Test
   void whenDomainOnPvAndLogHomeDisabled_returnOverride() {
-    configureDomain(domain).withDomainHomeInImage(false).withLogHomeEnabled(false);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME).withLogHomeEnabled(false);
 
     assertThat(domain.isLogHomeEnabled(), is(false));
   }
 
   @Test
   void whenDomainInImage_logHomeDefaultsToDisabled() {
-    configureDomain(domain).withDomainHomeInImage(true);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.IMAGE);
 
     assertThat(domain.isLogHomeEnabled(), is(false));
   }
 
   @Test
   void whenDomainInImageAndLogHomeEnabled_returnOverride() {
-    configureDomain(domain).withDomainHomeInImage(true).withLogHomeEnabled(true);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.IMAGE).withLogHomeEnabled(true);
 
     assertThat(domain.isLogHomeEnabled(), is(true));
   }
@@ -106,6 +100,13 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHome("/my/logs/");
 
     assertThat(domain.getLogHome(), equalTo("/my/logs/"));
+  }
+
+  @Test
+  void whenLogHomeLayoutSet_returnTheCorrectLayoutType() {
+    configureDomain(domain).withLogHomeLayout(LogHomeLayoutType.FLAT);
+
+    assertThat(domain.getLogHomeLayout(), equalTo(LogHomeLayoutType.FLAT));
   }
 
   @Test
@@ -759,7 +760,7 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
+  void whenDomainReadFromYaml_domainHomeSourceTypePersistentVolume() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PERSISTENT_VOLUME));
@@ -905,9 +906,8 @@ class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     AdminService adminService = domain.getAdminServerSpec().getAdminService();
 
-    assertThat(
-        adminService.getChannels(),
-        containsInAnyOrder(channelWith("default", 7001), channelWith("extra", 7011)));
+    assertThat(adminService.getChannels(), containsInAnyOrder(
+          List.of(channelWith("default", 7001), channelWith("extra", 7011))));
     assertThat(
         adminService.getLabels(), both(hasEntry("red", "maroon")).and(hasEntry("blue", "azure")));
     assertThat(
@@ -1503,13 +1503,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainHomeInImageSpecified_useValue() {
-    configureDomain(domain).withDomainHomeInImage(false);
-
-    assertThat(domain.getSpec().isDomainHomeInImage(), is(false));
-  }
-
-  @Test
   void whenLogHomeNotSet_useDefault() {
     configureDomain(domain);
 
@@ -1553,14 +1546,14 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void domainHomeTest_standardHome2() {
-    configureDomain(domain).withDomainHomeInImage(false);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
 
     assertThat(domain.getDomainHome(), equalTo("/shared/domains/uid1"));
   }
 
   @Test
   void domainHomeTest_standardHome3() {
-    configureDomain(domain).withDomainHomeInImage(true);
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.IMAGE);
 
     assertThat(domain.getDomainHome(), equalTo("/u01/oracle/user_projects/domains"));
   }

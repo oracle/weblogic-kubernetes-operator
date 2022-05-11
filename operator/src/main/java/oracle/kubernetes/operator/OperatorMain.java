@@ -402,9 +402,8 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-
   /**
-   * Returns true if the operator is configured to use a single dedicated namespace for both itself any any domains.
+   * Returns true if the operator is configured to use a single dedicated namespace for both itself and any domains.
    * @return true, if selection strategy is dedicated mode.
    */
   public static boolean isDedicated() {

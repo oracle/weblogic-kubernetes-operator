@@ -33,8 +33,8 @@ they are correct when it starts.
 Note that the operator installation Helm chart
 creates ClusterRoles and ClusterRoleBindings
 when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableclusterrolebinding">}}) Helm chart configuration setting
-is set to `true`, and the chart creates Roles and RoleBindings
-when the setting is set to `false` (the default).
+is set to `true` (the default), and the chart creates Roles and RoleBindings
+when the setting is set to `false`.
 
 **References**
 
@@ -138,7 +138,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 Assuming that the operator was installed into the Kubernetes Namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
 
-**Note**: The operator names in table below represent the `<role-name>` from the [cluster names](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions) section.
+**Note**: The operator names in following table represent the `<role-name>` from the [cluster names](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions) section.
 
 | ClusterRoleBinding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |
@@ -157,7 +157,7 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       See [Namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}})
 [^3]: The binding is assigned to the operator `ServiceAccount`.
       In addition, the Kubernetes RBAC resources that the operator installation actually
-      set up will be adjusted based on the value of the `dedicated` mode.
+      sets up will be adjusted based on whether the operator is in dedicated mode.
       By default, the operator does not run in dedicated mode and those security resources
       are created as `ClusterRole` and `ClusterRoleBindings`.
       If the operator is running in dedicated mode,

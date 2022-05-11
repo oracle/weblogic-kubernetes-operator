@@ -34,10 +34,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -52,6 +52,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FA
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -196,7 +197,8 @@ class IntrospectorConfigMapTest {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         EventTestUtils.getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Nonnull

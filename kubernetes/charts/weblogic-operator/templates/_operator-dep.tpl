@@ -172,7 +172,7 @@ spec:
 ---
   {{ $chartVersion := .Chart.Version }}
   {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
-  {{- if or (ne $webhookExists "true") (.recreateWebhook) }}
+  {{- if and (ne $webhookExists "true") (not .operatorOnly) }}
     # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "v1"
     kind: "ConfigMap"
@@ -193,7 +193,7 @@ spec:
       labels:
         weblogic.webhookName: {{ .Release.Namespace | quote }}
         weblogic.webhookVersion: {{ .Chart.Version }}
-      {{- if .preserveWebhook }}
+      {{- if and (.preserveWebhook) (not .webhookOnly) }}
       annotations:
         "helm.sh/hook": pre-install
         "helm.sh/resource-policy": keep

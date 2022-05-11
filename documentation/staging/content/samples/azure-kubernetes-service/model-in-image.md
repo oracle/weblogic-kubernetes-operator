@@ -79,11 +79,7 @@ Install the operator. Ensure your current directory is `weblogic-kubernetes-oper
 ```
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1 \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
 ```
@@ -359,7 +355,7 @@ You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled
 
 AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
 
-Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
+Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps shown previously.  For simplicity, we use the resource group name as the name of the ACR instance.
 
 ```shell
 $ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_PERS_RESOURCE_GROUP --sku Basic --admin-enabled true
@@ -551,7 +547,7 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-res
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
-Modify the Domain YAML with your values.
+Modify the Domain YAML file with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|

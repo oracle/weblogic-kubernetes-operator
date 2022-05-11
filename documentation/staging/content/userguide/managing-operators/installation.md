@@ -9,6 +9,7 @@ description: "How to install, upgrade, and uninstall the operator."
 
 - [Introduction](#introduction)
 - [Install the operator](#install-the-operator)
+- [Install the WebLogic domain resource conversion webhook](#install-the-weblogic-domain-resource-conversion-webhook)
 - [Set up domain namespaces](#set-up-domain-namespaces)
 - [Update a running operator](#update-a-running-operator)
 - [Upgrade the operator](#upgrade-the-operator)
@@ -27,6 +28,15 @@ A Kubernetes cluster can host multiple operators, but no more than one per names
 {{% notice note %}}
 Before installing the operator, ensure that each of its prerequisite requirements is met.
 See [Prepare for installation]({{<relref "/userguide/managing-operators/preparation.md">}}).
+{{% /notice %}}
+
+{{% notice note %}}
+By default, installing the operator also configures a deployment and supporting resources for the
+[conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook">}})
+and deploys the conversion webhook.
+To skip the conversion webhook installation, set helm configuration value `operatorOnly` to `true` 
+in the `helm install` command.
+For more details, see [install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook">}}).
 {{% /notice %}}
 
 After meeting the [prerequisite requirements]({{<relref "/userguide/managing-operators/preparation.md">}}),
@@ -75,9 +85,6 @@ For example, using Helm 3.x, with the following settings:
 |Helm chart repo URL|`https://oracle.github.io/weblogic-kubernetes-operator/charts`|
 |Helm chart repo name|`weblogic-operator`|
 |`namespace`|`sample-weblogic-operator-ns`|
-|`enableClusterRoleBinding`|`true` (gives operator permission to automatically install the Domain CRD and to manage domain resources in any namespace)|
-|`domainNamespaceSelectionStrategy`|`LabelSelector` (limits operator to managing namespaces that match the specified label selector)|
-|`domainNamespaceLabelSelector`|`weblogic-operator\=enabled` (the label and expected value for the label)|
 
 ```text
 $ kubectl create namespace sample-weblogic-operator-ns
@@ -109,28 +116,6 @@ Install the operator using this format: `helm install <helm-release-name> <helm-
 $ helm install sample-weblogic-operator \
   weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
-  --wait
-```
-
-Or, instead of using the previous `helm install` command,
-create a YAML file named `custom-values.yaml` with the following contents:
-
-```
-enableClusterRoleBinding: true
-domainNamespaceSelectionStrategy: LabelSelector
-domainNamespaceLabelSelector: "weblogic-operator=enabled"
-```
-
-And call:
-
-```text
-$ helm install sample-weblogic-operator \
-  weblogic-operator/weblogic-operator \
-  --namespace sample-weblogic-operator-ns \
-  --values custom-values.yaml \
   --wait
 ```
 
@@ -154,6 +139,10 @@ see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting#c
   when specifying the selector in a YAML file.
   A backslash (`\`) is only required when specifying the selector on the command line using `--set`,
   as shown in the previous example.
+
+### Install the WebLogic domain resource conversion webhook
+By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled. If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
+For conversion webhook installation details, see [Install the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
 
 ### Set up domain namespaces
 
@@ -208,6 +197,13 @@ any running WebLogic Server instances created by the original operator. It
 is not necessary and such instances will continue to run without interruption
 during the upgrade.
 
+When you upgrade a 3.x operator to 4.0, it will also create a
+WebLogic Domain resource conversion webhook deployment and its associated resources in the same namespace. If the conversion
+webhook deployment already exists in some other namespace, then a new conversion webhook deployment is not created.
+The webhook automatically and transparently upgrades the existing Domains from the 3.x schema to the 4.0 schema.
+For more information, see
+[WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}).
+
 ### Uninstall the operator
 
 {{% notice note %}}
@@ -244,6 +240,21 @@ $ kubectl delete customresourcedefinition domains.weblogic.oracle
 Note that the Domain custom resource definition is shared.
 Do not delete the CRD if there are other operators in the same cluster
 or you have running domain resources.
+
+Beginning with operator version 4.0, uninstalling an operator also removes the conversion webhook
+ deployment and its associated resources by default.
+Therefore, if you have multiple operators running, then, by default, an uninstall
+of one operator will affect the other operators. The uninstall will not delete the conversion definition
+in the domain CRD so you will be unable to create domains using `weblogic.oracle/v8` schema.
+If you want to prevent the uninstall of an operator  
+from having these side effects, then use one of the following two options:
+- [Install the conversion webhook]({{< relref "userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}})
+ in a separate namespace using `webhookOnly=true` Helm configuration value.
+- Use the `preserveWebhook=true` Helm configuration value during operator installation with the `helm install` command.
+
+For more information, see
+[uninstall the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}})
+for the conversion webhook uninstallation details.
 
 ### Installation sample
 

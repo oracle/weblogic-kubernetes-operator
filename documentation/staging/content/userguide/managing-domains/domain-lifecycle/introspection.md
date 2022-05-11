@@ -38,7 +38,7 @@ Introspection automatically occurs when:
 
 #### Initiating introspection
 
-Sometimes, such as for the [use cases](#introspection-use-cases) described below, it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
+Sometimes, such as for the [use cases](#introspection-use-cases), it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
 
 Set `introspectVersion` to a new value.
 
@@ -76,7 +76,7 @@ When introspection fails, the operator will not start any WebLogic Server instan
 
 The introspection will be periodically retried and then will eventually timeout with the Domain `status` indicating the processing failed. To recover from a failed state, correct the underlying problem and update the `introspectVersion`.
 
-Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+Please review the details for diagnosing introspection failures related to [configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#debugging">}}) or [Model in Image domain home generation]({{<relref "/userguide/managing-domains/debugging.md">}}).
 
 {{% notice tip %}}
 The introspector log is mirrored to the Domain resource `spec.logHome` directory

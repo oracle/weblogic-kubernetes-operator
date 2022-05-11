@@ -96,7 +96,10 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
   serverOutOption=""
 else
   # setup ".out" location for a WL server
-  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
+  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
+  if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+    serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
+  fi
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
@@ -130,6 +133,13 @@ createFolder "${NODEMGR_LOG_HOME}" "This directory is used to hold node manager 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
 nodemgr_lck_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log.lck
+
+if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+  nodemgr_log_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs/${SERVER_NAME}_nodemanager.log
+  nodemgr_out_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.out
+  nodemgr_lck_file=${NODEMGR_LOG_HOME}/servers/${SERVER_NAME}/logs//${SERVER_NAME}_nodemanager.log.lck
+fi
+
 
 checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file nodemgr_lck_file
 

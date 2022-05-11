@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -21,11 +22,17 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -196,5 +203,28 @@ public class SecretUtils {
         },
         logger,
         "the default token to be available in default service account");
+  }
+
+  /**
+   * Create multiple secrets if base images repository and domain images repository are different.
+   *
+   * @param namespace namespace in which to create image repository secrets
+   * @return string array of secret names created
+   */
+  public static String[] createSecretsForImageRepos(String namespace) {
+    List<String> secrets = new ArrayList<>();
+    //create repo registry secret
+    if (!secretExists(OCIR_SECRET_NAME, namespace)) {
+      createOcirRepoSecret(namespace);
+    }
+    secrets.add(OCIR_SECRET_NAME);
+    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
+      //create base images repo secret
+      if (!secretExists(OCR_SECRET_NAME, namespace)) {
+        createOcrRepoSecret(namespace);
+      }
+      secrets.add(OCR_SECRET_NAME);
+    }
+    return secrets.toArray(String[]::new);
   }
 }

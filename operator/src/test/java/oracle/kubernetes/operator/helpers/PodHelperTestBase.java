@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -66,6 +67,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -100,19 +102,24 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME;
+import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
@@ -160,6 +167,7 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -180,6 +188,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase extends DomainValidationTestBase {
+
   public static final String EXPORTER_IMAGE = "monexp:latest";
   public static final String CUSTOM_WDT_INSTALL_SOURCE_HOME = "/myaux/weblogic-deploy";
   public static final String CUSTOM_MODEL_SOURCE_HOME = "/myaux/models";
@@ -283,18 +292,18 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME, sourceWDTInstallHome));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_MODEL_HOME, sourceModelHome));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_NAME, name));
     return envVars;
   }
 
   static List<V1EnvVar> getLegacyAuxiliaryImageEnvVariables(String image, String name, String command) {
     List<V1EnvVar> envVars = new ArrayList<>();
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, command));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_CONTAINER_NAME, COMPATIBILITY_MODE + name));
     return envVars;
   }
 
@@ -449,8 +458,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
 
-  protected DomainConfigurator defineFluentdConfiguration(boolean watchIntrospectorLog) {
-    return configureDomain()
+  protected void defineFluentdConfiguration(boolean watchIntrospectorLog) {
+    configureDomain()
             .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
                     null);
   }
@@ -684,6 +693,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.1 Mii Pod.
   abstract String getReferenceMiiPodYaml();
 
+  // Returns the YAML for a 3.3 Mii pod with aux image.
+  abstract String getReferenceMiiAuxImagePodYaml_3_3();
+
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
     useProductionHash();
@@ -694,6 +706,40 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
     assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
     assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWithAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiAuxImagePodYaml_3_3()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  private V1Container createInitContainer() {
+    return new V1Container().name("compatibility-mode-operator-aux-container1").image("model-in-image:WLS-AI-v1")
+        .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
+        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+        .addEnvItem(envItem(AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH))
+        .addEnvItem(envItem(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_COMMAND, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_IMAGE, "model-in-image:WLS-AI-v1"))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_NAME, "compatibility-mode-operator-aux-container1"))
+        .addVolumeMountsItem(new V1VolumeMount().mountPath(AUXILIARY_IMAGE_TARGET_PATH)
+            .name("aux-image-volume-auxiliaryimagevolume1"))
+        .addVolumeMountsItem(new V1VolumeMount().mountPath("/weblogic-operator/scripts")
+            .name("weblogic-scripts-cm-volume"));
   }
 
   @Test
@@ -903,6 +949,21 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenDomainHasAuxiliaryImagesWithResourceRequirements_createPodsWithAIInitContainerHavingResourceRequirements() {
+    getConfigurator()
+        .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+            .imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS)))
+        .withLimitRequirement("cpu", "250m")
+        .withRequestRequirement("memory", "1Gi");
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS, new V1ResourceRequirements()
+                .limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
+  @Test
   void whenDomainHasAIWithCustomSourceWdtInstallHome_createPodsWithAIInitContainerHavingCustomSourceWdtInstallHome() {
     getConfigurator()
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -1058,6 +1119,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                     serverName)));
   }
 
+  @Test
+  void whenDomainHasLegacyAuxiliaryImagesWithResources_createPodsWithAIInitContainerHavingResourceRequirements() {
+    Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
+    Map<String, Object> auxiliaryImage =
+        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS);
+
+    convertDomainWithLegacyAuxImages(
+        createLegacyDomainMap(
+            createDomainSpecMapWithResources(Collections.singletonList(auxiliaryImageVolume),
+                Collections.singletonList(auxiliaryImage), createResources())));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+        allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            "wdt-image:v1", V1Container.ImagePullPolicyEnum.ALWAYS,
+            AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND,
+            new V1ResourceRequirements().limits(Collections.singletonMap("cpu", new Quantity("250m")))
+                .requests(Collections.singletonMap("memory", new Quantity("1Gi"))))));
+  }
+
   static ImmutableMap<String, Object> createLegacyDomainMap(Map<String, Object> spec) {
     return ImmutableMap.of("apiVersion", "weblogic.oracle/v8",
             "kind", "Domain",
@@ -1073,6 +1153,19 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     spec.put("image", "image:latest");
     spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
     spec.put("serverPod", createServerPod(auxiliaryImages));
+    return spec;
+  }
+
+  static Map<String, Object> createDomainSpecMapWithResources(List<Object> auxiliaryImageVolumes,
+                                                              List<Object> auxiliaryImages,
+                                                              Map<String, Object> resources) {
+    Map<String, Object> spec = new LinkedHashMap<>();
+    spec.put("domainUID", "uid1");
+    spec.put("webLogicCredentialsSecret", createWebLogicCredentialsSecret());
+    spec.put("includeServerOutInPodLog", Boolean.TRUE);
+    spec.put("image", "image:latest");
+    spec.put("auxiliaryImageVolumes", auxiliaryImageVolumes);
+    spec.put("serverPod", createServerPod(auxiliaryImages, resources));
     return spec;
   }
 
@@ -1141,6 +1234,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @NotNull
+  private static Map<String, Object> createServerPod(List<Object> auxiliaryImages, Map<String, Object> resources) {
+    Map<String, Object> serverPod = new LinkedHashMap<>();
+    serverPod.put("auxiliaryImages", auxiliaryImages);
+    serverPod.put("resources", resources);
+    return serverPod;
+  }
+
+  @NotNull
   private static Map<String, Object> createWebLogicCredentialsSecret() {
     Map<String, Object> webLogicCredentialsSecret = new LinkedHashMap<>();
     webLogicCredentialsSecret.put("name", "webLogicCredentialsSecretName");
@@ -1176,6 +1277,13 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     auxiliaryImage.put("volume", volume);
     auxiliaryImage.put("command", command);
     return auxiliaryImage;
+  }
+
+  static Map<String, Object> createResources() {
+    Map<String, Object> resources = new LinkedHashMap<>();
+    resources.put("requests", Collections.singletonMap("memory", "1Gi"));
+    resources.put("limits", Collections.singletonMap("cpu", "250m"));
+    return resources;
   }
 
   static Map<String, Object> createAuxiliaryImageVolume(String mountPath) {
@@ -1426,7 +1534,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -1460,7 +1569,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   private ApiException createQuotaExceededException() {
@@ -1557,6 +1667,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", myLogHome));
+  }
+
+  @Test
+  void whenPodCreated_withLogHomeLayoutFlat_hasLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    domainPresenceInfo.getDomain().getSpec().setLogHomeLayout(LogHomeLayoutType.FLAT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString()));
+  }
+
+  @Test
+  void whenPodCreated_withoutLogHomeLayout_hasNoLogHomeLayoutEnvVariableSet() {
+    final String myLogHome = "/shared/mylogs/";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("LOG_HOME_LAYOUT",
+        LogHomeLayoutType.FLAT.toString())));
   }
 
   @Test
@@ -2109,7 +2238,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private boolean isKubernetesFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(KUBERNETES_ERROR);
+    return DOMAIN_FAILED_EVENT.equals(e.getReason())
+        && e.getMessage().contains(getLocalizedString(KUBERNETES_EVENT_ERROR));
   }
 
   @Test

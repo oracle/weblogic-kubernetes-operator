@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d571b889aad4762676ea7c9998ec9c88621048e88108bfd2a9b23b9032870ba3
+    weblogic.sha256: 4424293c3c408cb5c457be82ec8e36d1d2c0b2b1b4eb85dce435435af3ed121f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -277,8 +277,7 @@ spec:
                     type: object
                   secrets:
                     description: A list of names of the Secrets for WebLogic configuration
-                      overrides or model. If this field is specified, then the value
-                      of `spec.configOverrideSecrets` is ignored.
+                      overrides or model.
                     items:
                       type: string
                     type: array
@@ -322,8 +321,7 @@ spec:
                     type: object
                   overridesConfigMap:
                     description: The name of the ConfigMap for WebLogic configuration
-                      overrides. If this field is specified, then the value of `spec.configOverrides`
-                      is ignored.
+                      overrides.
                     type: string
                   introspectorJobActiveDeadlineSeconds:
                     description: The introspector job timeout value in seconds. If
@@ -331,13 +329,6 @@ spec:
                       value is ignored. Defaults to 120 seconds.
                     type: number
                 type: object
-              configOverrideSecrets:
-                description: Deprecated. Use `configuration.secrets` instead. Ignored
-                  if `configuration.secrets` is specified. A list of names of the
-                  Secrets for optional WebLogic configuration overrides.
-                items:
-                  type: string
-                type: array
               imagePullSecrets:
                 description: A list of image pull Secrets for the WebLogic Server
                   image.
@@ -524,6 +515,17 @@ spec:
                   if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID>
                   if `domainHomeSourceType` is FromModel.
                 type: string
+              logHomeLayout:
+                description: Control how log files under `logHome` are organized when
+                  logHome is set and `logHomeEnabled` is true. `FLAT` - all files
+                  directly in the `logHome` root directory. `BY_SERVERS` (default)
+                  - domain log files and `introspector.out` are at the `logHome` root
+                  level, all other files are organized under the respective server
+                  name logs directory  `logHome/servers/<server name>/logs`.
+                enum:
+                - FLAT
+                - BY_SERVERS
+                type: string
               domainHomeSourceType:
                 description: 'Domain home file system source type: Legal values: Image,
                   PersistentVolume, FromModel. Image indicates that the domain home
@@ -531,9 +533,7 @@ spec:
                   field. PersistentVolume indicates that the domain home file system
                   is located on a persistent volume. FromModel indicates that the
                   domain home file system will be created and managed by the operator
-                  based on a WDT domain model. If this field is specified, it overrides
-                  the value of `domainHomeInImage`. If both fields are unspecified,
-                  then `domainHomeSourceType` defaults to Image.'
+                  based on a WDT domain model. Defaults to Image.'
                 enum:
                 - Image
                 - PersistentVolume
@@ -3546,13 +3546,23 @@ spec:
                       WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
                     type: string
                 type: object
+              failureRetryIntervalSeconds:
+                description: The wait time in seconds before the start of the next
+                  retry after a Severe failure. Defaults to 120.
+                minimum: 0.0
+                type: number
               logHome:
                 description: The directory in a server's container in which to store
                   the domain, Node Manager, server logs, server *.out, introspector
                   .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
                   is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled`
-                  is false.
+                  is false.See also `domains.spec.logHomeLayout`.
                 type: string
+              failureRetryLimitMinutes:
+                description: The time in minutes before the operator will stop retrying
+                  Severe failures. Defaults to 1440.
+                minimum: 0.0
+                type: number
               includeServerOutInPodLog:
                 description: Specifies whether the server .out file will be included
                   in the Pod's log. Defaults to true.
@@ -6639,13 +6649,6 @@ spec:
                   field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
                 type: number
-              domainHomeInImage:
-                description: Deprecated. Use `domainHomeSourceType` instead. Ignored
-                  if `domainHomeSourceType` is specified. True indicates that the
-                  domain home file system is present in the container image specified
-                  by the image field. False indicates that the domain home file system
-                  is located on a persistent volume. Defaults to unset.
-                type: boolean
               serverStartPolicy:
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
@@ -6689,11 +6692,6 @@ spec:
                   storage of default and custom file stores. If `dataHome` is not
                   specified or its value is either not set or empty, then the data
                   storage directories are determined from the WebLogic domain configuration.
-                type: string
-              configOverrides:
-                description: Deprecated. Use `configuration.overridesConfigMap` instead.
-                  Ignored if `configuration.overridesConfigMap` is specified. The
-                  name of the ConfigMap for optional WebLogic configuration overrides.
                 type: string
               logHomeEnabled:
                 description: Specifies whether the log home folder is enabled. Defaults
@@ -12642,15 +12640,42 @@ spec:
                   will precede when the various servers or clusters are available.
                 format: date-time
                 type: string
+              initialFailureTime:
+                description: RFC 3339 date and time at which a currently failing domain
+                  started automatic retries.
+                format: date-time
+                type: string
+              lastFailureTime:
+                description: RFC 3339 date and time at which a currently failing domain
+                  last experienced a Severe failure.
+                format: date-time
+                type: string
               conditions:
                 description: Current service state of the domain.
                 items:
                   type: object
                   properties:
+                    severity:
+                      description: The severity of the failure. Can be Fatal, Severe
+                        or Warning.
+                      type: string
+                      enum:
+                      - Fatal
+                      - Severe
+                      - Warning
                     reason:
                       description: Unique, one-word, CamelCase reason for the condition's
                         last transition.
                       type: string
+                      enum:
+                      - DomainInvalid
+                      - Introspection
+                      - Kubernetes
+                      - ServerPod
+                      - ReplicasTooHigh
+                      - TopologyMismatch
+                      - Internal
+                      - Aborted
                     type:
                       description: The type of the condition. Valid types are Completed,
                         Available, Failed, Rolling, and ConfigChangesPendingRestart.

@@ -11,18 +11,24 @@ description: "General advice for debugging and monitoring the operator."
 - [Check Helm status](#check-helm-status)
 - [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
 - [Check the operator deployment](#check-the-operator-deployment)
-- [Check common issues](#check-common-issues)
-- [Check for events](#check-for-events)
+- [Check the conversion webhook deployment](#check-the-conversion-webhook-deployment)
+- [Check common operator issues](#check-common-operator-issues)
+- [Check for operator events](#check-for-operator-events)
+- [Check for conversion webhook events](#check-for-conversion-webhook-events)
 - [Check the operator log](#check-the-operator-log)
+- [Check the conversion webhook log](#check-the-conversion-webhook-log)
 - [Operator ConfigMap](#operator-configmap)
 - [Force the operator to restart](#force-the-operator-to-restart)
-- [Operator logging level](#operator-logging-level)
+- [Operator and conversion webhook logging level](#operator-and-conversion-webhook-logging-level)
+- [Troubleshooting the conversion webhook](#troubleshooting-the-conversion-webhook)
+  - [Ensure the conversion webhook is deployed and running](#ensure-the-conversion-webhook-is-deployed-and-running)
+  - [Check for runtime errors during conversion](#check-for-runtime-errors-during-conversion)
 - [See also](#see-also)
 
 ### Troubleshooting a particular domain resource
 
 After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
-If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/debugging.md">}}).
 
 ### Check Helm status
 
@@ -90,12 +96,52 @@ $ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
 ```
 A pod `describe` usefully includes any events that might be associated with the operator.
 
-### Check common issues
+### Check the conversion webhook deployment
+
+Verify that the conversion webhook is deployed and running by listing all deployments with the `weblogic.webhookName` label.
+
+```text
+$ kubectl get deployment --all-namespaces=true -l weblogic.webhookName
+```
+
+Check the conversion webhook deployment's detailed status:
+
+```text
+$ kubectl -n WH_NAMESPACE get deployments/weblogic-operator-webhook -o yaml
+```
+
+And/or:
+
+```text
+$ kubectl -n WH_NAMESPACE describe deployments/weblogic-operator-webhook
+```
+
+Each conversion webhook deployment will have a corresponding Kubernetes pod
+with a name that has a prefix that matches the deployment name,
+plus a unique suffix that changes every time the deployment restarts.
+
+To find conversion webhook pods and check their high-level status:
+
+```text
+$ kubectl get pods --all-namespaces=true -l weblogic.webhookName
+```
+
+To check the details for a given pod:
+
+```text
+$ kubectl -n WH_NAMESPACE get pod weblogic-operator-webhook-UNIQUESUFFIX -o yaml
+$ kubectl -n WH_NAMESPACE describe pod weblogic-operator-webhook-UNIQUESUFFIX
+```
+A pod `describe` usefully includes any events that might be associated with the conversion webhook.
+For information about installing and uninstalling the webhook, see
+[WebLogic Domain resource conversion webhook]({{< relref "/userguide/managing-operators/conversion-webhook.md" >}}).
+
+### Check common operator issues
 
 - See [Common mistakes and solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 - Check the [FAQs]({{<relref "/faq/_index.md">}}).
 
-### Check for events
+### Check for operator events
 
 To check for Kubernetes events that may have been logged to the operator's namespace:
 
@@ -103,12 +149,51 @@ To check for Kubernetes events that may have been logged to the operator's names
 $ kubectl -n OP_NAMESPACE get events --sort-by='.lastTimestamp'
 ```
 
-### Check the operator log
+### Check for conversion webhook events
 
-To check the operator deployment's log (especially look for `SEVERE` and `ERROR` level messages):
+To check for Kubernetes events that may have been logged to the conversion webhook's namespace:
 
 ```text
-$ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
+$ kubectl -n WH_NAMESPACE get events --sort-by='.lastTimestamp'
+```
+### Check the operator log
+
+Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
+
+
+- Find your operator.
+  ```shell
+  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+  ```
+  ```
+  NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+  sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
+
+  ```
+- Use `grep` on the operator log; look for `SEVERE` and `WARNING` level messages.
+
+  ```shell
+  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
+    | egrep -e "level...(SEVERE|WARNING)"
+  ```
+  ```json
+  {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
+  ```
+
+- You can filter out operator log messages specific to your `domainUID` by piping the previous logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
+
+  ```shell
+  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
+    | egrep -e "level...(SEVERE|WARNING)" \
+    | grep "domainUID...sample-domain1"
+  ```
+
+### Check the conversion webhook log
+
+To check the conversion webhook deployment's log (especially look for `SEVERE` and `ERROR` level messages):
+
+```text
+$ kubectl logs -n YOUR_CONVERSION_WEBHOOK_NS -c weblogic-operator-webhook deployments/weblogic-operator-webhook
 ```
 
 ### Operator ConfigMap
@@ -176,10 +261,10 @@ There are several approaches for restarting an operator:
 
      ```
 
-### Operator logging level
+### Operator and conversion webhook logging level
 
 {{% notice warning %}}
-It should rarely be necessary to change the operator to use a finer-grained logging level,
+It should rarely be necessary to change the operator and conversion webhook to use a finer-grained logging level,
 but, in rare situations, the operator support team may direct you to do so.
 If you change the logging level, then be aware that FINE or finer-grained logging levels
 can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
@@ -221,6 +306,47 @@ $ helm upgrade \
 
 For more information, see the
 [javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) documentation.
+
+### Troubleshooting the conversion webhook
+The following are some common mistakes and solutions for the conversion webhook.
+
+#### Ensure the conversion webhook is deployed and running
+Verify that the conversion webhook is deployed and running by following the steps in [check the conversion webhook deployment](#check-the-conversion-webhook-deployment).
+If it is not deployed, then you will see the following `conversion webhook not found`
+error when creating a Domain with `weblogic.oracle/v8` schema Domain resource.
+
+```
+Error from server: error when creating "k8s-domain.yaml": conversion webhook for weblogic.oracle/v9, Kind=Domain failed: Post "https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s": service "weblogic-operator-webhook-svc" not found
+```
+
+The conversion webhook can be deployed standalone or as part of an operator installation. Note that if the conversion webhook was installed as part
+of an operator installation, then it is implicitly removed by default when the operator is uninstalled.  If the conversion webhook is not deployed or running,
+then reinstall it by following the steps in
+[Installing the conversion webhook]({{<relref "/userguide/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
+
+If the conversion webhook Deployment is deployed but is not in the ready status, then you will see a `connection refused` error when creating a Domain using the `weblogic.oracle/v8` schema Domain resource.
+
+The POST URL in the error message has the name of the conversion webhook service and the namespace. For example, if the POST URL is `https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s`, then the service name is `weblogic-operator-webhook-svc` and the namespace is `sample-weblogic-operator-ns`. In this case, run the following commands to ensure that the Deployment is running and the webhook service exists in the `sample-weblogic-operator-ns` namespace.
+
+```
+$  kubectl get deployment weblogic-operator-webhook -n sample-weblogic-operator-ns
+NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+weblogic-operator-webhook   1/1     1            1           87m
+
+$  kubectl get service weblogic-operator-webhook-svc -n sample-weblogic-operator-ns
+NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+weblogic-operator-webhook-svc   ClusterIP   10.106.89.198   <none>        8084/TCP   88m
+```
+If the conversion webhook Deployment status is not ready, then [check the conversion webhook log]({{<relref "/userguide/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and the [conversion webhook events]({{<relref "/userguide/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. If the conversion webhook service doesn't exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.
+
+#### Check for runtime errors during conversion
+If you see a `WebLogic Domain custom resource conversion webhook failed` error when creating a Domain with a `weblogic.oracle/v8` schema domain resource, then [check the conversion webhook runtime Pod logs]({{<relref "/userguide/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and [check for the generated events]({{<relref "/userguide/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. Assuming that the conversion webhook is deployed in the `sample-weblogic-operator-ns` namespace, run the following commands to check for logs and events.
+
+```
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator-webhook deployments/weblogic-operator-webhook
+
+$ kubectl get events -n sample-weblogic-operator-ns
+```
 
 ### See also
 

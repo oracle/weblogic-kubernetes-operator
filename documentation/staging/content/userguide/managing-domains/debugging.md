@@ -1,7 +1,7 @@
 +++
 title = "Domain debugging"
 date = 2020-03-11T16:45:16-05:00
-weight = 60
+weight = 11
 pre = "<b> </b>"
 description = "Debugging a deployed domain."
 +++
@@ -14,7 +14,6 @@ Here are some suggestions for debugging problems with a domain after your Domain
  - [Check the Domain events](#check-the-domain-events)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
- - [Check the operator log](#check-the-operator-log)
  - [Check the docs](#check-the-docs)
  - [Check the operator](#check-the-operator)
 
@@ -36,14 +35,13 @@ For more information, see [Domain events]({{< relref "/userguide/managing-domain
 If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
 
 {{% notice tip %}}
-To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-helm">}}).
+To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see the [Configuration reference]({{< relref "/userguide/managing-operators/using-helm#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds" >}}).
 {{% /notice %}}
 
-For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
+For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`.
 
-  ```
-  $ # here we see a failed introspector job pod among the domain's pods:
-  ```
+Here we see a failed introspector job pod among the domain's pods:
+
    ```shell
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
   ```
@@ -54,29 +52,32 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   sample-domain1-managed-server1               1/1     Running   0          19h
   sample-domain1-managed-server2               1/1     Running   0          19h
 
-  $ # let's look at the job's describe
   ```
+- First, look at the output from the job's `describe` command.
+
   ```shell
   $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
   ```
-  ```
-  $ # now let's look at the job's pod describe, in particular look at its 'events'
-  ```
+
+- Now, look at the job's pod `describe` output; in particular look at its `events`.
+
   ```shell
   $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
   ```
-  ```
-  $ # finally let's look at job's pod's log
-  ```
+
+- Last, look at the job's pod's log.
+
   ```shell
   $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
   ```
-  ```
-  $ # alternative log command (will have same output as previous)
-  # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
 
-  A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
+
+- Here's an alternative log command that will have same output as shown in the previous command.
+  `$ kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k`
+
+A common reason for the introspector job to fail in a Model in Image domain is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
+ ```
   ...
 
   SEVERE Messages:
@@ -88,9 +89,9 @@ The introspector log is mirrored to the Domain resource `spec.logHome` directory
 when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 {{% /notice %}}
 
-{{% notice tip %}}
+
 If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.
-{{% /notice %}}
+
 
 ### Check the WebLogic Server pods
 
@@ -101,37 +102,6 @@ If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods hav
 If you are performing an online update to a running domain's WebLogic configuration,
 then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
 
-### Check the operator log
-
-Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
-
-  ```
-  $ # find your operator
-  ```
-  ```shell
-  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-  ```
-  ```
-  NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-  sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
-
-  $ # grep operator log for SEVERE and WARNING level messages
-  ```
-  ```shell
-  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
-    | egrep -e "level...(SEVERE|WARNING)"
-  ```
-  ```json
-  {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
-  ```
-
-  You can filter out operator log messages specific to your `domainUID` by piping the above logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
-
-  ```shell
-  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
-    | egrep -e "level...(SEVERE|WARNING)" \
-    | grep "domainUID...sample-domain1"
-  ```
 
 ### Check the docs
 

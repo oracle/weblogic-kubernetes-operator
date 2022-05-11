@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -45,11 +46,11 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
@@ -179,7 +180,7 @@ public class JobStepContext extends BasePodStepContext {
 
   List<V1Volume> getAdditionalVolumes() {
     List<V1Volume> volumes = getDomain().getSpec().getAdditionalVolumes();
-    getServerSpec().getAdditionalVolumes().stream().forEach(volume -> addVolumeIfMissing(volume, volumes));
+    getServerSpec().getAdditionalVolumes().forEach(volume -> addVolumeIfMissing(volume, volumes));
     return volumes;
   }
 
@@ -191,7 +192,7 @@ public class JobStepContext extends BasePodStepContext {
 
   List<V1VolumeMount> getAdditionalVolumeMounts() {
     List<V1VolumeMount> volumeMounts = getDomain().getSpec().getAdditionalVolumeMounts();
-    getServerSpec().getAdditionalVolumeMounts().stream().forEach(mount -> addVolumeMountIfMissing(mount, volumeMounts));
+    getServerSpec().getAdditionalVolumeMounts().forEach(mount -> addVolumeMountIfMissing(mount, volumeMounts));
     return volumeMounts;
   }
 
@@ -281,6 +282,10 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getEffectiveLogHome();
   }
 
+  LogHomeLayoutType getLogHomeLayout() {
+    return getDomain().getLogHomeLayout();
+  }
+
   String getIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
@@ -333,12 +338,12 @@ public class JobStepContext extends BasePodStepContext {
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
     return getIntrospectorJobActiveDeadlineSeconds(podTuning)
-          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * getIntrospectJobFailureCount());
+          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * getNumDeadlineIncreases());
   }
 
-  private Integer getIntrospectJobFailureCount() {
-    return Optional.ofNullable(info.getDomain().getStatus())
-            .map(DomainStatus::getIntrospectJobFailureCount).orElse(0);
+  @NotNull
+  private Long getNumDeadlineIncreases() {
+    return Math.min(5, info.getNumDeadlineIncreases());
   }
 
   V1JobSpec createJobSpec(TuningParameters tuningParameters) {
@@ -386,7 +391,8 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
-            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+            .map(c -> c.env(createEnv(c, tuningParameters)).resources(createResources()))
+            .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
 
@@ -399,7 +405,7 @@ public class JobStepContext extends BasePodStepContext {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
     if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
-      getEnvironmentVariables(tuningParameters).stream()
+      getEnvironmentVariables(tuningParameters)
               .forEach(envVar -> addIfMissing(initContainerEnvVars,
                   envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
     }
@@ -669,6 +675,9 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
+    if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
+      addEnvVar(vars, ServerEnvVars.LOG_HOME_LAYOUT, getLogHomeLayout().toString());
+    }
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
     addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
