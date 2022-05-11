@@ -15,13 +15,18 @@ import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 
-import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
 public class EventTestUtils {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   public static List<CoreV1Event> getEventsWithReason(@NotNull List<CoreV1Event> events, String reason) {
     return events.stream().filter(event -> reasonMatches(event, reason)).collect(Collectors.toList());
   }
@@ -290,10 +295,20 @@ public class EventTestUtils {
   }
 
   public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(ABORTED_ERROR);
+    return DOMAIN_FAILED_EVENT.equals(e.getReason())
+        && e.getMessage().contains(getLocalizedString(ABORTED_EVENT_ERROR));
   }
 
   public static boolean isDomainInternalFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(INTERNAL_ERROR);
+    return DOMAIN_FAILED_EVENT.equals(e.getReason())
+        && e.getMessage().contains(getLocalizedString(INTERNAL_EVENT_ERROR));
+  }
+
+  public static String getLocalizedString(String msgId) {
+    return LOGGER.formatMessage(msgId);
+  }
+
+  public static String getFormattedMessage(String msgId, Object... params) {
+    return LOGGER.formatMessage(msgId, params);
   }
 }
