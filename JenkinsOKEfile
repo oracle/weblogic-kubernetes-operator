@@ -440,7 +440,7 @@ pipeline {
 
                  stage('Setup OFSS') {
                                     environment {
-                                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
+                                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         oci_config_file = credentials("${wkobuild_oci_config}")
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
@@ -455,7 +455,7 @@ pipeline {
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${oci_config_file}
                                         export OCI_CLI_PROFILE=WKOBUILD
-                                        export PATH=${WORKSPACE}/terraform/terraforminstall:$PATH
+                                        export PATH=${runtime_path}
 
                                         echo "creating storage class to setup OFSS ..."
 
@@ -486,7 +486,7 @@ EOF
 
                 stage('Run integration tests') {
                     environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
                         OCR_USERNAME = credentials("${ocr_username_creds}")
