@@ -150,7 +150,7 @@ public class FmwUtils {
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome(domainInHomePrefix + "logs" + domainUid)
+            .logHome(domainInHomePrefix + "logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod

@@ -195,10 +195,11 @@ class ItFmwDomainInPVUsingWLST {
     java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
     logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
 
+    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/";
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
     p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainParentDir", uniquePath);
     p.setProperty("domainName", domainUid);
     p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
     p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
@@ -228,7 +229,6 @@ class ItFmwDomainInPVUsingWLST {
         pvName, pvcName, jrfDomainNamespace);
 
     // create a domain custom resource configuration object
-    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains";
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -250,7 +250,7 @@ class ItFmwDomainInPVUsingWLST {
                 .namespace(jrfDomainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome(uniquePath + "/logs/" + domainUid)
+            .logHome(uniquePath + "logs/" + domainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
