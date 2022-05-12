@@ -507,15 +507,10 @@ public class Kubernetes {
    * @return true if the service is found, otherwise false. If there is
    *              an error in querying the cluster, it returns false.
    */
-  public static boolean doesServiceExist(String serviceName, Map<String, String> label, String namespace) {
-    try {
-      if (getService(serviceName, label, namespace) != null) {
-        return true;
-      }
-    } catch (ApiException aie) {
-      //ignore
-    }
-    return false;
+  public static boolean doesServiceExist(
+      String serviceName, Map<String, String> label, String namespace)
+      throws ApiException {
+    return getService(serviceName, label, namespace) != null ? true : false;
   }
 
 
