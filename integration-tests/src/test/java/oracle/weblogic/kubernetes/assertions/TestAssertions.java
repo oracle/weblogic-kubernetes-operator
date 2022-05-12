@@ -58,6 +58,16 @@ public class TestAssertions {
   public static Callable<Boolean> operatorIsReady(String namespace) {
     return Operator.isReady(namespace);
   }
+  
+  /**
+   * Check if Operator is running.
+   *
+   * @param namespace in which is operator is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> operatorWebhookIsReady(String namespace) {
+    return Operator.isWebhookReady(namespace);
+  }  
 
   /**
    * Check if NGINX is running.
