@@ -13,7 +13,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -24,6 +24,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -76,6 +77,7 @@ class ItMultiDomainModels {
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
+    System.setProperty("WEBLOGIC_SLIM", Boolean.toString(WEBLOGIC_SLIM));
 
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -110,7 +112,7 @@ class ItMultiDomainModels {
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @Tag("gate")
-  @DisabledIf("java.lang.String.valueOf(WEBLOGIC_SLIM)")
+  @DisabledIfEnvironmentVariable(named = "WEBLOGIC_SLIM", matches = "true")
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
     Domain domain = createDomainBasedOnDomainType(domainType);
 
