@@ -22,13 +22,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -128,7 +129,7 @@ class IntrospectionLoggingTest {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", INTROSPECTION_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to", getLocalizedString(INTROSPECTION_EVENT_ERROR)));
   }
 
   @SuppressWarnings("SameParameterValue")

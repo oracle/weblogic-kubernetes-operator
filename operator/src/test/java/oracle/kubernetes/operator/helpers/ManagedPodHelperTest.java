@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_EXISTS;
@@ -50,7 +51,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -343,7 +344,8 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   @Test

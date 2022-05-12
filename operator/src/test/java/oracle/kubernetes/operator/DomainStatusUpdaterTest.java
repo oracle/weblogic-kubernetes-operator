@@ -31,18 +31,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_ROLL_START;
+import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
-import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -172,7 +173,8 @@ class DomainStatusUpdaterTest {
 
     testSupport.runSteps(createInternalFailureSteps(failure));
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
+        .withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -201,7 +203,8 @@ class DomainStatusUpdaterTest {
 
     testSupport.runSteps(createInternalFailureSteps(failure));
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -226,7 +229,8 @@ class DomainStatusUpdaterTest {
   void onFailedStep_emitEvent() {
     testSupport.runSteps(createInternalFailureSteps(failure));
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(INTERNAL_ERROR));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(INTERNAL_EVENT_ERROR)));
   }
 
   @Test
@@ -252,7 +256,8 @@ class DomainStatusUpdaterTest {
   void afterIntrospectionFailure_generateDomainAbortedEvent() {
     testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR, job));
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(ABORTED_ERROR));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(ABORTED_EVENT_ERROR)));
   }
 
   @SuppressWarnings("SameParameterValue")
