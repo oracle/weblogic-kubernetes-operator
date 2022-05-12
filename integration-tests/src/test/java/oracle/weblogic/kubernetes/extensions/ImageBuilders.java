@@ -604,7 +604,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             .chartDir(OPERATOR_CHART_DIR);
 
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, null, false, false, null, null, false, "INFO", -1, -1, true);
+        0, opHelmParams, null, false, false, null, null, false, "INFO", -1, -1, true, "default");
   }
 
 }
