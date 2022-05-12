@@ -84,9 +84,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -102,6 +104,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -368,6 +371,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       }
       logger.info("Uninstalling webhook only operator");
       uninstallOperator(opHelmParams);
+      deleteNamespace(webhookNamespace);
 
       logger.info("Cleanup images after all test suites are run");
       // delete all the images from local repo
@@ -595,15 +599,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
   
   HelmParams opHelmParams;
+  String webhookNamespace;
 
   private OperatorParams installWebHookOnlyOperator() {
+    webhookNamespace = assertDoesNotThrow(() -> createUniqueNamespace());
+    String webhookSa = webhookNamespace + "-sa";
     String opNamespace = "default";
     opHelmParams
         = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
 
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
+    return installAndVerifyOperator(webhookNamespace, webhookSa + "-sa", false,
         0, opHelmParams, null, false, false, null, null, false, "INFO", -1, -1, true, "default");
   }
 
