@@ -394,7 +394,7 @@ public class Kubernetes {
    * starts with weblogic-operator-webhook and decorated with label weblogic.webhookName:namespace.
    *
    * @param namespace in which to check for the pod existence
-   * @return true if pod exists and running otherwise false
+   * @return true if pod exists, running and ready otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isWebhookPodReady(String namespace) throws ApiException {

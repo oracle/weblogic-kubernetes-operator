@@ -60,9 +60,9 @@ public class TestAssertions {
   }
   
   /**
-   * Check if Operator is running.
+   * Check if Operator WebHook pod is running.
    *
-   * @param namespace in which is operator is running
+   * @param namespace in which is operator webhook pod is running
    * @return true if running false otherwise
    */
   public static Callable<Boolean> operatorWebhookIsReady(String namespace) {
