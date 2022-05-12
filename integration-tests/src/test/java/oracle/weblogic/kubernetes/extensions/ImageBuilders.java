@@ -609,7 +609,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             .namespace(webhookNamespace)
             .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(webhookNamespace, webhookSa, false, 0, opHelmParams, null,
-        false, false, null, null, false, "INFO", -1, -1, false, true, "default");
+        false, false, null, null, false, "INFO", -1, -1, true, "default");
   }
 
 }
