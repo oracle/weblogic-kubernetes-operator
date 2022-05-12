@@ -609,9 +609,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-
-    return installAndVerifyOperator(webhookNamespace, webhookSa + "-sa", false,
-        0, opHelmParams, null, false, false, null, null, false, "INFO", -1, -1, true, "default");
+    return installAndVerifyOperator(webhookNamespace, webhookSa, false, 0, opHelmParams, null,
+        false, false, null, null, false, "INFO", -1, -1, true, "default");
   }
 
 }
