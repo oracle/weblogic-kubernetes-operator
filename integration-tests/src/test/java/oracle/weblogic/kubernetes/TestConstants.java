@@ -61,6 +61,7 @@ public interface TestConstants {
 
   // TEST_IMAGES_REPO constants to which all test domain images are pushed into
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
+  public static final String TEST_IMAGES_REPO_REGISTRY = System.getenv("TEST_IMAGES_REPO");
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
   public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
@@ -86,7 +87,10 @@ public interface TestConstants {
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
   public static final String BASE_IMAGES_REPO = 
       getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
+  public static final String TEST_IMAGES_REPO =
+       getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
   public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
+  public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values

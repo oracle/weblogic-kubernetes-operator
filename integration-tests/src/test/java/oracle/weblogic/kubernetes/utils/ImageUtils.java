@@ -27,10 +27,14 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -445,9 +449,9 @@ public class ImageUtils {
    */
   public static void createOcirRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
-        BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_SECRET_NAME, namespace);
+    logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
+    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
+        TEST_IMAGES_REPO_REGISTRY, TEST_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**
