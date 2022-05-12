@@ -49,6 +49,7 @@ pipeline {
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
         kubeconfig_file = "${result_root}/kubeconfig"
+        oci_config_file = credentials("${wkobuild_oci_config}")
         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
@@ -59,9 +60,8 @@ pipeline {
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
-                        'oke-srg',
-                        'integration-tests',
                         'oke-cert',
+                        'integration-tests',
                         'toolkits-srg'
                 ]
         )
@@ -391,7 +391,7 @@ EOF
                             export OCI_CLI_CONFIG_FILE=${oci_config_file}
                             export OCI_CLI_PROFILE=WKOBUILD
                             echo 'Create a OKE cluster'
-                            #mkdir -p "${WORKSPACE}/terraform"
+
                             cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
                             cp -rf ${terraform_script_dir_name}/twoclusters/mount_target.tf ${WORKSPACE}/terraform/.
                             cp -rf ${terraform_script_dir_name}/twoclusters/file_system.tf ${WORKSPACE}/terraform/.
@@ -400,10 +400,6 @@ EOF
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
-                            #if ! sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform ; then
-                            #  sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
-                            #  echo "OKE cluster creation failed"
-                            #fi
                         '''
                     }
                 }
@@ -428,12 +424,8 @@ EOF
                                         export PATH=${runtime_path}
 
                                         echo "creating storage class to setup OFSS ..."
-
                                         echo "getting MountTarget ID"
-
-                                        echo "oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'"
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
-                                        echo "mount_target_id=  $mount_target_id"
 
                                         echo "Creating Storage Class to mount OFSS"
                                         cat << EOF | kubectl apply -f -
@@ -558,6 +550,9 @@ EOF
                             if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
                                 echo "integration-tests failed"
                             fi
+                            if [ "${MAVEN_PROFILE_NAME}" = "integration-test" ]; then
+                                mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
+                            fi
                         '''
                     }
                     post {
@@ -581,6 +576,8 @@ EOF
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}:/bin"
                         export KUBECONFIG=${kubeconfig_file}
+                        export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                        export OCI_CLI_PROFILE=WKOBUILD
                         echo 'Remove old OKE cluster (if any)...'
 
                         if [ -f "$OCI_PROP_FILE" ] && [ -f "${WORKSPACE}/terraform/oke.delete.sh" ]; then
