@@ -610,6 +610,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     Domain domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();
+    
+    String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
 
     // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
@@ -618,7 +620,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
-        "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+        uniquePath + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
     waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
@@ -632,7 +634,7 @@ class ItMultiDomainModelsWithLoadBalancer {
           String.format("found file %s in pod %s in namespace %s, expect not exist",
               customDataFile, managedServerPodName, domainNamespace));
 
-      String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
+      String defaultMSDataFile = uniquePath + "/servers/managed-server" + i
           + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
       waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
