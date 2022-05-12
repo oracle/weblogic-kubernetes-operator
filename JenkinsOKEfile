@@ -531,8 +531,8 @@ EOF
                             export OCIR_USERNAME=${OCIR_USERNAME}
                             export OCIR_PASSWORD=${OCIR_PASSWORD}
                             export OCIR_EMAIL=${OCIR_EMAIL}
-                            export DOMAIN_IMAGES_REPO = ${DOMAIN_IMAGES_REPO}
-                            export BASE_IMAGES_REPO = ${BASE_IMAGES_REPO}
+                            export DOMAIN_IMAGES_REPO=${DOMAIN_IMAGES_REPO}
+                            export BASE_IMAGES_REPO=${BASE_IMAGES_REPO}
                             export OKE_CLUSTER="true"
 
                             if [ ! -z "${http_proxy}" ]; then
