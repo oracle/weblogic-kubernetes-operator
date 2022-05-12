@@ -33,9 +33,6 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
-{{- if eq $scope.domainNamespaceSelectionStrategy "List" -}}
-{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
-{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-   if $scope.elkIntegrationEnabled -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
@@ -44,12 +41,17 @@
 {{-     $ignore := include "utils.verifyBoolean" (list $scope "createLogStashConfigMap") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
-{{- if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
-{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
-{{- end -}}
-{{- if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
-{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{- if not $scope.webhookOnly -}}
+{{-   $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{-   if eq $scope.domainNamespaceSelectionStrategy "List" -}}
+{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{-   end -}}
+{{-   if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
+{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{-   end -}}
+{{-   if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
+{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}
