@@ -434,11 +434,7 @@ EOF
                                         echo "oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'"
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
                                         echo "mount_target_id=  $mount_target_id"
-                                        mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
-                                        mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
 
-                                        export NFS_SERVER=$mt_private_ip
-                                        echo "Using NFS Server ${NFS_SERVER}"
                                         echo "Creating Storage Class to mount OFSS"
                                         cat << EOF | kubectl apply -f -
 kind: StorageClass
@@ -470,6 +466,8 @@ EOF
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
                         DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
                         DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
+                        compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
+                        availability_domain = "VPGL:PHX-AD-1"
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
@@ -492,7 +490,11 @@ EOF
                             fi
 
                             export K8S_NODEPORT_HOST=${NODE_IP}
+                            mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
+                            mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
 
+                            export NFS_SERVER=$mt_private_ip
+                            echo "Using NFS Server ${NFS_SERVER}"
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
 
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
