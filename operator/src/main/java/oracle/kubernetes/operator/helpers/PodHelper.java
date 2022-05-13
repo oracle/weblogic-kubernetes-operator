@@ -29,12 +29,12 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
@@ -254,7 +254,7 @@ public class PodHelper {
    *
    */
   public static boolean shouldRestartEvictedPod(V1Pod pod) {
-    return isEvicted(pod) && TuningParameters.getInstance().getPodTuning().restartEvictedPods;
+    return isEvicted(pod) && TuningParameters.getInstance().isRestartEvictedPods();
   }
 
   /**
@@ -426,14 +426,14 @@ public class PodHelper {
     }
 
     @Override
-    protected V1PodSpec createSpec(TuningParameters tuningParameters) {
-      return super.createSpec(tuningParameters).hostname(getPodName());
+    protected V1PodSpec createSpec() {
+      return super.createSpec().hostname(super.getPodName());
     }
 
     @Override
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars() {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      addStartupEnvVars(vars, tuningParameters);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -644,11 +644,11 @@ public class PodHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars() {
       List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
       List<V1EnvVar> vars = new ArrayList<>(envVars);
-      addStartupEnvVars(vars, tuningParameters);
+      addStartupEnvVars(vars);
       return vars;
     }
   }

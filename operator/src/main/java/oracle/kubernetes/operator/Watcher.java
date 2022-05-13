@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -189,20 +188,19 @@ abstract class Watcher<T> {
   }
 
   private int getWatchLifetime() {
-    return Optional.ofNullable(tuning).map(t -> t.watchLifetime).orElse(5);
+    return tuning.getWatchLifetime();
   }
 
   private int getWatchMinimumDelay() {
-    return Optional.ofNullable(tuning).map(t -> t.watchMinimumDelay).orElse(1);
+    return tuning.getWatchMinimumDelay();
   }
 
   private boolean hasNext(Watchable<T> watch) {
     try {
       return watch.hasNext();
-    } catch (Throwable ex) {
-      // no-op on exception during hasNext
+    } catch (Exception ex) {
+      return false;
     }
-    return false;
   }
 
   /**

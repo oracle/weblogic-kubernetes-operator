@@ -37,12 +37,12 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -82,7 +82,7 @@ public class JobHelper {
 
   // Creates the job spec from the specified packet
   static V1JobSpec createJobSpec(Packet packet) {
-    return new IntrospectorJobStepContext(packet).createJobSpec(TuningParameters.getInstance());
+    return new IntrospectorJobStepContext(packet).createJobSpec();
   }
 
   static Step deleteDomainIntrospectorJobStep(Step next) {
@@ -560,7 +560,7 @@ public class JobHelper {
 
       // Returns true if the job is left over from an earlier make-right, and we may now delete it.
       private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
-        final int retryInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+        final int retryInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
         return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
       }
 

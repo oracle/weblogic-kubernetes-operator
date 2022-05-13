@@ -40,7 +40,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -88,13 +88,13 @@ import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.OperatorMain.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -482,7 +482,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
     assertThat(getStartingNamespaces(), contains(NS_WEBLOGIC2, NS_WEBLOGIC4));
@@ -494,7 +494,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     runCreateReadNamespacesStep();
 
     assertThat(getStartingNamespaces(), contains(NS_WEBLOGIC1, NS_WEBLOGIC3, NS_WEBLOGIC5));
@@ -535,7 +535,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
-    TuningParameters.getInstance().put(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
   }
 
   @Test
@@ -938,7 +938,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(
@@ -955,7 +955,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(
@@ -974,7 +974,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
 
@@ -989,7 +989,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
     defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
 
@@ -1006,7 +1006,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
     defineSelectionStrategy(SelectionStrategy.LABEL_SELECTOR);
-    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    TuningParametersStub.setParameter("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
     runCreateReadNamespacesStep();
 
@@ -1018,7 +1018,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     defineSelectionStrategy(SelectionStrategy.REG_EXP);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
     List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
 
     testSupport.runSteps(
@@ -1035,7 +1035,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
 
     List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
     testSupport.runSteps(
@@ -1053,7 +1053,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     defineSelectionStrategy(SelectionStrategy.REG_EXP);
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
@@ -1068,7 +1068,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     defineSelectionStrategy(SelectionStrategy.REG_EXP);
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
@@ -1085,7 +1085,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
 
     defineSelectionStrategy(SelectionStrategy.REG_EXP);
-    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    TuningParametersStub.setParameter("domainNamespaceRegExp", REGEXP);
     runCreateReadNamespacesStep();
 
     assertThat(logRecords, containsInfo(MessageKeys.END_MANAGING_NAMESPACE).withParams("NS3"));

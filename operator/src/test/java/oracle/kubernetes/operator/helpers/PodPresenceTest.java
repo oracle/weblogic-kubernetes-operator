@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
@@ -432,7 +433,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
@@ -466,7 +467,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(modifiedPod).toWatchResponse();
@@ -483,7 +484,7 @@ class PodPresenceTest {
     V1Pod modifiedPod = withEvictedStatus(createAdminServerPod());
     List<String> createdPodNames = new ArrayList<>();
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p, createdPodNames));
-    testSupport.doOnDelete(POD, i -> recordPodDeletion(i));
+    testSupport.doOnDelete(POD, this::recordPodDeletion);
 
     packet.put(SERVER_NAME, ADMIN_SERVER_NAME);
     info.setServerPod(ADMIN_SERVER_NAME, currentPod);

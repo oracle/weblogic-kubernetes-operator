@@ -32,8 +32,8 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -508,8 +508,7 @@ public class DomainPresenceInfo implements PacketComponent {
     try {
       if (webLogicCredentialsSecretLastSet == null
           || webLogicCredentialsSecretLastSet.isAfter(
-              SystemClock.now().minusSeconds(
-                  TuningParameters.getInstance().getMainTuning().weblogicCredentialsSecretRereadIntervalSeconds))) {
+              SystemClock.now().minusSeconds(getWeblogicCredentialsSecretRereadIntervalSeconds()))) {
         return webLogicCredentialsSecret;
       }
     } finally {
@@ -519,6 +518,10 @@ public class DomainPresenceInfo implements PacketComponent {
     // time to clear
     setWebLogicCredentialsSecret(null);
     return null;
+  }
+
+  private int getWeblogicCredentialsSecretRereadIntervalSeconds() {
+    return TuningParameters.getInstance().getCredentialsSecretRereadIntervalSeconds();
   }
 
   /**
