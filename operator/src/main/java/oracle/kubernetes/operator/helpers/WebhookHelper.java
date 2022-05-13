@@ -244,13 +244,12 @@ public class WebhookHelper {
       private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
         return Optional.of(webhookConfig)
             .map(V1ValidatingWebhookConfiguration::getWebhooks)
-            .map(l -> getFirstWebhook(l))
+            .map(this::getFirstWebhook)
             .orElse(null);
       }
 
-      @NotNull
       private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
-        return l.size() == 0 ? null : l.get(0);
+        return l.isEmpty() ? null : l.get(0);
       }
 
       @Override
