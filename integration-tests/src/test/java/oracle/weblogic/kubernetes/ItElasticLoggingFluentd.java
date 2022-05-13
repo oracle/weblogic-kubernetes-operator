@@ -486,10 +486,7 @@ class ItElasticLoggingFluentd {
 
     String[] deleteLineKeys
         = new String[]{"resources", "StartupClass", "LoggingExporterStartupClass", "ClassName", "Target"};
-    RandomAccessFile file = null;
-    BufferedWriter writer = null;
-    try {
-      file = new RandomAccessFile(WLS_LOGGING_MODEL_FILE, "rw");
+    try (RandomAccessFile file = new RandomAccessFile(WLS_LOGGING_MODEL_FILE, "rw")) {
       String lineToKeep = "";
       String allLines = "";
       boolean fountit = false;
@@ -506,21 +503,13 @@ class ItElasticLoggingFluentd {
         allLines += lineToKeep + "\n";
       }
 
-      writer = new BufferedWriter(new FileWriter(WLS_LOGGING_MODEL_FILE));
-      writer.write(allLines);
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(WLS_LOGGING_MODEL_FILE))) {
+        writer.write(allLines);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
     } catch (Exception ex) {
       ex.printStackTrace();
-    } finally {
-      try {
-        if (file != null) {
-          file.close();
-        }
-        if (writer != null) {
-          writer.close();
-        }
-      } catch (Exception ex) {
-        //ignore
-      }
     }
   }
 }
