@@ -260,15 +260,6 @@ public class TuningParameters {
     return Optional.ofNullable(getConfiguredValue(name)).map(Boolean::valueOf).orElse(defaultValue);
   }
 
-  private String getConfiguredValue(String name) {
-    lock.readLock().lock();
-    try {
-      return configuredValues.get(name);
-    } finally {
-      lock.readLock().unlock();
-    }
-  }
-
   int getParameter(String name, int defaultValue) {
     return Optional.ofNullable(getConfiguredValue(name)).map(Integer::valueOf).orElse(defaultValue);
   }
@@ -279,6 +270,15 @@ public class TuningParameters {
 
   String getParameter(String name, String defaultValue) {
     return Optional.ofNullable(getConfiguredValue(name)).orElse(defaultValue);
+  }
+
+  private String getConfiguredValue(String name) {
+    lock.readLock().lock();
+    try {
+      return configuredValues.get(name);
+    } finally {
+      lock.readLock().unlock();
+    }
   }
 
   /**
