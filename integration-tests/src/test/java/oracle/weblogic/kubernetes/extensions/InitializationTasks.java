@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -84,7 +85,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -112,7 +112,7 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 /**
  * Class to build the required images for the tests.
  */
-public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
+public class InitializationTasks implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
@@ -599,17 +599,36 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
   
   HelmParams opHelmParams;
-  String webhookNamespace;
+  String webhookNamespace = "ns-webhook";
 
   private OperatorParams installWebHookOnlyOperator() {
-    webhookNamespace = assertDoesNotThrow(() -> createUniqueNamespace());
+    // recreate WebHook namespace
+    deleteNamespace(webhookNamespace);
+    assertDoesNotThrow(() -> new Namespace().name(webhookNamespace).create());
     String webhookSa = webhookNamespace + "-sa";
+    getLogger().info("Installing webhook only operator in namespace {0}", webhookNamespace);
     opHelmParams
         = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
             .namespace(webhookNamespace)
             .chartDir(OPERATOR_CHART_DIR);
-    return installAndVerifyOperator(webhookNamespace, webhookSa, false, 0, opHelmParams, null,
-        false, false, null, null, false, "INFO", -1, -1, true, "null");
+    return installAndVerifyOperator(
+        webhookNamespace, // webhook namespace
+        webhookSa, //webhook service account
+        false, // with REST api enabled
+        0, // externalRestHttpPort
+        opHelmParams, // operator helm parameters
+        null, // elasticsearchHost
+        false, // ElkintegrationEnabled
+        false, // createLogStashconfigmap
+        null, // domainspaceSelectionStrategy
+        null, // domainspaceSelector
+        false, // enableClusterRolebinding
+        "INFO", // webhook pod log level
+        -1, // domainPresenceFailureRetryMaxCount
+        -1, // domainPresenceFailureRetrySeconds
+        true, // webhookOnly
+        "null" // domainNamespace
+    );
   }
 
 }
