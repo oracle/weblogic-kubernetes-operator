@@ -510,7 +510,7 @@ public class Kubernetes {
   public static boolean doesServiceExist(
       String serviceName, Map<String, String> label, String namespace)
       throws ApiException {
-    return getService(serviceName, label, namespace) != null ? true : false;
+    return getService(serviceName, label, namespace) != null;
   }
 
 
