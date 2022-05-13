@@ -385,8 +385,23 @@ public class Kubernetes {
       }
     } else {
       getLogger().info("Pod doesn't exist");
-    }
+    }    
     return status;
+  }
+  
+  /**
+   * Checks if the webhook pod is running and ready in a given namespace. The method assumes the webhook pod name to
+   * starts with weblogic-operator-webhook and decorated with label weblogic.webhookName:namespace.
+   *
+   * @param namespace in which to check for the pod existence
+   * @return true if pod exists, running and ready otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isWebhookPodReady(String namespace) throws ApiException {
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.webhookName", namespace);
+    String podName = "weblogic-operator-webhook";
+    return isPodReady(namespace, labels, podName);
   }
 
   /**
