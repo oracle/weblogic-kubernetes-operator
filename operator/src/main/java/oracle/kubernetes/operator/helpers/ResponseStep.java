@@ -271,6 +271,13 @@ public abstract class ResponseStep<T> extends Step {
     return doTerminate(createTerminationException(packet, callResponse), packet);
   }
 
+  /**
+   * Create an exception to be passed to the doTerminate call.
+   *
+   * @param packet Packet for creating the exception
+   * @param callResponse CallResponse for creating the exception
+   * @return An Exception to be passed to the doTerminate call
+   */
   protected Throwable createTerminationException(Packet packet, CallResponse<T> callResponse) {
     return UnrecoverableErrorBuilder.createExceptionFromFailedCall(callResponse);
   }
