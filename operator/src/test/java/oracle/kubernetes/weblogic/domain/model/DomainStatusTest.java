@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -55,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainStatusTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final int RETRY_SECONDS = 100;
 
   private DomainStatus domainStatus;
   private final List<Memento> mementos = new ArrayList<>();
@@ -344,6 +346,29 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenNoFailures_numDeadlineIncreasesIsZero() {
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(0));
+  }
+
+  @Test
+  void afterFirstSevereFailure_numDeadlineIncreasesIsOne() {
+    domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(1));
+  }
+
+  @Test
+  void afterMultipleSevereFailures_numDeadlineIncreasesIsCount() {
+    final int numFailures = 3;
+    for (int i = 0; i < numFailures; i++) {
+      domainStatus.addCondition(new DomainCondition(FAILED).withReason(INTROSPECTION).withMessage("failed"));
+      SystemClockTestSupport.increment(RETRY_SECONDS);
+    }
+
+    assertThat(domainStatus.getNumDeadlineIncreases(RETRY_SECONDS), equalTo(numFailures));
+  }
+
+  @Test
   void whenDomainRollingStatusAdded_statusHasRollingStatus() {
     domainStatus.addCondition(new DomainCondition(ROLLING));
 
@@ -383,6 +408,29 @@ class DomainStatusTest {
     assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withMinimumReplicas(2)));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicas(3))));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicasGoal(5))));
+  }
+
+  @Test
+  void statusEqualsItself() {
+    assertThat(domainStatus, equalTo(domainStatus));
+  }
+
+  @Test
+  void status_doesNotEqualsChangedClone() {
+    DomainStatus clone = new DomainStatus(this.domainStatus);
+    clone.addCondition(new DomainCondition(COMPLETED).withStatus("True"));
+
+    assertThat(domainStatus, not(equalTo(clone)));
+  }
+
+  @Test
+  void hashCodeForStatus_equalsCloneHashCode() {
+    assertThat(domainStatus.hashCode(), equalTo(new DomainStatus(domainStatus).hashCode()));
+  }
+
+  @Test
+  void status_toStringResultsInAString() {
+    assertThat(domainStatus.toString(), isA(String.class));
   }
 
   @Test

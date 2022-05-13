@@ -38,9 +38,9 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -834,14 +834,14 @@ public class Domain implements KubernetesObject {
   /**
    * Returns the interval in seconds at which Severe failures will be retried.
    */
-  public int getFailureRetryIntervalSeconds() {
+  public long getFailureRetryIntervalSeconds() {
     return spec.getFailureRetryIntervalSeconds();
   }
 
   /**
    * Returns the time in minutes after the first severe failure when the operator will stop retrying Severe failures.
    */
-  public int getFailureRetryLimitMinutes() {
+  public long getFailureRetryLimitMinutes() {
     return spec.getFailureRetryLimitMinutes();
   }
 

@@ -18,7 +18,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.WebhookMain;
 import oracle.kubernetes.operator.WebhookMainTest;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;

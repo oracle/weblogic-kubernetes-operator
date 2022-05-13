@@ -20,8 +20,12 @@ data:
   {{- end }}
   {{- end }}
   serviceaccount: {{ .serviceAccount | quote }}
-  domainNamespaceSelectionStrategy: {{ (default "List" .domainNamespaceSelectionStrategy) | quote }}
+  {{- if .domainNamespaceSelectionStrategy }}
+  domainNamespaceSelectionStrategy: {{ .domainNamespaceSelectionStrategy | quote }}
+  {{- end }}
+  {{- if .domainNamespaces }}
   domainNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
+  {{- end }}
   {{- if .domainNamespaceLabelSelector }}
   domainNamespaceLabelSelector: {{ .domainNamespaceLabelSelector | quote }}
   {{- end }}

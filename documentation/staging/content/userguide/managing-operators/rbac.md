@@ -33,8 +33,8 @@ they are correct when it starts.
 Note that the operator installation Helm chart
 creates ClusterRoles and ClusterRoleBindings
 when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableclusterrolebinding">}}) Helm chart configuration setting
-is set to `true`, and the chart creates Roles and RoleBindings
-when the setting is set to `false` (the default).
+is set to `true` (the default), and the chart creates Roles and RoleBindings
+when the setting is set to `false`.
 
 **References**
 

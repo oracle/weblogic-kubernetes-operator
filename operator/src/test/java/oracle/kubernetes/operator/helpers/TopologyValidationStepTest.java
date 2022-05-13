@@ -12,12 +12,11 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.Stub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -45,13 +44,13 @@ import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_C
 import static oracle.kubernetes.common.logging.MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ServerStartPolicy.IF_NEEDED;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM;
@@ -390,7 +389,9 @@ class TopologyValidationStepTest {
 
     assertThat(domain, hasCondition(FAILED).withReason(TOPOLOGY_MISMATCH).withMessageContaining(message));
     assertThat(logRecords, containsWarning(messageKey).withParams(parameters));
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(TOPOLOGY_MISMATCH_ERROR, message));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT)
+            .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR), message));
   }
 
   @Test
@@ -924,24 +925,10 @@ class TopologyValidationStepTest {
     runTopologyValidationStep();
 
     assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
-                .withMessageContaining(TOPOLOGY_MISMATCH_ERROR,
+                .withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR),
                       getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster"),
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
-
-  @Test
-  void whenIsExplicitRecheck_createEvent() {
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    setExplicitRecheck();
-    defineScenario(TopologyCase.CONFIGURATION)
-          .withClusterConfiguration("no-such-cluster")
-          .build();
-
-    runTopologyValidationStep();
-
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(TOPOLOGY_MISMATCH_ERROR));
-  }
-
 
   // todo compute ReplicasTooHigh
   // todo remove ReplicasTooHigh
@@ -951,17 +938,4 @@ class TopologyValidationStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private void setExplicitRecheck() {
-    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
-        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
-  }
-
-  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements
-        MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return true;
-    }
-  }
 }

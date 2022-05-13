@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -32,7 +34,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_FORMATTING;
-import static oracle.kubernetes.operator.DomainPresence.getFailureRetryMaxCount;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -64,6 +65,7 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
+  @SuppressWarnings("unused")
   @Description(
       "Non-zero if the introspector job fails for any reason. "
           + "You can configure an introspector job retry limit for jobs that log script failures using "
@@ -71,7 +73,8 @@ public class DomainStatus {
           + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureCount = 0;
+  @Deprecated(since = "4.0")
+  private Integer introspectJobFailureCount;
 
   @Description("Unique ID of the last failed introspection job.")
   private String failedIntrospectionUid;
@@ -114,6 +117,7 @@ public class DomainStatus {
    * A copy constructor that creates a deep copy.
    * @param that the object to copy
    */
+  @SuppressWarnings("CopyConstructorMissesField")
   public DomainStatus(DomainStatus that) {
     message = that.message;
     reason = that.reason;
@@ -124,7 +128,6 @@ public class DomainStatus {
     initialFailureTime = that.initialFailureTime;
     lastFailureTime = that.lastFailureTime;
     replicas = that.replicas;
-    introspectJobFailureCount = that.introspectJobFailureCount;
     failedIntrospectionUid = that.failedIntrospectionUid;
   }
 
@@ -375,50 +378,20 @@ public class DomainStatus {
     return this;
   }
 
-  /**
-   * The number of times the introspect job failed.
-   *
-   * @return introspectJobFailureRetryCount
-   */
-  public Integer getIntrospectJobFailureCount() {
-    return this.introspectJobFailureCount;
-  }
-
-  /**
-   * Increment the number of introspect job failure count.
-   *
-   * @param uid the Kubernetes-assigned UID of the job which discovered the introspection failure
-   */
-  public void incrementIntrospectJobFailureCount(String uid) {
-    if (fiberException(uid) || failedIntrospectionNotRecorded(uid)) {
-      introspectJobFailureCount = introspectJobFailureCount + 1;
-    }
-    failedIntrospectionUid = uid;
-  }
-
-  private boolean fiberException(String uid) {
-    return uid == null;
-  }
-
-  private boolean failedIntrospectionNotRecorded(String uid) {
-    return !uid.equals(failedIntrospectionUid);
-  }
-
-  /**
-   * Reset the number of introspect job failure to default.
-   *
-   * @return this
-   */
-  public DomainStatus resetIntrospectJobFailureCount() {
-    this.introspectJobFailureCount = 0;
-    return this;
-  }
 
   /**
    * Returns the UID of the last failed introspection job.
    */
   public String getFailedIntrospectionUid() {
     return failedIntrospectionUid;
+  }
+
+  /**
+   * Records the UID of a failed introspection job.
+   * @param failedIntrospectionUid  the Kubernetes-assigned UID of the job which discovered the introspection failure
+   */
+  public void setFailedIntrospectionUid(String failedIntrospectionUid) {
+    this.failedIntrospectionUid = failedIntrospectionUid;
   }
 
   /**
@@ -587,8 +560,39 @@ public class DomainStatus {
     return initialFailureTime;
   }
 
+  /**
+   * Returns the time that the last severe failure was reported.
+   */
   public OffsetDateTime getLastFailureTime() {
     return lastFailureTime;
+  }
+
+  /**
+   * Return the number of times that failure timeouts should be increased as a result of failures.
+   * Will be approximately the number of times a failure has been reported, assuming one failure per retry.
+   * @param retrySeconds the number of seconds between retries.
+   */
+  public int getNumDeadlineIncreases(long retrySeconds) {
+    if (initialFailureTime == null || lastFailureTime == null) {
+      return 0;
+    } else {
+      return (int) (1 + divideRoundingUp(getSecondsFromInitialToLastFailure(), retrySeconds));
+    }
+  }
+
+  private long divideRoundingUp(Long dividend, long divisor) {
+    return (dividend + divisor - 1) / divisor;
+  }
+
+  /**
+   * Returns the number of seconds between the first failure reported and the most recent one.
+   */
+  public Long getSecondsFromInitialToLastFailure() {
+    return Duration.between(initialFailureTime, lastFailureTime).getSeconds();
+  }
+
+  public long getMinutesFromInitialToLastFailure() {
+    return TimeUnit.SECONDS.toMinutes(getSecondsFromInitialToLastFailure());
   }
 
   @Override
@@ -600,7 +604,8 @@ public class DomainStatus {
         .append("servers", servers)
         .append("clusters", clusters)
         .append("startTime", startTime)
-        .append("introspectJobFailureCount", introspectJobFailureCount)
+        .append("initialFailureTime", initialFailureTime)
+        .append("lastFailureTime", lastFailureTime)
         .append("failedIntrospectionUid", failedIntrospectionUid)
         .toString();
   }
@@ -610,11 +615,12 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
+        .append(initialFailureTime)
+        .append(lastFailureTime)
         .append(Domain.sortOrNull(servers))
         .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
-        .append(introspectJobFailureCount)
         .append(failedIntrospectionUid)
         .toHashCode();
   }
@@ -637,7 +643,6 @@ public class DomainStatus {
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
-        .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
         .append(failedIntrospectionUid, rhs.failedIntrospectionUid)
         .isEquals();
   }
@@ -648,7 +653,6 @@ public class DomainStatus {
         .withStringField("reason", DomainStatus::getReason)
         .withBooleanField("rolling", DomainStatus::isRolling)
         .withStringField("failedIntrospectionUid", DomainStatus::getFailedIntrospectionUid)
-        .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
         .withListField("clusters", ClusterStatus.getObjectPatch(), DomainStatus::getClusters)
@@ -658,14 +662,8 @@ public class DomainStatus {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
   }
 
-  public DomainStatus withIntrospectJobFailureCount(int failureCount) {
-    this.introspectJobFailureCount = failureCount;
-    return this;
-  }
-
   public String createDomainStatusMessage(String message) {
-    return LOGGER.formatMessage(getMessageKey(failedIntrospectionUid, message),
-          message, getIntrospectJobFailureCount(), getFailureRetryMaxCount());
+    return LOGGER.formatMessage(getMessageKey(failedIntrospectionUid, message), message);
   }
 
   @NotNull
@@ -677,7 +675,7 @@ public class DomainStatus {
   private FailureLevel getFailureLevel(String jobUid, String message) {
     if (jobUid == null) {
       return FailureLevel.NON_INTROSPECTION;
-    } else if (hasReachedMaximumFailureCount()) {
+    } else if (isAborted()) {
       return FailureLevel.RETRIES_EXCEEDED;
     } else if (isFatalError(message)) {
       return FailureLevel.FATAL;
@@ -693,24 +691,25 @@ public class DomainStatus {
   /**
    * Returns true if the failure count in the status is equal to or greater than the configured maximum.
    */
-  public boolean hasReachedMaximumFailureCount() {
-    return getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
+  public boolean isAborted() {
+    return Optional.ofNullable(conditions).orElse(Collections.emptyList()).stream().anyMatch(this::isAbortedFailure);
+  }
+
+  private boolean isAbortedFailure(DomainCondition domainCondition) {
+    return ABORTED == domainCondition.getReason();
   }
 
   /**
    * Computes a failure condition that accounts for retries and failed inspection messages.
    * @param reason the underlying reason
    * @param message the underlying message
-   * @param jobUid the uid of the failed introspection job. May be null.
    */
-  public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message, String jobUid) {
+  public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message) {
     DomainFailureReason effectiveReason = reason;
     String effectiveMessage = message;
     if (hasJustGotFatalIntrospectorError(effectiveMessage)) {
       effectiveReason = ABORTED;
       effectiveMessage = FATAL_INTROSPECTOR_ERROR_MSG + effectiveMessage;
-    } else if (hasJustExceededMaxRetryCount(jobUid)) {
-      effectiveReason = ABORTED;
     }
     return new DomainCondition(FAILED).withReason(effectiveReason).withMessage(effectiveMessage);
   }
@@ -725,20 +724,6 @@ public class DomainStatus {
 
   private boolean isFatalIntrospectorMessage(String statusMessage) {
     return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
-  }
-
-  /**
-   * Increments the failure count associated with the specified introspection job and returns true
-   * if doing so results in the count reaching its maximum value.
-   * @param jobUid the UID of a failed introspection job
-   */
-  private boolean hasJustExceededMaxRetryCount(String jobUid) {
-    if (jobUid == null || hasReachedMaximumFailureCount()) {
-      return false;
-    } else {
-      incrementIntrospectJobFailureCount(jobUid);
-      return hasReachedMaximumFailureCount();
-    }
   }
 
   private enum FailureLevel {

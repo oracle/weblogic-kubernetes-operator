@@ -140,7 +140,6 @@ public class MessageKeys {
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
   public static final String DOMAIN_ROLL_START = "WLSKO-0190";
-  public static final String DOMAIN_ROLL_COMPLETE = "WLSKO-0191";
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
@@ -196,7 +195,6 @@ public class MessageKeys {
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
   public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
-  public static final String INTROSPECT_JOB_FAILED_RETRY_COUNT = "WLSDO-0015";
   public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
@@ -220,6 +218,38 @@ public class MessageKeys {
   public static final String PODS_NOT_READY = "WLSDO-0041";
   public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
   public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
+
+  // domain event messages
+  public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
+  public static final String DOMAIN_CREATED_EVENT_PATTERN = "WLSEO-0002";
+  public static final String DOMAIN_CHANGED_EVENT_PATTERN = "WLSEO-0003";
+  public static final String DOMAIN_COMPLETED_EVENT_PATTERN = "WLSEO-0004";
+  public static final String DOMAIN_DELETED_EVENT_PATTERN = "WLSEO-0005";
+  public static final String DOMAIN_FAILED_EVENT_PATTERN = "WLSEO-0006";
+  public static final String DOMAIN_UNAVAILABLE_EVENT_PATTERN = "WLSEO-0007";
+  public static final String DOMAIN_INCOMPLETE_EVENT_PATTERN = "WLSEO-0008";
+  public static final String DOMAIN_FAILURE_RESOLVED_EVENT_PATTERN = "WLSEO-0009";
+  public static final String POD_CYCLE_STARTING_EVENT_PATTERN = "WLSEO-0010";
+  public static final String START_MANAGING_NAMESPACE_EVENT_PATTERN = "WLSEO-0011";
+  public static final String STOP_MANAGING_NAMESPACE_EVENT_PATTERN = "WLSEO-0012";
+  public static final String NAMESPACE_WATCHING_STARTED_EVENT_PATTERN = "WLSEO-0013";
+  public static final String NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN = "WLSEO-0014";
+  public static final String START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN = "WLSEO-0015";
+  public static final String DOMAIN_ROLL_STARTING_EVENT_PATTERN = "WLSEO-0016";
+  public static final String DOMAIN_ROLL_COMPLETED_EVENT_PATTERN = "WLSEO-0017";
+  public static final String DOMAIN_INVALID_EVENT_ERROR = "WLSEO-0018";
+  public static final String TOPOLOGY_MISMATCH_EVENT_ERROR = "WLSEO-0019";
+  public static final String INTROSPECTION_EVENT_ERROR = "WLSEO-0020";
+  public static final String KUBERNETES_EVENT_ERROR = "WLSEO-0021";
+  public static final String SERVER_POD_EVENT_ERROR = "WLSEO-0022";
+  public static final String REPLICAS_TOO_HIGH_EVENT_ERROR = "WLSEO-0023";
+  public static final String INTERNAL_EVENT_ERROR = "WLSEO-0024";
+  public static final String ABORTED_EVENT_ERROR = "WLSEO-0025";
+  public static final String WILL_RETRY_EVENT_SUGGESTION = "WLSEO-0026";
+  public static final String ABORTED_ERROR_EVENT_SUGGESTION = "WLSEO-0027";
+  public static final String DOMAIN_INVALID_ERROR_EVENT_SUGGESTION = "WLSEO-0028";
+  public static final String TOPOLOGY_MISMATCH_ERROR_EVENT_SUGGESTION = "WLSEO-0029";
+  public static final String REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION = "WLSEO-0030";
 
   private MessageKeys() {
   }

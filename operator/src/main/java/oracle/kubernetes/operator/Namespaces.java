@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -123,7 +124,7 @@ public class Namespaces {
       private String[] getLabelSelectors() {
         return Optional.ofNullable(TuningParameters.getInstance().get("domainNamespaceLabelSelector"))
             .map(s -> new String[]{s})
-            .orElse(new String[0]);
+            .orElse(new String[] { "weblogic-operator=enabled" });
       }
 
       private boolean matchSpecifiedLabelSelectors(@NotNull V1ObjectMeta nsMetadata, String[] selectors) {
@@ -253,9 +254,10 @@ public class Namespaces {
    * @return Selection strategy
    */
   static SelectionStrategy getSelectionStrategy() {
-    return Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY))
-                .map(SelectionStrategy::fromValue)
-                .orElse(SelectionStrategy.LIST);
+    return Optional.ofNullable(HelmAccess.getHelmVariable(SELECTION_STRATEGY_KEY))
+        .or(() -> Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY)))
+        .map(SelectionStrategy::fromValue)
+        .orElse(SelectionStrategy.LABEL_SELECTOR);
   }
 
   // checks the list of namespace names collected above. If any configured namespaces are not found, logs a warning.

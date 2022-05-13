@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.steps.ReadHealthStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.KubernetesExec;
 import oracle.kubernetes.operator.utils.KubernetesExecFactory;
 import oracle.kubernetes.operator.utils.KubernetesExecFactoryImpl;
@@ -144,15 +145,17 @@ public class ServerStatusReader {
     @Override
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
-      ConcurrentMap<String, String> serverStateMap =
+      final ConcurrentMap<String, String> serverStateMap =
           (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
+      final long unchangedCountToDelayStatusRecheck
+          = TuningParameters.getInstance().getUnchangedCountToDelayStatusRecheck();
+      final int eventualLongDelay = TuningParameters.getInstance().getEventualLongDelay();
+      final LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
 
-      TuningParameters.MainTuning main = TuningParameters.getInstance().getMainTuning();
-      LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
-          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck
-          && SystemClock.now().isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
+          && lastKnownStatus.getUnchangedCount() >= unchangedCountToDelayStatusRecheck
+          && SystemClock.now().isBefore(lastKnownStatus.getTime().plusSeconds(eventualLongDelay))) {
         String state = lastKnownStatus.getStatus();
         serverStateMap.put(serverName, state);
         return doNext(packet);
