@@ -43,7 +43,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
@@ -946,6 +945,7 @@ public class TestAssertions {
   }
 
   /**
+   * Verify the web app can be accessed from all managed servers in the domain through Load Balancer.
    * @param curlCmd curl command to call the sample app
    * @param managedServerNames managed server names that the sample app response should return
    * @param maxIterations max iterations to call the curl command
