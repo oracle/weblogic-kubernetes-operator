@@ -263,10 +263,7 @@ def getServerNamePrefix(topology, template):
       if dynamicServer is not None:
         server_name_prefix = getDynamicServerPropertyOrNone(dynamicServer, 'ServerNamePrefix')
 
-  if cluster_name is None:
-    raise ValueError('Cluster is not set in server template %s' % (template))
-
-  if server_name_prefix is None:
+  if cluster_name is not None and server_name_prefix is None:
     raise ValueError('ServerNamePrefix is not set in %s' % (cluster_name))
 
   return server_name_prefix
