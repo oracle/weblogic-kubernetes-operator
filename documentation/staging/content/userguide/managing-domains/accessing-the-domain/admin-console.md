@@ -11,7 +11,7 @@ It is an _alternative_ to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
 For detailed documentation, see the [WebLogic Remote Console](https://oracle.github.io/weblogic-remote-console/).
 
-A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.
+A major benefit of using the Remote Console is that it runs in your browser or as a desktop application, and can be used to connect to different WebLogic Server instances.
 You can use the Remote Console with WebLogic Server _slim_ installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
 or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx).
 Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
