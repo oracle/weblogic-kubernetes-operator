@@ -38,6 +38,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -112,7 +113,7 @@ class IntrospectionLoggingTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(formatIntrospectionError(SEVERE_PROBLEM_1)));
+    assertThat(updatedDomain.getStatus().getMessage(), containsString(SEVERE_PROBLEM_1));
   }
 
   private String formatIntrospectionError(String problem) {
@@ -158,6 +159,6 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(formatIntrospectionError(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2))));
+        containsString(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
   }
 }
