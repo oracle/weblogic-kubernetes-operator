@@ -23,6 +23,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsea
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -89,6 +90,7 @@ public class LoggingExporterUtils {
 
     // wait until the Elasticsearch pod is ready.
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> isElkStackPodReady(namespace, elasticsearchPodNamePrefix),
           "isElkStackPodReady failed with ApiException"),
         logger,
