@@ -7,6 +7,10 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 
+/**
+ * AdmissionRequest represents a Kubernetes admission request inside an AdmissionReview object sent by the
+ * Kubernetes ApiServer upon invoking an admission webhook.
+ */
 public class AdmissionRequest {
   @Expose
   protected String uid;

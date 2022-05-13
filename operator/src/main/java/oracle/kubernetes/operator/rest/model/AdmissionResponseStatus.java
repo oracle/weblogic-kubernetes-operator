@@ -7,6 +7,9 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
+/**
+ * AdmissionResponseStatus represents a status inside an AdmissionResponse.
+ */
 public class AdmissionResponseStatus {
   @Expose
   private Integer code;

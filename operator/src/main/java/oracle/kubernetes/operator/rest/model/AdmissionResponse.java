@@ -5,6 +5,10 @@ package oracle.kubernetes.operator.rest.model;
 
 import com.google.gson.annotations.Expose;
 
+/**
+ * AdmissionResponse represents a Kubernetes admission response inside an AdmissionReview that is sent by
+ * an admission webhook to the Kubernetes ApiServer as a response to an admission request.
+ */
 public class AdmissionResponse {
   @Expose
   protected String uid;

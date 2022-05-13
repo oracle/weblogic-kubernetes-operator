@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -94,24 +95,49 @@ public class WebhookHelper {
     private V1ValidatingWebhookConfiguration createModel(Certificates certificates) {
       Map<String, String> labels = new HashMap<>();
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
-      return AnnotationHelper.withSha256Hash(new V1ValidatingWebhookConfiguration()
-          .metadata(new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).labels(labels))
-          .addWebhooksItem(new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
-              .admissionReviewVersions(Collections.singletonList(ADMISSION_REVIEW_VERSION))
-              .sideEffects(SIDE_EFFECT_NONE)
-              .addRulesItem(new V1RuleWithOperations()
-                  .addApiGroupsItem(APP_GROUP)
-                  .apiVersions(Collections.singletonList(API_VERSION))
-                  .operations(Collections.singletonList(UPDATE))
-                  .resources(Collections.singletonList(DOMAIN_RESOURCES))
-                  .scope(SCOPE))
-              .clientConfig(new AdmissionregistrationV1WebhookClientConfig()
-                  .service(new AdmissionregistrationV1ServiceReference()
-                      .namespace(getWebhookNamespace())
-                      .name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
-                      .port(CONVERSION_WEBHOOK_HTTPS_PORT)
-                      .path(VALIDATING_WEBHOOK_PATH))
-                  .caBundle(getCaBundle(certificates)))));
+      return AnnotationHelper.withSha256Hash(createValidatingWebhookConfigurationModel(certificates, labels));
+    }
+
+    private V1ValidatingWebhookConfiguration createValidatingWebhookConfigurationModel(
+        Certificates certificates, Map<String, String> labels) {
+      return new V1ValidatingWebhookConfiguration()
+          .metadata(createMetadata(labels))
+          .addWebhooksItem(createWebhooksItem(certificates));
+    }
+
+    private V1ValidatingWebhook createWebhooksItem(Certificates certificates) {
+      return new V1ValidatingWebhook().name(VALIDATING_WEBHOOK_NAME)
+          .admissionReviewVersions(Collections.singletonList(ADMISSION_REVIEW_VERSION))
+          .sideEffects(SIDE_EFFECT_NONE)
+          .addRulesItem(createRule())
+          .clientConfig(createClientConfig(certificates));
+    }
+
+    private AdmissionregistrationV1WebhookClientConfig createClientConfig(Certificates certificates) {
+      return new AdmissionregistrationV1WebhookClientConfig()
+          .service(createServiceReference())
+          .caBundle(getCaBundle(certificates));
+    }
+
+    private AdmissionregistrationV1ServiceReference createServiceReference() {
+      return new AdmissionregistrationV1ServiceReference()
+          .namespace(getWebhookNamespace())
+          .name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
+          .port(CONVERSION_WEBHOOK_HTTPS_PORT)
+          .path(VALIDATING_WEBHOOK_PATH);
+    }
+
+    private V1RuleWithOperations createRule() {
+      return new V1RuleWithOperations()
+          .addApiGroupsItem(APP_GROUP)
+          .apiVersions(Collections.singletonList(API_VERSION))
+          .operations(Collections.singletonList(UPDATE))
+          .resources(Collections.singletonList(DOMAIN_RESOURCES))
+          .scope(SCOPE);
+    }
+
+    private V1ObjectMeta createMetadata(Map<String, String> labels) {
+      return new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).labels(labels);
     }
 
     @Nullable
@@ -147,8 +173,7 @@ public class WebhookHelper {
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
@@ -159,8 +184,8 @@ public class WebhookHelper {
         }
       }
 
-      private boolean shouldUpdate(
-          V1ValidatingWebhookConfiguration existingWebhookConfig, V1ValidatingWebhookConfiguration model) {
+      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig,
+                                   V1ValidatingWebhookConfiguration model) {
         return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model));
       }
 
@@ -217,14 +242,20 @@ public class WebhookHelper {
       }
 
       private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.of(webhookConfig).map(V1ValidatingWebhookConfiguration::getWebhooks)
-            .orElse(Collections.emptyList())
-            .get(0);
+        return Optional.of(webhookConfig)
+            .map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .map(l -> getFirstWebhook(l))
+            .orElse(null);
+      }
+
+      @NotNull
+      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
+        return l.size() == 0 ? null : l.get(0);
       }
 
       @Override
-      protected NextAction onFailureNoRetry(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
@@ -236,21 +267,19 @@ public class WebhookHelper {
       }
 
       @Override
-      public NextAction onFailure(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return super.onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(VALIDATING_WEBHOOK_CONFIGURATION_CREATED, getName(callResponse.getResult()));
         return doNext(packet);
       }
 
       @Override
-      protected NextAction onFailureNoRetry(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
         return isNotAuthorizedOrForbidden(callResponse)
@@ -268,20 +297,18 @@ public class WebhookHelper {
       }
 
       @Override
-      public NextAction onFailure(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return super.onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return doNext(packet);
       }
 
       @Override
-      protected NextAction onFailureNoRetry(
-          Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }

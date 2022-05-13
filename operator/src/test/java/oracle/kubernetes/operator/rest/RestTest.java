@@ -97,7 +97,7 @@ class RestTest extends JerseyTest {
   private final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
   private boolean includeRequestedByHeader = true;
   private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
-  private AdmissionReview admissionReview = createAdmissionReview();
+  private final AdmissionReview admissionReview = createAdmissionReview();
 
   private AdmissionReview createAdmissionReview() {
     return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createAdmissionRequest());
@@ -106,9 +106,9 @@ class RestTest extends JerseyTest {
   private AdmissionRequest createAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
     request.setUid(RESPONSE_UID);
-    request.setKind(new HashMap<String, String>());
-    request.setResource(new HashMap<String, String>());
-    request.setSubResource(new HashMap<String, String>());
+    request.setKind(new HashMap<>());
+    request.setResource(new HashMap<>());
+    request.setSubResource(new HashMap<>());
     request.setObject(new Object());
     request.setOldObject(new Object());
     return request;
@@ -358,9 +358,7 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {
-    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_1);
-    Response response = sendCValidatingWebhookRequest(admissionReview);
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_1));
 
     assertThat(responseString, equalTo(getAsString(VALIDATING_REVIEW_RESPONSE_ACCEPT)));
   }
@@ -370,13 +368,10 @@ class RestTest extends JerseyTest {
     String resultAllowed = "\"allowed\":false";
     String resultMessage = "\"message\":\"Exception: com.google.gson.JsonSyntaxException";
 
-    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
-    Response response = sendCValidatingWebhookRequest(admissionReview);
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
+    String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_2));
 
     assertThat(responseString, containsString(resultAllowed));
     assertThat(responseString, containsString(resultMessage));
-
   }
 
   @Test
@@ -390,24 +385,18 @@ class RestTest extends JerseyTest {
     expectedReview.setApiVersion("admission.k8s.io/v1");
     expectedReview.setKind("AdmissionReview");
 
-    String admissionReview = writeAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
+    AdmissionReview responseReview
+        = sendValidatingRequestAsAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
 
-    Response response = sendCValidatingWebhookRequest(admissionReview);
-
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
-    AdmissionReview responseReview = readAdmissionReview(responseString);
-
-    assertThat(responseReview.getResponse().toString().equals((expectedResponse).toString()), equalTo(true));
+    assertThat(responseReview.toString(), equalTo(expectedReview.toString()));
   }
 
   @Test
   void whenInvalidValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
     String resultMessage = "Exception: com.google.gson.JsonSyntaxException";
 
-    String admissionReview = getAsString(VALIDATING_REVIEW_REQUEST_2);
-    Response response = sendCValidatingWebhookRequest(admissionReview);
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
-    AdmissionReview responseReview = readAdmissionReview(responseString);
+    AdmissionReview responseReview
+        = readAdmissionReview(sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_2)));
 
     assertThat(getAllowed(responseReview), equalTo(false));
     assertThat(getResultMessage(responseReview), containsString(resultMessage));
@@ -415,12 +404,7 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
-    String admissionReviewString = writeAdmissionReview(admissionReview);
-
-    Response response = sendCValidatingWebhookRequest(admissionReviewString);
-
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
-    AdmissionReview responseReview = readAdmissionReview(responseString);
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getAllowed(responseReview), equalTo(true));
     assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
@@ -433,14 +417,19 @@ class RestTest extends JerseyTest {
     expectedStatus.setCode(HTTP_OK);
     expectedStatus.setMessage(null);
     admissionReview.request(null);
-    String admissionReviewString = writeAdmissionReview(admissionReview);
 
-    Response response = sendCValidatingWebhookRequest(admissionReviewString);
-
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
-    AdmissionReview responseReview = readAdmissionReview(responseString);
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
+  }
+
+  private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
+    return readAdmissionReview(sendValidatingRequestAsString(writeAdmissionReview(admissionReview)));
+  }
+
+  private String sendValidatingRequestAsString(String admissionReviewString) {
+    Response response = sendValidatingWebhookRequest(admissionReviewString);
+    return getAsString((ByteArrayInputStream)response.getEntity());
   }
 
   private AdmissionResponseStatus getResultStatus(AdmissionReview responseReview) {
@@ -474,7 +463,7 @@ class RestTest extends JerseyTest {
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getAllowed).orElse(false);
   }
 
-  private Response sendCValidatingWebhookRequest(String admissionReview) {
+  private Response sendValidatingWebhookRequest(String admissionReview) {
     return createRequest(VALIDATING_WEBHOOK_HREF)
         .post(createWebhookRequest(admissionReview));
   }

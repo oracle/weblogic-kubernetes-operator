@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.create;
 
+import java.util.List;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
@@ -13,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Role;
@@ -458,16 +461,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .addApiGroupsItem("authorization.k8s.io")
                 .resources(singletonList("selfsubjectrulesreviews"))
                 .verbs(singletonList("create")))
-        .addRulesItem(
-                    newPolicyRule()
-                        .addApiGroupsItem("admissionregistration.k8s.io")
-                        .resources(asList("validatingwebhookconfigurations"))
-                        .verbs(
-                            asList(
-                                "get",
-                                "create",
-                                "update",
-                                "patch")));
+        .addRulesItem(newPolicyRuleForValidatingWebhookConfiguration());
   }
 
   @Test
@@ -748,15 +742,19 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         "delete",
                         "deletecollection")))
         .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("admissionregistration.k8s.io")
-                .resources(asList("validatingwebhookconfigurations"))
-                .verbs(
-                    asList(
-                        "get",
-                        "create",
-                        "update",
-                        "patch")));
+            newPolicyRuleForValidatingWebhookConfiguration());
+  }
+
+  private V1PolicyRule newPolicyRuleForValidatingWebhookConfiguration() {
+    return newPolicyRule()
+        .addApiGroupsItem("admissionregistration.k8s.io")
+        .resources(List.of("validatingwebhookconfigurations"))
+        .verbs(
+            asList(
+                "get",
+                "create",
+                "update",
+                "patch"));
   }
 
   @Test
