@@ -52,22 +52,34 @@ public interface TestConstants {
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
   // BASE_IMAGES_REPO constants from where all the base images are pulled
+  // Default for BASE_IMAGES_REPO is phx.ocir.io
+  // TBD : Why two variables BASE_IMAGES_REPO and BASE_IMAGES_REPO_REGISTRY
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
+  public static final String BASE_IMAGES_REPO =
+      getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
   public static final String BASE_IMAGES_REPO_REGISTRY = System.getenv("BASE_IMAGES_REPO");
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
   public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
   public static final String BASE_IMAGES_REPO_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
   public static final String BASE_IMAGES_REPO_SECRET_NAME = "base-images-repo-secret";
+  public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
 
   // TEST_IMAGES_REPO constants to which all test domain images are pushed into
+  // Default for TEST_IMAGES_REPO is phx.ocir.io
+  // TBD : Why two variables TEST_IMAGES_REPO and TEST_IMAGES_REPO_REGISTRY
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
+  public static final String TEST_IMAGES_REPO =
+       getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
   public static final String TEST_IMAGES_REPO_REGISTRY = System.getenv("TEST_IMAGES_REPO");
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
   public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
   public static final String TEST_IMAGES_REPO_SECRET_NAME = "test-images-repo-secret";
+  public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
   // ocir default image values, these values will be used while running locally
+  // Defaults for all the base images name. It depends on the default value of 
+  // BASE_IMAGES_REPO. Following defaults are based on OCIR as default.
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
   public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "12.2.1.4";
   public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/fmw-infrastructure";
@@ -79,18 +91,10 @@ public interface TestConstants {
   // (a) for kind cluster push to kind repo
   // (b) for OKD or OKE push to TEST_IMAGES_REPO 
   // (c) for local runs don't push the domain images to any repo
+  // TBD: Can we replace DOMAIN_IMAGES_REPO with TEST_IMAGES_REPO
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
       .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
           ? getNonEmptySystemProperty("wko.it.test.images.repo") + "/weblogick8s/" : "");
-
-  // ----------------------------- base images constants ---------------------
-  // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
-  public static final String BASE_IMAGES_REPO = 
-      getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
-  public static final String TEST_IMAGES_REPO =
-       getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
-  public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
-  public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
@@ -114,9 +118,13 @@ public interface TestConstants {
       DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
-  // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
-  // For example, image container-registry.oracle.com/middleware/weblogic:12.2.1.4 will be pushed/used as
-  // localhost:5000/middleware/weblogic:12.2.1.4 in kind and in non-kind cluster it will be used as is.
+  // For kind, replace repo name in image name with KIND_REPO, 
+  // otherwise use the actual image name
+  // For example, if the image name is
+  // container-registry.oracle.com/middleware/weblogic:12.2.1.4 
+  // it will be pushed/used as
+  // localhost:5000/middleware/weblogic:12.2.1.4 in kind and 
+  // in non-kind cluster it will be used as is.
   public static final String DB_19C_IMAGE_TAG = "19.3.0.0";
   public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
       + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
@@ -127,8 +135,6 @@ public interface TestConstants {
   public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
       + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
       : DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
-
-  // ----------------------------- base images constants - end -------------------
 
   // jenkins constants
   public static final String BUILD_ID = System.getProperty("wko.it.jenkins.build.id", "");

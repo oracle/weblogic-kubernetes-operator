@@ -31,11 +31,11 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -157,7 +157,7 @@ class ItIstioProductionSecureMode {
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
-                                      BASE_IMAGES_REPO_SECRET_NAME,
+                                      TEST_IMAGES_REPO_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,

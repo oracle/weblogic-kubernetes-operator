@@ -29,7 +29,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
@@ -40,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -250,7 +250,7 @@ class ItDBOperator {
     Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         fmwEncryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
@@ -312,7 +312,7 @@ class ItDBOperator {
     // create the domain CR with a pre-defined configmap
     createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
         dbSecretName, false, false, true);
 
