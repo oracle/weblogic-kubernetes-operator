@@ -50,7 +50,6 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -247,8 +246,7 @@ public class JobHelper {
       }
 
       private boolean isInProgressJobOutdated(V1Job job) {
-        return hasNotCompleted(job)
-            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
+        return hasNotCompleted(job) && hasAnyImageChanged(job);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -650,26 +648,7 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
-        if (getCurrentIntrospectFailureRetryCount() > 0) {
-          reportIntrospectJobFailure();
-        }
-
         return doNext(listPodsInNamespace(getNamespace(), getNext()), packet);
-      }
-
-      @Nonnull
-      private Integer getCurrentIntrospectFailureRetryCount() {
-        return Optional.of(getDomain())
-            .map(Domain::getStatus)
-            .map(DomainStatus::getIntrospectJobFailureCount)
-            .orElse(0);
-      }
-
-      private void reportIntrospectJobFailure() {
-        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED,
-            getDomainUid(),
-            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds,
-            getCurrentIntrospectFailureRetryCount());
       }
 
       private Step listPodsInNamespace(String namespace, Step next) {
