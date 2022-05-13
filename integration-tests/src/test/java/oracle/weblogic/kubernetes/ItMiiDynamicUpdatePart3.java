@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -258,7 +259,9 @@ class ItMiiDynamicUpdatePart3 {
     String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, helper.opNamespace));
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("Introspector Job Log"));
-    assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
+    if (!WEBLOGIC_SLIM) {
+      assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
+    }
     assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector has failed"));
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
