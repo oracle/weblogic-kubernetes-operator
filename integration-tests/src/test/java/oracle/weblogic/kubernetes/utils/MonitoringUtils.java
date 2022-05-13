@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
@@ -78,6 +79,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAcco
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
@@ -848,12 +850,20 @@ public class MonitoringUtils {
             ADMIN_PASSWORD_DEFAULT,
             K8S_NODEPORT_HOST,
             nodeport);
+    testUntil(withLongRetryPolicy,
+        callTestWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50),
+        logger,
+        "Verify NGINX can access the monitoring exporter metrics \n"
+            + "from all managed servers in the domain via http");
+    /*
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 100))
         .as("Verify NGINX can access the monitoring exporter metrics "
             + "from all managed servers in the domain via http")
         .withFailMessage("NGINX can not access the monitoring exporter metrics "
             + "from one or more of the managed servers via http")
         .isTrue();
+
+     */
   }
 
   /**
