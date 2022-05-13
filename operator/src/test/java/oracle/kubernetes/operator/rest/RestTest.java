@@ -34,9 +34,9 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
+import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
-import oracle.kubernetes.operator.rest.model.Status;
 import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
@@ -384,7 +384,7 @@ class RestTest extends JerseyTest {
     AdmissionResponse expectedResponse = new AdmissionResponse();
     expectedResponse.setUid(RESPONSE_UID);
     expectedResponse.setAllowed(true);
-    expectedResponse.setStatus(new Status().code(HTTP_OK));
+    expectedResponse.setStatus(new AdmissionResponseStatus().code(HTTP_OK));
     AdmissionReview expectedReview = new AdmissionReview();
     expectedReview.setResponse(expectedResponse);
     expectedReview.setApiVersion("admission.k8s.io/v1");
@@ -429,7 +429,7 @@ class RestTest extends JerseyTest {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
-    Status expectedStatus = new Status();
+    AdmissionResponseStatus expectedStatus = new AdmissionResponseStatus();
     expectedStatus.setCode(HTTP_OK);
     expectedStatus.setMessage(null);
     admissionReview.request(null);
@@ -443,19 +443,25 @@ class RestTest extends JerseyTest {
     assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
   }
 
-  private Status getResultStatus(AdmissionReview responseReview) {
+  private AdmissionResponseStatus getResultStatus(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
         .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).orElse(null);
   }
 
   private String getResultMessage(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getMessage).orElse("");
+        .map(AdmissionReview::getResponse)
+        .map(AdmissionResponse::getStatus)
+        .map(AdmissionResponseStatus::getMessage)
+        .orElse("");
   }
 
   private int getResultCode(AdmissionReview responseReview) {
     return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).map(Status::getCode).orElse(HTTP_OK);
+        .map(AdmissionReview::getResponse)
+        .map(AdmissionResponse::getStatus)
+        .map(AdmissionResponseStatus::getCode)
+        .orElse(HTTP_OK);
   }
 
   private String getUid(AdmissionReview admissionReview) {

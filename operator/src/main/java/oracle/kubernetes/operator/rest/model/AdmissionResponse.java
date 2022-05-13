@@ -11,7 +11,7 @@ public class AdmissionResponse {
   @Expose
   protected boolean allowed;
   @Expose
-  private Status status;
+  private AdmissionResponseStatus status;
 
   public AdmissionResponse uid(String uid) {
     this.uid = uid;
@@ -39,15 +39,15 @@ public class AdmissionResponse {
     return this;
   }
 
-  public Status getStatus() {
+  public AdmissionResponseStatus getStatus() {
     return status;
   }
 
-  public void setStatus(Status status) {
+  public void setStatus(AdmissionResponseStatus status) {
     this.status = status;
   }
 
-  public AdmissionResponse status(Status status) {
+  public AdmissionResponse status(AdmissionResponseStatus status) {
     this.status = status;
     return this;
   }

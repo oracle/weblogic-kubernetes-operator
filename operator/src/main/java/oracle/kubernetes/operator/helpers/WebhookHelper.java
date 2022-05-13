@@ -28,6 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
@@ -37,14 +40,13 @@ public class WebhookHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
   public static final String VALIDATING_WEBHOOK_NAME = "weblogic.validating.webhook";
   public static final String VALIDATING_WEBHOOK_PATH = "/admission";
-  public static final String APP_GROUP = "weblogic.oracle";
-  public static final String API_VERSION = "v9";
+  public static final String APP_GROUP = DOMAIN_GROUP;
+  public static final String API_VERSION = DOMAIN_VERSION;
+  public static final String DOMAIN_RESOURCES = DOMAIN_PLURAL;
   public static final String ADMISSION_REVIEW_VERSION = "v1";
-  public static final String DOMAIN_RESOURCES = "domains";
   public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
   public static final String SCOPE = "Namespaced";
-
 
   private WebhookHelper() {
   }

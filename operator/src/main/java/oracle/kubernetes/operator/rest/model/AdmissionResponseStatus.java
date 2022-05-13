@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
-public class Status {
+public class AdmissionResponseStatus {
   @Expose
   private Integer code;
   @Expose
@@ -21,7 +21,7 @@ public class Status {
     this.code = code;
   }
 
-  public Status code(Integer code) {
+  public AdmissionResponseStatus code(Integer code) {
     this.code = code;
     return this;
   }
@@ -34,14 +34,14 @@ public class Status {
     this.message = message;
   }
 
-  public Status message(String message) {
+  public AdmissionResponseStatus message(String message) {
     this.message = message;
     return this;
   }
 
   @Override
   public String toString() {
-    return "Status{"
+    return "AdmissionResponseStatus{"
             + "code='" + code + '\''
             + ", message='" + message + '\''
             + '}';
@@ -55,9 +55,9 @@ public class Status {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Status status = (Status) o;
+    AdmissionResponseStatus status = (AdmissionResponseStatus) o;
     return Objects.equals(code, status.code)
-            && Objects.equals(message, status.message);
+        && Objects.equals(message, status.message);
   }
 
   @Override

@@ -13,8 +13,8 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
+import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
-import oracle.kubernetes.operator.rest.model.Status;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
@@ -62,7 +62,7 @@ public class AdmissionWebhookResource extends BaseResource {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
       admissionResponse = new AdmissionResponse()
           .uid(getUid(admissionRequest))
-          .status(new Status().message("Exception: " + e));
+          .status(new AdmissionResponseStatus().message("Exception: " + e));
     }
     LOGGER.exiting(admissionResponse);
     return writeAdmissionReview(new AdmissionReview()
@@ -92,7 +92,7 @@ public class AdmissionWebhookResource extends BaseResource {
     return new AdmissionResponse()
         .uid(getUid(request))
         .allowed(validate(request))
-        .status(new Status().code(HTTP_OK));
+        .status(new AdmissionResponseStatus().code(HTTP_OK));
   }
 
   private boolean validate(AdmissionRequest request) {
