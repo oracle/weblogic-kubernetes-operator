@@ -285,7 +285,7 @@ class ItMiiDomain {
       logger.info("WebLogic console is accessible thru default service");
     } else {
       logger.info("Checking Rest API management console in WebLogic slim image");
-      verifyCredentials(adminServerPodName, domainNamespace,
+      verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
   }

@@ -547,7 +547,7 @@ class ItKubernetesDomainEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome";
+    String newLogHome = "/shared/" + domainNamespace3 + "/domains/logHome/" + domainUid;
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
     logger.info("Changing the current log home used by the domain : {0} to {1}", logHome, newLogHome);
