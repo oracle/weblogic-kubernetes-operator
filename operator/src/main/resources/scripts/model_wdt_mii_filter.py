@@ -187,7 +187,7 @@ def filter_model(model):
   except:
       exc_type, exc_obj, exc_tb = sys.exc_info()
       ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
-      utils.trace('SEVERE', ee_string)
+      utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
       raise
 
 
