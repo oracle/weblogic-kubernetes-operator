@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 

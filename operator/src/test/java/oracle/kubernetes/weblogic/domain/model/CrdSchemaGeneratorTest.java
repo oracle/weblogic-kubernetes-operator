@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -24,7 +24,8 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import oracle.kubernetes.json.Feature;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class CrdSchemaGeneratorTest {
 
+  public static final String ENABLED_FEATURE = "TestFeature";
+  public static final String DISABLED_FEATURE = "OtherFeature";
   private final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
@@ -69,6 +72,7 @@ public class CrdSchemaGeneratorTest {
 
   @Test
   void whenMixOfEnabledDisabledFeatures_validateSchemaOnlyContainsEnabled() {
+    TuningParametersStub.setParameter(TuningParameters.FEATURE_GATES, ENABLED_FEATURE + "=true");
     final Map<String, Object> schema = createSchema(SomeObject.class);
 
     assertThat(schema, hasKey("properties"));
@@ -79,9 +83,9 @@ public class CrdSchemaGeneratorTest {
   }
 
   private static class SomeObject {
-    @Feature(TuningParametersStub.ENABLED_FEATURE)
+    @Feature(ENABLED_FEATURE)
     private ClassForEnabledFeature enabled;
-    @Feature(TuningParametersStub.DISABLED_FEATURE)
+    @Feature(DISABLED_FEATURE)
     private ClassForDisabledFeature disabled;
     private String five;
   }

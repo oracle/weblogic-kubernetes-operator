@@ -23,10 +23,10 @@ import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestConfig;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
@@ -85,9 +85,9 @@ public class ConversionWebhookMainTest extends ThreadFactoryTestBase {
   private final ConversionWebhookMainDelegateStub delegate =
           createStrictStub(ConversionWebhookMainDelegateStub.class, testSupport);
   private final ConversionWebhookMain main = new ConversionWebhookMain(delegate);
-  private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Function<String, Path> getInMemoryPath = p -> inMemoryFileSystem.getPath(p);
+  private static Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
 
 
   static {

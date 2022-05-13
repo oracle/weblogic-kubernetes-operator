@@ -63,13 +63,14 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -123,6 +124,7 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
+import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -426,7 +428,7 @@ class DomainProcessorTest {
   }
 
   private void triggerStatusUpdate() {
-    testSupport.setTime((int) TuningParameters.getInstance().getMainTuning().initialShortDelay, TimeUnit.SECONDS);
+    testSupport.setTime(TuningParameters.getInstance().getInitialShortDelay(), TimeUnit.SECONDS);
   }
 
   private void makePodsHealthy() {
@@ -877,7 +879,7 @@ class DomainProcessorTest {
   @Test
   void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
-    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
+    TuningParametersStub.setParameter(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
         .configureAdminServer()
@@ -969,6 +971,7 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
     runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();

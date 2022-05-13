@@ -59,6 +59,7 @@ import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -1278,17 +1279,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+      final int statusUpdateTimeoutSeconds = TuningParameters.getInstance().getStatusUpdateTimeoutSeconds();
+      final int initialShortDelay = TuningParameters.getInstance().getInitialShortDelay();
       final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-      final TuningParameters.MainTuning mainTuning = TuningParameters.getInstance().getMainTuning();
 
       registerStatusUpdater(
           info.getNamespace(),
           info.getDomainUid(),
           delegate.scheduleWithFixedDelay(
               () -> new ScheduledStatusUpdater(info.getNamespace(), info.getDomainUid(), loggingFilter)
-                  .withTimeoutSeconds(mainTuning.statusUpdateTimeoutSeconds).updateStatus(),
-              mainTuning.initialShortDelay,
-              mainTuning.initialShortDelay,
+                  .withTimeoutSeconds(statusUpdateTimeoutSeconds).updateStatus(),
+              initialShortDelay,
+              initialShortDelay,
               TimeUnit.SECONDS));
     }
   }
