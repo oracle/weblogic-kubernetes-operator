@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.ClientFactoryStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
