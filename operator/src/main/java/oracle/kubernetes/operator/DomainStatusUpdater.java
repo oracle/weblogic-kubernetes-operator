@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -1087,7 +1088,7 @@ public class DomainStatusUpdater {
       private long getMaxReadyWaitTime(V1Pod pod) {
         return Optional.ofNullable(getInfo().getDomain())
             .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
-            .orElse(TuningParameters.getInstance().getPodTuning().maxReadyWaitTimeSeconds);
+            .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
       }
 
       private String getServerName(V1Pod pod) {

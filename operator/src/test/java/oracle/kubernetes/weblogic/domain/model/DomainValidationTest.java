@@ -12,10 +12,9 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -872,7 +871,7 @@ class DomainValidationTest extends DomainValidationTestBase {
         .configureAdminService()
         .withChannel("default");
 
-    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
+    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
     assertThat(myDomain.getValidationFailures(resourceLookup),  empty());
   }
 

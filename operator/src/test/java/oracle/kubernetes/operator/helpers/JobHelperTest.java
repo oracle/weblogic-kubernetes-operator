@@ -44,6 +44,7 @@ import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -77,7 +78,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
-import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -96,6 +96,8 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createTolerat
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
@@ -152,6 +154,7 @@ class JobHelperTest extends DomainValidationTestBase {
         .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
   public static final int MODE_420 = 420;
   public static final int MODE_365 = 365;
+  public static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE = 180L;
   private Method getDomainSpec;
   private final Domain domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -740,13 +743,15 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, Long.toString(
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getPodSpecActiveDeadlineSeconds(jobSpec),
-          is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          is(INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     assertThat(
-          jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+          jobSpec.getActiveDeadlineSeconds(), is(INTROSPECTOR_JOB_ACTIVE_DEADLINE));
   }
 
   private static Long getPodSpecActiveDeadlineSeconds(V1JobSpec jobSpec) {
@@ -759,9 +764,11 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, Long.toString(
+        INTROSPECTOR_JOB_ACTIVE_DEADLINE));
     int failureCount = 2;
     long expectedActiveDeadlineSeconds =
-          TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
+          INTROSPECTOR_JOB_ACTIVE_DEADLINE
                 + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
 
     final DomainStatus status = new DomainStatus();
@@ -1180,7 +1187,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenOperatorHasKubernetesPlatformConfigured_introspectorPodSpecHasKubernetesPlatformEnvVariable() {
-    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "Openshift");
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
