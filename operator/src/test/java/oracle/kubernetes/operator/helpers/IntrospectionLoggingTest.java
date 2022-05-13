@@ -22,13 +22,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
@@ -37,6 +38,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -111,7 +113,7 @@ class IntrospectionLoggingTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(formatIntrospectionError(SEVERE_PROBLEM_1)));
+    assertThat(updatedDomain.getStatus().getMessage(), containsString(SEVERE_PROBLEM_1));
   }
 
   private String formatIntrospectionError(String problem) {
@@ -128,7 +130,7 @@ class IntrospectionLoggingTest {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", INTROSPECTION_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to", getLocalizedString(INTROSPECTION_EVENT_ERROR)));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -157,6 +159,6 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(formatIntrospectionError(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2))));
+        containsString(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
   }
 }

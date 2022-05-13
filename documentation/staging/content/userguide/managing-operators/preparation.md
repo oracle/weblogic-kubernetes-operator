@@ -269,13 +269,13 @@ then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
 configuration setting to `true` when installing the operator.
 
 For example `--set "enableClusterRoleBinding=true"`.
-The default for this setting is `false`.
+The default for this setting is `true`.
 
 This is the most popular security strategy.
 
 ##### Any namespace with cluster role binding disabled
 
-If your operator Helm `enableClusterRoleBinding` configuration value is `false` (the default),
+If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 then an operator is still capable of managing multiple namespaces
 but a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
@@ -293,9 +293,6 @@ If you want to limit the operator so that it can access only resources in its lo
 
 - Choose a `Dedicated` namespace selection strategy.
   See [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy).
-- Do _not_ set the `enableClusterRoleBinding` operator Helm chart
-  configuration setting to `true` (default is `false`)
-  when installing the operator.
 - You will need to manually install the operator CRD
   because `enableClusterRoleBinding` is not set to `true`
   and installing the CRD requires cluster role binding privileges.
@@ -311,8 +308,6 @@ Before installing your operator,
 choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
 See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
-Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
-then you should also set `enableClusterRoleBinding` to `false`.
 See [Choose a security strategy](#choose-a-security-strategy).
 
 For a description of common namespace management issues,

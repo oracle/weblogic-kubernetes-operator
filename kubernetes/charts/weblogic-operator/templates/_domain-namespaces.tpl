@@ -2,18 +2,18 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainNamespaces" }}
-{{- if (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") }}
+{{- if (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   $key := .Release.Namespace -}}
 {{-   $ignore := set $args "domainNamespace" $key -}}
 {{-   include "operator.operatorRoleBindingNamespace" $args -}}
-{{- else if eq (default "List" .domainNamespaceSelectionStrategy) "List" }}
+{{- else if eq .domainNamespaceSelectionStrategy "List" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{-   range $key := $args.domainNamespaces -}}
 {{-     $ignore := set $args "domainNamespace" $key -}}
 {{-     include "operator.operatorRoleBindingNamespace" $args -}}
 {{-   end }}
-{{- else if eq .domainNamespaceSelectionStrategy "LabelSelector" }}
+{{- else if eq (default "LabelSelector" .domainNamespaceSelectionStrategy) "LabelSelector" }}
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{- /*
       Split terms on commas not contained in parentheses. Unfortunately, the regular expression

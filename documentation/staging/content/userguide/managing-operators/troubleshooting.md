@@ -28,7 +28,7 @@ description: "General advice for debugging and monitoring the operator."
 ### Troubleshooting a particular domain resource
 
 After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
-If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
+If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/debugging.md">}}).
 
 ### Check Helm status
 
@@ -156,14 +156,37 @@ To check for Kubernetes events that may have been logged to the conversion webho
 ```text
 $ kubectl -n WH_NAMESPACE get events --sort-by='.lastTimestamp'
 ```
-
 ### Check the operator log
 
-To check the operator deployment's log (especially look for `SEVERE` and `ERROR` level messages):
+Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
-```text
-$ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
-```
+
+- Find your operator.
+  ```shell
+  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+  ```
+  ```
+  NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+  sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
+
+  ```
+- Use `grep` on the operator log; look for `SEVERE` and `WARNING` level messages.
+
+  ```shell
+  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
+    | egrep -e "level...(SEVERE|WARNING)"
+  ```
+  ```json
+  {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
+  ```
+
+- You can filter out operator log messages specific to your `domainUID` by piping the previous logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
+
+  ```shell
+  $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
+    | egrep -e "level...(SEVERE|WARNING)" \
+    | grep "domainUID...sample-domain1"
+  ```
 
 ### Check the conversion webhook log
 

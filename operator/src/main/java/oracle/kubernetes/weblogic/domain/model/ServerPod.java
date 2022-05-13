@@ -683,7 +683,7 @@ class ServerPod extends KubernetesResource {
         new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
   }
 
-  private void addAdditionalVolume(V1Volume volume) {
+  void addAdditionalVolume(V1Volume volume) {
     volumes.add(volume);
   }
 

@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -344,6 +345,8 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
+  public abstract DomainConfigurator withAdditionalVolume(V1Volume volume);
+
   public abstract DomainConfigurator withAdditionalPvClaimVolume(String name, String claimName);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
@@ -633,12 +636,12 @@ public abstract class DomainConfigurator {
    * @param retrySeconds the new value
    * @return this object
    */
-  public abstract DomainConfigurator withFailureRetryIntervalSeconds(int retrySeconds);
+  public abstract DomainConfigurator withFailureRetryIntervalSeconds(long retrySeconds);
 
   /**
    * Specify the Severe error retry limit in minutes.
    * @param limitMinutes the new value
    * @return this object
    */
-  public abstract DomainConfigurator withFailureRetryLimitMinutes(int limitMinutes);
+  public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
 }
