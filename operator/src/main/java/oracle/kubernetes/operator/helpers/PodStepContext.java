@@ -68,7 +68,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -1248,11 +1247,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
-      // reset introspect failure job count - if any
-      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(DomainStatus::resetIntrospectJobFailureCount);
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);

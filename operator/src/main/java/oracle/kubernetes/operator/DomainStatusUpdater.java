@@ -306,18 +306,6 @@ public class DomainStatusUpdater {
     return new FailureStep(INTROSPECTION, message);
   }
 
-  static class ResetFailureCountStep extends DomainStatusUpdaterStep {
-
-    @Override
-    void modifyStatus(DomainStatus domainStatus) {
-      domainStatus.resetIntrospectJobFailureCount();
-    }
-  }
-
-  public static Step createResetFailureCountStep() {
-    return new ResetFailureCountStep();
-  }
-
   abstract static class DomainStatusUpdaterStep extends Step {
 
     DomainStatusUpdaterStep() {
@@ -1309,7 +1297,8 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        addFailure(status, status.createAdjustedFailedCondition(reason, message, jobUid));
+        addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }
 
