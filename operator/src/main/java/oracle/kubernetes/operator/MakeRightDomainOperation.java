@@ -57,12 +57,6 @@ public interface MakeRightDomainOperation {
     return domainRequiresIntrospectionInCurrentMakeRight(packet) && !wasInspectionRun(packet);
   }
 
-  boolean isExplicitRecheck();
-
-  static boolean isExplicitRecheck(Packet packet) {
-    return fromPacket(packet).map(MakeRightDomainOperation::isExplicitRecheck).orElse(false);
-  }
-
   /**
    * Returns true if the packet contains info about a domain that requires introspection in a sequences of steps
    * before server pods are created or modified.

@@ -12,10 +12,8 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.meterware.simplestub.Stub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -52,7 +50,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ServerStartPolicy.IF_NEEDED;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM;
@@ -932,21 +929,6 @@ class TopologyValidationStepTest {
                       getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server")));
   }
 
-  @Test
-  void whenIsExplicitRecheck_createEvent() {
-    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
-    setExplicitRecheck();
-    defineScenario(TopologyCase.CONFIGURATION)
-          .withClusterConfiguration("no-such-cluster")
-          .build();
-
-    runTopologyValidationStep();
-
-    assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(TOPOLOGY_MISMATCH_EVENT_ERROR)));
-  }
-
-
   // todo compute ReplicasTooHigh
   // todo remove ReplicasTooHigh
 
@@ -955,17 +937,4 @@ class TopologyValidationStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private void setExplicitRecheck() {
-    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
-        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
-  }
-
-  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements
-        MakeRightDomainOperation {
-
-    @Override
-    public boolean isExplicitRecheck() {
-      return true;
-    }
-  }
 }
