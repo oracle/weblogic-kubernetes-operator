@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -407,6 +408,29 @@ class DomainStatusTest {
     assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withMinimumReplicas(2)));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicas(3))));
     assertThat(domainStatus.getClusters(), not(hasItem(clusterStatus("cluster1").withReplicasGoal(5))));
+  }
+
+  @Test
+  void statusEqualsItself() {
+    assertThat(domainStatus, equalTo(domainStatus));
+  }
+
+  @Test
+  void status_doesNotEqualsChangedClone() {
+    DomainStatus clone = new DomainStatus(this.domainStatus);
+    clone.addCondition(new DomainCondition(COMPLETED).withStatus("True"));
+
+    assertThat(domainStatus, not(equalTo(clone)));
+  }
+
+  @Test
+  void hashCodeForStatus_equalsCloneHashCode() {
+    assertThat(domainStatus.hashCode(), equalTo(new DomainStatus(domainStatus).hashCode()));
+  }
+
+  @Test
+  void status_toStringResultsInAString() {
+    assertThat(domainStatus.toString(), isA(String.class));
   }
 
   @Test
