@@ -13,7 +13,7 @@ prop() {
 }
 
 cleanupLB() {
-  echo 'Clean up left over LB $compartment_ocid ${clusterName}_vcn'
+  echo 'Clean up left over LB'
   myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
   declare -a vcnidarray
   vcnidarray=(${myvcn_id// /})

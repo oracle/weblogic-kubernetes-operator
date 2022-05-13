@@ -464,6 +464,7 @@ EOF
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
                         clusterName = "mtcluster"
+                        FSS_DIR = "/oketest"
 
                     }
                     steps {
@@ -486,6 +487,7 @@ EOF
                             mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
 
                             export NFS_SERVER=$mt_private_ip
+                            export FSS_DIR=${FSS_DIIR}
                             echo "Using NFS Server ${NFS_SERVER}"
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
 
