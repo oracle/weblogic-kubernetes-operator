@@ -44,11 +44,11 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -67,7 +67,6 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
@@ -86,6 +85,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
@@ -94,8 +94,8 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -119,7 +119,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyD
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createResources;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -128,6 +128,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTE
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.empty;
@@ -142,6 +143,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest extends DomainTestUtils {
+
+  private static final int MAX_RETRY_COUNT = 2;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -203,6 +206,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
+
+    TuningParametersStub.setParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, "2");
   }
 
   private static class JobAwaiterStepFactoryStub implements JobAwaiterStepFactory {
@@ -345,7 +350,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test
@@ -365,7 +371,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
-    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
+    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
@@ -611,13 +617,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithFluentdTerminatedDuringIntropsection_checkExpectedMessage() {
+  void whenJobCreatedWithFluentdTerminatedDuringIntrospection_checkExpectedMessage() {
     String jobName = UID + "-introspector";
-    DomainConfiguratorFactory.forDomain(domain)
-            .withFluentdConfiguration(true, "elastic-cred", null);
+    DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true, "elastic-cred", null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
-    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName,
-            true, true);
+    testSupport.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
     testSupport.defineResources(jobPod);
     defineFailedFluentdContainerInIntrospection();
 
@@ -627,7 +631,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             jobPod.getMetadata().getName(),
             jobPod.getMetadata().getNamespace(), 1, null, null);
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(formatIntrospectionError(expectedDetail)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(), containsString(expectedDetail));
   }
 
   private String formatIntrospectionError(String failure) {
@@ -768,12 +772,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private void definePreviousFailedIntrospection() {
     defineFailedIntrospection();
-    getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
+    getDomain().getOrCreateStatus().setFailedIntrospectionUid(JOB_UID);
   }
 
   private void definePreviousFailedIntrospectionWithoutPodLog() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
-    getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
+    getDomain().getOrCreateStatus().setFailedIntrospectionUid(JOB_UID);
   }
 
   @Test
@@ -1075,7 +1079,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   Domain getDomain() {
@@ -1193,7 +1198,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private int getRecheckIntervalSeconds() {
-    return TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    return oracle.kubernetes.operator.tuning.TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
   }
 
   @Test
@@ -1207,52 +1212,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     logRecords.clear();
   }
 
-  @Test
-  void whenJobLogContainsSevereError_incrementFailureCount() {
-    createFailedIntrospectionLog();
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(1));
-  }
-
   private Domain getUpdatedDomain() {
     return testSupport.<Domain>getResources(DOMAIN).get(0);
-  }
-
-  @Test
-  void whenJobLogContainsSevereError_recordJobUid() {
-    createFailedIntrospectionLog();
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    assertThat(getUpdatedDomain().getStatus().getFailedIntrospectionUid(), equalTo(JOB_UID));
-  }
-
-  @Test
-  void whenJobLogContainsSevereErrorAndStatusHasCurrentJobUID_dontIncrementFailureCount() {
-    createFailedIntrospectionLog();
-    getUpdatedDomain().setStatus(createDomainStatusAfterOneFailure(JOB_UID));
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(1));
-  }
-
-  private DomainStatus createDomainStatusAfterOneFailure(String jobUid) {
-    final DomainStatus status = new DomainStatus();
-    status.incrementIntrospectJobFailureCount(jobUid);
-    return status;
-  }
-
-  @Test
-  void whenJobLogContainsSevereErrorAndStatusHasDifferentJobUID_incrementFailureCount() {
-    createFailedIntrospectionLog();
-    getUpdatedDomain().setStatus(createDomainStatusAfterOneFailure("zzzz"));
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(2));
   }
 
   @Test
@@ -1261,7 +1222,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(formatIntrospectionError(SEVERE_PROBLEM)));
+    assertThat(getUpdatedDomain().getStatus().getMessage(), containsString(SEVERE_PROBLEM));
   }
 
   @Test
@@ -1485,11 +1446,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
-
-  // create job
-  // add job uid to status
-  // do NOT create pod log
-  // run successfully
 
   private Cluster getCluster(String clusterName) {
     return domain.getSpec().getClusters().stream()

@@ -10,7 +10,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 

@@ -27,7 +27,6 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.OperatorMain;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
@@ -39,6 +38,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.DomainAction;
 import oracle.kubernetes.operator.rest.model.DomainActionType;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -93,8 +93,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void authorize(String domainUid, Operation operation) {
-    LOGGER.entering(domainUid, operation);
-    if (!authenticateWithTokenReview()) {
+    if (!useAuthenticateWithTokenReview()) {
       return;
     }
     boolean authorized;
@@ -136,7 +135,7 @@ public class RestBackendImpl implements RestBackend {
 
   private V1UserInfo authenticate(String accessToken) {
     LOGGER.entering();
-    if (!authenticateWithTokenReview()) {
+    if (!useAuthenticateWithTokenReview()) {
       return null;
     }
     V1TokenReviewStatus status = atn.check(principal, accessToken,
@@ -412,7 +411,7 @@ public class RestBackendImpl implements RestBackend {
     return new WebApplicationException(rb.build());
   }
 
-  protected boolean authenticateWithTokenReview() {
+  protected boolean useAuthenticateWithTokenReview() {
     return "true".equalsIgnoreCase(Optional.ofNullable(TuningParameters.getInstance().get("tokenReviewAuthentication"))
         .orElse("false"));
   }

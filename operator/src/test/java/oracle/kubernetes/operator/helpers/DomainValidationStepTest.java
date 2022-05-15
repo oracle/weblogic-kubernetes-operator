@@ -33,15 +33,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
@@ -168,7 +169,8 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(domainValidationSteps);
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(DOMAIN_INVALID_ERROR));
+    assertThat(testSupport,
+        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
   private String getStatusReason(Domain updatedDomain) {

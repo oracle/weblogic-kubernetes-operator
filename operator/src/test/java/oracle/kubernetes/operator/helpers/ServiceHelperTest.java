@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -56,14 +57,15 @@ import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SERVICE_REPLA
 import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
 import static oracle.kubernetes.common.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.common.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -200,6 +202,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
                 .ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(UnitTestHash.install());
+    mementos.add(TuningParametersStub.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport
@@ -404,7 +407,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+           getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {

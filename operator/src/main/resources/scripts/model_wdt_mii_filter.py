@@ -46,12 +46,14 @@
 
 import inspect
 import os
-import sys
+import sys, traceback
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
+
+import utils
 
 env = None
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
@@ -153,31 +155,41 @@ class SecretManager(object):
 
 
 def filter_model(model):
-  if model is not None:
-    if getOfflineWlstEnv() is None:
+
+  try:
+
+    if model is not None:
+      if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
-    initSecretManager(env)
+      initSecretManager(env)
 
-    if model and 'resources' in model:
-      customizeCustomFileStores(model)
+      if model and 'resources' in model:
+        customizeCustomFileStores(model)
 
-    if model and 'topology' in model:
-      topology = model['topology']
-      customizeNodeManagerCreds(topology)
-      customizeDomainLogPath(topology)
+      if model and 'topology' in model:
+        topology = model['topology']
+        customizeNodeManagerCreds(topology)
+        customizeDomainLogPath(topology)
 
-      if 'Cluster' in topology:
-        # If Istio enabled, inject replication channel for each cluster
-        # before creating the corresponding NAP for each server and
-        # server-template
-        customizeIstioClusters(model)
+        if 'Cluster' in topology:
+          # If Istio enabled, inject replication channel for each cluster
+          # before creating the corresponding NAP for each server and
+          # server-template
+          customizeIstioClusters(model)
 
-      if 'Server' in topology:
-        customizeServers(model)
+        if 'Server' in topology:
+          customizeServers(model)
 
-      if 'ServerTemplate' in topology:
-        customizeServerTemplates(model)
+        if 'ServerTemplate' in topology:
+          customizeServerTemplates(model)
+
+  except:
+      exc_type, exc_obj, exc_tb = sys.exc_info()
+      ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
+      utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
+      raise
+
 
 def initOfflineWlstEnv(model):
   global env
@@ -250,6 +262,9 @@ def getServerNamePrefix(topology, template):
       dynamicServer = getDynamicServerOrNone(cluster)
       if dynamicServer is not None:
         server_name_prefix = getDynamicServerPropertyOrNone(dynamicServer, 'ServerNamePrefix')
+
+  if cluster_name is not None and server_name_prefix is None:
+    raise ValueError('ServerNamePrefix is not set in %s' % (cluster_name))
 
   return server_name_prefix
 

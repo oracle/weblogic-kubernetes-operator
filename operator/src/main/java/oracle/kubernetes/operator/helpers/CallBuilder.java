@@ -53,8 +53,6 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import okhttp3.Call;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.builders.CallParamsImpl;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
@@ -66,6 +64,8 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.CallBuilderTuning;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -442,12 +442,12 @@ public class CallBuilder {
 
 
   public CallBuilder() {
-    this(getCallBuilderTuning(), ClientPool.getInstance());
+    this(ClientPool.getInstance());
   }
 
   private CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
     if (tuning != null) {
-      tuning(tuning.callRequestLimit, tuning.callTimeoutSeconds, tuning.callMaxRetryCount);
+      configureTuning(tuning.getCallRequestLimit(), tuning.getCallTimeoutSeconds(), tuning.getCallMaxRetryCount());
     }
     this.helper = helper;
   }
@@ -524,7 +524,7 @@ public class CallBuilder {
     return this;
   }
 
-  private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
+  private void configureTuning(int limit, int timeoutSeconds, int maxRetryCount) {
     this.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
