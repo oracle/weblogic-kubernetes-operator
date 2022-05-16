@@ -87,4 +87,4 @@ they are typically not suited for production systems for multiple reasons, inclu
 #### See also
 
 - [External WebLogic clients]({{< relref "/faq/external-clients.md" >}})
-- [Remote Console, Administration Console, WLST, and Port Forwarding access]({{< relref "/userguide/managing-domains/accessing-the-domain/_index.md" >}})
+- [Remote Console, Administration Console, WLST, and Port Forwarding access]({{< relref "/managing-domains/accessing-the-domain/_index.md" >}})

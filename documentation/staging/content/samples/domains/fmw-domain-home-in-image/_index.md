@@ -15,20 +15,20 @@ to start the Kubernetes artifacts of the corresponding domain, including the Web
 
 #### Prerequisites
 
-Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
 The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
   For details on how to obtain or create the image, refer to
-  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
+  [FMW Infrastructure domains]({{< relref "/managing-domains/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/storage/_index.md" >}}).
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:
-  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
+  * Configure access to your database. For details, see [here]({{< relref "/managing-domains/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
@@ -163,7 +163,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when the `mode` is set to `wlst`. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
 | `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when the `mode` is set to `wdt` (which is the default `mode`). | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_projects/domains/<domainUID>` |
-| `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. **NOTE**: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. **NOTE**: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/managing-domains/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |

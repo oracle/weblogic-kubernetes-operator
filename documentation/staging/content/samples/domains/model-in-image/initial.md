@@ -316,7 +316,7 @@ The model files:
     - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
     - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
 
 #### Creating the image with WIT
@@ -434,7 +434,7 @@ Run the following `kubectl` commands to deploy the required secrets:
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
+  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation.
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
@@ -884,7 +884,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   {{% /expand %}}
 
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
+If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
 #### Invoke the web application
 

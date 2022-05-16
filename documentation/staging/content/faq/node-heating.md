@@ -53,4 +53,4 @@ serverPod:
           topologyKey: "kubernetes.io/hostname"
 ```
 
-Details about how the operator generates Pods for WebLogic Server instances, including details about labels and variable substitution, are available [here]({{< relref "/userguide/managing-domains/domain-resource#pod-generation" >}}).
+Details about how the operator generates Pods for WebLogic Server instances, including details about labels and variable substitution, are available [here]({{< relref "/managing-domains/domain-resource#pod-generation" >}}).

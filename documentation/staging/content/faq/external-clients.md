@@ -185,7 +185,7 @@ For example, if a WebLogic Server instance is named `My_Server`
 and the domain UID is `MyUid`, then its listen
 address within the namespace will be `myuid-my-server`.
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 
@@ -197,7 +197,7 @@ Here are the steps:
 
 - In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/faq/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/faq/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
@@ -445,7 +445,7 @@ Similarly, this also means that it's necessary to enable unknown host access on 
 
 To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA communication with a target WebLogic Server:
   * Set the `weblogic.rjvm.allowUnknownHost` Java system property to `true` on each target WebLogic Server instance.
-    * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+    * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
   * Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.
 
 #### Configuring WebLogic Server affinity load balancing algorithms
@@ -536,7 +536,7 @@ In the previous example, `DOMAIN_UID` and `NAMESPACE` are assumed to already be 
 Alternatively, you can substitute the macros with DNS-1123 acceptable values
 (changed to lowercase and underscores converted to dashes).
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 #### Security notes

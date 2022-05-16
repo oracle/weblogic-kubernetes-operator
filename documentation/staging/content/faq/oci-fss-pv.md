@@ -25,7 +25,7 @@ Linux based systems. These instructions provide one option to
 update file ownership used by the standard Oracle images where
 UID `1000` and GID `1000` typically represent the `oracle` or `opc` user.
 For more information on persistent volume handling,
-see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).
+see [Persistent storage]({{< relref "/managing-domains/persistent-storage/_index.md" >}}).
 {{% /notice %}}
 
 

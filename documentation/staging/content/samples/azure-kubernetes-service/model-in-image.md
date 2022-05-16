@@ -290,7 +290,7 @@ The model file:
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 
@@ -430,7 +430,7 @@ $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 
 ##### Kubernetes Secrets for WebLogic
 
-First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see [Prepare to run a domain]({{< relref "/userguide/managing-domains/prepare" >}}). In this case, you have two secrets.
+First, create the secrets needed by the WLS type model domain. For more on secrets in the context of running domains, see [Prepare to run a domain]({{< relref "/managing-domains/prepare" >}}). In this case, you have two secrets.
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -536,7 +536,7 @@ The secret regsecret has been successfully created in the sample-domain1-ns name
 
 ##### Domain resource
 
-Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/userguide/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+Now, you create a Domain YAML file. Think of the Domain YAML file as the way to configure some aspects of your WebLogic domain using Kubernetes.  The operator uses the Kubernetes "custom resource" feature to define a Kubernetes resource type called `Domain`.  For more on the `Domain` Kubernetes resource, see [Domain Resource]({{< relref "/managing-domains/domain-resource" >}}). For more on custom resources see [the Kubernetes documentation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 
 We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
@@ -905,5 +905,5 @@ For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kub
 
 #### Useful links
 
-- [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+- [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
 - [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample
