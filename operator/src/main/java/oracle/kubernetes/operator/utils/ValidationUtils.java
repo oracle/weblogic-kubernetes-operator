@@ -20,7 +20,14 @@ import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 
 /**
  * ValidationUtil provides the utility methods to perform the validation of a proposed change to an existing
- * Domain or Cluster resource. It is used by the validating webhook upon a request coming from the Kubernetes ApiServer.
+ * Domain or Cluster resource. It is used by the validating webhook.
+ *
+ * <p>The current version supports validation of the following:
+ * <ul>
+ * <li>The proposed replicas settings at the domain level and/or cluster level can be honored by WebLogic domain config.
+ * </li>
+ * </ul>
+ * </p>
  */
 
 public class ValidationUtils {
@@ -51,25 +58,29 @@ public class ValidationUtils {
   private static boolean specEquals(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
     return Optional.of(existingDomain)
         .map(Domain::getSpec)
-        .map(s -> s.equals(proposedDomain.getSpec()))
-        .orElse(proposedDomain.getSpec() == null);
+        .map(s -> isProposedSpecUnchanged(s, proposedDomain))
+        .orElse(false);
   }
 
-  private static boolean shouldIntrospect(Domain existingDomain, Domain proposedDomain) {
+  private static boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec, @NotNull Domain proposedDomain) {
+    return existingSpec == proposedDomain.getSpec() || Objects.equals(existingSpec, proposedDomain.getSpec());
+  }
+
+  private static boolean shouldIntrospect(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
     return !Objects.equals(existingDomain.getIntrospectVersion(), proposedDomain.getIntrospectVersion())
         || imagesChanged(existingDomain, proposedDomain);
   }
 
-  private static boolean imagesChanged(Domain existingDomain, Domain proposedDomain) {
+  private static boolean imagesChanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
     if (!Objects.equals(existingDomain.getDomainHomeSourceType(), proposedDomain.getDomainHomeSourceType())) {
       return true;
     }
     switch (proposedDomain.getDomainHomeSourceType()) {
       case IMAGE:
-        return !Objects.equals(existingDomain.getSpec().getImage(), proposedDomain.getSpec().getImage());
+        return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
       case FROM_MODEL:
         if (noAuxiliaryImagesConfigured(existingDomain) && noAuxiliaryImagesConfigured(proposedDomain)) {
-          return !Objects.equals(existingDomain.getSpec().getImage(), proposedDomain.getSpec().getImage());
+          return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
         } else {
           return noAuxiliaryImagesConfigured(existingDomain)
               || noAuxiliaryImagesConfigured(proposedDomain)
@@ -80,12 +91,16 @@ public class ValidationUtils {
     }
   }
 
-  private static boolean noAuxiliaryImagesConfigured(Domain domain) {
+  private static String getImage(@NotNull Domain existingDomain) {
+    return Optional.of(existingDomain).map(Domain::getSpec).map(DomainSpec::getImage).orElse(null);
+  }
+
+  private static boolean noAuxiliaryImagesConfigured(@NotNull Domain domain) {
     return domain.getAuxiliaryImages() == null;
   }
 
-  private static boolean validReplicas(Domain domain) {
-    return Optional.ofNullable(domain)
+  private static boolean validReplicas(@NotNull Domain domain) {
+    return Optional.of(domain)
         .map(Domain::getStatus)
         .map(DomainStatus::getClusters)
         .orElse(Collections.emptyList())
@@ -93,12 +108,12 @@ public class ValidationUtils {
         .allMatch(c -> validClusterReplicas(domain, c));
   }
 
-  private static Boolean validClusterReplicas(Domain domain, ClusterStatus status) {
+  private static Boolean validClusterReplicas(@NotNull Domain domain, @NotNull ClusterStatus status) {
     return getProposedReplicas(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
   }
 
-  private static Cluster getCluster(Domain domain, String clusterName) {
-    return Optional.ofNullable(domain).map(Domain::getSpec)
+  private static Cluster getCluster(@NotNull Domain domain, String clusterName) {
+    return Optional.of(domain).map(Domain::getSpec)
         .map(DomainSpec::getClusters)
         .orElse(Collections.emptyList())
         .stream().filter(c -> nameMatches(c, clusterName)).findAny().orElse(null);
@@ -112,11 +127,11 @@ public class ValidationUtils {
     return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
   }
 
-  private static int getProposedReplicas(Domain domain, Cluster cluster) {
+  private static int getProposedReplicas(@NotNull Domain domain, Cluster cluster) {
     return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicas(domain));
   }
 
-  private static int getDomainReplicas(Domain domain) {
-    return Optional.ofNullable(domain).map(Domain::getSpec).map(DomainSpec::getReplicas).orElse(0);
+  private static int getDomainReplicas(@NotNull Domain domain) {
+    return Optional.of(domain).map(Domain::getSpec).map(DomainSpec::getReplicas).orElse(0);
   }
 }

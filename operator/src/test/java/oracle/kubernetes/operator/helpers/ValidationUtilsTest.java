@@ -93,6 +93,25 @@ class ValidationUtilsTest {
   }
 
   @Test
+  void whenNoSpec_returnTrue() {
+    Domain d1 = createDomain().withSpec(null);
+    Domain d2 = createDomain().withSpec(null);
+    assertThat(ValidationUtils.validateDomain(d1, d2), equalTo(true));
+  }
+
+  @Test
+  void whenSpecRemoved_returnTrue() {
+    Domain d2 = createDomain().withSpec(null);
+    assertThat(ValidationUtils.validateDomain(domain1, d2), equalTo(true));
+  }
+
+  @Test
+  void whenSpecAdded_returnTrue() {
+    Domain d1 = createDomain().withSpec(null);
+    assertThat(ValidationUtils.validateDomain(d1, domain2), equalTo(true));
+  }
+
+  @Test
   void whenDomainReplicasChangedAloneValid_returnTrue() {
     domain2.getSpec().withReplicas(GOOD_REPLICAS);
 
