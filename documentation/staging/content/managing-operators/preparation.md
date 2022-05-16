@@ -43,7 +43,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
    special licensing requirements, or restrictions.
    See [Supported environments]({{< relref "/introduction/platforms/environments.md" >}}) for details.
 
-1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/introduction/kubernetes/k8s-setup.md" >}}).
+1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/managing-operators/k8s-setup.md" >}}).
 
 1. If it is not already installed, then install Helm.
    To install an operator, it is required to install Helm in your Kubernetes cluster.

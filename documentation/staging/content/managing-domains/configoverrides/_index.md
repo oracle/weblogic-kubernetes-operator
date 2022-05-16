@@ -403,7 +403,7 @@ __Debugging steps:__
 * If WebLogic Server instance Pods do not come up at all, then:
   * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
   * Check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
-  For more information, see [Domain events]({{< relref "/managing-domains/domain-events.md" >}}).
+  For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 
   * Check the introspector job and its log.
     * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector`

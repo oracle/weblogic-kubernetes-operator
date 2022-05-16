@@ -28,7 +28,7 @@ then see [Online update status and labels]({{<relref "/managing-domains/model-in
 
 To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
-For more information, see [Domain events]({{< relref "/managing-domains/domain-events.md" >}}).
+For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 
 ### Check the introspector job
 

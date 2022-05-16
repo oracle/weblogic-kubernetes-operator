@@ -1,9 +1,9 @@
-+++
-title = "Ingress"
-date = 2019-02-23T20:46:32-05:00
-weight = 6
-pre = "<b> </b>"
-+++
+---
+title: "Ingress"
+date: 2019-02-23T20:46:32-05:00
+weight: 6
+description: "Configure load balancers with ingresses."
+---
 
 Ingresses are one approach provided by Kubernetes to configure load balancers.
 Depending on the version of Kubernetes you are using, and your cloud provider, you may need to use Ingresses.

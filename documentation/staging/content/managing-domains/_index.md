@@ -153,7 +153,7 @@ The operator lets you initiate scaling of clusters in various ways:
 ### About domain events
 
 The operator generates Kubernetes events at key points during domain processing.
-For more information, see [Domain events]({{< relref "/managing-domains/domain-events.md" >}}).
+For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 
 ### Monitoring a domain
 
