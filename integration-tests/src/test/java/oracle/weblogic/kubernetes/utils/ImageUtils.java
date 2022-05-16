@@ -535,7 +535,7 @@ public class ImageUtils {
    */
   public static void createSecretForBaseImages(String namespace) {
     if (BASE_IMAGES_REPO.equals(BASE_IMAGES_REPO_REGISTRY)) {
-      createOcirRepoSecret(namespace);
+      createOcrRepoSecret(namespace);
     }
   }
 
