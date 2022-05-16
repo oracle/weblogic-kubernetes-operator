@@ -4,16 +4,37 @@
 package oracle.kubernetes.operator.rest.model;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 /**
- * AdmissionResponse represents a Kubernetes admission response inside an AdmissionReview that is sent by
- * an admission webhook to the Kubernetes ApiServer as a response to an admission request.
+ * AdmissionResponse represents a Kubernetes admission response inside an AdmissionReview that an admission webhook
+ * sends back o the Kubernetes ApiServer as a response to an admission call. It contains the result of an admission
+ * call, including whether the required change is accepted or not as well as the reason of a rejection.
+ * <p>More info: <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
+ #webhook-request-and-response">Admission webhook request and response</a>.
+ * </p>
  */
 public class AdmissionResponse {
+  /**
+   * An uid uniquely identifying this admission call (copied from the request.uid sent to the webhook).
+   */
+  @SerializedName("uid")
   @Expose
   protected String uid;
+
+  /**
+   * Indicate if the corresponding admission request is allowed.
+   */
+  @SerializedName("allowed")
   @Expose
   protected boolean allowed;
+
+  /**
+   * Optionally provide more information about what happened to the admission call. Mostly used when a webhook rejects
+   * a call.
+   * @see oracle.kubernetes.operator.rest.model.AdmissionResponseStatus
+   */
+  @SerializedName("status")
   @Expose
   private AdmissionResponseStatus status;
 

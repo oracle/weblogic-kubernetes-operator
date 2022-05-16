@@ -57,6 +57,8 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KIND;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
 import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
@@ -382,8 +384,8 @@ class RestTest extends JerseyTest {
     expectedResponse.setStatus(new AdmissionResponseStatus().code(HTTP_OK));
     AdmissionReview expectedReview = new AdmissionReview();
     expectedReview.setResponse(expectedResponse);
-    expectedReview.setApiVersion("admission.k8s.io/v1");
-    expectedReview.setKind("AdmissionReview");
+    expectedReview.setApiVersion(ADMISSION_REVIEW_API_VERSION);
+    expectedReview.setKind(ADMISSION_REVIEW_KIND);
 
     AdmissionReview responseReview
         = sendValidatingRequestAsAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));

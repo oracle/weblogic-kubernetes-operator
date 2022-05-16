@@ -6,22 +6,59 @@ package oracle.kubernetes.operator.rest.model;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * AdmissionRequest represents a Kubernetes admission request inside an AdmissionReview object sent by the
- * Kubernetes ApiServer upon invoking an admission webhook.
+ * Kubernetes ApiServer upon invoking an admission webhook. It describes the details of request, including
+ * the information avout the resource that the required admission call is targeted to, as well as the existing
+ * version and the proposed version of the resource.
+ *
+ * <p>More info:
+ * <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
+ #webhook-request-and-response">Admission webhook request and response</a>.
+ * </p>
  */
 public class AdmissionRequest {
+  /**
+   * An uid uniquely identifying this admission call.
+   */
+  @SerializedName("uid")
   @Expose
   protected String uid;
+
+  /**
+   * Fully-qualified group/version/kind of the incoming object.
+   */
+  @SerializedName("kind")
   @Expose
   protected Map<String, String> kind;
+
+  /**
+   * Fully-qualified group/version/kind of the resource being modified.
+   */
+  @SerializedName("resource")
   @Expose
   protected Map<String, String> resource;
+
+  /**
+   * The subresource, if the request is to a subresource.
+   */
+  @SerializedName("subResource")
   @Expose
   protected Map<String, String> subResource;
+
+  /**
+   * The new object being admitted.
+   */
+  @SerializedName("object")
   @Expose
   protected Object object;
+
+  /**
+   * The existing object.
+   */
+  @SerializedName("oldObject")
   @Expose
   protected Object oldObject;
 

@@ -6,13 +6,24 @@ package oracle.kubernetes.operator.rest.model;
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
 /**
- * AdmissionResponseStatus represents a status inside an AdmissionResponse.
+ * AdmissionResponseStatus represents customized HTT code and message when rejecting an admission request. The
+ * specified status object is returned to the user.
  */
 public class AdmissionResponseStatus {
+  /**
+   * HTTP return code for this status.
+   */
+  @SerializedName("code")
   @Expose
   private Integer code;
+
+  /**
+   * A human-readable description of the status of this admission call.
+   */
+  @SerializedName("message")
   @Expose
   private String message;
 
