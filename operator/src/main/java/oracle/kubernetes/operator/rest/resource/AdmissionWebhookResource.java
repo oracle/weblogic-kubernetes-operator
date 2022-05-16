@@ -48,7 +48,6 @@ public class AdmissionWebhookResource extends BaseResource {
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
     LOGGER.fine("Validating webhook is invoked");
-    LOGGER.entering(href());
 
     AdmissionReview admissionReview = null;
     AdmissionRequest admissionRequest = null;
@@ -64,7 +63,7 @@ public class AdmissionWebhookResource extends BaseResource {
           .uid(getUid(admissionRequest))
           .status(new AdmissionResponseStatus().message("Exception: " + e));
     }
-    LOGGER.exiting(admissionResponse);
+
     return writeAdmissionReview(new AdmissionReview()
         .apiVersion(Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null))
         .kind(Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null))

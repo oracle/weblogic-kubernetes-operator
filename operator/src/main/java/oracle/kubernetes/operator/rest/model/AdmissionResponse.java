@@ -7,9 +7,9 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * AdmissionResponse represents a Kubernetes admission response inside an AdmissionReview that an admission webhook
- * sends back o the Kubernetes ApiServer as a response to an admission call. It contains the result of an admission
- * call, including whether the required change is accepted or not as well as the reason of a rejection.
+ * AdmissionResponse represents a Kubernetes admission response that an admission webhook sends back to the Kubernetes
+ * ApiServer. It contains the result of an admission call, including whether the proposed change is accepted or not
+ * as well as the reason for a rejection.
  * <p>More info: <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
  #webhook-request-and-response">Admission webhook request and response</a>.
  * </p>

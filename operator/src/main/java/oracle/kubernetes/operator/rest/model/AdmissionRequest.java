@@ -9,10 +9,10 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * AdmissionRequest represents a Kubernetes admission request inside an AdmissionReview object sent by the
- * Kubernetes ApiServer upon invoking an admission webhook. It describes the details of request, including
- * the information avout the resource that the required admission call is targeted to, as well as the existing
- * version and the proposed version of the resource.
+ * AdmissionRequest represents a Kubernetes admission request sent by the Kubernetes ApiServer upon invoking an
+ * admission webhook. It describes the details of the request, including the information about the resource object
+ * that the required admission operation should be performed upon, as well as the existing version and the proposed
+ * version of the object.
  *
  * <p>More info:
  * <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/
