@@ -295,8 +295,8 @@ EOF
                         sh '''
                             export PATH=${runtime_path}
                             python -V
-                            yum install -y python36
-                            python -V
+                            #yum install -y python36
+                            #python -V
                             mkdir ${WORKSPACE}/oci
                             cd ${WORKSPACE}/oci
                             curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
