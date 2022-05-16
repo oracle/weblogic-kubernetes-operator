@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -73,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
+@DisabledOnSlimImage
 class ItRemoteConsole {
 
   private static String domainNamespace = null;
