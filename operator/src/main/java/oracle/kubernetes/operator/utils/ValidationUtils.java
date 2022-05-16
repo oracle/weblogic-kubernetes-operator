@@ -18,6 +18,11 @@ import org.jetbrains.annotations.NotNull;
 
 import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 
+/**
+ * ValidationUtil provides the utility methods to perform the validation of a proposed change to an existing
+ * Domain or Cluster resource. It is used by the validating webhook upon a request coming from the Kubernetes ApiServer.
+ */
+
 public class ValidationUtils {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
@@ -25,7 +30,8 @@ public class ValidationUtils {
   }
 
   /**
-   * Validating a domain resource.
+   * Validating a proposed domain resource against an existing domain resource. It returns true if the proposed changes
+   * in the proposed domain resource can be honored, otherwise, returns false.
    *
    * @param existingDomain domain that needs to be validated against.
    * @param proposedDomain domain that needs to be validated.
@@ -102,7 +108,6 @@ public class ValidationUtils {
   private static int getProposedReplicas(Domain domain, Cluster cluster) {
     return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicas(domain));
   }
-
 
   private static int getDomainReplicas(Domain domain) {
     return Optional.ofNullable(domain).map(Domain::getSpec).map(DomainSpec::getReplicas).orElse(0);

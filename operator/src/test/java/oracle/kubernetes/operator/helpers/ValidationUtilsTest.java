@@ -83,6 +83,11 @@ class ValidationUtilsTest {
   }
 
   @Test
+  void whenSameObject_returnTrue() {
+    assertThat(ValidationUtils.validateDomain(domain1, domain1), equalTo(true));
+  }
+
+  @Test
   void whenNothingChanged_returnTrue() {
     assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
   }
@@ -232,7 +237,7 @@ class ValidationUtilsTest {
   }
 
   @Test
-  void whenDomainSourceTypeBothMIINoAuxImgAndDomainImageChangedReplicasInvalid_returnTrue() {
+  void whenDomainSourceTypeBothMIINoAuxImgImageChangedAndDomainImageChangedReplicasInvalid_returnTrue() {
     domain2.getSpec().withReplicas(BAD_REPLICAS);
     domain2.getSpec().withImage(NEW_IMAGE_NAME);
     domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
@@ -242,10 +247,30 @@ class ValidationUtilsTest {
   }
 
   @Test
+  void whenDomainSourceTypeBothMIINoAuxImgAndDomainImageChangedReplicasInvalid_returnFalse() {
+    domain2.getSpec().withReplicas(BAD_REPLICAS);
+    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+
+    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+  }
+
+  @Test
   void whenDomainSourceTypeBothMIIAddAuxImgAndDomainImageChangedReplicasInvalid_returnTrue() {
     domain2.getSpec().withReplicas(BAD_REPLICAS);
     domain2.getSpec().withImage(NEW_IMAGE_NAME);
     setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+
+    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+  }
+
+  @Test
+  void whenDomainSourceTypeBothMIIRemoveAuxImgAndDomainImageChangedReplicasInvalid_returnTrue() {
+    domain2.getSpec().withReplicas(BAD_REPLICAS);
+    domain2.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(domain1, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
     domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
