@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -47,7 +48,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -73,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The use case verifies external RMI client access to WebLogic cluster.
@@ -92,6 +91,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test external RMI access through NodePort tunneling")
 @IntegrationTest
+@DisabledOnSlimImage
 class ItExternalNodePortService {
 
   private static String opNamespace = null;
@@ -207,7 +207,6 @@ class ItExternalNodePortService {
   @DisplayName("Verify RMI access to WLS through NodePort Service")
   void testExternalRmiAccessThruNodePortService() {
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
