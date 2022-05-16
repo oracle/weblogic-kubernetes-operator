@@ -294,7 +294,15 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            sudo yum install -y python36-oci-cli
+                            python -V
+                            yum install -y python36
+                            python -V
+                            mkdir ${WORKSPACE}/oci
+                            cd ${WORKSPACE}/oci
+                            curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
+                            chmod +x ${WORKSPACE}/oci/install.sh
+                            ${WORKSPACE}/oci/install.sh --install-dir ${PWD} --exec-dir  ${WORKSPACE}/bin --script-dir ${PWD} --optional-features n --accept-all-defaults
+                            #sudo yum install -y python36-oci-cli
                             oci --version
                         '''
                     }
