@@ -44,8 +44,15 @@ public class ValidationUtils {
         || shouldIntrospect(existingDomain, proposedDomain);
   }
 
-  private static boolean unchanged(Domain existingDomain, Domain proposedDomain) {
-    return existingDomain == proposedDomain || Objects.equals(existingDomain, proposedDomain);
+  private static boolean unchanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+    return existingDomain == proposedDomain || specEquals(existingDomain, proposedDomain);
+  }
+
+  private static boolean specEquals(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+    return Optional.of(existingDomain)
+        .map(Domain::getSpec)
+        .map(s -> s.equals(proposedDomain.getSpec()))
+        .orElse(proposedDomain.getSpec() == null);
   }
 
   private static boolean shouldIntrospect(Domain existingDomain, Domain proposedDomain) {
