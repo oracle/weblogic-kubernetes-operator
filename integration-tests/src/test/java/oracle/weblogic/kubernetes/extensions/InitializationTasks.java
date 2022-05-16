@@ -23,9 +23,12 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -53,6 +56,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -79,10 +84,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -90,8 +97,10 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -99,7 +108,7 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 /**
  * Class to build the required images for the tests.
  */
-public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
+public class InitializationTasks implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
@@ -274,6 +283,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .execute();
           }
         }
+        
+        //install webhook to prevent every operator installation trying to update crd
+        installWebHookOnlyOperator();
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -340,6 +352,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       } catch (IOException ioe) {
         logger.severe("Failed to cleanup files @ " + RESULTS_ROOT, ioe);
       }
+      logger.info("Uninstalling webhook only operator");
+      uninstallOperator(opHelmParams);
+      deleteNamespace(webhookNamespace);
 
       logger.info("Cleanup images after all test suites are run");
       // delete all the images from local repo
@@ -564,6 +579,39 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
+  }
+  
+  HelmParams opHelmParams;
+  String webhookNamespace = "ns-webhook";
+
+  private OperatorParams installWebHookOnlyOperator() {
+    // recreate WebHook namespace
+    deleteNamespace(webhookNamespace);
+    assertDoesNotThrow(() -> new Namespace().name(webhookNamespace).create());
+    String webhookSa = webhookNamespace + "-sa";
+    getLogger().info("Installing webhook only operator in namespace {0}", webhookNamespace);
+    opHelmParams
+        = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(webhookNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(
+        webhookNamespace, // webhook namespace
+        webhookSa, //webhook service account
+        false, // with REST api enabled
+        0, // externalRestHttpPort
+        opHelmParams, // operator helm parameters
+        null, // elasticsearchHost
+        false, // ElkintegrationEnabled
+        false, // createLogStashconfigmap
+        null, // domainspaceSelectionStrategy
+        null, // domainspaceSelector
+        false, // enableClusterRolebinding
+        "INFO", // webhook pod log level
+        -1, // domainPresenceFailureRetryMaxCount
+        -1, // domainPresenceFailureRetrySeconds
+        true, // webhookOnly
+        "null" // domainNamespace
+    );
   }
 
 }

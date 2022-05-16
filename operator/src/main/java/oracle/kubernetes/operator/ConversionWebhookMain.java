@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -114,7 +115,7 @@ public class ConversionWebhookMain extends BaseMain {
       startRestServer();
 
       // start periodic recheck of CRD
-      int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
+      int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
       delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
 
       markReadyAndStartLivenessThread();

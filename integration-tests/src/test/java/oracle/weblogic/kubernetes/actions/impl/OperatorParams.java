@@ -38,6 +38,7 @@ public class OperatorParams {
   private static final String FEATURE_GATES = "featureGates";
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
+  private static final String WEBHOOK_ONLY = "webhookOnly";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -63,6 +64,7 @@ public class OperatorParams {
   private String featureGates;
   private String kubernetesPlatform;
   private boolean createLogStashConfigMap = true;
+  private boolean webhookOnly;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -194,6 +196,11 @@ public class OperatorParams {
   public String getKubernetesPlatform() {
     return kubernetesPlatform;
   }
+  
+  public OperatorParams webHookOnly(boolean webhookOnly) {
+    this.webhookOnly = webhookOnly;
+    return this;
+  }
 
   /**
    * Loads Helm values into a value map.
@@ -249,6 +256,9 @@ public class OperatorParams {
     if (kubernetesPlatform != null) {
       values.put(KUBERNETES_PLATFORM, kubernetesPlatform);
     }
+    if (webhookOnly) {
+      values.put(WEBHOOK_ONLY, webhookOnly);
+    }    
 
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
 

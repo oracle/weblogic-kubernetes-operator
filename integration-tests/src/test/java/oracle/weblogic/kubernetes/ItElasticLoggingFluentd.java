@@ -3,8 +3,12 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -63,12 +67,14 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -103,10 +109,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItElasticLoggingFluentd {
 
   // constants for creating domain image using model in image
-  private static final String WLS_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
+  private static final String WLS_LOGGING_MODEL_FILE = WORK_DIR + "/" + "new.model.wlslogging.yaml";
   private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
-
-  private static final String FLUENTD_NAME = "fluentd";
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
 
   // constants for Domain
@@ -188,7 +192,8 @@ class ItElasticLoggingFluentd {
     assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
-    // create fluentd configuration
+    // modify fluentd configuration
+    modifyModelConfigfile();
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -471,5 +476,40 @@ class ItElasticLoggingFluentd {
     logger.info("Search query returns " + execResult.stdout());
 
     return execResult.stdout();
+  }
+
+  private static void modifyModelConfigfile() {
+    final String sourceConfigFile = MODEL_DIR + "/model.wlslogging.yaml";
+
+    assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(WLS_LOGGING_MODEL_FILE)),
+        "copy model.wlslogging.yaml failed");
+
+    String[] deleteLineKeys
+        = new String[]{"resources", "StartupClass", "LoggingExporterStartupClass", "ClassName", "Target"};
+    try (RandomAccessFile file = new RandomAccessFile(WLS_LOGGING_MODEL_FILE, "rw")) {
+      String lineToKeep = "";
+      String allLines = "";
+      boolean fountit = false;
+      while ((lineToKeep = file.readLine()) != null) {
+        for (String deleteLineKey : deleteLineKeys) {
+          if (lineToKeep.startsWith(deleteLineKey)) {
+            fountit = true;
+            break;
+          }
+        }
+        if (fountit) {
+          continue;
+        }
+        allLines += lineToKeep + "\n";
+      }
+
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(WLS_LOGGING_MODEL_FILE))) {
+        writer.write(allLines);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+    }
   }
 }

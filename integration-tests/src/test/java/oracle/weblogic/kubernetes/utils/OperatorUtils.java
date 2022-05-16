@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -292,6 +293,7 @@ public class OperatorUtils {
         "INFO",
         -1,
         -1,
+        false,
         domainNamespace);
   }
 
@@ -386,6 +388,7 @@ public class OperatorUtils {
         loggingLevel,
         domainPresenceFailureRetryMaxCount,
         domainPresenceFailureRetrySeconds,
+        false,
         domainNamespace);
   }
 
@@ -397,7 +400,9 @@ public class OperatorUtils {
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opHelmParams the Helm parameters to install operator
+   * @param elasticSearchHost Elasticsearchhost 
    * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param createLogStashConfigMap boolean indicating creating logstash
    * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
    *                                  how to select the set of namespaces that it will manage
    * @param domainNamespaceSelector the label or expression value to manage namespaces
@@ -405,6 +410,7 @@ public class OperatorUtils {
    * @param loggingLevel logging level of operator
    * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
    * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param webhookOnly boolean indicating install webHookOnly operator 
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -422,6 +428,7 @@ public class OperatorUtils {
                                                         String loggingLevel,
                                                         int domainPresenceFailureRetryMaxCount,
                                                         int domainPresenceFailureRetrySeconds,
+                                                        boolean webhookOnly,
                                                         String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -455,6 +462,10 @@ public class OperatorUtils {
         .domainNamespaces(Arrays.asList(domainNamespace))
         .javaLoggingLevel(loggingLevel)
         .serviceAccount(opServiceAccount);
+    
+    if (webhookOnly) {
+      opParams.webHookOnly(webhookOnly);
+    }
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
@@ -530,13 +541,23 @@ public class OperatorUtils {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // wait for the operator to be ready
-    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
-    testUntil(
-        assertDoesNotThrow(() -> operatorIsReady(opNamespace),
-          "operatorIsReady failed with ApiException"),
-        logger,
-        "operator to be running in namespace {0}",
-        opNamespace);
+    if (webhookOnly) {
+      logger.info("Wait for the operator webhook pod is ready in namespace {0}", opNamespace);
+      testUntil(
+          assertDoesNotThrow(() -> operatorWebhookIsReady(opNamespace),
+              "operatorWebhookIsReady failed with ApiException"),
+          logger,
+          "operator webhook to be running in namespace {0}",
+          opNamespace);
+    } else {
+      logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+      testUntil(
+          assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+              "operatorIsReady failed with ApiException"),
+          logger,
+          "operator to be running in namespace {0}",
+          opNamespace);
+    }
 
     if (withRestAPI) {
       logger.info("Wait for the operator external service in namespace {0}", opNamespace);
