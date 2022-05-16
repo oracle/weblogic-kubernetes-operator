@@ -72,7 +72,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
-import oracle.weblogic.kubernetes.extensions.ImageBuilders;
+import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
@@ -1168,7 +1168,7 @@ public class TestActions {
   public static boolean dockerPush(String image) {
     boolean result = Docker.push(image);
     if (result) {
-      ImageBuilders.registerPushedImage(image);
+      InitializationTasks.registerPushedImage(image);
     }
     return result;
   }

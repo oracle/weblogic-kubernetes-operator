@@ -42,13 +42,14 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -119,7 +120,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyD
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createResources;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
-import static oracle.kubernetes.operator.helpers.TuningParametersStub.MAX_RETRY_COUNT;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -143,6 +144,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest extends DomainTestUtils {
+
+  private static final int MAX_RETRY_COUNT = 2;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String NODEMGR_HOME = "/u01/nodemanager";
@@ -204,6 +207,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
+
+    TuningParametersStub.setParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, "2");
   }
 
   private static class JobAwaiterStepFactoryStub implements JobAwaiterStepFactory {
@@ -367,7 +372,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
-    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
+    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
@@ -995,6 +1000,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(asFailedJobPodWithImagePullError(createIntrospectorJobPod(), imagePullError));
   }
 
+  private void defineFailedIntrospectionWithDeadlineExceeded() {
+    testSupport.defineResources(createIntrospectorJob());
+    testSupport.defineResources(asFailedJobPodWithDeadlineExceeded(createIntrospectorJobPod()));
+  }
+
   private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
     List<V1ContainerStatus> statuses = List.of(createImagePullContainerStatus(imagePullError));
     return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
@@ -1003,6 +1013,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private V1ContainerStatus createImagePullContainerStatus(String imagePullError) {
     return new V1ContainerStatus().state(
           new V1ContainerState().waiting(new V1ContainerStateWaiting().reason(imagePullError)));
+  }
+
+  private V1Pod asFailedJobPodWithDeadlineExceeded(V1Pod introspectorJobPod) {
+    return introspectorJobPod.status(new V1PodStatus().reason("DeadlineExceeded"));
   }
 
   private V1Pod createIntrospectorJobPod() {
@@ -1018,6 +1032,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return job;
   }
 
+  private V1Job asFailedJobWithDeadlineExceeded(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+            .reason("DeadlineExceeded")));
+    return job;
+  }
+
   @Test
   void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
@@ -1030,6 +1051,20 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
     assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenPreviousFailedJobWithDeadlineExceeded_terminateWithException() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithDeadlineExceeded();
+    testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
   private V1Job affectedJob;
@@ -1194,7 +1229,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private int getRecheckIntervalSeconds() {
-    return TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    return oracle.kubernetes.operator.tuning.TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
   }
 
   @Test
