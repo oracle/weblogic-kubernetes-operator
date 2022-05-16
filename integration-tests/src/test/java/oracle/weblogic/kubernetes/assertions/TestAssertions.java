@@ -41,6 +41,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -954,6 +955,20 @@ public class TestAssertions {
   }
 
   /**
+   * Verify the web app can be accessed from all managed servers in the domain through Load Balancer.
+   * @param curlCmd curl command to call the sample app
+   * @param managedServerNames managed server names that the sample app response should return
+   * @param maxIterations max iterations to call the curl command
+   * @return true if the web app can hit all managed servers, false otherwise
+   */
+  public static Callable<Boolean> callTestWebAppAndCheckForServerNameInResponse(String curlCmd,
+                                                                            List<String> managedServerNames,
+                                                                            int maxIterations) {
+    return () ->
+      callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, maxIterations);
+  }
+
+  /**
    * Check if executed command contains expected output.
    *
    * @param pod   V1Pod object
@@ -964,4 +979,5 @@ public class TestAssertions {
     return () -> oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodLog(pod.getMetadata().getName(),
         pod.getMetadata().getNamespace()).contains(searchKey);
   }
+
 }
