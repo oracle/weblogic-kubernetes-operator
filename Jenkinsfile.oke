@@ -38,11 +38,6 @@ pipeline {
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
         wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
 
-
-        sonar_project_key = 'oracle_weblogic-kubernetes-operator'
-        sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
-        sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
-
         OKE_CLUSTER='true'
 
         outdir = "${WORKSPACE}/staging"
@@ -88,7 +83,7 @@ pipeline {
         )
         booleanParam(name: 'PARALLEL_RUN',
                      description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: true
+                     defaultValue: false
         )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
@@ -142,6 +137,7 @@ pipeline {
                description: '',
                defaultValue: '2.0.5'
         )
+
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
                      defaultValue: false
@@ -152,6 +148,7 @@ pipeline {
         stage('Filter unwanted branches') {
             when {
                 anyOf {
+                    branch 'main'
                     branch 'okejen'
                 }
             }
@@ -284,40 +281,6 @@ EOF
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
-
-                stage('Run Sonar Analysis') {
-                    steps {
-                        sh '''
-                            rm -rf ${WORKSPACE}/.mvn/maven.config
-                            mkdir -p ${WORKSPACE}/.mvn
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            if [ -z "${CHANGE_ID}" ]; then
-                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                            else
-                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                        '''
-                        withSonarQubeEnv('SonarCloud') {
-                            sh "mvn sonar:sonar"
-                        }
-                    }
-                }
-
-                 stage('Verify Sonar Quality Gate') {
-                    steps {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                        }
-                    }
-                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
