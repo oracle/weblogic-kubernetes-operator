@@ -13,6 +13,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_F
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallRemoteconsoleParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -103,7 +104,11 @@ public class WebLogicRemoteConsole {
         + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
 
-    return callWebAppAndWaitTillReady(curlCmd, 10);
+    testUntil((() -> {
+      return callWebAppAndWaitTillReady(curlCmd, 1);
+    }), logger, "Waiting for remote console access to return 200 status code");
+
+    return true;
 
   }
 
