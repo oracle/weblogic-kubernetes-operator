@@ -845,7 +845,7 @@ public class DomainStatusUpdater {
         }
 
         private int minReplicas() {
-          return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
+          return getInfo().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
         private long numServersReady() {
@@ -855,7 +855,7 @@ public class DomainStatusUpdater {
         }
 
         private int maxUnavailable() {
-          return getDomain().getMaxUnavailable(clusterName);
+          return getInfo().getMaxUnavailable(clusterName);
         }
 
         private String createFailureMessage() {
@@ -865,7 +865,7 @@ public class DomainStatusUpdater {
 
       private void setStatusDetails(DomainStatus status) {
         getDomainConfig()
-            .map(c -> new DomainStatusFactory(getDomain(), c, this::isStartedServer))
+            .map(c -> new DomainStatusFactory(getInfo(), c, this::isStartedServer))
             .ifPresent(f -> f.setStatusDetails(status));
       }
 
@@ -1078,8 +1078,8 @@ public class DomainStatusUpdater {
       }
 
       private long getMaxReadyWaitTime(V1Pod pod) {
-        return Optional.ofNullable(getInfo().getDomain())
-            .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
+        return Optional.ofNullable(getInfo())
+            .map(i -> i.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
             .orElse(TuningParameters.getInstance().getPodTuning().maxReadyWaitTimeSeconds);
       }
 
@@ -1148,21 +1148,21 @@ public class DomainStatusUpdater {
   static class DomainStatusFactory {
 
     @Nonnull
-    private final Domain domain;
+    private final DomainPresenceInfo info;
     private final WlsDomainConfig domainConfig;
     private final Function<String, Boolean> isServerConfiguredToRun;
 
     /**
      * Creates a factory to create a DomainStatus object, initialized with state from the configuration.
      *
-     * @param domain an operator domain resource
+     * @param info an operator domain resource
      * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
-    public DomainStatusFactory(@Nonnull Domain domain,
+    public DomainStatusFactory(@Nonnull DomainPresenceInfo info,
                                @Nonnull WlsDomainConfig domainConfig,
                                @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
-      this.domain = domain;
+      this.info = info;
       this.domainConfig = domainConfig;
       this.isServerConfiguredToRun = isServerConfiguredToRun;
     }
@@ -1204,7 +1204,7 @@ public class DomainStatusUpdater {
       }
 
       private String getDesiredState(String serverName, String clusterName) {
-        return domain.getServer(serverName, clusterName).getDesiredState();
+        return info.getServer(serverName, clusterName).getDesiredState();
       }
 
       private boolean wasServerStarted() {
@@ -1222,11 +1222,11 @@ public class DomainStatusUpdater {
     }
 
     private boolean useMinimumClusterSize(String clusterName) {
-      return !domain.isAllowReplicasBelowMinDynClusterSize(clusterName);
+      return !info.isAllowReplicasBelowMinDynClusterSize(clusterName);
     }
 
     private Integer getClusterSizeGoal(String clusterName) {
-      return domain.getReplicaCount(clusterName);
+      return info.getReplicaCount(clusterName);
     }
 
   }

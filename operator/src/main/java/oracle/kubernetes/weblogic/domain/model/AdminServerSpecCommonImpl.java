@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 public class AdminServerSpecCommonImpl extends ServerSpecCommonImpl implements AdminServerSpec {
   private final AdminServer adminServer;
 
-  AdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
+  public AdminServerSpecCommonImpl(DomainSpec spec, AdminServer server) {
     super(spec, server, null, null);
     adminServer = server;
   }

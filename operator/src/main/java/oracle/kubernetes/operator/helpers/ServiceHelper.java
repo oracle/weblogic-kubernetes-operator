@@ -38,7 +38,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
-import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommon;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -255,14 +255,14 @@ public class ServiceHelper {
     }
 
     private ServerSpec getServerSpec() {
-      return getDomain().getServer(getServerName(), getClusterName());
+      return info.getServer(getServerName(), getClusterName());
     }
 
     @Override
     protected Map<String, String> getServiceLabels() {
       Map<String, String> serviceLabels = getServerSpec().getServiceLabels();
       if (isForAdminServer()) {
-        serviceLabels.putAll(getDomain().getAdminServerSpec().getServiceLabels());
+        serviceLabels.putAll(info.getAdminServerSpec().getServiceLabels());
       }
       return serviceLabels;
     }
@@ -271,7 +271,7 @@ public class ServiceHelper {
     protected Map<String, String> getServiceAnnotations() {
       Map<String, String> serviceAnnotations = getServerSpec().getServiceAnnotations();
       if (isForAdminServer()) {
-        serviceAnnotations.putAll(getDomain().getAdminServerSpec().getServiceAnnotations());
+        serviceAnnotations.putAll(info.getAdminServerSpec().getServiceAnnotations());
       }
       return serviceAnnotations;
     }
@@ -836,23 +836,23 @@ public class ServiceHelper {
       return CLUSTER_SERVICE_REPLACED;
     }
 
-    ClusterSpec getClusterSpec() {
-      return getDomain().getCluster(clusterName);
+    ClusterSpecCommon getClusterSpecCommon() {
+      return info.getClusterSpecCommon(clusterName);
     }
 
     @Override
     Map<String, String> getServiceLabels() {
-      return getClusterSpec().getClusterLabels();
+      return getClusterSpecCommon().getClusterLabels();
     }
 
     @Override
     Map<String, String> getServiceAnnotations() {
-      return getClusterSpec().getClusterAnnotations();
+      return getClusterSpecCommon().getClusterAnnotations();
     }
 
     @Override
     V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
-      return getClusterSpec().getClusterSessionAffinity();
+      return getClusterSpecCommon().getClusterSessionAffinity();
     }
   }
 
@@ -979,7 +979,7 @@ public class ServiceHelper {
     }
 
     private Optional<AdminService> getNullableAdminService() {
-      return Optional.ofNullable(getDomain().getAdminServerSpec())
+      return Optional.ofNullable(info.getAdminServerSpec())
           .map(AdminServerSpec::getAdminService);
     }
   }

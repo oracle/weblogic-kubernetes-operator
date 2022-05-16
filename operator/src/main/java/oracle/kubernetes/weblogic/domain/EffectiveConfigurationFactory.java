@@ -7,6 +7,8 @@ import java.util.List;
 
 import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommon;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 /**
@@ -19,7 +21,11 @@ public interface EffectiveConfigurationFactory {
 
   ServerSpec getServerSpec(String serverName, String clusterName);
 
-  ClusterSpec getClusterSpec(String clusterName);
+  ServerSpec getServerSpec(ManagedServer server, ClusterSpec clusterSpec, Integer clusterLimit);
+
+  ClusterSpecCommon getClusterSpec(String clusterName);
+
+  int getReplicaCountFor(ClusterSpec cluster);
 
   int getReplicaCount(String clusterName);
 

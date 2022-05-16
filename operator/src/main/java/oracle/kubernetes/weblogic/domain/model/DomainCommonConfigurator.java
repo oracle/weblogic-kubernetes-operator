@@ -285,8 +285,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
   }
 
-  private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    Cluster cluster = getDomainSpec().getCluster(clusterName);
+  private ClusterSpec getOrCreateCluster(@Nonnull String clusterName) {
+    ClusterSpec cluster = getDomainSpec().getCluster(clusterName);
     if (cluster != null) {
       return cluster;
     }
@@ -294,8 +294,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return createCluster(clusterName);
   }
 
-  private Cluster createCluster(@Nonnull String clusterName) {
-    Cluster cluster = new Cluster().withClusterName(clusterName);
+  private ClusterSpec createCluster(@Nonnull String clusterName) {
+    ClusterSpec cluster = new ClusterSpec().withClusterName(clusterName);
     getDomainSpec().getClusters().add(cluster);
     return cluster;
   }
@@ -667,9 +667,9 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
-    private final Cluster cluster;
+    private final ClusterSpec cluster;
 
-    ClusterConfiguratorImpl(Cluster cluster) {
+    ClusterConfiguratorImpl(ClusterSpec cluster) {
       this.cluster = cluster;
     }
 

@@ -235,6 +235,26 @@
             </configuration>
           </execution>
           <execution>
+            <id>cluster-custom-resource</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <executable>java</executable>
+              <arguments>
+                <argument>--add-opens</argument>
+                <argument>java.base/java.time=ALL-UNNAMED</argument>
+                <argument>-classpath</argument>
+                <!-- automatically creates the classpath using all project dependencies,
+                     also adding the project build directory -->
+                <classpath/>
+                <argument>oracle.kubernetes.operator.helpers.ClusterCrdHelper</argument>
+                <argument>${project.basedir}/../kubernetes/crd/cluster-crd.yaml</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>test-python-scripts</id>
             <phase>test</phase>
             <goals>

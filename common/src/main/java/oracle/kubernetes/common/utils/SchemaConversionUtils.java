@@ -6,6 +6,7 @@ package oracle.kubernetes.common.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.common.AuxiliaryImageConstants;
+import oracle.kubernetes.common.ClusterCustomResourceHelper;
 import oracle.kubernetes.common.CommonConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.BaseLoggingFacade;
@@ -25,11 +29,13 @@ import org.yaml.snakeyaml.Yaml;
 
 @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
 public class SchemaConversionUtils {
+
   private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
   public static final String VOLUME_MOUNTS = "volumeMounts";
   public static final String VOLUME = "volume";
   public static final String MOUNT_PATH = "mountPath";
   public static final String IMAGE = "image";
+  public static final String CLUSTER_RESOURCE_REFERENCES = "cluster-resource-references";
 
   private AtomicInteger containerIndex = new AtomicInteger(0);
 
@@ -39,6 +45,16 @@ public class SchemaConversionUtils {
    * @return Domain The converted domain.
    */
   public Object convertDomainSchema(Map<String, Object> domain, String desiredAPIVersion) {
+    return convertDomainSchema(null, domain, desiredAPIVersion);
+  }
+
+  /**
+   * Convert the domain schema to desired API version.
+   * @param domain Domain to be converted.
+   * @return Domain The converted domain.
+   */
+  public Object convertDomainSchema(ClusterCustomResourceHelper clusterCustomResourceHelper, Map<String, Object> domain,
+      String desiredAPIVersion) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
       return domain;
@@ -49,6 +65,7 @@ public class SchemaConversionUtils {
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
     removeProgressingConditionFromDomainStatus(domain);
+    convertClustersToResources(clusterCustomResourceHelper, domain, desiredAPIVersion);
     domain.put("apiVersion", desiredAPIVersion);
     LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
     return domain;
@@ -78,6 +95,128 @@ public class SchemaConversionUtils {
     return yaml.dump(convertDomainSchema((Map<String, Object>) domain, desiredApiVersion));
   }
 
+  private void convertClustersToResources(ClusterCustomResourceHelper clusterCustomResourceHelper,
+      Map<String, Object> domain, String desiredAPIVersion) {
+    try {
+      if (clusterCustomResourceHelper != null) {
+        String apiVersion = (String)domain.get("apiVersion");
+        if (CommonConstants.API_VERSION_V8.equals(apiVersion)
+            && CommonConstants.API_VERSION_V9.equals(desiredAPIVersion)) {
+          convertV8toV9(clusterCustomResourceHelper, domain);
+        } else if (CommonConstants.API_VERSION_V9.equals(apiVersion)
+            && CommonConstants.API_VERSION_V8.equals(desiredAPIVersion)) {
+          convertV9toV8(clusterCustomResourceHelper, domain);
+        }
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void convertV8toV9(ClusterCustomResourceHelper clusterCustomResourceHelper, Map<String, Object> domain)
+      throws ApiException {
+    Map<String, Object> domainSpec = getSpec(domain);
+    List<Object> clusterSpecs = getOrCreateClusterSpecs(domainSpec);
+    if (!clusterSpecs.isEmpty()) {
+      List<String> clusterResources = clusterCustomResourceHelper
+          .getNamesOfDeployedClusterResources(getNamespace(domain), getDomainUid(domain));
+      Iterator<Object> itr = clusterSpecs.iterator();
+      while (itr.hasNext()) {
+        Map<String, Object> clusterSpec = (Map<String, Object>) itr.next();
+        String clusterName = (String) clusterSpec.get("clusterName");
+        if (!clusterResources.contains(clusterName)) {
+          // Create Cluster Resource
+          clusterCustomResourceHelper.createClusterResource(clusterSpec, domain);
+
+          // remove the cluster spec from the map
+          itr.remove();
+
+          // Add the reference to the DomainSpec
+          addClusterResourceReference(domainSpec, clusterName);
+        }
+      }
+    }
+  }
+
+  private void addClusterResourceReference(Map<String, Object> domainSpec, String clusterName) {
+    Optional.ofNullable(getClusterResourceReferences(domainSpec)).map(c -> c.add(clusterName));
+  }
+
+  protected List<String> getClusterResourceReferences(Map<String, Object> domainSpec) {
+    List<String> clusterResourceReferences =
+        (List<String>) domainSpec.get(CLUSTER_RESOURCE_REFERENCES);
+    if (clusterResourceReferences == null) {
+      clusterResourceReferences = new ArrayList<>();
+      domainSpec.put(CLUSTER_RESOURCE_REFERENCES, clusterResourceReferences);
+    }
+    return clusterResourceReferences;
+  }
+
+  protected void convertV9toV8(ClusterCustomResourceHelper clusterCustomResourceHelper, Map<String, Object> domain) {
+    String namespace = getNamespace(domain);
+    Map<String, Object> domainSpec = getSpec(domain);
+    List<String> clusterResourceReferences =
+        (List<String>) domainSpec.get(CLUSTER_RESOURCE_REFERENCES);
+    if (clusterResourceReferences != null && !clusterResourceReferences.isEmpty()) {
+      Map<String, Object> clusterResources = clusterCustomResourceHelper
+          .getDeployedClusterResources(namespace, getDomainUid(domain));
+      if (!clusterResources.isEmpty()) {
+        List<Object> clusterSpecs = getOrCreateClusterSpecs(domainSpec);
+        Iterator<String> itr = clusterResourceReferences.iterator();
+        while (itr.hasNext()) {
+          // Add Cluster map to ClusterSpec
+          Map<String, Object> clusterResource =
+              (Map<String, Object>) clusterResources.get(itr.next());
+
+          // Get Clusterspec from Cluster Resource
+          clusterSpecs.add(getClusterSpec(clusterResource));
+        }
+
+        // Remove Cluster Resource Reference from CRD for v8
+        domainSpec.remove(CLUSTER_RESOURCE_REFERENCES);
+      }
+    }
+  }
+
+  /**
+   * Get list of Cluster specs from the Domain spec.  Will create an empty list  and add it to the
+   * Domain spec if it doesn't exist.
+   *
+   * @param domainSpec spec of the Domain
+   * @return list of Cluster specs.
+   */
+  public static List<Object> getOrCreateClusterSpecs(Map<String, Object> domainSpec) {
+    List<Object> clusterSpecs = getClusterSpecs(domainSpec);
+    if (clusterSpecs == null) {
+      clusterSpecs = new ArrayList<>();
+      domainSpec.put("clusters", clusterSpecs);
+    }
+    return clusterSpecs;
+  }
+
+  private Map<String, Object> getClusterSpec(Map<String, Object> cluster) {
+    return (Map<String, Object>) cluster.get("spec");
+  }
+
+  public static String getNamespace(Map<String, Object> domain) {
+    Map<String, Object> metadata = (Map<String, Object>) domain.get("metadata");
+    return (String) metadata.get(V1ObjectMeta.SERIALIZED_NAME_NAMESPACE);
+  }
+
+  /**
+   * Get  DomainUid from Domain object.
+   * @param domain as Map.
+   * @return domainUid from DomainSpec else from domain metadata name attribute.
+   */
+  public static String getDomainUid(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = SchemaConversionUtils.getSpec(domain);
+    String domainUid = (String) domainSpec.get("domainUID");
+    if (domainUid != null) {
+      return domainUid;
+    }
+    return getName(domain);
+  }
+
   private void adjustAdminPortForwardingDefault(Map<String, Object> spec, String apiVersion) {
     Map<String, Object> adminServerSpec = (Map<String, Object>) spec.get("adminServer");
     Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
@@ -91,7 +230,7 @@ public class SchemaConversionUtils {
     List<Object> auxiliaryImageVolumes = Optional.ofNullable(getAuxiliaryImageVolumes(spec)).orElse(new ArrayList<>());
     convertAuxiliaryImages(spec, auxiliaryImageVolumes);
     Optional.ofNullable(getAdminServer(spec)).ifPresent(as -> convertAuxiliaryImages(as, auxiliaryImageVolumes));
-    Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
+    Optional.ofNullable(getClusterSpecs(spec)).ifPresent(cl -> cl.forEach(cluster ->
             convertAuxiliaryImages((Map<String, Object>) cluster, auxiliaryImageVolumes)));
     Optional.ofNullable(getManagedServers(spec)).ifPresent(ms -> ms.forEach(managedServer ->
             convertAuxiliaryImages((Map<String, Object>) managedServer, auxiliaryImageVolumes)));
@@ -117,7 +256,7 @@ public class SchemaConversionUtils {
     return (Map<String, Object>) spec.get("adminServer");
   }
 
-  private List<Object> getClusters(Map<String, Object> spec) {
+  private static List<Object> getClusterSpecs(Map<String, Object> spec) {
     return (List<Object>) spec.get("clusters");
   }
 
@@ -140,7 +279,7 @@ public class SchemaConversionUtils {
     return (Map<String, Object>) Optional.ofNullable(spec).map(s -> s.get("serverPod")).orElse(null);
   }
 
-  Map<String, Object> getSpec(Map<String, Object> domain) {
+  public static Map<String, Object> getSpec(Map<String, Object> domain) {
     return (Map<String, Object>)domain.get("spec");
   }
 
@@ -294,6 +433,11 @@ public class SchemaConversionUtils {
   private String getCommand(Map<String, Object> auxiliaryImage) {
     return Optional.ofNullable((String) auxiliaryImage.get("command"))
             .orElse(AuxiliaryImageConstants.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
+  }
+
+  private static String getName(Map<String, Object> resource) {
+    Map<String, Object> metadata = (Map<String, Object>) resource.get("metadata");
+    return (String) metadata.get(V1ObjectMeta.SERIALIZED_NAME_NAME);
   }
 
   private String getName(int index) {

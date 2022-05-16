@@ -10,14 +10,14 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ClusterTest extends BaseConfigurationTestBase {
-  private final Cluster cluster1;
-  private final Cluster cluster2;
+  private final ClusterSpec cluster1;
+  private final ClusterSpec cluster2;
 
   /**
    * Construct cluster test.
    */
   public ClusterTest() {
-    super(new Cluster(), new Cluster());
+    super(new ClusterSpec(), new ClusterSpec());
     cluster1 = getInstance1();
     cluster2 = getInstance2();
   }

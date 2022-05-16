@@ -14,7 +14,7 @@ public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
    *     server
    */
   public ManagedServerSpecCommonImpl(
-      DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+      DomainSpec spec, Server server, ClusterSpec cluster, Integer clusterLimit) {
     super(spec, server, cluster, clusterLimit);
   }
 

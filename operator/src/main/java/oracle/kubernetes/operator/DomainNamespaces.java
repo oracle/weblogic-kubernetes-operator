@@ -32,6 +32,8 @@ import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
@@ -52,6 +54,8 @@ public class DomainNamespaces {
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<Domain, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
+  private final WatcherControl<Cluster, ClusterWatcher> clusterWatchers
+      = new WatcherControl<>(ClusterWatcher::create, c -> c::dispatchClusterWatch);
   private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
@@ -283,6 +287,11 @@ public class DomainNamespaces {
     @Override
     Consumer<DomainList> getDomainListProcessing() {
       return l -> domainWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    Consumer<ClusterList> getClusterListProcessing() {
+      return l -> clusterWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
   }
 }

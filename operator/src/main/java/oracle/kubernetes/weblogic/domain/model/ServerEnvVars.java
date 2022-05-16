@@ -70,7 +70,7 @@ public class ServerEnvVars {
         LOG_HOME, SERVER_OUT_IN_POD_LOG, DATA_HOME, ACCESS_LOG_IN_LOG_HOME, DYNAMIC_CONFIG_OVERRIDE,
         KUBERNETES_PLATFORM);
 
-  static boolean isReserved(String name) {
+  public static boolean isReserved(String name) {
     return RESERVED_NAMES.contains(name);
   }
 }

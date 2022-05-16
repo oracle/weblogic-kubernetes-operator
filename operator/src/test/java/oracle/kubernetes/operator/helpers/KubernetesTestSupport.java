@@ -77,6 +77,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.apache.commons.lang3.ArrayUtils;
@@ -97,6 +99,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String NAMESPACE = "Namespace";
   public static final String DOMAIN = "Domain";
+  public static final String CLUSTER = "Cluster";
   public static final String EVENT = "Event";
   public static final String JOB = "Job";
   public static final String PV = "PersistentVolume";
@@ -145,6 +148,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
+    supportNamespaced(CLUSTER, Cluster.class, this::createClusterList);
     supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
@@ -163,6 +167,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private DomainList createDomainList(List<Domain> items) {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
+  }
+
+  private ClusterList createClusterList(List<Cluster> items) {
+    return new ClusterList().withMetadata(createListMeta()).withItems(items);
   }
 
   private CoreV1EventList createEventList(List<CoreV1Event> items) {

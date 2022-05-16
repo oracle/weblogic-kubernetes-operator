@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /**
@@ -33,6 +34,12 @@ public interface DomainProcessor {
    * @param item a Kubernetes watch even
    */
   void dispatchDomainWatch(Watch.Response<Domain> item);
+
+  /**
+   * Handles a watch event for clusters in the managed namespaces.
+   * @param item a Kubernetes watch even
+   */
+  void dispatchClusterWatch(Watch.Response<Cluster> item);
 
   /**
    * Handles a watch event for pods in the managed namespaces.

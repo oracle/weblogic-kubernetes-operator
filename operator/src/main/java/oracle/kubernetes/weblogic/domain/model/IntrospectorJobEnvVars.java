@@ -152,7 +152,7 @@ public class IntrospectorJobEnvVars {
    * @param name an environment variable name
    * @return true if the name is reserved
    */
-  static boolean isReserved(String name) {
+  public static boolean isReserved(String name) {
     return ServerEnvVars.isReserved(name) || RESERVED_NAMES.contains(name);
   }
 

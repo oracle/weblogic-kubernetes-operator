@@ -1,116 +1,103 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodSpec.RestartPolicyEnum;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1ServiceSpec.SessionAffinityEnum;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 
 /**
  * An element representing a cluster in the domain configuration.
  *
  * @since 2.0
  */
-public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
-  /** The name of the cluster. Required. */
-  @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
-      + "in the WebLogic domain configuration. Required.")
-  @Nonnull
-  private String clusterName;
-
-  /** The number of replicas to run in the cluster, if specified. */
-  @Description(
-      "The number of cluster member Managed Server instances to start for this WebLogic cluster. "
-      + "The operator will sort cluster member Managed Server names from the WebLogic domain "
-      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
-      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
-      + "The operator will then start Managed Server instances from the sorted list, "
-      + "up to the `replicas` count, unless specific Managed Servers are specified as "
-      + "starting in their entry under the `managedServers` field. In that case, the specified Managed Server "
-      + "instances will be started and then additional cluster members "
-      + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
-      + "not already started. If cluster members are started "
-      + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.")
-  @Range(minimum = 0)
-  private Integer replicas;
+public class Cluster implements Comparable<Cluster>, KubernetesObject {
+  /**
+   * APIVersion defines the versioned schema of this representation of an object. Servers should
+   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   */
+  @SerializedName("apiVersion")
+  @Description("The API version defines the versioned schema of this Domain.")
+  private String apiVersion;
 
   /**
-   * Tells the operator whether the customer wants the server to be running. For clustered servers -
-   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
-   * needs to be started to get to the cluster's replica count.
-   *
-   * @since 2.0
+   * Kind is a string value representing the REST resource this object represents. Servers may infer
+   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
+   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
    */
-  @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
-  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
-      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  private ServerStartPolicy serverStartPolicy;
+  @SerializedName("kind")
+  @Description("The type of the REST resource. Must be \"Domain\".")
+  private String kind;
 
-  @Description(
-      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
-  @Range(minimum = 1)
-  private Integer maxUnavailable;
+  /**
+   * Standard object's metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+   */
+  @SerializedName("metadata")
+  @Description("The resource metadata. Must include the `name` and `namespace.")
+  private V1ObjectMeta metadata = new V1ObjectMeta();
 
-  @Description("Customization affecting Kubernetes Service generated for this WebLogic cluster.")
-  @SerializedName("clusterService")
+  /**
+   * ClusterSpec is a description of a cluster.
+   */
+  @SerializedName("spec")
   @Expose
-  private ClusterService clusterService = new ClusterService();
+  @Valid
+  @Description("The specification of the operation of the WebLogic cluster. Required.")
+  @Nonnull
+  private ClusterSpec spec = new ClusterSpec();
 
-  @Description("Specifies whether the number of running cluster members is allowed to drop below the "
-      + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
-      + "Otherwise, the operator will ensure that the number of running cluster members is not less than "
-      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
-      + "Defaults to true."
-  )
-  private Boolean allowReplicasBelowMinDynClusterSize;
+  /**
+   * ClusterStatus represents information about the status of a cluster. Status may trail the actual
+   * state of a system.
+   */
+  @SerializedName("status")
+  @Expose
+  @Valid
+  @Description("The current status of the operation of the WebLogic cluster. Updated automatically by the operator.")
+  private ClusterStatus status;
 
-  @Description(
-      "The maximum number of Managed Servers instances that the operator will start in parallel "
-      + "for this cluster in response to a change in the `replicas` count. "
-      + "If more Managed Server instances must be started, the operator will wait until a Managed "
-      + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
-      + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
-  )
-  @Range(minimum = 0)
-  private Integer maxConcurrentStartup;
-
-  @Description(
-          "The maximum number of WebLogic Server instances that will shut down in parallel "
-                  + "for this cluster when it is being partially shut down by lowering its replica count. "
-                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
-                  + "which defaults to 1."
-  )
-  @Range(minimum = 0)
-  private Integer maxConcurrentShutdown;
-
-  protected Cluster getConfiguration() {
-    Cluster configuration = new Cluster();
-    configuration.fillInFrom(this);
+  protected ClusterSpec getConfiguration() {
+    ClusterSpec configuration = new ClusterSpec();
+    configuration.fillInFrom(this.getSpec());
     configuration.setRestartVersion(this.getRestartVersion());
     return configuration;
   }
 
   public String getClusterName() {
-    return clusterName;
+    return metadata.getName();
   }
 
   public void setClusterName(@Nonnull String clusterName) {
-    this.clusterName = clusterName;
+    metadata.setName(clusterName);
   }
 
   public Cluster withClusterName(@Nonnull String clusterName) {
@@ -118,12 +105,16 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     return this;
   }
 
+  public String getNamespace() {
+    return metadata.getNamespace();
+  }
+
   public Integer getReplicas() {
-    return replicas;
+    return spec.getReplicas();
   }
 
   public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
+    spec.setReplicas(replicas);
   }
 
   /**
@@ -134,46 +125,43 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
    *     configured in the WebLogic domain home configuration.
    */
   public Boolean isAllowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
+    return spec.isAllowReplicasBelowMinDynClusterSize();
   }
 
   public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
-    allowReplicasBelowMinDynClusterSize = value;
+    spec.setAllowReplicasBelowMinDynClusterSize(value);
   }
 
   public Integer getMaxConcurrentStartup() {
-    return maxConcurrentStartup;
+    return spec.getMaxConcurrentStartup();
   }
 
   public void setMaxConcurrentStartup(Integer value) {
-    maxConcurrentStartup = value;
+    spec.setMaxConcurrentStartup(value);
   }
 
   public Integer getMaxConcurrentShutdown() {
-    return maxConcurrentShutdown;
+    return spec.getMaxConcurrentShutdown();
   }
 
   public void setMaxConcurrentShutdown(Integer value) {
-    maxConcurrentShutdown = value;
+    spec.setMaxConcurrentShutdown(value);
   }
 
-  @Nullable
-  @Override
   public ServerStartPolicy getServerStartPolicy() {
-    return serverStartPolicy;
+    return spec.getServerStartPolicy();
   }
 
-  @Override
   public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
+    spec.setServerStartPolicy(serverStartPolicy);
   }
 
   public ClusterService getClusterService() {
-    return clusterService;
+    return spec.getClusterService();
   }
 
   public void setClusterService(ClusterService clusterService) {
-    this.clusterService = clusterService;
+    spec.setClusterService(clusterService);
   }
 
   public Cluster withClusterService(ClusterService clusterService) {
@@ -181,54 +169,56 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     return this;
   }
 
+  public Cluster spec(ClusterSpec spec) {
+    this.spec = spec;
+    return this;
+  }
+
   public Map<String, String> getClusterLabels() {
-    return clusterService.getLabels();
+    return getClusterService().getLabels();
   }
 
   void addClusterLabel(String name, String value) {
-    clusterService.addLabel(name, value);
+    getClusterService().addLabel(name, value);
   }
 
   public Map<String, String> getClusterAnnotations() {
-    return clusterService.getAnnotations();
+    return getClusterService().getAnnotations();
   }
 
   void addClusterAnnotation(String name, String value) {
-    clusterService.addAnnotations(name, value);
+    getClusterService().addAnnotations(name, value);
   }
 
-  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
-    return clusterService.getSessionAffinity();
+  public SessionAffinityEnum getClusterSessionAffinity() {
+    return getClusterService().getSessionAffinity();
   }
 
   Integer getMaxUnavailable() {
-    return maxUnavailable;
+    return spec.getMaxUnavailable();
   }
 
   void setMaxUnavailable(Integer maxUnavailable) {
-    this.maxUnavailable = maxUnavailable;
+    spec.setMaxUnavailable(maxUnavailable);
   }
 
-  void fillInFrom(Cluster other) {
+  void fillInFrom(BaseConfiguration other) {
     if (other == null) {
       return;
     }
-    super.fillInFrom(other);
-    clusterService.fillInFrom(other.clusterService);
+    spec.fillInFrom(other);
+    //clusterService.fillInFrom(other.clusterService);
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .appendSuper(super.toString())
-        .append("clusterName", clusterName)
-        .append("replicas", replicas)
-        .append("serverStartPolicy", serverStartPolicy)
-        .append("clusterService", clusterService)
-        .append("maxUnavailable", maxUnavailable)
-        .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
-        .append("maxConcurrentStartup", maxConcurrentStartup)
-        .append("maxConcurrentShutdown", maxConcurrentShutdown)
+        .append("clusterName", getClusterName())
+        .append("apiVersion", apiVersion)
+        .append("kind", kind)
+        .append("metadata", metadata)
+        .append("spec", spec)
+        .append("status", status)
         .toString();
   }
 
@@ -246,34 +236,290 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(clusterName, cluster.clusterName)
-        .append(replicas, cluster.replicas)
-        .append(serverStartPolicy, cluster.serverStartPolicy)
-        .append(clusterService, cluster.clusterService)
-        .append(maxUnavailable, cluster.maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
-        .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
-        .append(maxConcurrentShutdown, cluster.maxConcurrentShutdown)
+        .append(metadata, cluster.metadata)
+        .append(apiVersion, cluster.apiVersion)
+        .append(kind, cluster.kind)
+        .append(spec, cluster.spec)
+        .append(status, cluster.status)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .appendSuper(super.hashCode())
-        .append(clusterName)
-        .append(replicas)
-        .append(serverStartPolicy)
-        .append(clusterService)
-        .append(maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize)
-        .append(maxConcurrentStartup)
-        .append(maxConcurrentShutdown)
+        .append(metadata)
+        .append(apiVersion)
+        .append(kind)
+        .append(spec)
+        .append(status)
         .toHashCode();
   }
 
-  @Override
   public int compareTo(@Nonnull Cluster o) {
-    return clusterName.compareTo(o.clusterName);
+    return getClusterName().compareTo(o.getClusterName());
+  }
+
+  /**
+   * APIVersion defines the versioned schema of this representation of an object. Servers should
+   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   *
+   * @return API version
+   */
+  public String getApiVersion() {
+    return apiVersion;
+  }
+
+  /**
+   * APIVersion defines the versioned schema of this representation of an object. Servers should
+   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   *
+   * @param apiVersion API version
+   */
+  public void setApiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
+  }
+
+  /**
+   * APIVersion defines the versioned schema of this representation of an object. Servers should
+   * convert recognized schemas to the latest internal value, and may reject unrecognized values.
+   * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+   *
+   * @param apiVersion API version
+   * @return this
+   */
+  public Cluster withApiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
+    return this;
+  }
+
+  /**
+   * Kind is a string value representing the REST resource this object represents. Servers may infer
+   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
+   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @return kind
+   */
+  public String getKind() {
+    return kind;
+  }
+
+  /**
+   * Kind is a string value representing the REST resource this object represents. Servers may infer
+   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
+   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param kind Kind
+   */
+  public void setKind(String kind) {
+    this.kind = kind;
+  }
+
+  /**
+   * Kind is a string value representing the REST resource this object represents. Servers may infer
+   * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
+   * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+   *
+   * @param kind Kind
+   * @return this
+   */
+  public Cluster withKind(String kind) {
+    this.kind = kind;
+    return this;
+  }
+
+  /**
+   * Standard object's metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+   *
+   * @return Metadata
+   */
+  public V1ObjectMeta getMetadata() {
+    return metadata;
+  }
+
+  /**
+   * Standard object's metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+   *
+   * @param metadata Metadata
+   */
+  public void setMetadata(V1ObjectMeta metadata) {
+    this.metadata = metadata;
+  }
+
+  /**
+   * Standard object's metadata. More info:
+   * https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+   *
+   * @param metadata Metadata
+   * @return this
+   */
+  public Cluster withMetadata(V1ObjectMeta metadata) {
+    this.metadata = metadata;
+    return this;
+  }
+
+  /**
+   * Returns the domain unique identifier.
+   *
+   * @return domain UID
+   */
+  public String getDomainUid() {
+    return KubernetesUtils.getDomainUidLabel(metadata);
+  }
+
+  /**
+   * Sets the value of the domainUID label in the given Kubernetes resource metadata.
+   *
+   * @param name the uid
+   * @return value of the domainUID label
+   */
+  public Cluster withDomainUid(String name) {
+    Optional.ofNullable(metadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.put(DOMAINUID_LABEL, name));
+    return this;
+  }
+
+  String getRestartVersion() {
+    return spec.getRestartVersion();
+  }
+
+  void setRestartVersion(String restartVersion) {
+    spec.setRestartVersion(restartVersion);
+  }
+
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return spec.getAdditionalVolumeMounts();
+  }
+
+  void addAdditionalVolume(String name, String path) {
+    spec.addAdditionalVolume(name, path);
+  }
+
+  void addAdditionalPvClaimVolume(String name, String claimName) {
+    spec.addAdditionalPvClaimVolume(name, claimName);
+  }
+
+  ProbeTuning getLivenessProbe() {
+    return spec.getLivenessProbe();
+  }
+
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    spec.setLivenessProbe(initialDelay, timeout, period);
+  }
+
+  public List<V1Container> getContainers() {
+    return spec.getContainers();
+  }
+
+  public ClusterSpec getSpec() {
+    return spec;
+  }
+
+  public List<V1Container> getInitContainers() {
+    return spec.getInitContainers();
+  }
+
+  Shutdown getShutdown() {
+    return spec.getShutdown();
+  }
+
+  public RestartPolicyEnum getRestartPolicy() {
+    return spec.getRestartPolicy();
+  }
+
+  public String getRuntimeClassName() {
+    return spec.getRuntimeClassName();
+  }
+
+  public String getSchedulerName() {
+    return spec.getSchedulerName();
+  }
+
+  void addEnvironmentVariable(String name, String value) {
+    spec.addEnvironmentVariable(new V1EnvVar().name(name).value(value));
+  }
+
+  void setServerStartState(@Nullable ServerStartState serverStartState) {
+    spec.setServerStartState(serverStartState);
+  }
+
+  void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    spec.setReadinessProbe(initialDelay, timeout, period);
+  }
+
+  void setReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    spec.setReadinessProbeThresholds(successThreshold, failureThreshold);
+  }
+
+  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    spec.setLivenessProbeThresholds(successThreshold, failureThreshold);
+  }
+
+  void addNodeSelector(String labelKey, String labelValue) {
+    spec.addNodeSelector(labelKey, labelValue);
+  }
+
+  void addRequestRequirement(String resource, String quantity) {
+    spec.addRequestRequirement(resource, quantity);
+  }
+
+  void addLimitRequirement(String resource, String quantity) {
+    spec.addLimitRequirement(resource, quantity);
+  }
+
+  void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    spec.setPodSecurityContext(podSecurityContext);
+  }
+
+  V1SecurityContext getContainerSecurityContext() {
+    return spec.getContainerSecurityContext();
+  }
+
+  void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+    spec.setContainerSecurityContext(containerSecurityContext);
+  }
+
+  public void addAdditionalVolumeMount(String name, String path) {
+    spec.addAdditionalVolumeMount(name, path);
+  }
+
+  void addInitContainer(V1Container initContainer) {
+    spec.addInitContainer(initContainer);
+  }
+
+  void addContainer(V1Container container) {
+    spec.addContainer(container);
+  }
+
+  void addPodLabel(String name, String value) {
+    spec.addPodLabel(name, value);
+  }
+
+  Map<String, String> getPodAnnotations() {
+    return spec.getPodAnnotations();
+  }
+
+  void addPodAnnotation(String name, String value) {
+    spec.addPodAnnotation(name, value);
+  }
+
+  void setRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+    spec.setRestartPolicy(restartPolicy);
+  }
+
+  void setAffinity(V1Affinity affinity) {
+    spec.setAffinity(affinity);
+  }
+
+  public void setNodeName(String nodeName) {
+    spec.setNodeName(nodeName);
+  }
+
+  public void setMaxReadyWaitTimeSeconds(long waitTime) {
+    spec.setMaxReadyWaitTimeSeconds(waitTime);
   }
 }

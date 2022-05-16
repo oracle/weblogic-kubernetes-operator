@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -24,6 +26,7 @@ import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.PolicyV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -53,6 +56,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import okhttp3.Call;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.builders.CallParamsImpl;
@@ -68,9 +72,12 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
@@ -294,6 +301,9 @@ public class CallBuilder {
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
+  private final CallFactory<ClusterList> listCluster =
+      (requestParams, usage, cont, callback) ->
+          wrap(listClusterAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1PodList> listPod =
       (requestParams, usage, cont, callback) ->
           wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
@@ -404,6 +414,25 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
+  private final SynchronousCallFactory<ClusterList> listClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listNamespacedCluster(
+                  requestParams.namespace,
+                  pretty,
+                  null,
+                  fieldSelector,
+                  labelSelector,
+                  limit,
+                  resourceVersion,
+                  timeoutSeconds,
+                  watch);
+  private final SynchronousCallFactory<Cluster> createClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .createNamespacedCluster(
+                  requestParams.namespace,
+                  requestParams.body);
   private final SynchronousCallFactory<Domain> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -422,6 +451,11 @@ public class CallBuilder {
       (client, requestParams) ->
           new WeblogicApi(client)
               .patchNamespacedDomain(
+                  requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
+  private final SynchronousCallFactory<Cluster> patchClusterCall =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .patchNamespacedCluster(
                   requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
 
   private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
@@ -682,6 +716,51 @@ public class CallBuilder {
     RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
+
+  private Call listClusterAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<ClusterList> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .listNamespacedClusterAsync(
+            namespace,
+            pretty,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing clusters.
+   *
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listClusterAsync(String namespace, ResponseStep<ClusterList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listCluster", namespace, null, null, callParams), listCluster);
+  }
+
+  /**
+   * Patch cluster.
+   *
+   * @param name the domain uid (unique within the k8s cluster)
+   * @param namespace the namespace containing the domain
+   * @param patchBody the patch to apply
+   * @return Updated cluster
+   * @throws ApiException APIException
+   */
+  public Cluster patchCluster(String name, String namespace, V1Patch patchBody) throws ApiException {
+    RequestParams requestParams =
+        new RequestParams("patchCluster", namespace, name, patchBody, name);
+    return executeSynchronousCall(requestParams, patchClusterCall);
+  }
+
 
   /**
    * Replace domain status.
@@ -2124,5 +2203,144 @@ public class CallBuilder {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  // --------------------------- Custom Resource Cluster -----------------------------------
+  /**
+   * Create a Cluster Custom Resource.
+   *
+   * @param cluster Cluster custom resource model object
+   * @param cluVersion custom resource's version
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public void createClusterCustomResource(Cluster cluster, String... cluVersion) throws ApiException {
+    //public Cluster createClusterCustomResource(Cluster cluster, String... cluVersion) throws ApiException {
+    //String clusterVersion = (cluVersion.length == 0) ? KubernetesConstants.CLUSTER_VERSION : cluVersion[0];
+
+    if (cluster == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'cluster' cannot be null when calling createClusterCustomResource()");
+    }
+
+    if (cluster.getMetadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'cluster' cannot be null when calling createClusterCustomResource()");
+    }
+
+    if (cluster.getMetadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+          "'namespace' field in the metadata cannot be null when calling createClusterCustomResource()");
+    }
+
+    String namespace = cluster.getMetadata().getNamespace();
+
+    JsonElement json = convertToJson(cluster);
+
+    try {
+      RequestParams requestParams = new RequestParams("createCluster", namespace, null, json, callParams);
+      executeSynchronousCall(requestParams, createClusterCall);
+    } catch (ApiException apex) {
+      throw apex;
+    }
+  }
+
+  /**
+   * Converts a Java Object to a JSON element.
+   *
+   * @param obj java object to be converted
+   * @return object representing Json element
+   */
+  private JsonElement convertToJson(Object obj) {
+    ClientPool pool = getClientPool();
+    ApiClient apiClient = pool.take();
+    try {
+      Gson gson = apiClient.getJSON().getGson();
+      return gson.toJsonTree(obj);
+    } finally {
+      pool.recycle(apiClient);
+    }
+  }
+
+  /**
+   * Get the Cluster Custom Resource.
+   *
+   * @param clusterName unique domain identifier
+   * @param namespace name of namespace
+   * @return cluster custom resource or null if Cluster does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public Cluster getClusterCustomResource(String clusterName, String namespace)
+      throws ApiException {
+    return getClusterCustomResource(clusterName, namespace, KubernetesConstants.CLUSTER_VERSION);
+  }
+
+  /**
+   * Get the Cluster Custom Resource.
+   *
+   * @param clusterName unique domain identifier
+   * @param namespace name of namespace
+   * @param clusterVersion version of doclustermain
+   * @return cluster custom resource or null if Cluster does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public Cluster getClusterCustomResource(String clusterName, String namespace, String clusterVersion)
+      throws ApiException {
+    Object cluster = null;
+    ClientPool pool = getClientPool();
+    ApiClient apiClient = pool.take();
+    try {
+      CustomObjectsApi customObjectsApi = new CustomObjectsApi(apiClient);
+      cluster = customObjectsApi.getNamespacedCustomObject(
+          KubernetesConstants.DOMAIN_GROUP, // custom resource's group name
+          clusterVersion, // //custom resource's version
+          namespace, // custom resource's namespace
+          KubernetesConstants.CLUSTER_PLURAL, // custom resource's plural name
+          clusterName // custom object's name
+      );
+    } catch (ApiException apex) {
+      if (apex.getCode() != HTTP_NOT_FOUND) {
+        throw apex;
+      }
+    } finally {
+      pool.recycle(apiClient);
+    }
+
+    if (cluster != null) {
+      return handleResponse(cluster, Cluster.class);
+    }
+
+    System.out.println("Cluster Custom Resource '" + clusterName + "' not found in namespace " + namespace);
+    return null;
+  }
+
+  /**
+   * Converts the response to appropriate type.
+   *
+   * @param response response object to convert
+   * @param type the type to convert into
+   * @return the Java object of the type the response object is converted to
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T handleResponse(Object response, Class<T> type) {
+    JsonElement jsonElement = convertToJson(response);
+    ClientPool pool = getClientPool();
+    ApiClient apiClient = pool.take();
+    try {
+      return apiClient.getJSON().getGson().fromJson(jsonElement, type);
+    } finally {
+      pool.recycle(apiClient);
+    }
+  }
+
+  /**
+   * List clusters.
+   *
+   * @param namespace Namespace
+   * @return Cluster list
+   * @throws ApiException API exception
+   */
+  public @Nonnull ClusterList listCluster(String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("listCluster", namespace, null, null, callParams);
+    return executeSynchronousCall(requestParams, listClusterCall);
   }
 }

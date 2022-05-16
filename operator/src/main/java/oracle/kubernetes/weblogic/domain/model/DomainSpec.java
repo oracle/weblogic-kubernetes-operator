@@ -27,7 +27,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+//import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -401,7 +401,19 @@ public class DomainSpec extends BaseConfiguration {
       + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
       + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
       + "WebLogic domain configuration.")
-  protected final List<Cluster> clusters = new ArrayList<>();
+  protected final List<ClusterSpec> clusters = new ArrayList<>();
+
+  /**
+   * The list of names of cluster custom resources the operator should reference for cluster
+   * configuration elements.
+   *
+   * @since 4.0
+   */
+  @Description("List of names of Cluster Custom Resources the Operator expects to be deployed in the "
+      + "same namespace that the domain is deployed.  A reference to a cluster custom resource "
+      + " in order for the cluster elements to be applied.")
+  @SerializedName("cluster-resource-references")
+  protected final List<String> clusterResourceReferences = new ArrayList<>();
 
   /**
    * Adds a Cluster to the DomainSpec.
@@ -409,8 +421,41 @@ public class DomainSpec extends BaseConfiguration {
    * @param cluster The cluster to be added to this DomainSpec
    * @return this object
    */
-  public DomainSpec withCluster(Cluster cluster) {
+  public DomainSpec withCluster(ClusterSpec cluster) {
     clusters.add(cluster);
+    return this;
+  }
+
+  /**
+   * Adds a list of cluster resource references to the DomainSpec.
+   *
+   * @param clusterResourceNames List of cluster references to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec withClusterResourceReferences(List<String> clusterResourceNames) {
+    clusterResourceReferences.addAll(clusterResourceNames);
+    return this;
+  }
+
+  /**
+   * Add a  cluster resource reference to the DomainSpec.
+   *
+   * @param clusterResourceName a cluster reference to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec addClusterResourceReference(String clusterResourceName) {
+    clusterResourceReferences.add(clusterResourceName);
+    return this;
+  }
+
+  /**
+   * Remove a  cluster resource reference to the DomainSpec.
+   *
+   * @param clusterResourceName a cluster reference to be removed from the DomainSpec
+   * @return this object
+   */
+  public DomainSpec removeClusterResourceReference(String clusterResourceName) {
+    clusterResourceReferences.remove(clusterResourceName);
     return this;
   }
 
@@ -428,11 +473,11 @@ public class DomainSpec extends BaseConfiguration {
     return adminServer;
   }
 
-  @SuppressWarnings("unused")
-  EffectiveConfigurationFactory getEffectiveConfigurationFactory(
-      String apiVersion) {
-    return new CommonEffectiveConfigurationFactory();
-  }
+  //@SuppressWarnings("unused")
+  //EffectiveConfigurationFactory getEffectiveConfigurationFactory(
+  //    String apiVersion) {
+  //  return new CommonEffectiveConfigurationFactory();
+  //}
 
   /**
    * Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults
@@ -516,7 +561,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   // NOTE: we ignore the namespace, which could be confusing. We should change it with the next schema update.
-  V1SecretReference getWebLogicCredentialsSecret() {
+  public V1SecretReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
@@ -801,7 +846,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(OverrideDistributionStrategy.DEFAULT);
   }
 
-  Model getModel() {
+  public Model getModel() {
     return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null);
   }
 
@@ -823,7 +868,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return istioEnabled
    */
-  boolean isIstioEnabled() {
+  public boolean isIstioEnabled() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getIstio)
         .map(Istio::getEnabled)
@@ -993,6 +1038,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("adminServer", adminServer)
             .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("clusters", clusters)
+            .append("clusterResourceReferences", clusterResourceReferences)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("configuration", configuration)
@@ -1026,6 +1072,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer)
             .append(allowReplicasBelowMinDynClusterSize)
             .append(clusters)
+            .append(clusterResourceReferences)
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(configuration)
@@ -1078,6 +1125,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
+            .append(clusterResourceReferences, rhs.clusterResourceReferences)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
@@ -1091,8 +1139,12 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-
-  ManagedServer getManagedServer(String serverName) {
+  /**
+   * Get Managed Server.
+   * @param serverName name of server.
+   * @return ManagedServer object.
+   */
+  public ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {
       for (ManagedServer s : managedServers) {
         if (serverName.equals(s.getServerName())) {
@@ -1103,9 +1155,14 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  Cluster getCluster(String clusterName) {
+  /**
+   * Get ClusterSpec object.
+   * @param clusterName name of cluster.
+   * @return spec of cluster.
+   */
+  public ClusterSpec getCluster(String clusterName) {
     if (clusterName != null) {
-      for (Cluster c : clusters) {
+      for (ClusterSpec c : clusters) {
         if (clusterName.equals(c.getClusterName())) {
           return c;
         }
@@ -1138,130 +1195,7 @@ public class DomainSpec extends BaseConfiguration {
     return managedServers;
   }
 
-  public List<Cluster> getClusters() {
+  public List<ClusterSpec> getClusters() {
     return clusters;
-  }
-
-  class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
-    @Override
-    public AdminServerSpec getAdminServerSpec() {
-      return new AdminServerSpecCommonImpl(DomainSpec.this, adminServer);
-    }
-
-    @Override
-    public ServerSpec getServerSpec(String serverName, String clusterName) {
-      return new ManagedServerSpecCommonImpl(
-          DomainSpec.this,
-          getManagedServer(serverName),
-          getCluster(clusterName),
-          getClusterLimit(clusterName));
-    }
-
-    private boolean hasReplicaCount(Cluster cluster) {
-      return cluster != null && cluster.getReplicas() != null;
-    }
-
-    private boolean hasMaxUnavailable(Cluster cluster) {
-      return cluster != null && cluster.getMaxUnavailable() != null;
-    }
-
-    private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
-      return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
-    }
-
-    private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-      return hasAllowReplicasBelowMinDynClusterSize(cluster)
-          ? cluster.isAllowReplicasBelowMinDynClusterSize()
-          : DomainSpec.this.isAllowReplicasBelowMinDynClusterSize();
-    }
-
-    private boolean hasMaxConcurrentStartup(Cluster cluster) {
-      return cluster != null && cluster.getMaxConcurrentStartup() != null;
-    }
-
-    private int getMaxConcurrentShutdownFor(Cluster cluster) {
-      return Optional.ofNullable(cluster).map(Cluster::getMaxConcurrentShutdown)
-          .orElse(getMaxClusterConcurrentShutdown());
-    }
-
-    private int getMaxConcurrentStartupFor(Cluster cluster) {
-      return hasMaxConcurrentStartup(cluster)
-          ? cluster.getMaxConcurrentStartup()
-          : getMaxClusterConcurrentStartup();
-    }
-
-    private int getMaxUnavailableFor(Cluster cluster) {
-      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
-    }
-
-    private int getReplicaCountFor(Cluster cluster) {
-      return hasReplicaCount(cluster)
-          ? cluster.getReplicas()
-          : Optional.ofNullable(replicas).orElse(0);
-    }
-
-    @Override
-    public ClusterSpec getClusterSpec(String clusterName) {
-      return new ClusterSpecCommonImpl(DomainSpec.this, getCluster(clusterName));
-    }
-
-    private Integer getClusterLimit(String clusterName) {
-      return clusterName == null ? null : getReplicaCount(clusterName);
-    }
-
-    @Override
-    public boolean isShuttingDown() {
-      return getAdminServerSpec().isShuttingDown();
-    }
-
-    @Override
-    public int getReplicaCount(String clusterName) {
-      return getReplicaCountFor(getCluster(clusterName));
-    }
-
-    @Override
-    public void setReplicaCount(String clusterName, int replicaCount) {
-      getOrCreateCluster(clusterName).setReplicas(replicaCount);
-    }
-
-    @Override
-    public int getMaxUnavailable(String clusterName) {
-      return getMaxUnavailableFor(getCluster(clusterName));
-    }
-
-    @Override
-    public List<String> getAdminServerChannelNames() {
-      return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
-    }
-
-    @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
-      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
-    }
-
-    @Override
-    public int getMaxConcurrentStartup(String clusterName) {
-      return getMaxConcurrentStartupFor(getCluster(clusterName));
-    }
-
-    @Override
-    public int getMaxConcurrentShutdown(String clusterName) {
-      return getMaxConcurrentShutdownFor(getCluster(clusterName));
-    }
-
-    private Cluster getOrCreateCluster(String clusterName) {
-      Cluster cluster = getCluster(clusterName);
-      if (cluster != null) {
-        return cluster;
-      }
-
-      return createClusterWithName(clusterName);
-    }
-
-    private Cluster createClusterWithName(String clusterName) {
-      Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.add(cluster);
-      return cluster;
-    }
   }
 }

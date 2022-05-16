@@ -132,7 +132,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   ServerSpec getServerSpec() {
-    return getDomain().getAdminServerSpec();
+    return info.getAdminServerSpec();
   }
 
   String getJobName() {
@@ -643,7 +643,7 @@ public class JobStepContext extends BasePodStepContext {
   List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
     // Pod for introspector job would use same environment variables as for admin server
     List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+          PodHelper.createCopy(info.getAdminServerSpec().getEnvironmentVariables());
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());

@@ -16,7 +16,8 @@ The specification of the operation of the WebLogic domain. Required.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
-| `clusters` | Array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
+| `cluster-resource-references` | Array of string | List of names of Cluster Custom Resources the Operator expects to be deployed in the same namespace that the domain is deployed.  A reference to a cluster custom resource  in order for the cluster elements to be applied. |
+| `clusters` | Array of [Cluster Spec](#cluster-spec) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
 | `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | Array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
@@ -74,7 +75,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING. |
 
-### Cluster
+### Cluster Spec
 
 | Name | Type | Description |
 | --- | --- | --- |

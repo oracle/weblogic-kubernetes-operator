@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -67,6 +68,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -131,7 +133,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     this.productVersion = productVersion;
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+  public static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
@@ -142,7 +144,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     statusUpdaters.remove((namespace));
   }
 
-  static void registerDomainPresenceInfo(DomainPresenceInfo info) {
+  /**
+   * Register a DomainPresenceInfo object.
+   * @param info DomainPresenceInfo object.
+   */
+  public static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     domains
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
           .put(info.getDomainUid(), info);
@@ -333,6 +339,10 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static Step bringManagedServersUp() {
     return new ManagedServersUpStep(null);
+  }
+
+  private static Step listClusterResources(String namespace, String domainUid) {
+    return new NamespacedResources(namespace, domainUid).getClusterListSteps();
   }
 
   private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
@@ -613,6 +623,73 @@ public class DomainProcessorImpl implements DomainProcessor {
         .execute();
   }
 
+  /**
+   * Dispatch the Cluster event to the appropriate handler.
+   *
+   * @param item An item received from a Watch response.
+   */
+  public void dispatchClusterWatch(Watch.Response<Cluster> item) {
+    switch (item.type) {
+      case "ADDED":
+        handleAddedCluster(item.object);
+        break;
+      case "MODIFIED":
+        handleModifiedCluster(item.object);
+        break;
+      case "DELETED":
+        handleDeletedCluster(item.object);
+        break;
+
+      case "ERROR":
+      default:
+    }
+  }
+
+  private void handleAddedCluster(Cluster cluster) {
+    System.out.println("DomainProcessorImp.handleAddedCluster cluster: " + cluster);
+    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    System.out.println("DomainProcessorImp.handleAddedCluster cachedInfo: " + cachedInfo);
+    if (cachedInfo == null) {
+      return;
+    }
+
+    //LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
+    //createMakeRightOperation(cluster)
+    //    .interrupt()
+    //    .withExplicitRecheck()
+    //    .withEventData(EventItem.CLUSTER_CREATED, null, cluster)
+    //    .execute();
+  }
+
+  private void handleModifiedCluster(Cluster cluster) {
+    System.out.println("DomainProcessorImp.handleModifiedCluster cluster: " + cluster);
+    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    System.out.println("DomainProcessorImp.handleModifiedCluster cachedInfo: " + cachedInfo);
+    if (cachedInfo == null) {
+      return;
+    }
+
+    //LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
+    //createMakeRightOperation(cluster)
+    //    .interrupt()
+    //    .withExplicitRecheck()
+    //    .withEventData(EventItem.CLUSTER_CHANGED, null, cluster)
+    //    .execute();
+  }
+
+  private void handleDeletedCluster(Cluster cluster) {
+    System.out.println("DomainProcessorImp.handleDeletedCluster cluster: " + cluster);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
+    System.out.println("DomainProcessorImp.handleDeletedCluster info: " + info);
+    //Domain domain = info.getDomain();
+    //domain.removeCluster(cluster.getClusterName());
+    //LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
+    //createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+    //    .withEventData(EventItem.CLUSTER_DELETED, null, cluster.getClusterName())
+    //    .execute();
+  }
+
+
   private static void logThrowable(Throwable throwable) {
     if (throwable instanceof Step.MultiThrowable) {
       for (Throwable t : ((Step.MultiThrowable) throwable).getThrowables()) {
@@ -691,14 +768,14 @@ public class DomainProcessorImpl implements DomainProcessor {
       this.liveInfo = liveInfo;
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       if (!isNewDomain(cachedInfo)
-          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
+          && isAfter(getCreationTimestamp(liveInfo.getDomain()), getCreationTimestamp(cachedInfo.getDomain()))) {
         willInterrupt = true;
       }
     }
 
-    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
-      return Optional.ofNullable(dpi.getDomain())
-          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+    private OffsetDateTime getCreationTimestamp(KubernetesObject ko) {
+      return Optional.ofNullable(ko)
+          .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
     }
 
     private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
@@ -1148,6 +1225,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
     Step managedServerStrategy = Step.chain(
+        listClusterResources(info.getNamespace(), info.getDomainUid()),
         bringManagedServersUp(),
         MonitoringExporterSteps.updateExporterSidecars(),
         createStatusUpdateStep(new TailStep()));
@@ -1168,7 +1246,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
-          DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
+          DomainPresenceStep.createDomainPresenceStep(info, domainUpStrategy, managedServerStrategy));
   }
 
   private Step createDomainUpInitialStep(DomainPresenceInfo info) {

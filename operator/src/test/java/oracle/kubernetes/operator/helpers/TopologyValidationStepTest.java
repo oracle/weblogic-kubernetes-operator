@@ -27,7 +27,7 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -248,8 +248,8 @@ class TopologyValidationStepTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private Cluster createCluster(String clusterName) {
-    Cluster cluster = new Cluster();
+  private ClusterSpec createCluster(String clusterName) {
+    ClusterSpec cluster = new ClusterSpec();
     cluster.setClusterName(clusterName);
     cluster.setReplicas(1);
     cluster.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);

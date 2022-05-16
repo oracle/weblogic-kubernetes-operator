@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
@@ -58,6 +59,7 @@ class NamespacedResources {
           getServiceListSteps(),
           getPodDisruptionBudgetListSteps(),
           getDomainListSteps(),
+          getClusterListSteps(),
           new CompletionStep()
     );
   }
@@ -122,6 +124,14 @@ class NamespacedResources {
     Consumer<DomainList> getDomainListProcessing() {
       return null;
     }
+
+    /**
+     * Return the processing to be performed on a list of clusters found in Kubernetes. May be null.
+     */
+    Consumer<ClusterList> getClusterListProcessing() {
+      return null;
+    }
+
 
     /**
      * Do any post-processing of intermediate results.
@@ -207,8 +217,16 @@ class NamespacedResources {
     return getListProcessing(Processors::getDomainListProcessing).map(this::createDomainListSteps).orElse(null);
   }
 
+  Step getClusterListSteps() {
+    return getListProcessing(Processors::getClusterListProcessing).map(this::createClusterListSteps).orElse(null);
+  }
+
   private Step createDomainListSteps(List<Consumer<DomainList>> processing) {
     return new CallBuilder().listDomainAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step createClusterListSteps(List<Consumer<ClusterList>> processing) {
+    return new CallBuilder().listClusterAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private <L extends KubernetesListObject>

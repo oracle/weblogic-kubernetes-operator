@@ -112,7 +112,34 @@
         "channelName"
       ]
     },
-    "Cluster": {
+    "ClusterService": {
+      "type": "object",
+      "properties": {
+        "sessionAffinity": {
+          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "type": "string",
+          "enum": [
+            "ClientIP",
+            "None"
+          ]
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "ClusterSpec": {
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -179,33 +206,6 @@
       "required": [
         "clusterName"
       ]
-    },
-    "ClusterService": {
-      "type": "object",
-      "properties": {
-        "sessionAffinity": {
-          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
-          "type": "string",
-          "enum": [
-            "ClientIP",
-            "None"
-          ]
-        },
-        "annotations": {
-          "description": "The annotations to be added to generated resources.",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        }
-      }
     },
     "ClusterStatus": {
       "type": "object",
@@ -394,7 +394,7 @@
           "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Cluster"
+            "$ref": "#/definitions/ClusterSpec"
           }
         },
         "serverStartState": {
@@ -467,6 +467,13 @@
           "deprecated": "true",
           "description": "Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides.",
           "type": "string"
+        },
+        "cluster-resource-references": {
+          "description": "List of names of Cluster Custom Resources the Operator expects to be deployed in the same namespace that the domain is deployed.  A reference to a cluster custom resource  in order for the cluster elements to be applied.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "logHomeEnabled": {
           "description": "Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.",

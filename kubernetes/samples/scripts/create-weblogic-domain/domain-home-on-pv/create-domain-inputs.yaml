@@ -12,11 +12,11 @@ adminServerName: admin-server
 
 # Unique ID identifying a domain.
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
-domainUID: domain1
+domainUID: sample-domain1
 
 # Home of the WebLogic domain
 # If not specified, the value is derived from the domainUID as /shared/domains/<domainUID>
-domainHome: /shared/domains/domain1
+domainHome: /shared/domains/sample-domain1
 
 # Determines which WebLogic Servers the operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
@@ -58,7 +58,7 @@ productionModeEnabled: true
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase.
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-credentials
-weblogicCredentialsSecretName: domain1-weblogic-credentials
+weblogicCredentialsSecretName: sample-domain1-weblogic-credentials
 
 # Whether to include server .out to the pod's stdout.
 # The default is true.
@@ -67,7 +67,7 @@ includeServerOutInPodLog: true
 # The in-pod location for domain log, server logs, server out, Node Manager log, introspector out, and
 # HTTP access log files. If not specified, the value is derived from the domainUID as
 # /shared/logs/<domainUID>.
-logHome: /shared/logs/domain1
+logHome: /shared/logs/sample-domain1
 
 # Set this value to 'false' to have HTTP access log files written to the directory 
 # configured in the WebLogic domain home.
@@ -99,14 +99,14 @@ adminNodePort: 30701
 exposeAdminNodePort: false
 
 # Name of the domain namespace
-namespace: default
+namespace: sample-domain1-ns
 
 #Java Option for WebLogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
-persistentVolumeClaimName: domain1-weblogic-sample-pvc
+persistentVolumeClaimName: weblogic-sample-pvc
 
 # Mount path of the domain persistent volume.
 domainPVMountPath: /shared

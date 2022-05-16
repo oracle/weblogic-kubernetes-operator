@@ -117,7 +117,7 @@ public class DomainValidationSteps {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       Domain domain = info.getDomain();
-      List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
+      List<String> validationFailures = info.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
         return doNext(createRemoveSelectedFailuresStep(getNext(), DOMAIN_INVALID), packet)
@@ -150,7 +150,7 @@ public class DomainValidationSteps {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       Domain domain = info.getDomain();
-      List<String> validationFailures = domain.getAdditionalValidationFailures(podSpec);
+      List<String> validationFailures = info.getAdditionalValidationFailures(podSpec);
 
       if (validationFailures.isEmpty()) {
         return doNext(packet);

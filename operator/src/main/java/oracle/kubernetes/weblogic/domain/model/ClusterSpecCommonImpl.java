@@ -10,16 +10,16 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 
-public class ClusterSpecCommonImpl extends ClusterSpec {
-  private final Cluster cluster;
+public class ClusterSpecCommonImpl extends ClusterSpecCommon {
+  private final ClusterSpec cluster;
 
-  public ClusterSpecCommonImpl(DomainSpec spec, Cluster cluster) {
+  public ClusterSpecCommonImpl(DomainSpec spec, ClusterSpec cluster) {
     this.cluster = getBaseConfiguration(cluster);
     this.cluster.fillInFrom(spec);
   }
 
-  private Cluster getBaseConfiguration(Cluster cluster) {
-    return cluster != null ? cluster.getConfiguration() : new Cluster();
+  private ClusterSpec getBaseConfiguration(ClusterSpec cluster) {
+    return cluster != null ? cluster.getConfiguration() : new ClusterSpec();
   }
 
   @Override

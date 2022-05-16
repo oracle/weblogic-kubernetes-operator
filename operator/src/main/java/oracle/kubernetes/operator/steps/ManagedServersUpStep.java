@@ -63,7 +63,7 @@ public class ManagedServersUpStep extends Step {
 
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
-    if (info.getDomain().isShuttingDown()) {
+    if (info.isShuttingDown()) {
       Optional.ofNullable(domainTopology).ifPresent(
           wlsDomainConfig ->
               factory.shutdownInfos.add(new ServerShutdownInfo(wlsDomainConfig.getAdminServerName(), null)));
@@ -196,7 +196,7 @@ public class ManagedServersUpStep extends Step {
     boolean shouldPrecreateServerService(ServerSpec server) {
       if (server.isPrecreateServerService()) {
         // skip pre-create if admin server and managed server are both shutting down
-        return ! (domain.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
+        return ! (info.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
       }
       return false;
     }
@@ -208,7 +208,7 @@ public class ManagedServersUpStep extends Step {
       }
 
       String clusterName = getClusterName(clusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      ServerSpec server = info.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
         addServerToStart(serverConfig, clusterName, server);
@@ -235,7 +235,7 @@ public class ManagedServersUpStep extends Step {
         int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
         return clusterConfig.hasDynamicServers()
             && clusterConfig.getServerConfigs().size() == configMaxClusterSize
-            && domain.getReplicaCount(clusterName) > configMaxClusterSize;
+            && info.getReplicaCount(clusterName) > configMaxClusterSize;
       }
       return false;
     }
@@ -288,7 +288,7 @@ public class ManagedServersUpStep extends Step {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
         addReplicasTooHighValidationErrorWarning(
-            domain.getReplicaCount(clusterName),
+            info.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
       }
@@ -298,13 +298,13 @@ public class ManagedServersUpStep extends Step {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
         LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
-            domain.getReplicaCount(clusterName),
+            info.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
 
         // Reset current replica count so we don't scale down less than minimum
         // dynamic cluster size
-        domain.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
+        info.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
       }
     }
 
@@ -316,9 +316,9 @@ public class ManagedServersUpStep extends Step {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
         if (clusterConfig.hasDynamicServers()
-            && !domain.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
+            && !info.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
           int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
-          return domain.getReplicaCount(clusterName) < configMinClusterSize;
+          return info.getReplicaCount(clusterName) < configMinClusterSize;
         }
       }
       return false;
@@ -338,7 +338,7 @@ public class ManagedServersUpStep extends Step {
         return;
       }
       String clusterName = getClusterName(wlsClusterConfig);
-      ServerSpec server = domain.getServer(serverName, clusterName);
+      ServerSpec server = info.getServer(serverName, clusterName);
       if (server.alwaysStart()) {
         addServerToStart(wlsServerConfig, clusterName, server);
       } else {

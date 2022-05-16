@@ -421,7 +421,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     startupInfos.add(
           new ServerStartupInfo(configSupport.getWlsServer(serverName),
               null,
-              domain.getServer(serverName, null))
+              domainPresenceInfo.getServer(serverName, null))
     );
   }
 
@@ -431,7 +431,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
             startupInfos.add(
                 new ServerStartupInfo(configSupport.getWlsServer(clusterName, server),
                     clusterName,
-                    domain.getServer(server, clusterName))
+                    domainPresenceInfo.getServer(server, clusterName))
             )
     );
 

@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.ws.rs.WebApplicationException;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
@@ -304,8 +305,9 @@ class RestBackendImplTest {
     configureCluster("cluster1").withReplicas(1);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
+    DomainPresenceInfo info = new DomainPresenceInfo((getUpdatedDomain()));
 
-    assertThat(getUpdatedDomain().getReplicaCount("cluster1"), equalTo(5));
+    assertThat(info.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test

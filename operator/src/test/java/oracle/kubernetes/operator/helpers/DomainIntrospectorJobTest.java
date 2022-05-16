@@ -58,7 +58,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -231,7 +231,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private DomainSpec createDomainSpec() {
-    Cluster cluster = new Cluster();
+    ClusterSpec cluster = new ClusterSpec();
     cluster.setClusterName("cluster-1");
     cluster.setReplicas(1);
     cluster.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
@@ -1346,10 +1346,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   // do NOT create pod log
   // run successfully
 
-  private Cluster getCluster(String clusterName) {
+  private ClusterSpec getCluster(String clusterName) {
     return domain.getSpec().getClusters().stream()
           .filter(c -> clusterName.equals(c.getClusterName()))
-          .findFirst().orElse(new Cluster());
+          .findFirst().orElse(new ClusterSpec());
   }
 
   private String getDomainHome() {

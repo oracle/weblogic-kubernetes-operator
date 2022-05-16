@@ -567,7 +567,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(2, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(2, equalTo(domainPresenceInfo.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -579,7 +579,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(0, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(0, equalTo(domainPresenceInfo.getReplicaCount("cluster1")));
   }
 
   @Test
@@ -592,7 +592,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat(3, equalTo(domain.getReplicaCount("cluster1")));
+    assertThat(3, equalTo(domainPresenceInfo.getReplicaCount("cluster1")));
   }
 
   @Test

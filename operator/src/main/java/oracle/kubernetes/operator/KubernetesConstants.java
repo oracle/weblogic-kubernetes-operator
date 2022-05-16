@@ -20,6 +20,14 @@ public interface KubernetesConstants {
   String DOMAIN_SHORT = "dom";
   String DOMAIN_VERSION = "v9";
 
+  String CLUSTERS_CRD_NAME = "clusters.weblogic.oracle";
+  String CLUSTER = "Cluster";
+  String CLUSTER_PLURAL = "clusters";
+  String CLUSTER_SINGULAR = "cluster";
+  String CLUSTER_SHORT = "clu";
+  String CLUSTER_VERSION = "v9";
+  String API_VERSION_CLUSTER_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + CLUSTER_VERSION;
+
   String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
 
   boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;

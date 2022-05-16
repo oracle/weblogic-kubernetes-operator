@@ -3,67 +3,288 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1PodSpec;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public abstract class ClusterSpec {
+/**
+ * An element representing a cluster in the domain configuration.
+ *
+ * @since 2.0
+ */
+public class ClusterSpec extends BaseConfiguration implements Comparable<ClusterSpec> {
+  /** The name of the cluster. Required. */
+  @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
+      + "in the WebLogic domain configuration. Required.")
+  @Nonnull
+  private String clusterName;
+
+  /** The number of replicas to run in the cluster, if specified. */
+  @Description(
+      "The number of cluster member Managed Server instances to start for this WebLogic cluster. "
+      + "The operator will sort cluster member Managed Server names from the WebLogic domain "
+      + "configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. "
+      + "This is done so that server names such as \"managed-server10\" come after \"managed-server9\". "
+      + "The operator will then start Managed Server instances from the sorted list, "
+      + "up to the `replicas` count, unless specific Managed Servers are specified as "
+      + "starting in their entry under the `managedServers` field. In that case, the specified Managed Server "
+      + "instances will be started and then additional cluster members "
+      + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
+      + "not already started. If cluster members are started "
+      + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
+      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.")
+  @Range(minimum = 0)
+  private Integer replicas;
 
   /**
-   * Returns the labels applied to the cluster service.
+   * Tells the operator whether the customer wants the server to be running. For clustered servers -
+   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
+   * needs to be started to get to the cluster's replica count.
    *
-   * @return a map of labels
+   * @since 2.0
    */
-  @Nonnull
-  public abstract Map<String, String> getClusterLabels();
+  @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
+  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
+      + "Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
+  private ServerStartPolicy serverStartPolicy;
 
-  /**
-   * Returns the annotations applied to the cluster service.
-   *
-   * @return a map of annotations
-   */
-  @Nonnull
-  public abstract Map<String, String> getClusterAnnotations();
+  @Description(
+      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
+  @Range(minimum = 1)
+  private Integer maxUnavailable;
 
-  public abstract V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity();
+  @Description("Customization affecting Kubernetes Service generated for this WebLogic cluster.")
+  @SerializedName("clusterService")
+  @Expose
+  private ClusterService clusterService = new ClusterService();
 
-  /**
-   * Returns the list of initContainers.
-   *
-   * @return a list of containers
-   */
-  @Nonnull
-  public List<V1Container> getInitContainers() {
-    return Collections.emptyList();
+  @Description("Specifies whether the number of running cluster members is allowed to drop below the "
+      + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
+      + "Otherwise, the operator will ensure that the number of running cluster members is not less than "
+      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
+      + "Defaults to true."
+  )
+  private Boolean allowReplicasBelowMinDynClusterSize;
+
+  @Description(
+      "The maximum number of Managed Servers instances that the operator will start in parallel "
+      + "for this cluster in response to a change in the `replicas` count. "
+      + "If more Managed Server instances must be started, the operator will wait until a Managed "
+      + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
+      + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
+  )
+  @Range(minimum = 0)
+  private Integer maxConcurrentStartup;
+
+  @Description(
+          "The maximum number of WebLogic Server instances that will shut down in parallel "
+                  + "for this cluster when it is being partially shut down by lowering its replica count. "
+                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
+                  + "which defaults to 1."
+  )
+  @Range(minimum = 0)
+  private Integer maxConcurrentShutdown;
+
+  protected ClusterSpec getConfiguration() {
+    ClusterSpec configuration = new ClusterSpec();
+    configuration.fillInFrom(this);
+    configuration.setRestartVersion(this.getRestartVersion());
+    return configuration;
+  }
+
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(@Nonnull String clusterName) {
+    this.clusterName = clusterName;
+  }
+
+  public ClusterSpec withClusterName(@Nonnull String clusterName) {
+    setClusterName(clusterName);
+    return this;
+  }
+
+  public Integer getReplicas() {
+    return replicas;
+  }
+
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
+  }
+
+  public ClusterSpec withReplicas(Integer replicas) {
+    this.replicas = replicas;
+    return this;
+  }
+
+  public ClusterSpec withServerStartState(ServerStartState serverStartState) {
+    super.setServerStartState(serverStartState);
+    return this;
   }
 
   /**
-   * Returns the list of additional containers.
+   * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
+   * in the WebLogic domain home configuration.
    *
-   * @return a list of containers
+   * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
+   *     configured in the WebLogic domain home configuration.
    */
-  @Nonnull
-  public List<V1Container> getContainers() {
-    return Collections.emptyList();
+  public Boolean isAllowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
   }
 
-  /**
-   * Returns the shutdown configuration.
-   *
-   * @return shutdown configuration
-   */
-  @Nonnull
-  public abstract Shutdown getShutdown();
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
+    allowReplicasBelowMinDynClusterSize = value;
+  }
 
-  public abstract V1PodSpec.RestartPolicyEnum getRestartPolicy();
+  public Integer getMaxConcurrentStartup() {
+    return maxConcurrentStartup;
+  }
 
-  public abstract String getRuntimeClassName();
+  public void setMaxConcurrentStartup(Integer value) {
+    maxConcurrentStartup = value;
+  }
 
-  public abstract String getSchedulerName();
+  public Integer getMaxConcurrentShutdown() {
+    return maxConcurrentShutdown;
+  }
 
+  public void setMaxConcurrentShutdown(Integer value) {
+    maxConcurrentShutdown = value;
+  }
+
+  @Nullable
+  @Override
+  public ServerStartPolicy getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  @Override
+  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  public ClusterService getClusterService() {
+    return clusterService;
+  }
+
+  public void setClusterService(ClusterService clusterService) {
+    this.clusterService = clusterService;
+  }
+
+  public ClusterSpec withClusterService(ClusterService clusterService) {
+    this.setClusterService(clusterService);
+    return this;
+  }
+
+  public Map<String, String> getClusterLabels() {
+    return clusterService.getLabels();
+  }
+
+  void addClusterLabel(String name, String value) {
+    clusterService.addLabel(name, value);
+  }
+
+  public Map<String, String> getClusterAnnotations() {
+    return clusterService.getAnnotations();
+  }
+
+  void addClusterAnnotation(String name, String value) {
+    clusterService.addAnnotations(name, value);
+  }
+
+  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
+    return clusterService.getSessionAffinity();
+  }
+
+  public Integer getMaxUnavailable() {
+    return maxUnavailable;
+  }
+
+  public void setMaxUnavailable(Integer maxUnavailable) {
+    this.maxUnavailable = maxUnavailable;
+  }
+
+  void fillInFrom(ClusterSpec other) {
+    if (other == null) {
+      return;
+    }
+    super.fillInFrom(other);
+    clusterService.fillInFrom(other.clusterService);
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("clusterName", clusterName)
+        .append("replicas", replicas)
+        .append("serverStartPolicy", serverStartPolicy)
+        .append("clusterService", clusterService)
+        .append("maxUnavailable", maxUnavailable)
+        .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+        .append("maxConcurrentStartup", maxConcurrentStartup)
+        .append("maxConcurrentShutdown", maxConcurrentShutdown)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    ClusterSpec cluster = (ClusterSpec) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(clusterName, cluster.clusterName)
+        .append(replicas, cluster.replicas)
+        .append(serverStartPolicy, cluster.serverStartPolicy)
+        .append(clusterService, cluster.clusterService)
+        .append(maxUnavailable, cluster.maxUnavailable)
+        .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
+        .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
+        .append(maxConcurrentShutdown, cluster.maxConcurrentShutdown)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(clusterName)
+        .append(replicas)
+        .append(serverStartPolicy)
+        .append(clusterService)
+        .append(maxUnavailable)
+        .append(allowReplicasBelowMinDynClusterSize)
+        .append(maxConcurrentStartup)
+        .append(maxConcurrentShutdown)
+        .toHashCode();
+  }
+
+  @Override
+  public int compareTo(@Nonnull ClusterSpec o) {
+    return clusterName.compareTo(o.clusterName);
+  }
 }

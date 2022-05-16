@@ -31,7 +31,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   private final Server server;
-  private final Cluster cluster;
+  private final ClusterSpec cluster;
   private final Integer clusterLimit;
 
   /**
@@ -43,7 +43,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
    */
-  ServerSpecCommonImpl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
+  ServerSpecCommonImpl(DomainSpec spec, Server server, ClusterSpec cluster, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;

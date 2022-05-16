@@ -58,7 +58,7 @@ class DomainUpPlanTest {
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegateStub.class));
 
   private DomainPresenceStep getDomainPresenceStep() {
-    return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
+    return DomainPresenceStep.createDomainPresenceStep(domainPresenceInfo, adminStep, managedServersStep);
   }
 
   @BeforeEach

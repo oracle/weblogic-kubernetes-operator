@@ -18,7 +18,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
-class DomainValidationMessages {
+public class DomainValidationMessages {
 
   /**
    * Returns a validation message indicating that more than one managed server spec has the same effective name
@@ -26,7 +26,7 @@ class DomainValidationMessages {
    * @param serverName the duplicate server name
    * @return the localized message
    */
-  static String duplicateServerName(@Nonnull String serverName) {
+  public static String duplicateServerName(@Nonnull String serverName) {
     return getMessage(MessageKeys.DUPLICATE_SERVER_NAME_FOUND, serverName);
   }
 
@@ -36,7 +36,7 @@ class DomainValidationMessages {
    * @param clusterName the duplicate cluster name
    * @return the localized message
    */
-  static String duplicateClusterName(@Nonnull String clusterName) {
+  public static String duplicateClusterName(@Nonnull String clusterName) {
     return getMessage(MessageKeys.DUPLICATE_CLUSTER_NAME_FOUND, clusterName);
   }
 
@@ -45,7 +45,7 @@ class DomainValidationMessages {
    * @param mount the problematic volume mount
    * @return the localized message
    */
-  static String badVolumeMountPath(@Nonnull V1VolumeMount mount) {
+  public static String badVolumeMountPath(@Nonnull V1VolumeMount mount) {
     return getMessage(MessageKeys.BAD_VOLUME_MOUNT_PATH, mount.getMountPath(), mount.getName());
   }
 
@@ -55,7 +55,7 @@ class DomainValidationMessages {
    * @param logHome the log home to be used
    * @return the localized message
    */
-  static String logHomeNotMounted(@Nonnull String logHome) {
+  public static String logHomeNotMounted(@Nonnull String logHome) {
     return getMessage(MessageKeys.LOG_HOME_NOT_MOUNTED, logHome);
   }
 
@@ -69,7 +69,13 @@ class DomainValidationMessages {
     return ResourceBundle.getBundle("Operator").getString(key);
   }
 
-  static String reservedVariableNames(String prefix, List<String> reservedNames) {
+  /**
+   * Failure message for reserved variable names.
+   * @param prefix spec path prefix.
+   * @param reservedNames list of reserved names.
+   * @return reserved variable message.
+   */
+  public static String reservedVariableNames(String prefix, List<String> reservedNames) {
     MessageFormat formatter = new MessageFormat("");
     formatter.applyPattern(getBundleString(MessageKeys.RESERVED_ENVIRONMENT_VARIABLES));
     formatter.setFormats(new Format[]{getEnvNoun(), null, null, getToBe()});
@@ -90,31 +96,31 @@ class DomainValidationMessages {
                             new String[] {getBundleString("singularToBe"), getBundleString("pluralToBe")});
   }
 
-  static String noSuchSecret(String secretName, String namespace, SecretType type) {
+  public static String noSuchSecret(String secretName, String namespace, SecretType type) {
     return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
   }
 
-  static String missingRequiredSecret(String secret) {
+  public static String missingRequiredSecret(String secret) {
     return getMessage(MessageKeys.SECRET_NOT_SPECIFIED, secret);
   }
 
-  static String missingRequiredOpssSecret(String secret) {
+  public static String missingRequiredOpssSecret(String secret) {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
-  static String illegalSecretNamespace(String namespace) {
+  public static String illegalSecretNamespace(String namespace) {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
   }
 
-  static String illegalSitConfigForMii(String configOverrides) {
+  public static String illegalSitConfigForMii(String configOverrides) {
     return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
   }
 
-  static String noSuchModelConfigMap(String configMapName, String namespace) {
+  public static String noSuchModelConfigMap(String configMapName, String namespace) {
     return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
   }
 
-  static String cannotExposeDefaultChannelIstio(String channelName) {
+  public static String cannotExposeDefaultChannelIstio(String channelName) {
     return getMessage(MessageKeys.CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO, channelName);
   }
 

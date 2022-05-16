@@ -83,12 +83,12 @@ public class ServerDownIteratorStep extends Step {
     return ssi.getClusterName() != null;
   }
 
-  private int getMaxConcurrentShutdown(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return domain.getMaxConcurrentShutdown(ssi.getClusterName());
+  private int getMaxConcurrentShutdown(DomainPresenceInfo info, DomainPresenceInfo.ServerShutdownInfo ssi) {
+    return info.getMaxConcurrentShutdown(ssi.getClusterName());
   }
 
-  private int getReplicaCount(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    return domain.getReplicaCount(ssi.getClusterName());
+  private int getReplicaCount(DomainPresenceInfo info, DomainPresenceInfo.ServerShutdownInfo ssi) {
+    return info.getReplicaCount(ssi.getClusterName());
   }
 
   private StepAndPacket createManagedServerDownDetails(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
@@ -114,8 +114,8 @@ public class ServerDownIteratorStep extends Step {
             .filter(this::isServerInCluster)
             .forEach(ssi ->
                     factories.computeIfAbsent(ssi.getClusterName(),
-                        k -> new ShutdownClusteredServersStepFactory(getMaxConcurrentShutdown(domain, ssi),
-                                getReplicaCount(domain, ssi)))
+                        k -> new ShutdownClusteredServersStepFactory(getMaxConcurrentShutdown(info, ssi),
+                                getReplicaCount(info, ssi)))
                         .add(createManagedServerDownDetails(packet, ssi)));
     return factories;
   }
@@ -136,7 +136,7 @@ public class ServerDownIteratorStep extends Step {
     }
 
     Collection<StepAndPacket> getServerShutdownStepAndPackets(DomainPresenceInfo info) {
-      if ((maxConcurrency == 0) || (replicaCount == 0) || info.getDomain().isShuttingDown()) {
+      if ((maxConcurrency == 0) || (replicaCount == 0) || info.isShuttingDown()) {
         return serversToShutdown;
       }
       ArrayList<StepAndPacket> steps = new ArrayList<>(maxConcurrency);

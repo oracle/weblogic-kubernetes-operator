@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,12 +28,21 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -41,16 +52,42 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
+import oracle.kubernetes.weblogic.domain.model.AdminServer;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminService;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.BaseConfiguration;
+import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommon;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommonImpl;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
+import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
+import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.ManagedServerSpecCommonImpl;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
+import static oracle.kubernetes.weblogic.domain.model.Domain.TOKEN_END_MARKER;
+import static oracle.kubernetes.weblogic.domain.model.Domain.TOKEN_START_MARKER;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -66,7 +103,8 @@ public class DomainPresenceInfo implements PacketComponent {
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Cluster> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1Service> clusterServices = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
@@ -418,15 +456,15 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   void removeClusterService(String clusterName) {
-    clusters.remove(clusterName);
+    clusterServices.remove(clusterName);
   }
 
   public V1Service getClusterService(String clusterName) {
-    return clusters.get(clusterName);
+    return clusterServices.get(clusterName);
   }
 
   void setClusterService(String clusterName, V1Service service) {
-    clusters.put(clusterName, service);
+    clusterServices.put(clusterName, service);
   }
 
   void setPodDisruptionBudget(String clusterName, V1PodDisruptionBudget pdb) {
@@ -475,12 +513,12 @@ public class DomainPresenceInfo implements PacketComponent {
       return;
     }
 
-    clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
+    clusterServices.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
 
   boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
     return removeIfPresentAnd(
-        clusters,
+        clusterServices,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
@@ -585,6 +623,63 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void setDomain(Domain domain) {
     this.domain.set(domain);
+  }
+
+  /**
+   * Add a cluster.
+   *
+   * @param cluster cluster
+   */
+  public void addClusterResource(Cluster cluster) {
+    Cluster existing = clusters.get(cluster.getClusterName());
+    if (existing == null || isAfter(getCreationTimestamp(cluster), getCreationTimestamp(existing))) {
+      clusters.put(cluster.getClusterName(), cluster);
+    }
+
+  }
+
+  protected Cluster getClusterResource(String clusterName) {
+    return clusters.get(clusterName);
+  }
+
+  private List<ClusterSpec> getClusterSpecs() {
+    List<ClusterSpec> clusterSpecs = clusters.values().stream().map(Cluster::getSpec)
+        .collect(Collectors.toList());
+    clusterSpecs.addAll(getDomain().getSpec().getClusters());
+    return clusterSpecs;
+  }
+
+  /**
+   * Returns the specification applicable to a particular server/cluster combination.
+   *
+   * @param serverName  the name of the server
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the server
+   */
+  public ServerSpec getServer(String serverName, String clusterName) {
+    //return Optional.ofNullable(clusterName).map(this::getClusterResource)
+    //    .map(c -> getServer(serverName, c)).orElse(getServerSpec(serverName, clusterName));
+    return getServerSpec(serverName, clusterName);
+  }
+
+  //private ServerSpec getServer(String serverName, Cluster cluster) {
+  //  return getServerSpec(getDomain().getManagedServer(serverName), cluster.getSpec(),
+  //      getReplicaCountFor(cluster.getSpec()));
+  //}
+
+  private static OffsetDateTime getCreationTimestamp(KubernetesObject ko) {
+    return Optional.ofNullable(ko)
+        .map(KubernetesObject::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+  }
+
+  private static boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
+    if (two == null) {
+      return true;
+    }
+    if (one == null) {
+      return false;
+    }
+    return one.isAfter(two);
   }
 
   /**
@@ -720,6 +815,136 @@ public class DomainPresenceInfo implements PacketComponent {
   public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
     this.serversToRoll = serversToRoll;
   }
+
+  public AdminServerSpec getAdminServerSpec() {
+    return getEffectiveConfigurationFactory().getAdminServerSpec();
+  }
+
+  /**
+   * Returns the specification applicable to a particular server/cluster combination.
+   *
+   * @param serverName  the name of the server
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the server
+   */
+  private ServerSpec getServerSpec(String serverName, String clusterName) {
+    return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
+  }
+
+  ///**
+  // * Returns the specification applicable to a particular server/cluster combination.
+  // *
+  // * @param server  ManagedServer object.
+  // * @param cluster ClusterSpec; may be null or empty if no applicable cluster.
+  // * @param clusterLimit limit of cluster size.
+  // * @return the effective configuration for the server
+  // */
+  //private ServerSpec getServerSpec(ManagedServer server, ClusterSpec cluster, Integer clusterLimit) {
+  //  return getEffectiveConfigurationFactory().getServerSpec(server, cluster, clusterLimit);
+  //}
+
+  /**
+   * Returns the specification applicable to a particular cluster.
+   *
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the cluster
+   */
+  public ClusterSpecCommon getClusterSpecCommon(String clusterName) {
+    return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
+  }
+
+  /**
+   * Returns the number of replicas to start for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getReplicaCount(String clusterName) {
+    return getEffectiveConfigurationFactory().getReplicaCount(clusterName);
+  }
+
+  public void setReplicaCount(String clusterName, int replicaLimit) {
+    getEffectiveConfigurationFactory().setReplicaCount(clusterName, replicaLimit);
+  }
+
+  /**
+   * Returns the maximum number of unavailable replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMaxUnavailable(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  /**
+   * Returns whether the specified cluster is allowed to have replica count below the minimum
+   * dynamic cluster size configured in WebLogic domain configuration.
+   *
+   * @param clusterName the name of the cluster
+   * @return whether the specified cluster is allowed to have replica count below the minimum
+   *     dynamic cluster size configured in WebLogic domain configuration
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
+  }
+
+  public int getMaxConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
+  }
+
+  private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
+    return new CommonEffectiveConfigurationFactory();
+  }
+
+  public int getMaxConcurrentShutdown(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
+  public boolean isShuttingDown() {
+    return getEffectiveConfigurationFactory().isShuttingDown();
+  }
+
+  /**
+   * Return the names of the exported admin NAPs.
+   *
+   * @return a list of names; may be empty
+   */
+  public List<String> getAdminServerChannelNames() {
+    return getEffectiveConfigurationFactory().getAdminServerChannelNames();
+  }
+
+  /**
+   * Get replica count for a specific cluster.
+   * @param clusterSpec Cluster specification.
+   * @return replica count.
+   */
+  public int getReplicaCountFor(ClusterSpec clusterSpec) {
+    return getEffectiveConfigurationFactory().getReplicaCountFor(clusterSpec);
+  }
+
+  /**
+   * Returns the value of the maximum server pod ready wait time.
+   *
+   * @param serverName server name
+   * @param clusterName cluster name
+   * @return value of the wait time in seconds.
+   */
+  public Long getMaxReadyWaitTimeSeconds(String serverName, String clusterName) {
+    return Optional.ofNullable(getServer(serverName, clusterName))
+        .map(ServerSpec::getMaximumReadyWaitTimeSeconds).orElse(1800L);
+  }
+
+  /**
+   * Returns the minimum number of replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMinAvailable(String clusterName) {
+    return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
+  }
+
 
   /** Details about a specific managed server. */
   public static class ServerInfo {
@@ -865,5 +1090,568 @@ public class DomainPresenceInfo implements PacketComponent {
     public boolean isServiceOnly() {
       return  isServiceOnly;
     }
+  }
+
+  class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+    @Override
+    public AdminServerSpec getAdminServerSpec() {
+      return getDomain().getAdminServerSpec();
+    }
+
+    @Override
+    public ServerSpec getServerSpec(String serverName, String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> getServerSpec(getDomain().getManagedServer(serverName),
+              c.getSpec(), getClusterLimit(clusterName)))
+          .orElse(getServerSpec(getDomain().getManagedServer(serverName),
+              getDomain().getSpec().getCluster(clusterName), getClusterLimit(clusterName)));
+    }
+
+    public ServerSpec getServerSpec(ManagedServer server, ClusterSpec clusterSpec, Integer clusterLimit) {
+      return new ManagedServerSpecCommonImpl(
+          getDomain().getSpec(),
+          server,
+          clusterSpec,
+          clusterLimit);
+    }
+
+
+    private boolean hasReplicaCount(ClusterSpec clusterspec) {
+      return clusterspec != null && clusterspec.getReplicas() != null;
+    }
+
+    private boolean hasMaxUnavailable(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.getMaxUnavailable() != null;
+    }
+
+    private boolean hasAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.isAllowReplicasBelowMinDynClusterSize() != null;
+    }
+
+    private boolean isAllowReplicasBelowDynClusterSizeFor(ClusterSpec clusterSpec) {
+      return hasAllowReplicasBelowMinDynClusterSize(clusterSpec)
+          ? clusterSpec.isAllowReplicasBelowMinDynClusterSize()
+          : getDomain().getSpec().isAllowReplicasBelowMinDynClusterSize();
+    }
+
+    private int getMaxConcurrentStartupFor(ClusterSpec cluster) {
+      return hasMaxConcurrentStartup(cluster)
+          ? cluster.getMaxConcurrentStartup()
+          : getDomain().getSpec().getMaxClusterConcurrentStartup();
+    }
+
+    private boolean hasMaxConcurrentStartup(ClusterSpec clusterSpec) {
+      return clusterSpec != null && clusterSpec.getMaxConcurrentStartup() != null;
+    }
+
+    private int getMaxConcurrentShutdownFor(ClusterSpec cluster) {
+      return Optional.ofNullable(cluster).map(ClusterSpec::getMaxConcurrentShutdown)
+          .orElse(getDomain().getSpec().getMaxClusterConcurrentShutdown());
+    }
+
+
+    /**
+     * Get replica count for a specific cluster.
+     * @param cluster Cluster specification.
+     * @return replica count.
+     */
+    public int getReplicaCountFor(ClusterSpec cluster) {
+      return hasReplicaCount(cluster)
+          ? cluster.getReplicas()
+          : Optional.ofNullable(getDomain().getSpec().getReplicas()).orElse(0);
+    }
+
+    @Override
+    public ClusterSpecCommon getClusterSpec(String clusterName) {
+      ClusterSpec clusterSpec = Optional.ofNullable(getClusterResource(clusterName)).map(Cluster::getSpec)
+          .orElse(getDomain().getSpec().getCluster(clusterName));
+      return new ClusterSpecCommonImpl(getDomain().getSpec(), clusterSpec);
+    }
+
+    private Integer getClusterLimit(String clusterName) {
+      return clusterName == null ? null : getReplicaCount(clusterName);
+    }
+
+    @Override
+    public boolean isShuttingDown() {
+      return getAdminServerSpec().isShuttingDown();
+    }
+
+    @Override
+    public int getReplicaCount(String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> getReplicaCountFor(c.getSpec()))
+          .orElse(getReplicaCountFor(getDomain().getSpec().getCluster(clusterName)));
+    }
+
+    @Override
+    public void setReplicaCount(String clusterName, int replicaCount) {
+      Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .ifPresentOrElse(c -> c.setReplicas(replicaCount),
+              () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
+    }
+
+    @Override
+    public int getMaxUnavailable(String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> getMaxUnavailableFor(c.getSpec()))
+          .orElse(getMaxUnavailableFor(getDomain().getSpec().getCluster(clusterName)));
+    }
+
+    private int getMaxUnavailableFor(ClusterSpec cluster) {
+      return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+    }
+
+    @Override
+    public List<String> getAdminServerChannelNames() {
+      return getDomain().getAdminServerChannelNames();
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> isAllowReplicasBelowDynClusterSizeFor(c.getSpec()))
+          .orElse(isAllowReplicasBelowDynClusterSizeFor(getDomain().getSpec().getCluster(clusterName)));
+    }
+
+    @Override
+    public int getMaxConcurrentStartup(String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> getMaxConcurrentStartupFor(c.getSpec()))
+          .orElse(getMaxConcurrentStartupFor(getDomain().getSpec().getCluster(clusterName)));
+    }
+
+    @Override
+    public int getMaxConcurrentShutdown(String clusterName) {
+      return Optional.ofNullable(clusterName).map(DomainPresenceInfo.this::getClusterResource)
+          .map(c -> getMaxConcurrentShutdownFor(c.getSpec()))
+          .orElse(getMaxConcurrentShutdownFor(getDomain().getSpec().getCluster(clusterName)));
+    }
+
+    private ClusterSpec getOrCreateCluster(String clusterName) {
+      ClusterSpec cluster = getDomain().getSpec().getCluster(clusterName);
+      if (cluster != null) {
+        return cluster;
+      }
+
+      return createClusterWithName(clusterName);
+    }
+
+    private ClusterSpec createClusterWithName(String clusterName) {
+      ClusterSpec cluster = new ClusterSpec().withClusterName(clusterName);
+      getDomain().getSpec().withCluster(cluster);
+      return cluster;
+    }
+  }
+
+  public List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    return new Validator().getValidationFailures(kubernetesResources);
+  }
+
+  public List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+    return new Validator().getAdditionalValidationFailures(podSpec);
+  }
+
+  class Validator {
+    public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
+    public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
+    public static final String MS_SPEC_PREFIX = "spec.managedServers";
+    private final List<String> failures = new ArrayList<>();
+    private final Set<String> clusterNames = new HashSet<>();
+    private final Set<String> serverNames = new HashSet<>();
+
+    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      addDuplicateNames();
+      addInvalidMountPaths();
+      addUnmappedLogHome();
+      addReservedEnvironmentVariables();
+      addMissingSecrets(kubernetesResources);
+      addIllegalSitConfigForMii();
+      verifyNoAlternateSecretNamespaceSpecified();
+      addMissingModelConfigMap(kubernetesResources);
+      verifyIstioExposingDefaultChannel();
+      verifyIntrospectorJobName();
+      verifyLivenessProbeSuccessThreshold();
+      verifyContainerNameValidInPodSpec();
+      verifyContainerPortNameValidInPodSpec();
+      verifyModelHomeNotInWDTInstallHome();
+      verifyWDTInstallHomeNotInModelHome();
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse();
+      whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+      return failures;
+    }
+
+    private void verifyModelHomeNotInWDTInstallHome() {
+      if (getDomain().getSpec().getWdtInstallHome().contains(getDomain().getSpec().getModelHome())) {
+        failures.add(DomainValidationMessages
+            .invalidWdtInstallHome(getDomain().getSpec().getWdtInstallHome(), getDomain().getSpec().getModelHome()));
+      }
+    }
+
+    private void verifyWDTInstallHomeNotInModelHome() {
+      if (getDomain().getSpec().getModelHome().contains(getDomain().getSpec().getWdtInstallHome())) {
+        failures.add(DomainValidationMessages
+            .invalidModelHome(getDomain().getSpec().getWdtInstallHome(), getDomain().getSpec().getModelHome()));
+      }
+    }
+
+    private void verifyIntrospectorJobName() {
+      // K8S adds a 5 character suffix to an introspector job name
+      if (LegalNames.toJobIntrospectorName(getDomainUid()).length()
+          > LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5) {
+        failures.add(DomainValidationMessages.exceedMaxIntrospectorJobName(
+            getDomainUid(),
+            LegalNames.toJobIntrospectorName(getDomainUid()),
+            LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
+      }
+    }
+
+    List<String> getAdditionalValidationFailures(V1PodSpec podSpec) {
+      addInvalidMountPathsForPodSpec(podSpec);
+      return failures;
+    }
+
+    private void addDuplicateNames() {
+      getDomain().getSpec().getManagedServers()
+          .stream()
+          .map(ManagedServer::getServerName)
+          .map(LegalNames::toDns1123LegalName)
+          .forEach(this::checkDuplicateServerName);
+      getClusterSpecs()
+          .stream()
+          .map(ClusterSpec::getClusterName)
+          .map(LegalNames::toDns1123LegalName)
+          .forEach(this::checkDuplicateClusterName);
+    }
+
+    private void checkDuplicateServerName(String serverName) {
+      if (serverNames.contains(serverName)) {
+        failures.add(DomainValidationMessages.duplicateServerName(serverName));
+      } else {
+        serverNames.add(serverName);
+      }
+    }
+
+    private void checkDuplicateClusterName(String clusterName) {
+      if (clusterNames.contains(clusterName)) {
+        failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
+      } else {
+        clusterNames.add(clusterName);
+      }
+    }
+
+    private void addInvalidMountPaths() {
+      getDomain().getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      if (getDomain().getSpec().getAdminServer() != null) {
+        getDomain().getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
+      }
+      if (getClusterSpecs() != null) {
+        getClusterSpecs().forEach(
+            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+      }
+    }
+
+    private void addInvalidMountPathsForPodSpec(V1PodSpec podSpec) {
+      podSpec.getContainers()
+          .forEach(container ->
+              Optional.ofNullable(container.getVolumeMounts())
+                  .ifPresent(volumes -> volumes.forEach(this::checkValidMountPath)));
+    }
+
+    private void checkValidMountPath(V1VolumeMount mount) {
+      if (skipValidation(mount.getMountPath())) {
+        return;
+      }
+
+      if (!new File(mount.getMountPath()).isAbsolute()) {
+        failures.add(DomainValidationMessages.badVolumeMountPath(mount));
+      }
+    }
+
+    private boolean skipValidation(String mountPath) {
+      StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
+      if (!nameList.hasMoreElements()) {
+        return false;
+      }
+      while (nameList.hasMoreElements()) {
+        String token = nameList.nextToken();
+        if (noMatchingEnvVarName(getEnvNames(), token)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
+      getAdminServerSpec().getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed);
+      getClusterSpecs().forEach(cluster ->
+          cluster.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
+      getDomain().getSpec().getManagedServers().forEach(managedServer ->
+          managedServer.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
+    }
+
+    private void verifyMountPathForAuxiliaryImagesNotUsed(V1VolumeMount volumeMount) {
+      Optional.ofNullable(getDomain().getSpec().getModel()).map(Model::getAuxiliaryImages)
+          .ifPresent(ai -> {
+            if (volumeMount.getMountPath().equals(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)) {
+              failures.add(DomainValidationMessages.mountPathForAuxiliaryImageAlreadyInUse());
+            }
+          });
+    }
+
+    private void whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
+      Optional.ofNullable(getDomain().getSpec().getModel()).map(Model::getAuxiliaryImages).ifPresent(
+          this::verifyWDTInstallHome);
+    }
+
+    private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
+      if (auxiliaryImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
+        failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
+      }
+    }
+
+    private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
+      return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
+    }
+
+    private void verifyLivenessProbeSuccessThreshold() {
+      Optional.of(getAdminServerSpec().getLivenessProbe())
+          .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
+              + ".livenessProbe.successThreshold"));
+      getClusterSpecs().forEach(cluster ->
+          Optional.ofNullable(cluster.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
+                  + cluster.getClusterName() + "].serverPod.livenessProbe.successThreshold")));
+      getDomain().getSpec().getManagedServers().forEach(managedServer ->
+          Optional.ofNullable(managedServer.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
+                  + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+    }
+
+    private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
+      if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+        failures.add(DomainValidationMessages.invalidLivenessProbeSuccessThresholdValue(
+            probe.getSuccessThreshold(), prefix));
+      }
+    }
+
+    private void verifyContainerNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+          isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getClusterSpecs().forEach(cluster ->
+          cluster.getContainers().forEach(container ->
+              isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                  + "].serverPod.containers")));
+      getDomain().getSpec().getManagedServers().forEach(managedServer ->
+          managedServer.getContainers().forEach(container ->
+              isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + "].serverPod.containers")));
+    }
+
+    private void isContainerNameReserved(V1Container container, String prefix) {
+      if (container.getName().equals(WLS_CONTAINER_NAME)) {
+        failures.add(DomainValidationMessages.reservedContainerName(container.getName(), prefix));
+      }
+    }
+
+    private void verifyContainerPortNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+          areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getClusterSpecs().forEach(cluster ->
+          cluster.getContainers().forEach(container ->
+              areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                  + "].serverPod.containers")));
+      getDomain().getSpec().getManagedServers().forEach(managedServer ->
+          managedServer.getContainers().forEach(container ->
+              areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + "].serverPod.containers")));
+    }
+
+    private void areContainerPortNamesValid(V1Container container, String prefix) {
+      Optional.ofNullable(container.getPorts()).ifPresent(portList ->
+          portList.forEach(port -> checkPortNameLength(port, container.getName(), prefix)));
+    }
+
+    private void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
+      if (port.getName().length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxContainerPortName(
+            getDomainUid(),
+            prefix + "." + name,
+            port.getName()));
+      }
+    }
+
+    @Nonnull
+    private Set<String> getEnvNames() {
+      return Optional.ofNullable(getDomain().getSpec().getEnv()).stream()
+          .flatMap(Collection::stream)
+          .map(V1EnvVar::getName)
+          .collect(toSet());
+    }
+
+    private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
+      int index = token.indexOf(TOKEN_END_MARKER);
+      if (index != -1) {
+        String str = token.substring(0, index);
+        // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
+        return !varNames.contains(str) && !IntrospectorJobEnvVars.isReserved(str);
+      }
+      return true;
+    }
+
+    private void addUnmappedLogHome() {
+      if (!getDomain().isLogHomeEnabled()) {
+        return;
+      }
+
+      if (getDomain().getSpec().getAdditionalVolumeMounts().stream()
+          .map(V1VolumeMount::getMountPath)
+          .noneMatch(this::mapsLogHome)) {
+        failures.add(DomainValidationMessages.logHomeNotMounted(getDomain().getLogHome()));
+      }
+    }
+
+    private boolean mapsLogHome(String mountPath) {
+      return getDomain().getLogHome().startsWith(separatorTerminated(mountPath));
+    }
+
+    private String separatorTerminated(String path) {
+      if (path.endsWith(File.separator)) {
+        return path;
+      } else {
+        return path + File.separator;
+      }
+    }
+
+    private void addIllegalSitConfigForMii() {
+      if (getDomain().getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
+          && getDomain().getConfigOverrides() != null) {
+        failures.add(DomainValidationMessages.illegalSitConfigForMii(getDomain().getConfigOverrides()));
+      }
+    }
+
+    private void verifyIstioExposingDefaultChannel() {
+      if (getDomain().getSpec().isIstioEnabled()) {
+        Optional.ofNullable(getDomain().getSpec().getAdminServer())
+            .map(AdminServer::getAdminService)
+            .map(AdminService::getChannels)
+            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+          || "default-secure".equals(channel.getChannelName())) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
+      }
+    }
+
+    private void addReservedEnvironmentVariables() {
+      checkReservedIntrospectorVariables(getDomain().getSpec(), "spec");
+      Optional.ofNullable(getDomain().getSpec().getAdminServer())
+          .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
+
+      getDomain().getSpec().getManagedServers()
+          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
+      getClusterSpecs()
+          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+    }
+
+    class EnvironmentVariableCheck {
+      private final Predicate<String> isReserved;
+
+      EnvironmentVariableCheck(Predicate<String> isReserved) {
+        this.isReserved = isReserved;
+      }
+
+      void checkEnvironmentVariables(@Nonnull BaseConfiguration configuration, String prefix) {
+        if (configuration.getEnv() == null) {
+          return;
+        }
+
+        List<String> reservedNames = configuration.getEnv()
+            .stream()
+            .map(V1EnvVar::getName)
+            .filter(isReserved)
+            .collect(Collectors.toList());
+
+        if (!reservedNames.isEmpty()) {
+          failures.add(DomainValidationMessages.reservedVariableNames(prefix, reservedNames));
+        }
+      }
+    }
+
+    private void checkReservedEnvironmentVariables(BaseConfiguration configuration, String prefix) {
+      new EnvironmentVariableCheck(ServerEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void checkReservedIntrospectorVariables(BaseConfiguration configuration, String prefix) {
+      new EnvironmentVariableCheck(IntrospectorJobEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
+    }
+
+    private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
+      verifySecretExists(resourceLookup, getDomain().getWebLogicCredentialsSecretName(),
+          SecretType.WEBLOGIC_CREDENTIALS);
+      for (V1LocalObjectReference reference : getImagePullSecrets()) {
+        verifySecretExists(resourceLookup, reference.getName(), SecretType.IMAGE_PULL);
+      }
+      for (String secretName : getDomain().getConfigOverrideSecrets()) {
+        verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
+      }
+
+      verifySecretExists(resourceLookup, getDomain().getOpssWalletPasswordSecret(), SecretType.OPSS_WALLET_PASSWORD);
+      verifySecretExists(resourceLookup, getDomain().getOpssWalletFileSecret(), SecretType.OPSS_WALLET_FILE);
+
+      if (getDomain().getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
+        if (getDomain().getRuntimeEncryptionSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredSecret(
+              "spec.configuration.model.runtimeEncryptionSecret"));
+        } else {
+          verifySecretExists(resourceLookup, getDomain().getRuntimeEncryptionSecret(), SecretType.RUNTIME_ENCRYPTION);
+        }
+        if (ModelInImageDomainType.JRF.equals(getDomain().getWdtDomainType())
+            && getDomain().getOpssWalletPasswordSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredOpssSecret(
+              "spec.configuration.opss.walletPasswordSecret"));
+        }
+      }
+    }
+
+    private List<V1LocalObjectReference> getImagePullSecrets() {
+      return getDomain().getSpec().getImagePullSecrets();
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
+      if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
+      }
+    }
+
+    private void verifyNoAlternateSecretNamespaceSpecified() {
+      if (!getSpecifiedWebLogicCredentialsNamespace().equals(getNamespace())) {
+        failures.add(DomainValidationMessages.illegalSecretNamespace(getSpecifiedWebLogicCredentialsNamespace()));
+      }
+    }
+
+    private String getSpecifiedWebLogicCredentialsNamespace() {
+      return Optional.ofNullable(getDomain().getSpec().getWebLogicCredentialsSecret())
+          .map(V1SecretReference::getNamespace)
+          .orElse(getNamespace());
+    }
+
+    private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
+      verifyModelConfigMapExists(resourceLookup, getDomain().getWdtConfigMap());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
+      if (getDomain().getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
+          && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+      }
+    }
+
   }
 }

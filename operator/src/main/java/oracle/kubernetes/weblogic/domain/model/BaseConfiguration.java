@@ -108,7 +108,7 @@ public abstract class BaseConfiguration {
     return serverStartState;
   }
 
-  void setServerStartState(@Nullable ServerStartState serverStartState) {
+  public void setServerStartState(@Nullable ServerStartState serverStartState) {
     this.serverStartState = serverStartState;
   }
 
@@ -150,7 +150,7 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
   }
 
-  ProbeTuning getLivenessProbe() {
+  public ProbeTuning getLivenessProbe() {
     return serverPod.getLivenessProbeTuning();
   }
 

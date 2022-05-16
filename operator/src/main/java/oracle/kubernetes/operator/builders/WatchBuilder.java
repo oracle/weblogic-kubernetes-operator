@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -111,6 +112,19 @@ public class WatchBuilder {
     return factory.createWatch(
         callParams, Domain.class, new ListDomainsCall(namespace));
   }
+
+  /**
+   * Creates a web hook object to track changes to WebLogic cluster in one namespaces.
+   *
+   * @param namespace the namespace in which to track clusters
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public Watchable<Cluster> createClusterWatch(String namespace) throws ApiException {
+    return factory.createWatch(
+        callParams, Cluster.class, new ListClustersCall(namespace));
+  }
+
 
   /**
    * Creates a web hook object to track config map calls.
@@ -394,6 +408,37 @@ public class WatchBuilder {
       }
     }
   }
+
+  private static class ListClustersCall implements BiFunction<ApiClient, CallParams, Call> {
+    private final String namespace;
+
+    ListClustersCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      configureClient(client);
+
+      try {
+        return new WeblogicApi(client)
+            .listNamespacedClusterCall(
+                namespace,
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
 
   private static class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
     private final String namespace;

@@ -22,6 +22,8 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
@@ -65,6 +67,11 @@ class DomainResourcesValidation {
       @Override
       Consumer<DomainList> getDomainListProcessing() {
         return DomainResourcesValidation.this::addDomainList;
+      }
+
+      @Override
+      Consumer<ClusterList> getClusterListProcessing() {
+        return l -> addClusterList(l);
       }
 
       @Override
@@ -126,8 +133,16 @@ class DomainResourcesValidation {
     list.getItems().forEach(this::addDomain);
   }
 
+  private void addClusterList(ClusterList list) {
+    list.getItems().forEach(this::addCluster);
+  }
+
   private void addDomain(Domain domain) {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
+  }
+
+  private void addCluster(Cluster cluster) {
+    getDomainPresenceInfo(cluster.getDomainUid()).addClusterResource(cluster);
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {

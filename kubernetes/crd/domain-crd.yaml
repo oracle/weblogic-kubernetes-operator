@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: b2bbe25894b465f3da8d9b7272e7049f67e2c2b0d983859af3556acdfd591313
+    weblogic.sha256: 7ccebfbb784f752eca83e9b7f3d71df51b5235bdbce0cef78e81fa8ae1cf97a5
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -6555,6 +6555,14 @@ spec:
                   Ignored if `configuration.overridesConfigMap` is specified. The
                   name of the ConfigMap for optional WebLogic configuration overrides.
                 type: string
+              cluster-resource-references:
+                description: List of names of Cluster Custom Resources the Operator
+                  expects to be deployed in the same namespace that the domain is
+                  deployed.  A reference to a cluster custom resource  in order for
+                  the cluster elements to be applied.
+                items:
+                  type: string
+                type: array
               logHomeEnabled:
                 description: Specifies whether the log home folder is enabled. Defaults
                   to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.

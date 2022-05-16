@@ -8,6 +8,7 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -99,6 +100,10 @@ public class DomainProcessorTestSetup {
             new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID).generation(generation)))
         .withSpec(ds)
         .withStatus(new DomainStatus());
+  }
+
+  public static DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+    return new DomainPresenceInfo(domain);
   }
 
   /**

@@ -15,8 +15,21 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceSpec.SessionAffinityEnum;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterService;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommon;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase.KubernetesResourceLookupStub;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.jupiter.api.Test;
 
@@ -24,9 +37,11 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainPresenceInfoTest {
@@ -34,7 +49,16 @@ class DomainPresenceInfoTest {
   private static final List<ServerStartupInfo> STARTUP_INFOS = Arrays.stream(MANAGED_SERVER_NAMES)
         .map(DomainPresenceInfoTest::toServerStartupInfo)
         .collect(Collectors.toList());
-  private final DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
+  private static final String NS = "ns";
+  private static final String DOMAIN_UID = "domain";
+  private static final String ENV_NAME1 = "MY_ENV";
+  private static final String RAW_VALUE_1 = "123";
+  private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
+  private static final String RAW_MOUNT_PATH_2 = "$(MY_ENV)/bin";
+  private static final String BAD_MOUNT_PATH_1 = "$DOMAIN_HOME/servers/$SERVER_NAME";
+  private final Domain domain = createDomain();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  protected final KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
   private static ServerStartupInfo toServerStartupInfo(String serverName) {
     return new ServerStartupInfo(
@@ -192,4 +216,236 @@ class DomainPresenceInfoTest {
 
 
   // todo compute availability per cluster: how many servers need to be running, list of servers in cluster
+
+  @Test
+  void whenClusterResourceDeployed_verifyClusterSpec_fromClusterResource() {
+    ClusterSpec clusterSpec = createClusterSpec();
+
+    Cluster cluster = createClusterResource(clusterSpec);
+
+    info.addClusterResource(cluster);
+
+    ClusterSpecCommon clusterSpecCommon = info.getClusterSpecCommon(cluster.getClusterName());
+    assertThat(clusterSpecCommon.getClusterSessionAffinity(), equalTo(SessionAffinityEnum.CLIENTIP));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_verifyClusterSpecAttribute_overrideServerSpec() {
+    ClusterSpec clusterSpec = createClusterSpec();
+
+    Cluster cluster = createClusterResource(clusterSpec);
+
+    info.addClusterResource(cluster);
+
+    ServerSpec serverSpec = info.getServer("ms1", cluster.getClusterName());
+    assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
+  }
+
+  @Test
+  void whenClusterResourceNotDeployed_verifyDefaultServerSpec() {
+    ServerSpec serverSpec = info.getServer("ms1", "domain-cluster-1");
+    assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
+  }
+
+  @Test
+  void whenClusterResourceAlreadyDeployed_addUpdatedClusterResource() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    Cluster c = info.getClusterResource(cluster.getClusterName());
+    assertThat(c, sameInstance(cluster));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_verifyReplicaCount() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    int replicaCount = info.getReplicaCount(cluster.getClusterName());
+    assertThat(replicaCount, equalTo(5));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_setReplicaCount() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    info.setReplicaCount(cluster.getClusterName(), 3);
+
+    assertThat(info.getReplicaCount(cluster.getClusterName()), equalTo(3));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_getMaxUnavailabe() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    clusterSpec.setMaxUnavailable(5);
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getMaxUnavailable(cluster.getClusterName()), equalTo(5));
+  }
+
+  @Test
+  void whenAdminServerChannelsNotDefined_exportedNamesIsEmpty() {
+    assertThat(info.getAdminServerChannelNames(), empty());
+  }
+
+  @Test
+  void whenClusterResourceDeployed_isAllowReplicasBelowMinDynClusterSize() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    clusterSpec.setAllowReplicasBelowMinDynClusterSize(false);
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    assertThat(info.isAllowReplicasBelowMinDynClusterSize(cluster.getClusterName()), equalTo(false));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_getMaxConcurrentStartup() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    clusterSpec.setMaxConcurrentStartup(3);
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getMaxConcurrentStartup(cluster.getClusterName()), equalTo(3));
+  }
+
+  @Test
+  void whenClusterResourceDeployed_getMaxConcurrentShutdown() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    clusterSpec.setMaxConcurrentShutdown(3);
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getMaxConcurrentShutdown(cluster.getClusterName()), equalTo(3));
+  }
+
+  @Test
+  void whenClusterSpecsHaveUniqueNames_dontReportError() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster1"));
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster2"));
+
+    assertThat(info.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenClusterSpecsHaveDuplicateNames_reportError() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName("cluster-1"));
+
+    assertThat(info.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("clusters", "cluster-1")));
+  }
+
+  @Test
+  void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    clusterSpec = createClusterSpec("cluster_1");
+    cluster = createClusterResource(clusterSpec);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("clusters", "cluster-1")));
+  }
+
+  @Test
+  void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    cluster.addAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+    info.addClusterResource(cluster);
+    //configureDomain(domain)
+    //    .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+
+    assertThat(info.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
+  }
+
+  @Test
+  void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    cluster.addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    configureDomain(domain)
+        .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
+        .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    ClusterSpec clusterSpec = createClusterSpec();
+    Cluster cluster = createClusterResource(clusterSpec);
+    cluster.addAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+    info.addClusterResource(cluster);
+
+    assertThat(info.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    configureDomain(domain)
+        .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+
+    assertThat(info.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
+  }
+
+  private Cluster createClusterResource(ClusterSpec clusterSpec) {
+    return new Cluster()
+          .withApiVersion(KubernetesConstants.API_VERSION_CLUSTER_WEBLOGIC_ORACLE)
+          .withKind(KubernetesConstants.CLUSTER)
+          .withMetadata(new V1ObjectMeta()
+              .name(qualifyClusterResourceName("domain", clusterSpec.getClusterName()))
+              .namespace("ns")
+              .putLabelsItem("weblogic.domainUID", "domain")
+              .creationTimestamp(SystemClock.now()))
+          .spec(clusterSpec);
+  }
+
+  private ClusterSpec createClusterSpec() {
+    return createClusterSpec("cluster-1");
+  }
+
+  private ClusterSpec createClusterSpec(String clusterName) {
+    return new ClusterSpec().withClusterName(clusterName).withReplicas(5)
+        .withClusterService(new ClusterService().withSessionAffinity(SessionAffinityEnum.CLIENTIP))
+        .withServerStartState(ServerStartState.ADMIN);
+  }
+
+  private String qualifyClusterResourceName(String domainUid, String clusterName) {
+    return domainUid + "-" + clusterName;
+  }
+
+  protected static Domain createDomain() {
+    return new Domain()
+        .withMetadata(new V1ObjectMeta().namespace(NS))
+        .withSpec(
+            new DomainSpec()
+                //.withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME))
+                .withDomainUid(DOMAIN_UID));
+  }
+
+  private DomainConfigurator configureDomain(Domain domain) {
+    return new DomainCommonConfigurator(domain);
+  }
 }

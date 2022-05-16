@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Application;
@@ -29,10 +30,13 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import oracle.kubernetes.common.utils.BaseTestUtils;
+import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import org.glassfish.jersey.test.JerseyTest;
 import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
 import org.glassfish.jersey.test.spi.TestContainerException;
@@ -390,6 +394,14 @@ class RestTest extends JerseyTest {
     ScaleClusterParamsModel params = new ScaleClusterParamsModel();
     params.setManagedServerCount(count);
     return params;
+  }
+
+  private static Cluster createClusterResource(String namespace, String name, String domainUid) {
+    return new Cluster()
+        .withDomainUid(domainUid)
+        .withMetadata(new V1ObjectMeta().namespace(namespace).name(name))
+        .spec(new ClusterSpec().withClusterName(name).withReplicas(2).withServerStartState(
+            ServerStartState.RUNNING));
   }
 
   @SuppressWarnings("unused")

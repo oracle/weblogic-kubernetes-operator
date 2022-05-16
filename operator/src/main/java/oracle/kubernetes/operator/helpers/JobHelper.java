@@ -47,7 +47,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -147,8 +147,8 @@ public class JobHelper {
     }
 
     // Returns true if the specified cluster is configured to start.
-    private boolean shouldStart(Cluster cluster) {
-      return (shouldStart(cluster.getServerStartPolicy())) && getDomain().getReplicaCount(cluster.getClusterName()) > 0;
+    private boolean shouldStart(ClusterSpec cluster) {
+      return (shouldStart(cluster.getServerStartPolicy())) && info.getReplicaCount(cluster.getClusterName()) > 0;
     }
 
     // Returns true if the specified server start policy will allow starting a server.
