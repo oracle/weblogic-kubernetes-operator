@@ -1665,6 +1665,18 @@ public class Kubernetes {
   }
 
   /**
+   * Gets a Kubernetes Secret.
+   *
+   * @param secretName Name of secret
+   * @param namespace Namespace
+   * @return secret, if found
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1Secret getSecret(String secretName, String namespace) throws ApiException {
+    return coreV1Api.readNamespacedSecret(secretName, namespace, PRETTY);
+  }
+
+  /**
    * Delete a Kubernetes Secret.
    *
    * @param name name of the Secret
