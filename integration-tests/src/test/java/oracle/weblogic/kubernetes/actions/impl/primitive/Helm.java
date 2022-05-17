@@ -65,11 +65,9 @@ public class Helm {
 
     // if we have chart values file
     String chartValuesFile = helmParams.getChartValuesFile();
-    getLogger().info("DEBUG: chartValuesFile is " + chartValuesFile);
     if (chartValuesFile != null) {
       installCmd = installCmd + " --values " + chartValuesFile;
     }
-    getLogger().info("DEBUG: installCmd is " + installCmd);
 
     // if we have chart version
     String chartVersion = helmParams.getChartVersion();
@@ -81,7 +79,6 @@ public class Helm {
     installCmd = installCmd + valuesToString(chartValues);
 
     // run the command
-    getLogger().info("DEBUG: installCmd final is " + installCmd);
     return exec(installCmd);
   }
 
