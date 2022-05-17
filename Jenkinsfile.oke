@@ -288,7 +288,7 @@ EOF
                         sh '''
                             export PATH=${runtime_path}
                             sudo yum install -y python36
-                            mkdir ${WORKSPACE}/oci
+                            mkdir -p ${WORKSPACE}/oci
                             cd ${WORKSPACE}/oci
                             curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
                             chmod +x ${WORKSPACE}/oci/install.sh
@@ -349,7 +349,11 @@ EOF
                         sh '''
                             export PATH=${runtime_path}
                             export KUBECONFIG=${KUBECONFIG}
-                            export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                            mkdir -p ${WORKSPACE}/oci
+                            cp -rf ${oci_config_file} ${WORKSPACE}/oci/config
+                            chmod 777 ${WORKSPACE}/oci/config
+                            sed -i -e "s:@WORKSPACE@:${WORKSPACE}:g" ${WORKSPACE}/oci/config
+                            export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                             export OCI_CLI_PROFILE=WKOBUILD
                             echo 'Create a OKE cluster'
 
@@ -369,7 +373,6 @@ EOF
                                     environment {
                                         runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
-                                        oci_config_file = credentials("${wkobuild_oci_config}")
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
                                         clusterName = "mtcluster"
                                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
@@ -380,7 +383,7 @@ EOF
                                         sh '''
                                         cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
-                                        export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                                        export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
                                         export PATH=${runtime_path}
 
@@ -408,7 +411,6 @@ EOF
                 stage('Run integration tests') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
-                        oci_config_file = credentials("${wkobuild_oci_config}")
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
                         OCR_USERNAME = credentials("${ocr_username_creds}")
                         OCR_PASSWORD = credentials("${ocr_password_creds}")
@@ -431,7 +433,7 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                            export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                             export OCI_CLI_PROFILE=WKOBUILD
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
@@ -539,7 +541,7 @@ EOF
                     sh '''
                         export PATH="${WORKSPACE}/bin:${PATH}"
                         export KUBECONFIG=${kubeconfig_file}
-                        export OCI_CLI_CONFIG_FILE=${oci_config_file}
+                        export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                         export OCI_CLI_PROFILE=WKOBUILD
                         echo 'Remove old OKE cluster (if any)...'
 
