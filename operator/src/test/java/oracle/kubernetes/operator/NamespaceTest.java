@@ -52,7 +52,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class NamespaceTest {
+public class NamespaceTest {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -62,7 +62,13 @@ class NamespaceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
-  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
+  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
+
+  @NotNull
+  public static DomainNamespaces createDomainNamespaces() {
+    return new DomainNamespaces(null);
+  }
+
   private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
   private final Collection<LogRecord> logRecords = new ArrayList<>();
