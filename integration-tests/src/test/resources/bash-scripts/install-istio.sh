@@ -35,9 +35,13 @@ kubectl delete namespace istio-system --ignore-not-found
   tar zxf istio.tar.gz
 )
 
+( kubectl create secret generic docker-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=/home/opc/.docker/config.json -n istio-system
+  kubectl get secrets -n istio-system -o yaml
+)
+
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set hub=gcr.io/istio-release --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-secret --set meshConfig.enablePrometheusMerge=false -y
   bin/istioctl verify-install
   bin/istioctl version
 )
