@@ -5,6 +5,6 @@ weight: 4
 description: "Managing domains in Kubernetes."
 ---
 
-The following sections provide information about running, managing, accessing, and monitoring domains.
+The following sections provide information for running, managing, accessing, and monitoring domains.
 
 {{% children style="h4" description="true" %}}
