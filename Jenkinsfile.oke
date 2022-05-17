@@ -289,20 +289,17 @@ EOF
                 }
                 stage ('Install oci cli') {
                     environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
                     }
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            python -V
                             sudo yum install -y python36
-                            python -V
                             mkdir ${WORKSPACE}/oci
                             cd ${WORKSPACE}/oci
                             curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
                             chmod +x ${WORKSPACE}/oci/install.sh
                             ${WORKSPACE}/oci/install.sh --install-dir ${PWD} --exec-dir  ${WORKSPACE}/bin --script-dir ${PWD} --optional-features n --accept-all-defaults
-                            #sudo yum install -y python36-oci-cli
                             oci --version
                         '''
                     }
@@ -348,7 +345,7 @@ EOF
 
                 stage('Create OKE cluster') {
                     environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         KUBECONFIG ="${WORKSPACE}/terraform/mtcluster_kubeconfig"
@@ -377,7 +374,7 @@ EOF
 
                  stage('Setup OFSS') {
                                     environment {
-                                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin:${WORKSPACE}/terraform/terraforminstall"
+                                        runtime_path = "${WORKSPACE}/bin:${PATH}:${WORKSPACE}/terraform/terraforminstall"
                                         OCI_PROP_FILE = "${WORKSPACE}/terraform/oci.prop"
                                         oci_config_file = credentials("${wkobuild_oci_config}")
                                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
@@ -417,7 +414,7 @@ EOF
 
                 stage('Run integration tests') {
                     environment {
-                        runtime_path = "${WORKSPACE}/bin:${PATH}:/bin"
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
                         OCR_USERNAME = credentials("${ocr_username_creds}")
@@ -547,7 +544,7 @@ EOF
             post {
                 always {
                     sh '''
-                        export PATH="${WORKSPACE}/bin:${PATH}:/bin"
+                        export PATH="${WORKSPACE}/bin:${PATH}"
                         export KUBECONFIG=${kubeconfig_file}
                         export OCI_CLI_CONFIG_FILE=${oci_config_file}
                         export OCI_CLI_PROFILE=WKOBUILD
