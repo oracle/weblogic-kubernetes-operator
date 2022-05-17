@@ -1,8 +1,9 @@
 +++
 title = "Persistent storage"
 date = 2019-02-23T16:45:09-05:00
-weight = 3
+weight = 5
 pre = "<b> </b>"
+description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) to store WebLogic domain homes and log files."
 +++
 
 This document outlines how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.

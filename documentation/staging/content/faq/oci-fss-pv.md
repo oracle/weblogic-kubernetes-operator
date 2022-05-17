@@ -1,5 +1,5 @@
 ---
-title: "Using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes"
+title: "Using OCI File Storage (FSS) for persistent volumes"
 date: 2020-02-12T12:12:12-05:00
 draft: false
 weight: 7

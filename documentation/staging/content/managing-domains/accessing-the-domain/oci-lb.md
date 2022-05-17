@@ -1,13 +1,11 @@
 ---
-title: "Using an Oracle Cloud Infrastructure load balancer"
+title: "Use an OCI load balancer"
 date: 2019-09-25T12:41:38-04:00
 draft: false
-weight: 8
+weight: 7
 description: "If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (OKE), then you can have Oracle Cloud Infrastructure automatically
-provision load balancers for you by creating a `Service` of type
-`LoadBalancer` instead of (or in addition to) installing an
-ingress controller like Traefik."
+provision load balancers for you."
 ---
 
 If you are running your Kubernetes cluster on Oracle Container Engine

@@ -1,8 +1,9 @@
 +++
 title = "Configuration overrides"
 date = 2019-02-23T16:45:16-05:00
-weight = 5
+weight = 7
 pre = "<b> </b>"
+description = "Use overrides to customize domains."
 +++
 
 #### Contents

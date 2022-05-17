@@ -1,8 +1,8 @@
 ---
 title: "Istio support"
 date: 2019-08-15T13:30:04-04:00
-weight: 7
-description: "Lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains."
+weight: 8
+description: "Run the operator and WebLogic domains managed by the operator when Istio sidecar injection is enabled."
 ---
 
 #### Contents

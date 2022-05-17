@@ -1,8 +1,8 @@
 +++
 title = "Choose a domain home source type"
 date = 2019-02-23T16:44:54-05:00
-weight = 1
-pre = "<b> </b>"
+weight = 3
+description = "When using the operator to start WebLogic Server instances from a domain, choose among these domain home types depending on your requirements."
 +++
 
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:

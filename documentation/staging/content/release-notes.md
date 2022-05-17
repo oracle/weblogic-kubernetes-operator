@@ -225,7 +225,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * Reflect introspector status to domain status ([#1832](https://github.com/oracle/weblogic-kubernetes-operator/pull/1832)).
 * Ensure operator detects pod state changes even when watch events are not delivered ([#1811](https://github.com/oracle/weblogic-kubernetes-operator/pull/1811)).
 * Support configurable WDT model home ([#1828](https://github.com/oracle/weblogic-kubernetes-operator/pull/1828)).
-* [Namespace management enhancements]({{< relref "/faq/namespace-management.md" >}}) ([#1860](https://github.com/oracle/weblogic-kubernetes-operator/pull/1860)).
+* [Namespace management enhancements]({{< relref "/managing-operators/namespace-management.md" >}}) ([#1860](https://github.com/oracle/weblogic-kubernetes-operator/pull/1860)).
 * Limit concurrent pod shut down while scaling down a cluster ([#1892](https://github.com/oracle/weblogic-kubernetes-operator/pull/1892)).
 * List continuation and watch bookmark support ([#1881](https://github.com/oracle/weblogic-kubernetes-operator/pull/1881)).
 * Fix scaling script when used with dedicated namespace mode ([#1921](https://github.com/oracle/weblogic-kubernetes-operator/pull/1921)).

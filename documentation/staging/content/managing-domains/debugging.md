@@ -1,9 +1,9 @@
 +++
 title = "Domain debugging"
 date = 2020-03-11T16:45:16-05:00
-weight = 9
+weight = 10
 pre = "<b> </b>"
-description = "Debugging a deployed domain."
+description = "Debug deployed domains."
 +++
 
 Here are some suggestions for debugging problems with a domain after your Domain YAML file is deployed.

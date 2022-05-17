@@ -3,7 +3,7 @@ title: "Use the Remote Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 2
-description: "Use the WebLogic Remote Console to manage a domain running in Kubernetes."
+description: "Use the WebLogic Remote Console to manage domains running in Kubernetes."
 ---
 
 The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.

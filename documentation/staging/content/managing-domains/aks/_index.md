@@ -2,7 +2,7 @@
 title: "Azure Kubernetes Service (AKS)"
 date: 2021-10-27T15:27:38-05:00
 weight: 12
-description: "Deploying WebLogic Server on Azure Kubernetes Service."
+description: "Deploy WebLogic Server on Azure Kubernetes Service."
 ---
 
 ### Contents

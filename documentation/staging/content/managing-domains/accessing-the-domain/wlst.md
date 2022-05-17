@@ -3,7 +3,7 @@ title: "Use WLST"
 date: 2019-02-23T17:39:19-05:00
 draft: false
 weight: 3
-description: "You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes."
+description: "Use the WebLogic Scripting Tool (WLST) to manage domains running in Kubernetes."
 ---
 
 You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.

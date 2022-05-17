@@ -3,7 +3,7 @@ title: "External WebLogic clients"
 date: 2019-11-21T21:23:03Z
 draft: false
 weight: 11
-description: "This FAQ describes approaches for giving WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernetes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes."
+description: "Give WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes."
 ---
 
 #### Contents
@@ -197,7 +197,7 @@ Here are the steps:
 
 - In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/faq/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/managing-domains/accessing-the-domain/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
