@@ -2,7 +2,7 @@
 title: "Namespace management"
 date: 2019-09-19T10:41:32-05:00
 draft: false
-weight: 5
+weight: 6
 description: "Configure or dynamically change the namespaces that a running operator manages."
 ---
 

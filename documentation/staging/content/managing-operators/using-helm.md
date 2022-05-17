@@ -1,7 +1,7 @@
 ---
 title: "Configuration reference"
 date: 2019-02-23T17:08:43-05:00
-weight: 4
+weight: 5
 description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 

@@ -1,8 +1,8 @@
 ---
-title: "WebLogic Domain resource conversion webhook"
+title: "Domain upgrade"
 date: 2019-02-23T16:47:21-05:00
 draft: false
-weight: 12
+weight: 4
 description: "Conversion webhook for upgrading the domain resource schema."
 ---
 
@@ -70,7 +70,7 @@ The following table describes the behavior of different operator `Helm` chart co
 | Helm uninstall with `preserveWebhook=true` set during `helm install` | | Operator deployment uninstalled and webhook deployment preserved. |
 
 **Note:**
-A webhook install is skipped if there's already a webhook deployment at the same or newer version. The `helm install` step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces. 
+A webhook install is skipped if there's already a webhook deployment at the same or newer version. The `helm install` step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces.
 
 ### Uninstall the conversion webhook
 

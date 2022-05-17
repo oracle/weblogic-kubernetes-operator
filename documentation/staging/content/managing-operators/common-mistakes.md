@@ -1,7 +1,7 @@
 ---
 title: "Common mistakes and solutions"
 date: 2019-02-23T17:08:43-05:00
-weight: 10
+weight: 11
 description: "Help for common installing and upgrading mistakes."
 ---
 

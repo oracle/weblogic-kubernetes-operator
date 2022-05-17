@@ -1,7 +1,7 @@
 +++
 title = "Persistent storage"
 date = 2019-02-23T16:45:09-05:00
-weight = 5
+weight = 7.5
 pre = "<b> </b>"
 description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) to store WebLogic domain homes and log files."
 +++
@@ -28,8 +28,6 @@ $ mkdir -m 777 -p /path/to/domain1PersistentVolume
 ```
 
 **Note regarding NFS**: In the current GA version, the Oracle Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
-
-Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on Oracle Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and `domain_home`), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
 
 #### PersistentVolume GID annotation
 

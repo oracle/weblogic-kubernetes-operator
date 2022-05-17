@@ -1,7 +1,7 @@
 ---
 title: "REST services"
 date: 2019-02-23T17:08:32-05:00
-weight: 8
+weight: 9
 description: "Use the operator's REST services."
 ---
 
