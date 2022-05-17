@@ -440,9 +440,14 @@ public class OperatorUtils {
             .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
 
-
     // get operator image name
-    String operatorImage = getOperatorImageName();
+    String operatorImage;
+    if ("3.4.0".equals(opHelmParams.getChartVersion())) {
+      operatorImage = "phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:owls_99380";
+    } else {
+      operatorImage = getOperatorImageName();
+    }
+
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
@@ -474,7 +479,7 @@ public class OperatorUtils {
     }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
-    if (opHelmParams.getRepoUrl() == null) {
+    if ((opHelmParams.getRepoUrl() == null) || (opHelmParams.getChartVersion().equals("3.4.0"))) {
       opParams.image(operatorImage);
     }
 
