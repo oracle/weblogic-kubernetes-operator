@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.rest;
 
 import java.util.Map;
 
+import oracle.kubernetes.operator.rest.resource.AdmissionWebhookResource;
 import oracle.kubernetes.operator.rest.resource.ConversionWebhookResource;
 import oracle.kubernetes.operator.work.Container;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -69,13 +70,13 @@ public class WebhookRestServer extends BaseRestServer {
   @Override
   ResourceConfig createResourceConfig(RestConfig restConfig) {
     return new ResourceConfig()
-            .register(JacksonFeature.class)
-            .register(ErrorFilter.class)
-            .register(RequestDebugLoggingFilter.class)
-            .register(ResponseDebugLoggingFilter.class)
-            .register(ExceptionMapper.class)
-            .packages(ConversionWebhookResource.class.getPackageName())
-            .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
+        .register(JacksonFeature.class)
+        .register(ErrorFilter.class)
+        .register(RequestDebugLoggingFilter.class)
+        .register(ResponseDebugLoggingFilter.class)
+        .register(ExceptionMapper.class)
+        .packages(ConversionWebhookResource.class.getPackageName(), AdmissionWebhookResource.class.getPackageName())
+        .setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
   }
 
   /**
@@ -103,8 +104,7 @@ public class WebhookRestServer extends BaseRestServer {
       webhookHttpsServer = createWebhookHttpsServer(container);
       LOGGER.info(
               "Started the webhook ssl REST server on "
-                      + getWebhookHttpsUri()
-                      + "/webhook"); // TBD .fine ?
+                      + getWebhookHttpsUri()); // TBD .fine ?
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {

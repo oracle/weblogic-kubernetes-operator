@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.WebhookHelper;
 import oracle.kubernetes.operator.rest.BaseRestServer;
 import oracle.kubernetes.operator.rest.RestConfig;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
@@ -28,22 +28,24 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 
 /** A Domain Custom Resource Conversion Webhook for WebLogic Kubernetes Operator. */
-public class ConversionWebhookMain extends BaseMain {
+public class WebhookMain extends BaseMain {
 
-  private final ConversionWebhookMainDelegate conversionWebhookMainDelegate;
+  private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
-  private RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
+  private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static NextStepFactory nextStepFactory = ConversionWebhookMain::createInitializeWebhookIdentityStep;
+  private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
-  static class ConversionWebhookMainDelegateImpl extends CoreDelegateImpl implements ConversionWebhookMainDelegate {
-    public ConversionWebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
+  static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
+
+    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
     }
 
@@ -62,6 +64,7 @@ public class ConversionWebhookMain extends BaseMain {
     public String getWebhookKeyUri() {
       return SECRETS_WEBHOOK_KEY;
     }
+
   }
 
   /**
@@ -70,7 +73,7 @@ public class ConversionWebhookMain extends BaseMain {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    ConversionWebhookMain main = createMain(getBuildProperties());
+    WebhookMain main = createMain(getBuildProperties());
 
     try {
       main.startDeployment(main::completeBegin);
@@ -85,27 +88,30 @@ public class ConversionWebhookMain extends BaseMain {
     }
   }
 
-  static ConversionWebhookMain createMain(Properties buildProps) {
-    final ConversionWebhookMainDelegateImpl delegate =
-            new ConversionWebhookMainDelegateImpl(buildProps, wrappedExecutorService);
+  static WebhookMain createMain(Properties buildProps) {
+    final WebhookMainDelegateImpl delegate =
+            new WebhookMainDelegateImpl(buildProps, wrappedExecutorService);
 
     delegate.logStartup();
-    return new ConversionWebhookMain(delegate);
+    return new WebhookMain(delegate);
   }
 
-  ConversionWebhookMain(ConversionWebhookMainDelegate conversionWebhookMainDelegate) {
+  WebhookMain(WebhookMainDelegate conversionWebhookMainDelegate) {
     super(conversionWebhookMainDelegate);
     this.conversionWebhookMainDelegate = conversionWebhookMainDelegate;
   }
 
   @Override
   protected Step createStartupSteps() {
+    Certificates certs = new Certificates(delegate);
     return nextStepFactory.createInitializationStep(conversionWebhookMainDelegate,
-        Step.chain(CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
-            new Certificates(delegate)), new CheckFailureAndCreateEventStep()));
+        Step.chain(
+            createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(), certs),
+            new CheckFailureAndCreateEventStep(),
+            WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
   }
 
-  private static Step createInitializeWebhookIdentityStep(ConversionWebhookMainDelegate delegate, Step next) {
+  private static Step createInitializeWebhookIdentityStep(WebhookMainDelegate delegate, Step next) {
     return new InitializeWebhookIdentityStep(delegate, next);
   }
 
@@ -134,7 +140,7 @@ public class ConversionWebhookMain extends BaseMain {
   }
 
   Step createCRDRecheckSteps() {
-    return Step.chain(CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
+    return Step.chain(createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
             new Certificates(delegate)), createCRDPresenceCheck());
   }
 
@@ -183,7 +189,7 @@ public class ConversionWebhookMain extends BaseMain {
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
-    Step createInitializationStep(ConversionWebhookMainDelegate delegate, Step next);
+    Step createInitializationStep(WebhookMainDelegate delegate, Step next);
   }
 
   public static class CheckFailureAndCreateEventStep extends Step {
