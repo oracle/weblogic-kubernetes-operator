@@ -950,7 +950,6 @@ class TopologyGenerator(Generator):
   def addNetworkAccessPoint(self, server, nap, is_server_template):
 
     # Change the name to follow the istio port naming convention
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     if istio_enabled == 'true':
@@ -989,9 +988,6 @@ class TopologyGenerator(Generator):
     :param is_server_template:  true if it is from ServerTemplate
     :param added_nap:  true if there are existing nap section in the output
     '''
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return False
 
     if not added_nap:
       self.writeln("  networkAccessPoints:")
@@ -1261,9 +1257,6 @@ class SitConfigGenerator(Generator):
       self.customizeServer(server)
 
   def customizeIstioClusters(self):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
     for cluster in self.env.getDomain().getClusters():
       repl_channel_name = cluster.getReplicationChannel()
       # Skip configuring replication channel if 'istiorepl' already defined
@@ -1418,10 +1411,10 @@ class SitConfigGenerator(Generator):
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
 
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    if istio_enabled  == 'true' and istio_use_localhost_bindings == 'true':
-      listen_address = '127.0.0.1'
+    # istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    # istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
+    # if istio_enabled  == 'true' and istio_use_localhost_bindings == 'true':
+    #   listen_address = '127.0.0.1'
 
     nap_name=nap.getName()
     if nap_name in ISTIO_NAP_NAMES:
@@ -1602,9 +1595,6 @@ class SitConfigGenerator(Generator):
       self.writeln('</d:coherence-member-config>')
 
   def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
@@ -1660,9 +1650,6 @@ class SitConfigGenerator(Generator):
                           bind_to_localhost="false")
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false':
-      return
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
@@ -1708,12 +1695,12 @@ class SitConfigGenerator(Generator):
                          listen_port=istio_readiness_port, protocol='http', bind_to_localhost="false")
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-    if (admin_channel_port_forward_enabled == 'false') or \
-        (istio_enabled == 'true' and istio_use_localhost_bindings == 'true'):
-      return
+    # istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    # istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
+    # admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+    # if (admin_channel_port_forward_enabled == 'false') or \
+    #     (istio_enabled == 'true' and istio_use_localhost_bindings == 'true'):
+    #   return
 
     index = 0
     for nap in server.getNetworkAccessPoints():

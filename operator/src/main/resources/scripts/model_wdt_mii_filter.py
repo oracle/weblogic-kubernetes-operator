@@ -229,9 +229,6 @@ def customizeServerTemplate(topology, template, template_name):
     customizeCoherenceMemberConfig(template, listen_address)
 
 def customizeIstioClusters(model):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
   if 'topology' in model and 'Cluster' in model['topology']:
     for cluster in model['topology']['Cluster']:
       if 'ReplicationChannel' not in model['topology']['Cluster'][cluster]:
@@ -446,22 +443,12 @@ def _get_ssl_listen_port(server):
   return ssl_listen_port
 
 def customizeServerIstioNetworkAccessPoint(server, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
-  istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-  if istio_readiness_port is None:
-    return
   admin_server_port = server['ListenPort']
   # Set the default if it is not provided to avoid nap default to 0 which fails validation.
 
   if admin_server_port is None:
     admin_server_port = 7001
-
-  # readiness probe
-  _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                   listen_port=istio_readiness_port, protocol='http', http_enabled="true")
-
+  istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
   # Generate NAP for each protocols
   if istioVersionRequiresLocalHostBindings():
     _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
@@ -511,9 +498,6 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
                    bind_to_localhost="false")
 
 def customizeIstioReplicationChannel(server, name, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false' or server['Cluster'] is None:
-    return
 
   # verify if server or server template is associated with a cluster
   cluster_name = getClusterNameOrNone(server)
@@ -581,9 +565,6 @@ def verify_replication_port_conflict(server, name, replication_port):
         raise_replication_port_conflict(nap_name, ssl_listen_port, replication_port, 'SSL')
 
 def customizeManagedIstioNetworkAccessPoint(template, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'false':
-    return
   istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
   if istio_readiness_port is None:
     return
@@ -648,10 +629,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
                    bind_to_localhost="false")
 
 def addAdminChannelPortForwardNetworkAccessPoints(server):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-  if (admin_channel_port_forwarding_enabled == 'false') or \
-      (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()):
+  if (admin_channel_port_forwarding_enabled == 'false'):
     return
 
   admin_server_port = server['ListenPort']
@@ -727,10 +706,6 @@ def customizeNetworkAccessPoint(nap_name, nap, listen_address):
   if nap_name in ISTIO_NAP_NAMES:
     # skip creating ISTIO channels
     return
-
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'true' and istioVersionRequiresLocalHostBindings():
-    listen_address = '127.0.0.1'
 
   # fix NAP listen address
   if 'ListenAddress' in nap:
@@ -839,9 +814,6 @@ def getSecretManager():
   return secret_manager
 
 def istioVersionRequiresLocalHostBindings():
-  if env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-    return True
-
   return False
 
 
