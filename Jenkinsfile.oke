@@ -144,14 +144,7 @@ pipeline {
         )
     }
 
-    stages {
-        stage('Filter unwanted branches') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'okejen'
-                }
-            }
+
             stages {
                 stage('Workaround JENKINS-41929 Parameters bug') {
                     steps {
@@ -558,5 +551,5 @@ EOF
                 }
             }
         }
-    }
+    
 }
