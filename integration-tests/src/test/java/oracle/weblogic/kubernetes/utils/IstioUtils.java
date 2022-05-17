@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class IstioUtils {
   private static SemanticVersion installedIstioVersion = new SemanticVersion(ISTIO_VERSION);
-  private static String namespace = "istio-system";
 
   /**
    * Install istio.

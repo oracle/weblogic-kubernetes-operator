@@ -27,7 +27,7 @@ istiodir=${workdir}/istio-${version}
 echo "Installing Istio version [${version}] in location [${istiodir}]"
 
 kubectl delete namespace istio-system --ignore-not-found
-# istio installation will create the namespace 'istio-system' 
+# create the namespace 'istio-system' 
 kubectl create namespace istio-system
 
 ( cd $workdir;
