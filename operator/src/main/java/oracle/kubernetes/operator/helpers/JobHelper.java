@@ -37,12 +37,12 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -50,7 +50,6 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -83,7 +82,7 @@ public class JobHelper {
 
   // Creates the job spec from the specified packet
   static V1JobSpec createJobSpec(Packet packet) {
-    return new IntrospectorJobStepContext(packet).createJobSpec(TuningParameters.getInstance());
+    return new IntrospectorJobStepContext(packet).createJobSpec();
   }
 
   static Step deleteDomainIntrospectorJobStep(Step next) {
@@ -247,8 +246,7 @@ public class JobHelper {
       }
 
       private boolean isInProgressJobOutdated(V1Job job) {
-        return hasNotCompleted(job)
-            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
+        return hasNotCompleted(job) && hasAnyImageChanged(job);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -562,7 +560,7 @@ public class JobHelper {
 
       // Returns true if the job is left over from an earlier make-right, and we may now delete it.
       private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
-        final int retryInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+        final int retryInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
         return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
       }
 
@@ -650,26 +648,7 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
-        if (getCurrentIntrospectFailureRetryCount() > 0) {
-          reportIntrospectJobFailure();
-        }
-
         return doNext(listPodsInNamespace(getNamespace(), getNext()), packet);
-      }
-
-      @Nonnull
-      private Integer getCurrentIntrospectFailureRetryCount() {
-        return Optional.of(getDomain())
-            .map(Domain::getStatus)
-            .map(DomainStatus::getIntrospectJobFailureCount)
-            .orElse(0);
-      }
-
-      private void reportIntrospectJobFailure() {
-        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED,
-            getDomainUid(),
-            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds,
-            getCurrentIntrospectFailureRetryCount());
       }
 
       private Step listPodsInNamespace(String namespace, Step next) {
@@ -742,13 +721,23 @@ public class JobHelper {
 
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
-        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
+        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
+        } else if (isJobPodTimedOut(jobPod)) {
+          // process job pod timed out same way as job timed out, which is to
+          // terminate current fiber
+          return onFailureNoRetry(packet, callResponse);
         } else {
           addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }
+      }
+
+      @Override
+      protected Throwable createTerminationException(Packet packet,
+          CallResponse<V1PodList> callResponse) {
+        return new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB));
       }
 
       private boolean isJobPodTimedOut(V1Pod jobPod) {

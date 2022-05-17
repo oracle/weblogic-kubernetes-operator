@@ -22,6 +22,17 @@ public class Operator {
       return Kubernetes.isOperatorPodReady(namespace);
     };
   }
+  
+  /**
+   * Check if the operator webhook pod is running in a given namespace.
+   * @param namespace in which to check for the operator webhook pod
+   * @return true if found running and ready otherwise false
+   */
+  public static Callable<Boolean> isWebhookReady(String namespace) {
+    return () -> {
+      return Kubernetes.isWebhookPodReady(namespace);
+    };
+  }  
 
   /**
    * Checks if the operator external service exists.

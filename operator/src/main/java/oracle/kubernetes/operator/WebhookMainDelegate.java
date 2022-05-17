@@ -6,9 +6,10 @@ package oracle.kubernetes.operator;
 /**
  * Definition of an interface that returns values that the Webhook Main class requires.
  */
-public interface ConversionWebhookMainDelegate extends CoreDelegate {
+public interface WebhookMainDelegate extends CoreDelegate {
 
   String getWebhookCertUri();
 
   String getWebhookKeyUri();
+
 }

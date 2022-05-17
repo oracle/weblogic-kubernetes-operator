@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,12 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.helpers.LegalNames.DNS_1123_FIELDS_PARAM;
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,7 +91,7 @@ class LegalNamesTest {
   @Test
   void verify_requiresDns1123Names_with_customList() {
     String customList = "diskName, claimName";
-    TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
+    defineDns1123Names(customList);
 
     assertThat(LegalNames.isDns1123Required("DiskName"), is(true));
     assertThat(LegalNames.isDns1123Required("ClaimName"), is(true));
@@ -101,10 +100,14 @@ class LegalNamesTest {
     assertThat(LegalNames.isDns1123Required("SecretName"), is(false));
   }
 
+  private void defineDns1123Names(String value) {
+    TuningParametersStub.setParameter(LegalNames.DNS_1123_FIELDS_PARAM, value);
+  }
+
   @Test
   void verify_requiresDns1123Names_return_true_with_emptyStringCustomList() {
     String customList = "";
-    TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
+    defineDns1123Names(customList);
 
     assertThat(LegalNames.isDns1123Required("ClaimName"), is(true));
     assertThat(LegalNames.isDns1123Required("SecretName"), is(true));
@@ -113,7 +116,7 @@ class LegalNamesTest {
   @Test
   void verify_requiresDns1123Names_return_true_with_singleSpaceCustomList() {
     String customList = " ";
-    TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
+    defineDns1123Names(customList);
 
     assertThat(LegalNames.isDns1123Required("ClaimName"), is(true));
     assertThat(LegalNames.isDns1123Required("SecretName"), is(true));

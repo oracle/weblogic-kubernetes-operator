@@ -455,10 +455,13 @@ class TopologyGenerator(Generator):
     serverNamePrefixes = []
     for cluster in self.env.getDomain().getClusters():
       if self.getDynamicServersOrNone(cluster) is not None:
-        if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
-          self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+        if cluster.getDynamicServers().getServerNamePrefix() is None:
+          self.addError("The ServerNamePrefix is not set for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers. The ServerNamePrefix must be set for each WebLogic dynamic cluster.")
         else:
-          serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
+          if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
+            self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+          else:
+            serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():

@@ -16,11 +16,11 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.OperatorMain;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -208,7 +208,7 @@ public final class HealthCheckHelper {
       CallBuilder cb = new CallBuilder();
       return createAndValidateKubernetesVersion(
           cb.executeSynchronousCallWithRetry(cb::readVersionCode,
-          TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
+          TuningParameters.getInstance().getInitializationRetryDelaySeconds()));
     } catch (Throwable t) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;
