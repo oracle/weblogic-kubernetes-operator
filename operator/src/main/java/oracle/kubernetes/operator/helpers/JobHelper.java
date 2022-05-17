@@ -37,12 +37,12 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -50,20 +50,23 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
 import static oracle.kubernetes.operator.helpers.ConfigMapHelper.readExistingIntrospectorConfigMap;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 
 public class JobHelper {
 
@@ -79,7 +82,7 @@ public class JobHelper {
 
   // Creates the job spec from the specified packet
   static V1JobSpec createJobSpec(Packet packet) {
-    return new IntrospectorJobStepContext(packet).createJobSpec(TuningParameters.getInstance());
+    return new IntrospectorJobStepContext(packet).createJobSpec();
   }
 
   static Step deleteDomainIntrospectorJobStep(Step next) {
@@ -243,8 +246,7 @@ public class JobHelper {
       }
 
       private boolean isInProgressJobOutdated(V1Job job) {
-        return hasNotCompleted(job)
-            && Optional.ofNullable(job).map(this::hasAnyImageChanged).orElse(false);
+        return hasNotCompleted(job) && hasAnyImageChanged(job);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -451,12 +453,12 @@ public class JobHelper {
       @Override
       public NextAction apply(Packet packet) {
         String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-
         return doNext(readDomainIntrospectorPodLog(jobPodName, getNext()), packet);
       }
 
       private Step readDomainIntrospectorPodLog(String jobPodName, Step next) {
         return new CallBuilder()
+                .withContainerName(getDomain().getDomainUid() + "-introspector")
                 .readPodLogAsync(
                         jobPodName, getNamespace(), getDomainUid(), new ReadPodLogResponseStep(next));
       }
@@ -495,7 +497,9 @@ public class JobHelper {
         Optional.ofNullable(callResponse.getResult()).ifPresent(result -> processIntrospectionResult(packet, result));
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
-        if (JobWatcher.isComplete(domainIntrospectorJob)) {
+        if (JobWatcher.isComplete(domainIntrospectorJob)
+                || JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
+                .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED))) {
           return doNext(packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
@@ -515,6 +519,12 @@ public class JobHelper {
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
+        // Note: fluentd container log can be huge, may not be a good idea to read the container log.
+        //  Just set a flag and let the user know they can check the container log to determine unlikely
+        //  starting error, most likely a very bad formatted configuration.
+        if (packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED) != null) {
+          severeStatuses.add(packet.get(JOB_POD_FLUENTD_CONTAINER_TERMINATED).toString());
+        }
         if (!severeStatuses.isEmpty()) {
           return doNext(Step.chain(
               createIntrospectionFailureSteps(
@@ -550,7 +560,7 @@ public class JobHelper {
 
       // Returns true if the job is left over from an earlier make-right, and we may now delete it.
       private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
-        final int retryInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+        final int retryInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
         return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
       }
 
@@ -638,26 +648,7 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
-        if (getCurrentIntrospectFailureRetryCount() > 0) {
-          reportIntrospectJobFailure();
-        }
-
         return doNext(listPodsInNamespace(getNamespace(), getNext()), packet);
-      }
-
-      @Nonnull
-      private Integer getCurrentIntrospectFailureRetryCount() {
-        return Optional.of(getDomain())
-            .map(Domain::getStatus)
-            .map(DomainStatus::getIntrospectJobFailureCount)
-            .orElse(0);
-      }
-
-      private void reportIntrospectJobFailure() {
-        LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED,
-            getDomainUid(),
-            TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds,
-            getCurrentIntrospectFailureRetryCount());
       }
 
       private Step listPodsInNamespace(String namespace, Step next) {
@@ -667,10 +658,54 @@ public class JobHelper {
       }
     }
 
+
     private class PodListResponseStep extends ResponseStep<V1PodList> {
 
       PodListResponseStep(Step next) {
         super(next);
+      }
+
+      private void addContainerTerminatedMarkerToPacket(V1Pod jobPod, String jobName, Packet packet) {
+
+        Optional<V1ContainerStatus> containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> FLUENTD_CONTAINER_NAME.equals(c.getName()))
+            .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          LOGGER.severe(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+              jobPod.getMetadata().getNamespace(),
+              containerStatus.get().getState().getTerminated().getExitCode(),
+              containerStatus.get().getState().getTerminated().getReason(),
+              containerStatus.get().getState().getTerminated().getMessage());
+
+          packet.put(JOB_POD_FLUENTD_CONTAINER_TERMINATED,
+              LOGGER.formatMessage(INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED, jobPod.getMetadata().getName(),
+                  jobPod.getMetadata().getNamespace(),
+                  containerStatus.get().getState().getTerminated().getExitCode(),
+                  containerStatus.get().getState().getTerminated().getReason(),
+                  containerStatus.get().getState().getTerminated().getMessage()));
+
+          return;
+
+        }
+
+        containerStatus = Optional.ofNullable(jobPod)
+            .map(V1Pod::getStatus)
+            .map(V1PodStatus::getContainerStatuses)
+            .orElseGet(Collections::emptyList)
+            .stream().filter(v -> v.getState().getTerminated() != null)
+            .filter(c -> jobName.equals(c.getName()))
+            .filter(c -> c.getState().getTerminated().getExitCode() == 0)
+            .findFirst();
+
+        if (!containerStatus.isEmpty()) {
+          packet.put(JOB_POD_INTROSPECT_CONTAINER_TERMINATED, JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER);
+        }
+
       }
 
       @Override
@@ -689,6 +724,7 @@ public class JobHelper {
         } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
+          addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }

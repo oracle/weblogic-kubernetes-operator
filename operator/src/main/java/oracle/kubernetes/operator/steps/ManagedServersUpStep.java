@@ -17,7 +17,6 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
-import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -98,10 +97,9 @@ public class ManagedServersUpStep extends Step {
   public NextAction apply(Packet packet) {
     LOGGER.entering();
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    boolean isExplicitRecheck = MakeRightDomainOperation.isExplicitRecheck(packet);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-    ServersUpStepFactory factory = new ServersUpStepFactory(config, info, isExplicitRecheck);
+    ServersUpStepFactory factory = new ServersUpStepFactory(config, info);
 
     if (LOGGER.isFineEnabled()) {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
@@ -137,9 +135,13 @@ public class ManagedServersUpStep extends Step {
       factory.addServerIfNeeded(serverConfig.wlsServerConfig, serverConfig.wlsClusterConfig);
     }
 
-    info.getServerPods().filter(pod -> !factory.getServers().contains(getPodServerName(pod)))
+    info.getServerPods().filter(pod -> podShouldNotBeRunning(pod, factory))
             .filter(pod -> !getPodServerName(pod).equals(wlsDomainConfig.getAdminServerName()))
             .forEach(pod -> shutdownServersNotPresentInDomainConfig(factory, pod));
+  }
+
+  private boolean podShouldNotBeRunning(V1Pod pod, ServersUpStepFactory factory) {
+    return !factory.getServers().contains(getPodServerName(pod));
   }
 
   private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {
@@ -171,19 +173,16 @@ public class ManagedServersUpStep extends Step {
     final WlsDomainConfig domainTopology;
     final Domain domain;
     final DomainPresenceInfo info;
-    final boolean skipEventCreation;
     List<ServerStartupInfo> startupInfos;
     List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
 
-    ServersUpStepFactory(WlsDomainConfig domainTopology,
-                         DomainPresenceInfo info, boolean skipEventCreation) {
+    ServersUpStepFactory(WlsDomainConfig domainTopology, DomainPresenceInfo info) {
       this.domainTopology = domainTopology;
       this.domain = info.getDomain();
       this.info = info;
-      this.skipEventCreation = skipEventCreation;
     }
 
     /**
@@ -194,7 +193,7 @@ public class ManagedServersUpStep extends Step {
      *         otherwise.
      */
     boolean shouldPrecreateServerService(ServerSpec server) {
-      if (server.isPrecreateServerService()) {
+      if (Boolean.TRUE.equals(server.isPrecreateServerService())) {
         // skip pre-create if admin server and managed server are both shutting down
         return ! (info.getAdminServerSpec().isShuttingDown() && server.isShuttingDown());
       }

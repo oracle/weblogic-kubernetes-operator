@@ -4,22 +4,35 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH;
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH;
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_SERVER_SERVICE_NAME_LENGTH;
+import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER;
+import static oracle.kubernetes.common.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
+import static oracle.kubernetes.common.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 
 public class WlsConfigValidator {
@@ -37,6 +50,7 @@ public class WlsConfigValidator {
   private final List<String> failures = new ArrayList<>();
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainConfig;
+  private LoggingFacade loggingFacade;
 
   private final GeneratedNameCheck clusterServiceNameCheck
         = new GeneratedNameCheck(LegalNames::toClusterServiceName, ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH);
@@ -68,8 +82,12 @@ public class WlsConfigValidator {
       final String legalName = nameGenerator.toLegalName(domainUid, rawName);
 
       if (legalName.length() > getLimit()) {
-        failures.add(LOGGER.formatMessage(messageKey, domainUid, rawName, legalName, getLimit()));
+        reportFailure(messageKey, domainUid, rawName, getLimit() - numFormatChars());
       }
+    }
+
+    private int numFormatChars() {
+      return nameGenerator.toLegalName("", "").length();
     }
 
     private int getLimit() {
@@ -83,17 +101,66 @@ public class WlsConfigValidator {
     this.domainUid = info.getDomainUid();
   }
 
+  WlsConfigValidator loggingTo(LoggingFacade loggingFacade) {
+    this.loggingFacade = loggingFacade;
+    return this;
+  }
+
   /**
    * Returns the failures from attempting to validate the topology.
    *
    * @return a list of strings that describe the failures.
    */
   List<String> getFailures() {
-    verifyGeneratedResourceNames();
-    verifyServerPorts();
+    if (domainConfig != null) {
+      verifyDomainResourceReferences();
+      verifyGeneratedResourceNames();
+      verifyServerPorts();
+      reportIfExporterPortConflicts();
+    }
     return failures;
   }
 
+  // Ensure that all clusters and servers configured by the domain resource actually exist in the topology.
+  private void verifyDomainResourceReferences() {
+    getManagedServers().stream()
+          .map(ManagedServer::getServerName).filter(this::isUnknownServer).forEach(this::reportUnknownServer);
+    getClusters().stream()
+          .map(ClusterSpec::getClusterName).filter(this::isUnknownCluster).forEach(this::reportUnknownCluster);
+  }
+
+  private List<ManagedServer> getManagedServers() {
+    return info.getDomain().getSpec().getManagedServers();
+  }
+
+  private boolean isUnknownServer(String serverName) {
+    return !domainConfig.containsServer(serverName);
+  }
+
+  private void reportUnknownServer(String serverName) {
+    reportFailure(NO_MANAGED_SERVER_IN_DOMAIN, serverName);
+  }
+
+  private void reportFailure(String messageKey, Object... params) {
+    failures.add(LOGGER.formatMessage(messageKey, params));
+    if (loggingFacade != null) {
+      loggingFacade.warning(messageKey, params);
+    }
+  }
+
+  private List<ClusterSpec> getClusters() {
+    return info.getClusterSpecs();
+  }
+
+  private boolean isUnknownCluster(String clusterName) {
+    return !domainConfig.containsCluster(clusterName);
+  }
+
+  private void reportUnknownCluster(String clusterName) {
+    reportFailure(NO_CLUSTER_IN_DOMAIN, clusterName);
+  }
+
+  // Ensure that generated service names are valid.
   private void verifyGeneratedResourceNames() {
     serverServiceNameCheck.check(domainConfig.getAdminServerName());
     if (isExternalServiceConfigured()) {
@@ -157,11 +224,67 @@ public class WlsConfigValidator {
 
   private void checkServerPorts(WlsServerConfig wlsServerConfig) {
     if (noAvailableAdminPort(wlsServerConfig)) {
-      failures.add(LOGGER.formatMessage(NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, wlsServerConfig.getName()));
+      reportFailure(NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, wlsServerConfig.getName());
     }
   }
 
   private boolean noAvailableAdminPort(WlsServerConfig wlsServerConfig) {
     return wlsServerConfig.getAdminProtocolChannelName() == null;
+  }
+
+  private void reportIfExporterPortConflicts() {
+    Optional.ofNullable(info.getDomain().getMonitoringExporterSpecification())
+          .map(MonitoringExporterSpecification::getRestPort)
+          .ifPresent(this::reportIfExporterPortConflicts);
+  }
+
+  private void reportIfExporterPortConflicts(int exporterPort) {
+    domainConfig.getServerConfigs().values().forEach(server -> reportIfExporterPortConflicts(exporterPort, server));
+    domainConfig.getClusterConfigs().values().forEach(cluster -> reportIfExporterPortConflicts(exporterPort, cluster));
+  }
+
+  private void reportIfExporterPortConflicts(int exporterPort, WlsServerConfig server) {
+    if (isPortInUse(exporterPort, server)) {
+      reportFailure(MONITORING_EXPORTER_CONFLICT_SERVER, exporterPort, server.getName());
+    }
+  }
+
+  private void reportIfExporterPortConflicts(int exporterPort, WlsClusterConfig cluster) {
+    cluster.getServers().forEach(server -> reportIfExporterPortConflicts(exporterPort, server));
+    if (isPortInUseByDynamicServer(exporterPort, cluster)) {
+      reportFailure(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER, exporterPort, cluster.getClusterName());
+    }
+  }
+
+  @NotNull
+  private Boolean isPortInUseByDynamicServer(int exporterPort, WlsClusterConfig cluster) {
+    return Optional.ofNullable(cluster.getDynamicServersConfig())
+          .map(WlsDynamicServersConfig::getServerTemplate)
+          .map(config -> isPortInUse(exporterPort, config)).orElse(false);
+  }
+
+  private boolean isPortInUse(int port, WlsServerConfig serverConfig) {
+    return getDefinedPorts(serverConfig).stream().anyMatch(p -> p == port);
+  }
+
+  private List<Integer> getDefinedPorts(WlsServerConfig serverConfig) {
+    final List<Integer> result = getStandardPorts(serverConfig);
+    result.addAll(getNapPorts(serverConfig));
+    return result;
+  }
+
+  private List<Integer> getStandardPorts(WlsServerConfig serverConfig) {
+    return getNonNullPorts(serverConfig.getListenPort(), serverConfig.getSslListenPort(), serverConfig.getAdminPort());
+  }
+
+  private List<Integer> getNonNullPorts(Integer... definedPorts) {
+    return Arrays.stream(definedPorts).filter(Objects::nonNull).collect(Collectors.toList());
+  }
+
+  private List<Integer> getNapPorts(WlsServerConfig serverConfig) {
+    return Optional.ofNullable(serverConfig.getNetworkAccessPoints()).orElse(List.of()).stream()
+          .map(NetworkAccessPoint::getListenPort)
+          .filter(Objects::nonNull)
+          .collect(Collectors.toList());
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 class CheckFactory {
+
+  private CheckFactory() {
+    // no-op
+  }
+
   static <T> CompatibilityCheck create(String description, List<T> expected, List<T> actual) {
     if (canBeMap(expected) && canBeMap(actual)) {
       return new CompatibleMaps<>(description, asMap(expected), asMap(actual));

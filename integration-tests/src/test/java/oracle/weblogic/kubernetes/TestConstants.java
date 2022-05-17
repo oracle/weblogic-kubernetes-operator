@@ -20,8 +20,6 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.collect.logs.on.success", "false"));
   public static final int SLEEP_SECONDS_AFTER_FAILURE =
       Integer.parseInt(getNonEmptySystemProperty("wko.it.sleep.seconds.after.failure", "0"));
-  public static boolean TWO_CLUSTERS =
-      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.two.clusters", "false"));
   public static final String K8S_NODEPORT_HOST1 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host1");
   public static final String K8S_NODEPORT_HOST2 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host2");
   public static final String OPDEMO = getNonEmptySystemProperty("wko.it.opdemo");
@@ -209,10 +207,11 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5-debian-elasticsearch7-1.1");
-  public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
+  public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int DEFAULT_LISTEN_PORT = 7100;
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
@@ -221,6 +220,7 @@ public interface TestConstants {
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
   public static final String FLUENTD_INDEX_KEY = "fluentd";
+  public static final String INTROSPECTOR_INDEX_KEY = "introspectord";
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
@@ -302,9 +302,8 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // Default ISTIO version is 1.11.1
   public static final String ISTIO_VERSION =
-      getNonEmptySystemProperty("wko.it.istio.version", "1.11.1");
+      getNonEmptySystemProperty("wko.it.istio.version", "1.13.2");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
@@ -345,6 +344,7 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
+  public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";

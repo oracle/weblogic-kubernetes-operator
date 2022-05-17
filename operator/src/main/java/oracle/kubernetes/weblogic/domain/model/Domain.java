@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,10 +21,11 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -293,6 +296,11 @@ public class Domain implements KubernetesObject {
     return cluster != null && cluster.getReplicas() != null;
   }
 
+
+  public FluentdSpecification getFluentdSpecification() {
+    return spec.getFluentdSpecification();
+  }
+
   /**
    * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
    * @return {@link MIINonDynamicChangesMethod}
@@ -437,6 +445,10 @@ public class Domain implements KubernetesObject {
   public String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
+  }
+
+  public LogHomeLayoutType getLogHomeLayout() {
+    return spec.getLogHomeLayout();
   }
 
   public boolean isLogHomeEnabled() {
@@ -691,8 +703,7 @@ public class Domain implements KubernetesObject {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
+    return spec.getConfigOverrideSecrets();
   }
 
   /**
@@ -741,6 +752,42 @@ public class Domain implements KubernetesObject {
     return spec.getAuxiliaryImageVolumeSizeLimit();
   }
 
+  /**
+   * Returns the interval in seconds at which Severe failures will be retried.
+   */
+  public long getFailureRetryIntervalSeconds() {
+    return spec.getFailureRetryIntervalSeconds();
+  }
+
+  /**
+   * Returns the time in minutes after the first severe failure when the operator will stop retrying Severe failures.
+   */
+  public long getFailureRetryLimitMinutes() {
+    return spec.getFailureRetryLimitMinutes();
+  }
+
+  /**
+   * Returns true if the operator should retry a failed make-right on this domain.
+   */
+  public boolean shouldRetry() {
+    return getNextRetryTime() != null;
+  }
+
+  /**
+   * Return the next time a retry should be done.
+   */
+  public OffsetDateTime getNextRetryTime() {
+    return Optional.ofNullable(getStatus())
+          .map(DomainStatus::getLastFailureTime)
+          .map(this::addRetryInterval)
+          .orElse(null);
+  }
+
+  // Adds the domain retry interval to the specified time.
+  private OffsetDateTime addRetryInterval(@Nonnull OffsetDateTime startTime) {
+    return startTime.plus(getFailureRetryIntervalSeconds(), ChronoUnit.SECONDS);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -780,5 +827,4 @@ public class Domain implements KubernetesObject {
         .append(status, rhs.status)
         .isEquals();
   }
-
 }

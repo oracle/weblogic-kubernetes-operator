@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.model.Cluster;

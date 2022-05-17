@@ -59,7 +59,7 @@ libnetfilter_conntrack-1.0.6-1.el7_3.x86_64
 conntrack-tools-1.4.4-4.el7.x86_64
 ```
 
-You should see output similar to that shown above.  If you do not, then you
+You should see output similar to that shown previously.  If you do not, then you
 should install `conntrack` using your operating system tools.
 
 #### Firewall (iptables) requirements
@@ -79,7 +79,7 @@ pkts bytes target     prot opt in     out     source               destination
    0     0 MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
 ```
 
-If you see output similar to the example above, for example, if you see any entries
+If you see output similar to the previous example, for example, if you see any entries
 in this chain, then you need to remove them.  You can remove the entries
 using this command:
 
@@ -87,8 +87,8 @@ using this command:
 $ iptables -t nat -v -D POST_public_allow 1
 ```
 
-Note that you will need to run that command for each line. So in the example
-above, you would need to run it twice.
+Note that you will need to run that command for each line. So in the previous example,
+you would need to run it twice.
 
 After you are done, you can run the previous command again and verify that
 the output is now an empty list.
@@ -106,7 +106,7 @@ Here is an example; you may need to adjust this to suit your own
 environment:
 
 * Create a `systemd` service:
-  
+
 ```shell
 $ echo 'Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...'
 ```

@@ -46,12 +46,14 @@
 
 import inspect
 import os
-import sys
+import sys, traceback
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
+
+import utils
 
 env = None
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
@@ -68,6 +70,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -106,6 +109,9 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def getDomainLogHomeLayout(self):
+    return self.LOG_HOME_LAYOUT
 
   def getDataHome(self):
     return self.DATA_HOME
@@ -149,31 +155,41 @@ class SecretManager(object):
 
 
 def filter_model(model):
-  if model is not None:
-    if getOfflineWlstEnv() is None:
+
+  try:
+
+    if model is not None:
+      if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
-    initSecretManager(env)
+      initSecretManager(env)
 
-    if model and 'resources' in model:
-      customizeCustomFileStores(model)
+      if model and 'resources' in model:
+        customizeCustomFileStores(model)
 
-    if model and 'topology' in model:
-      topology = model['topology']
-      customizeNodeManagerCreds(topology)
-      customizeDomainLogPath(topology)
+      if model and 'topology' in model:
+        topology = model['topology']
+        customizeNodeManagerCreds(topology)
+        customizeDomainLogPath(topology)
 
-      if 'Cluster' in topology:
-        # If Istio enabled, inject replication channel for each cluster
-        # before creating the corresponding NAP for each server and
-        # server-template
-        customizeIstioClusters(model)
+        if 'Cluster' in topology:
+          # If Istio enabled, inject replication channel for each cluster
+          # before creating the corresponding NAP for each server and
+          # server-template
+          customizeIstioClusters(model)
 
-      if 'Server' in topology:
-        customizeServers(model)
+        if 'Server' in topology:
+          customizeServers(model)
 
-      if 'ServerTemplate' in topology:
-        customizeServerTemplates(model)
+        if 'ServerTemplate' in topology:
+          customizeServerTemplates(model)
+
+  except:
+      exc_type, exc_obj, exc_tb = sys.exc_info()
+      ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
+      utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
+      raise
+
 
 def initOfflineWlstEnv(model):
   global env
@@ -247,6 +263,9 @@ def getServerNamePrefix(topology, template):
       if dynamicServer is not None:
         server_name_prefix = getDynamicServerPropertyOrNone(dynamicServer, 'ServerNamePrefix')
 
+  if cluster_name is not None and server_name_prefix is None:
+    raise ValueError('ServerNamePrefix is not set in %s' % (cluster_name))
+
   return server_name_prefix
 
 
@@ -262,10 +281,10 @@ def customizeNodeManagerCreds(topology):
 
 
 def customizeDomainLogPath(topology):
-  customizeLog(env.getDomainName(), topology)
+  customizeLog(env.getDomainName(), topology, isDomainLog=True)
 
 
-def customizeLog(name, topologyOrServer):
+def customizeLog(name, topologyOrServer, isDomainLog=False):
   if name is None:
     # domain name is req'd to create domain log configuration.
     # Missing domain name indicates our model is a fragment
@@ -278,7 +297,13 @@ def customizeLog(name, topologyOrServer):
   if 'Log' not in topologyOrServer:
     topologyOrServer['Log'] = {}
 
-  topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
+  if env.getDomainLogHomeLayout() == "FLAT":
+    topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
+  else:
+    if isDomainLog:
+      topologyOrServer['Log']['FileName'] = "%s/%s.log" % (logs_dir, name)
+    else:
+      topologyOrServer['Log']['FileName'] = "%s/servers/%s/logs/%s.log" % (logs_dir, name, name)
 
 
 def customizeCustomFileStores(model):
@@ -762,8 +787,10 @@ def customizeAccessLog(name, server):
     web_server_log = web_server['WebServerLog']
     if 'FileName' not in web_server_log:
       web_server_log['FileName'] = {}
-
-    web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
+    if env.getDomainLogHomeLayout() == "FLAT":
+      web_server_log['FileName'] = logs_dir + "/" + name + "_access.log"
+    else:
+      web_server_log['FileName'] = "%s/servers/%s/logs/%s_access.log" % (logs_dir, name, name)
 
 
 def getLogOrNone(config):

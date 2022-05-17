@@ -137,6 +137,11 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return this;
   }
 
+  public ClusterSpec withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
+    setServerStartPolicy(serverStartPolicy);
+    return this;
+  }
+
   /**
    * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
    * in the WebLogic domain home configuration.

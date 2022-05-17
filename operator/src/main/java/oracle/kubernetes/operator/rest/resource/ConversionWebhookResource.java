@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -77,9 +78,7 @@ public class ConversionWebhookResource extends BaseResource implements ClusterCu
     } catch (Exception e) {
       LOGGER.severe(DOMAIN_CONVERSION_FAILED, e.getMessage(), getConversionRequest(conversionReview));
       conversionResponse = new ConversionResponse()
-          .uid(getUid(conversionReview))
-          .result(new Result().status(FAILED_STATUS)
-              .message("Exception: " + e.toString()));
+          .uid(getUid(conversionReview)).result(new Result().status(FAILED_STATUS).message("Exception: " + e));
       generateFailedEvent(e, getConversionRequest(conversionReview));
     }
     LOGGER.exiting(conversionResponse);
@@ -90,7 +89,8 @@ public class ConversionWebhookResource extends BaseResource implements ClusterCu
   }
 
   private String getConversionRequest(ConversionReviewModel conversionReview) {
-    return Optional.ofNullable(conversionReview).map(c -> c.getRequest()).map(cr -> cr.toString()).orElse(null);
+    return Optional.ofNullable(conversionReview).map(ConversionReviewModel::getRequest)
+        .map(ConversionRequest::toString).orElse(null);
   }
 
   private void generateFailedEvent(Exception exception, String conversionRequest) {
@@ -114,13 +114,11 @@ public class ConversionWebhookResource extends BaseResource implements ClusterCu
    * @return ConversionResponse The response to the conversion request.
    */
   private ConversionResponse createConversionResponse(ConversionRequest conversionRequest) {
-    List<Object> convertedDomains = new ArrayList<>();
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(conversionRequest.getDesiredAPIVersion());
 
-    conversionRequest.getObjects()
-            .forEach(domain -> convertedDomains.add(
-                    schemaConversionUtils.convertDomainSchema(this,
-                            (Map<String,Object>) domain, conversionRequest.getDesiredAPIVersion())));
+    List<Object> convertedDomains = conversionRequest.getDomains().stream()
+          .map(schemaConversionUtils::convertDomainSchema)
+          .collect(Collectors.toList());
 
 
     return new ConversionResponse()

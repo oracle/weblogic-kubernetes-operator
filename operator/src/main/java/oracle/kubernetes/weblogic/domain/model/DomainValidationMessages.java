@@ -20,6 +20,10 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 
 public class DomainValidationMessages {
 
+  private DomainValidationMessages() {
+    // no-op
+  }
+
   /**
    * Returns a validation message indicating that more than one managed server spec has the same effective name
    * after DNS-1123 conversion.
@@ -106,6 +110,10 @@ public class DomainValidationMessages {
 
   public static String missingRequiredOpssSecret(String secret) {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
+  }
+
+  public static String missingRequiredFluentdSecret(String secret) {
+    return getMessage(MessageKeys.MISSING_ELASTIC_SEARCH_SECRET, secret);
   }
 
   public static String illegalSecretNamespace(String namespace) {

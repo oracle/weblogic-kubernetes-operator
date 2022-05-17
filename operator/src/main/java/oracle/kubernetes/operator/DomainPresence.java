@@ -3,17 +3,16 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.Optional;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 public class DomainPresence {
-  private static final int DEFAULT_TIMEOUT_SECONDS = 5;
-  private static final int DEFAULT_RETRY_MAX_COUNT = 5;
+
+  private DomainPresence() {
+    // no-op
+  }
 
   static int getDomainPresenceFailureRetrySeconds() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-        .map(TuningParameters::getMainTuning)
-        .map(t -> t.domainPresenceFailureRetrySeconds)
-        .orElse(DEFAULT_TIMEOUT_SECONDS);
+    return TuningParameters.getInstance().getDomainPresenceFailureRetrySeconds();
   }
 
   /**
@@ -21,9 +20,6 @@ public class DomainPresence {
    * This is derived from the "domainPresenceFailureRetryMaxCount" tuning parameter.
    */
   public static int getFailureRetryMaxCount() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-        .map(TuningParameters::getMainTuning)
-        .map(t -> t.domainPresenceFailureRetryMaxCount)
-        .orElse(DEFAULT_RETRY_MAX_COUNT);
+    return TuningParameters.getInstance().getDomainPresenceFailureRetryMaxCount();
   }
 }

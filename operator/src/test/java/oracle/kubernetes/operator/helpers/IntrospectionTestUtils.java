@@ -48,15 +48,26 @@ public class IntrospectionTestUtils {
           + ">>> EOF";
 
   /**
+   * Set up the in-memory Kubernetes environment for the domain processor, specifying the pod log.
+   * This allows testing of log messages in the case of failures.
+   *
+   * @param testSupport a kubernetes test support instance
+   * @param introspectResult the log to be returned from the job pod
+   */
+  static void defineIntrospectionPodLog(KubernetesTestSupport testSupport, String introspectResult) {
+    defineIntrospectionResult(testSupport, introspectResult, IntrospectionTestUtils::createCompletedStatus);
+  }
+
+  /**
    * Define in-memory kubernetes resources to represent an introspector job.
    *
    * @param testSupport a kubernetes test support instance
    * @param domainConfig the configuration from which the topology should be computed
    * @throws JsonProcessingException if an error occurs in creating the topology
    */
-  static void defineResources(KubernetesTestSupport testSupport, WlsDomainConfig domainConfig)
+  static void defineIntrospectionTopology(KubernetesTestSupport testSupport, WlsDomainConfig domainConfig)
       throws JsonProcessingException {
-    defineResources(testSupport, domainConfig, IntrospectionTestUtils::createCompletedStatus);
+    defineIntrospectionTopology(testSupport, domainConfig, IntrospectionTestUtils::createCompletedStatus);
   }
 
   /**
@@ -67,27 +78,16 @@ public class IntrospectionTestUtils {
    * @param jobStatus a supplier for a job status to be applied to the introspector job
    * @throws JsonProcessingException if an error occurs in creating the topology
    */
-  public static void defineResources(KubernetesTestSupport testSupport,
-                                     WlsDomainConfig domainConfig,
-                                     Supplier<V1JobStatus> jobStatus)
+  public static void defineIntrospectionTopology(KubernetesTestSupport testSupport,
+                                                 WlsDomainConfig domainConfig,
+                                                 Supplier<V1JobStatus> jobStatus)
         throws JsonProcessingException {
-    defineResources(testSupport, getIntrospectResult(domainConfig), jobStatus);
+    defineIntrospectionResult(testSupport, getIntrospectResult(domainConfig), jobStatus);
   }
 
-  /**
-   * Set up the in-memory Kubernetes environment for the domain processor, specifying the pod log.
-   * This allows testing of log messages in the case of failures.
-   *
-   * @param testSupport a kubernetes test support instance
-   * @param introspectResult the log to be returned from the job pod
-   */
-  static void defineResources(KubernetesTestSupport testSupport, String introspectResult) {
-    defineResources(testSupport, introspectResult, IntrospectionTestUtils::createCompletedStatus);
-  }
-
-  private static void defineResources(KubernetesTestSupport testSupport,
-                              String introspectResult,
-                              Supplier<V1JobStatus> jobStatus) {
+  private static void defineIntrospectionResult(KubernetesTestSupport testSupport,
+                                                String introspectResult,
+                                                Supplier<V1JobStatus> jobStatus) {
     testSupport.addToPacket(JOB_POD_NAME, INTROSPECTION_JOB);
     testSupport.doOnCreate(KubernetesTestSupport.JOB, job -> ((V1Job) job).setStatus(jobStatus.get()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, introspectResult);

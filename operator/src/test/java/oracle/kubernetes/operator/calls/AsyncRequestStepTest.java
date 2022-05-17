@@ -35,12 +35,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -50,6 +50,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -197,10 +198,12 @@ class AsyncRequestStepTest {
 
   @Test
   void whenDomainStatusIsNull_ignoreSuccess() {
-    info.getDomain().setStatus(null);
-    testSupport.addDomainPresenceInfo(info);
+    assertDoesNotThrow(() -> {
+      info.getDomain().setStatus(null);
+      testSupport.addDomainPresenceInfo(info);
 
-    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+      testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+    });
   }
 
   @Test

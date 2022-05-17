@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.AccessMode;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -27,6 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import org.jetbrains.annotations.Nullable;
+
 import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class InMemoryFileSystem extends FileSystem {
@@ -35,6 +39,10 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
   public static InMemoryFileSystem createInstance() {
     return instance = createStrictStub(InMemoryFileSystem.class);
+  }
+
+  public void defineFile(File file, String contents) {
+    instance.defineFileContents(file.getPath(), contents);
   }
 
   public void defineFile(String filePath, String contents) {
@@ -53,6 +61,11 @@ public abstract class InMemoryFileSystem extends FileSystem {
   @Nonnull
   public Path getPath(@Nonnull URI uri) {
     return PathStub.createPathStub(createPathString(uri.getPath(), new String[0]));
+  }
+
+  @Nonnull
+  public Path getPathThrowsIllegaArgumentException(@Nonnull URI uri) {
+    throw new IllegalArgumentException("test");
   }
 
   private String createPathString(String first, String[] more) {
@@ -135,6 +148,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
       return ((PathStub) path).filePath;
     }
 
+    @Override
+    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+      if (null == getRawFileType(getFilePath(path))) {
+        throw new NoSuchFileException("File " + getFilePath(path) + " does not exist");
+      }
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <A extends BasicFileAttributes> A readAttributes(
@@ -170,6 +190,11 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
 
     private PathType getPathType(String filePath) {
+      return Optional.ofNullable(getRawFileType(filePath)).orElse(PathType.DIRECTORY);
+    }
+
+    @Nullable
+    private PathType getRawFileType(String filePath) {
       for (String key : fileContents.keySet()) {
         if (key.startsWith(filePath + '/')) {
           return PathType.DIRECTORY;
@@ -178,7 +203,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
           return PathType.FILE;
         }
       }
-      return PathType.DIRECTORY;  // treat it as an empty directory
+      return null;
     }
   }
 

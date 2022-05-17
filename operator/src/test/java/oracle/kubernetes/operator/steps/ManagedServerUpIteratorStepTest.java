@@ -31,13 +31,14 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ThreadFactoryTestBase;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.FakeWatchTuning;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -101,7 +102,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private final AtomicBoolean stopping = new AtomicBoolean(false);
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private final PodWatcher watcher = createWatcher(NS, stopping, INITIAL_RESOURCE_VERSION);
-  final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0, 5, 24);
+  final WatchTuning tuning = new FakeWatchTuning();
 
   @Nonnull
   private static String getManagedServerName(int n) {

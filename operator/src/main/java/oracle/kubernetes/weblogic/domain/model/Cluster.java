@@ -117,6 +117,11 @@ public class Cluster implements Comparable<Cluster>, KubernetesObject {
     spec.setReplicas(replicas);
   }
 
+  public Cluster withReplicas(Integer replicas) {
+    setReplicas(replicas);
+    return this;
+  }
+
   /**
    * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
    * in the WebLogic domain home configuration.
@@ -154,6 +159,11 @@ public class Cluster implements Comparable<Cluster>, KubernetesObject {
 
   public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
     spec.setServerStartPolicy(serverStartPolicy);
+  }
+
+  public Cluster withServerStartPolicy(ServerStartPolicy serverStartPolicy) {
+    setServerStartPolicy(serverStartPolicy);
+    return this;
   }
 
   public ClusterService getClusterService() {

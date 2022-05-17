@@ -22,12 +22,13 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
@@ -41,11 +42,12 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 
 public abstract class BasePodStepContext extends StepContextBase {
 
-  public static final String KUBERNETES_PLATFORM_HELM_VARIABLE = "kubernetesPlatform";
   public static final String USER_MEM_ARGS = "USER_MEM_ARGS";
+  protected final String kubernetesPlatform;
 
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
+    kubernetesPlatform = TuningParameters.getInstance().getKubernetesPlatform();
   }
 
   final <T> T updateForDeepSubstitution(V1PodSpec podSpec, T target) {
@@ -87,13 +89,15 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   abstract List<V1Container> getContainers();
 
-  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
+  abstract List<V1Volume> getFluentdVolumes();
+
+  protected V1Container createPrimaryContainer() {
     return new V1Container()
         .name(getContainerName())
         .image(getServerSpec().getImage())
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
-        .env(getEnvironmentVariables(tuningParameters))
+        .env(getEnvironmentVariables())
         .resources(getServerSpec().getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
@@ -103,19 +107,17 @@ public abstract class BasePodStepContext extends StepContextBase {
    * processing of the list of environment variables such as token substitution before returning the
    * list.
    *
-   * @param tuningParameters TuningParameters containing parameters that may be used in environment
-   *     variables
    * @return A List of environment variables to be set up in the pod
    */
-  final List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+  final List<V1EnvVar> getEnvironmentVariables() {
 
     List<V1EnvVar> vars = new ArrayList<>();
-    addConfiguredEnvVarsExcludingAuxImagePaths(tuningParameters, vars);
+    addConfiguredEnvVarsExcludingAuxImagePaths(vars);
 
     addDefaultEnvVarIfMissing(
             vars, USER_MEM_ARGS, "-Djava.security.egd=file:/dev/./urandom");
 
-    addAuxImagePathsEnvVarIfExists(tuningParameters, vars);
+    addAuxImagePathsEnvVarIfExists(vars);
 
     hideAdminUserCredentials(vars);
     return doDeepSubstitution(varsToSubVariables(vars), vars);
@@ -136,6 +138,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
+            .resources(createResources())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -158,10 +161,27 @@ public abstract class BasePodStepContext extends StepContextBase {
     return vars;
   }
 
-  protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
+  protected V1ResourceRequirements createResources() {
+    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resourceRequirements = null;
+    if (!resources.getLimits().isEmpty()) {
+      resourceRequirements = new V1ResourceRequirements()
+          .limits(resources.getLimits());
+    }
+
+    if (!resources.getRequests().isEmpty()) {
+      resourceRequirements = resourceRequirements == null
+          ? new V1ResourceRequirements().requests(resources.getRequests())
+          : resourceRequirements.requests(resources.getRequests());
+    }
+    return resourceRequirements;
+  }
+
+  protected V1PodSpec createPodSpec() {
     return new V1PodSpec()
         .containers(getContainers())
-        .addContainersItem(createPrimaryContainer(tuningParameters))
+        .volumes(getFluentdVolumes())
+        .addContainersItem(createPrimaryContainer())
         .affinity(getServerSpec().getAffinity())
         .nodeSelector(getServerSpec().getNodeSelectors())
         .serviceAccountName(getServerSpec().getServiceAccountName())
@@ -190,19 +210,18 @@ public abstract class BasePodStepContext extends StepContextBase {
    * Abstract method to be implemented by subclasses to return a list of configured and additional
    * environment variables to be set up in the pod.
    *
-   * @param tuningParameters TuningParameters that can be used when obtaining
    * @return A list of configured and additional environment variables
    */
-  abstract List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters);
+  abstract List<V1EnvVar> getConfiguredEnvVars();
 
-  private void addConfiguredEnvVarsExcludingAuxImagePaths(TuningParameters tuningParameters, List<V1EnvVar> vars) {
-    getConfiguredEnvVars(tuningParameters).stream()
+  private void addConfiguredEnvVarsExcludingAuxImagePaths(List<V1EnvVar> vars) {
+    getConfiguredEnvVars().stream()
             .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()))
             .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
   }
 
-  private void addAuxImagePathsEnvVarIfExists(TuningParameters tuningParameters, List<V1EnvVar> vars) {
-    getConfiguredEnvVars(tuningParameters).stream()
+  private void addAuxImagePathsEnvVarIfExists(List<V1EnvVar> vars) {
+    getConfiguredEnvVars().stream()
             .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
             .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
   }
@@ -327,5 +346,9 @@ public abstract class BasePodStepContext extends StepContextBase {
     return Stream.ofNullable(v1PodSpec.getInitContainers())
         .flatMap(Collection::stream)
         .filter(this::isAuxiliaryContainer);
+  }
+
+  protected String getKubernetesPlatform() {
+    return kubernetesPlatform;
   }
 }

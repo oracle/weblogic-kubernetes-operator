@@ -12,17 +12,8 @@
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
 
-  <description>Oracle WebLogic Server Kubernetes Operator</description>
+  <description>WebLogic Kubernetes Operator</description>
   <name>operator-runtime</name>
-
-  <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
-  <inceptionYear>2017</inceptionYear>
-  <licenses>
-    <license>
-      <name>The Universal Permissive License (UPL), Version 1.0</name>
-      <url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
-    </license>
-  </licenses>
 
   <build>
     <finalName>weblogic-kubernetes-operator</finalName>
@@ -354,16 +345,6 @@
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java-api-fluent</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jetbrains.kotlin</groupId>
-      <artifactId>kotlin-stdlib-common</artifactId>
     </dependency>
 
     <!-- test dependencies -->

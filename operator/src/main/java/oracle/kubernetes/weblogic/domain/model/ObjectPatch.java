@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -262,7 +262,7 @@ class ObjectPatch<T> {
 
   static class EnumField<T,E> extends StringField<T> {
     EnumField(String name, Function<T, E> getter) {
-      super(name, a -> getter.apply(a).toString());
+      super(name, a -> Optional.ofNullable(getter.apply(a)).map(Object::toString).orElse(null));
     }
   }
 

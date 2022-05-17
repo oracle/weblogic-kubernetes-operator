@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -22,26 +23,28 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectionLoggingTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final int MAX_RETRY_COUNT = 2;
 
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -79,7 +82,7 @@ class IntrospectionLoggingTest {
 
   @Test
   void logIntrospectorMessages() {
-    IntrospectionTestUtils.defineResources(testSupport,
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport,
           onSeparateLines(SEVERE_MESSAGE_1, WARNING_MESSAGE, INFO_MESSAGE));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -93,7 +96,7 @@ class IntrospectionLoggingTest {
   @Test
   void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
-    IntrospectionTestUtils.defineResources(testSupport, extendedInfoMessage);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, extendedInfoMessage);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -103,20 +106,19 @@ class IntrospectionLoggingTest {
 
   @Test
   void whenJobLogContainsSevereError_copyToDomainStatus() {
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
-    assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1, 1, 2)));
+    assertThat(updatedDomain.getStatus().getMessage(), containsString(SEVERE_PROBLEM_1));
   }
 
   @Test
   void whenJobLogContainsSevereError_createDomainFailedIntrospectionEvent() {
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
@@ -124,7 +126,7 @@ class IntrospectionLoggingTest {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", INTROSPECTION_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to", getLocalizedString(INTROSPECTION_EVENT_ERROR)));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -143,7 +145,7 @@ class IntrospectionLoggingTest {
 
   @Test
   void whenJobLogContainsMultipleSevereErrors_copyToDomainStatus() {
-    IntrospectionTestUtils.defineResources(testSupport,
+    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport,
             onSeparateLines(SEVERE_MESSAGE_1, INFO_MESSAGE, INFO_EXTRA1, SEVERE_MESSAGE_2));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -153,6 +155,6 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, SEVERE_PROBLEM_1 + '\n' + SEVERE_PROBLEM_2, 1, 2)));
+        containsString(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
   }
 }

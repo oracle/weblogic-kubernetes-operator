@@ -43,7 +43,7 @@ Here are the steps for this use case:
 
    - Stage a ZIP file of the WDT archive.
 
-     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths below.
+     **NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following paths.
 
      When you create your updated image, you will use the files in staging directory `/tmp/mii-sample/model-in-image__WLS-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
@@ -87,7 +87,7 @@ Here are the steps for this use case:
 
    - Create a new image from your staged model files using WIT.
 
-     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+     **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
      At this point, you have staged all of the files needed for image `model-in-image:WLS-v2`; they include:
 
@@ -134,13 +134,13 @@ Here are the steps for this use case:
 
      Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v2`.
 
-     > **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+     **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
 #### Deploy resources - Introduction
 
 1. Set up and apply a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different image:
 
-   > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names below.
+   **NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names.
 
    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
@@ -163,7 +163,7 @@ Here are the steps for this use case:
 
       - Apply your changed Domain YAML file:
 
-          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
           ```shell
           $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
@@ -171,7 +171,7 @@ Here are the steps for this use case:
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
@@ -443,7 +443,7 @@ Here are the steps for this use case:
 
 A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
 
 If you plan to run the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 

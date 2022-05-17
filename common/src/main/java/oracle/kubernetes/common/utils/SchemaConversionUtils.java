@@ -13,8 +13,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -27,25 +29,45 @@ import oracle.kubernetes.common.logging.CommonLoggingFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-@SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
+import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
+
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
 
-  private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
-  public static final String VOLUME_MOUNTS = "volumeMounts";
-  public static final String VOLUME = "volume";
-  public static final String MOUNT_PATH = "mountPath";
-  public static final String IMAGE = "image";
-  public static final String CLUSTER_RESOURCE_REFERENCES = "cluster-resource-references";
-
-  private AtomicInteger containerIndex = new AtomicInteger(0);
+  /**
+   * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
+   * Validated in tests in the operator.
+   */
+  public static final List<String> SUPPORTED_FAILURE_REASONS = List.of(
+        "Aborted", "Internal", "TopologyMismatch", "ReplicasTooHigh",
+        "ServerPod", "Kubernetes", "Introspection", "DomainInvalid");
 
   /**
-   * Convert the domain schema to desired API version.
-   * @param domain Domain to be converted.
-   * @return Domain The converted domain.
+   * The list of condition types no longer supported. Should match the values in DomainConditionType with
+   * a true value for isObsolete(). Validated in tests in the operator.
    */
-  public Object convertDomainSchema(Map<String, Object> domain, String desiredAPIVersion) {
-    return convertDomainSchema(null, domain, desiredAPIVersion);
+  public static final List<String> OBSOLETE_CONDITION_TYPES = List.of("Progressing");
+
+  private static final BaseLoggingFacade LOGGER = CommonLoggingFactory.getLogger("Webhook", "Operator");
+  private static final String VOLUME_MOUNTS = "volumeMounts";
+  private static final String VOLUME = "volume";
+  private static final String MOUNT_PATH = "mountPath";
+  private static final String IMAGE = "image";
+  public static final String CLUSTER_RESOURCE_REFERENCES = "cluster-resource-references";
+
+  private final AtomicInteger containerIndex = new AtomicInteger(0);
+  private final String targetAPIVersion;
+
+  public SchemaConversionUtils(String targetAPIVersion) {
+    this.targetAPIVersion = targetAPIVersion;
+  }
+
+  public SchemaConversionUtils() {
+    this(API_VERSION_V9);
+  }
+
+  public static SchemaConversionUtils create() {
+    return new SchemaConversionUtils();
   }
 
   /**
@@ -53,21 +75,34 @@ public class SchemaConversionUtils {
    * @param domain Domain to be converted.
    * @return Domain The converted domain.
    */
-  public Object convertDomainSchema(ClusterCustomResourceHelper clusterCustomResourceHelper, Map<String, Object> domain,
-      String desiredAPIVersion) {
+  public Map<String, Object> convertDomainSchema(Map<String, Object> domain) {
+    return convertDomainSchema(null, domain);
+  }
+
+  /**
+   * Convert the domain schema to desired API version.
+   * @param domain Domain to be converted.
+   * @return Domain The converted domain.
+   */
+  public Map<String, Object> convertDomainSchema(ClusterCustomResourceHelper clusterCustomResourceHelper,
+      Map<String, Object> domain) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
       return domain;
     }
-    LOGGER.fine("Converting domain " + domain + " to " + desiredAPIVersion + " apiVersion.");
+    LOGGER.fine("Converting domain " + domain + " to " + targetAPIVersion + " apiVersion.");
 
     String apiVersion = (String)domain.get("apiVersion");
     adjustAdminPortForwardingDefault(spec, apiVersion);
     convertLegacyAuxiliaryImages(spec);
-    removeProgressingConditionFromDomainStatus(domain);
-    convertClustersToResources(clusterCustomResourceHelper, domain, desiredAPIVersion);
-    domain.put("apiVersion", desiredAPIVersion);
-    LOGGER.fine("Converted domain with " + desiredAPIVersion + " apiVersion is " + domain);
+    removeObsoleteConditionsFromDomainStatus(domain);
+    removeUnsupportedDomainStatusConditionReasons(domain);
+    convertDomainHomeInImageToDomainHomeSourceType(domain);
+    convertClustersToResources(clusterCustomResourceHelper, domain, targetAPIVersion);
+    moveConfigOverrides(domain);
+    moveConfigOverrideSecrets(domain);
+    domain.put("apiVersion", targetAPIVersion);
+    LOGGER.fine("Converted domain with " + targetAPIVersion + " apiVersion is " + domain);
     return domain;
   }
 
@@ -77,22 +112,12 @@ public class SchemaConversionUtils {
    * @return Domain String containing the converted domain yaml.
    */
   public String convertDomainSchema(String domainYaml) {
-    return convertDomainSchema(domainYaml, CommonConstants.API_VERSION_V9);
-  }
-
-  /**
-   * Convert the domain schema to desired API version.
-   * @param domainYaml Domain yaml to be converted.
-   * @param desiredApiVersion Desired API version.
-   * @return Domain String containing the domain yaml.
-   */
-  public String convertDomainSchema(String domainYaml, String desiredApiVersion) {
     DumperOptions options = new DumperOptions();
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);
     Yaml yaml = new Yaml(options);
     Object domain = yaml.load(domainYaml);
-    return yaml.dump(convertDomainSchema((Map<String, Object>) domain, desiredApiVersion));
+    return yaml.dump(convertDomainSchema((Map<String, Object>) domain));
   }
 
   private void convertClustersToResources(ClusterCustomResourceHelper clusterCustomResourceHelper,
@@ -237,15 +262,77 @@ public class SchemaConversionUtils {
     spec.remove("auxiliaryImageVolumes");
   }
 
-  private void removeProgressingConditionFromDomainStatus(Map<String, Object> domain) {
-    Map<String, Object> domainStatus = (Map<String, Object>) domain.get("status");
-    List<Object> conditions = (List) Optional.ofNullable(domainStatus).map(status -> status.get("conditions"))
-            .orElse(null);
-    Optional.ofNullable(conditions).ifPresent(x -> x.removeIf(cond -> hasType((Map<String, Object>)cond)));
+  private void removeObsoleteConditionsFromDomainStatus(Map<String, Object> domain) {
+    getStatusConditions(domain).removeIf(this::isObsoleteCondition);
   }
 
-  private boolean hasType(Map<String, Object> condition) {
-    return Optional.ofNullable(condition.get("type")).map("Progressing"::equals).orElse(false);
+  private boolean isObsoleteCondition(Map<String, String> condition) {
+    return Optional.ofNullable(condition.get("type")).map(this::isObsoleteConditionType).orElse(true);
+  }
+
+  private boolean isObsoleteConditionType(String type) {
+    return OBSOLETE_CONDITION_TYPES.contains(type);
+  }
+
+  @Nonnull
+  private List<Map<String,String>> getStatusConditions(Map<String, Object> domain) {
+    return (List<Map<String,String>>) Optional.ofNullable((Map<String, Object>) domain.get("status"))
+          .map(status -> status.get("conditions"))
+          .orElse(Collections.emptyList());
+  }
+
+  private void removeUnsupportedDomainStatusConditionReasons(Map<String, Object> domain) {
+    getStatusConditions(domain).forEach(this::removeReasonIfUnsupported);
+  }
+
+  private void removeReasonIfUnsupported(Map<String, String> condition) {
+    removeIf(condition, "reason", this::isUnsupportedReason);
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private void removeIf(Map<String, String> map, String key, Predicate<String> predicate) {
+    if (Optional.ofNullable(map.get(key)).map(predicate::test).orElse(false)) {
+      map.remove(key);
+    }
+  }
+
+  private boolean isUnsupportedReason(@Nonnull String reason) {
+    return !SUPPORTED_FAILURE_REASONS.contains(reason);
+  }
+
+  private void convertDomainHomeInImageToDomainHomeSourceType(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      Object existing = domainSpec.remove("domainHomeInImage");
+      if (existing != null && !domainSpec.containsKey("domainHomeSourceType")) {
+        domainSpec.put("domainHomeSourceType",
+                Boolean.parseBoolean((String) existing) ? "Image" : "PersistentVolume");
+      }
+    }
+  }
+
+  private void moveConfigOverrides(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      Object existing = domainSpec.remove("configOverrides");
+      if (existing != null) {
+        Map<String, Object> configuration =
+            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        configuration.putIfAbsent("overridesConfigMap", existing);
+      }
+    }
+  }
+
+  private void moveConfigOverrideSecrets(Map<String, Object> domain) {
+    Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
+    if (domainSpec != null) {
+      Object existing = domainSpec.remove("configOverrideSecrets");
+      if (existing != null) {
+        Map<String, Object> configuration =
+            (Map<String, Object>) domainSpec.computeIfAbsent("configuration", k -> new LinkedHashMap<>());
+        configuration.putIfAbsent("secrets", existing);
+      }
+    }
   }
 
   private List<Object> getAuxiliaryImageVolumes(Map<String, Object> spec) {
@@ -406,7 +493,7 @@ public class SchemaConversionUtils {
     Map<String, Object> container = new LinkedHashMap<>();
     container.put("name", CommonConstants.COMPATIBILITY_MODE + getName(index));
     container.put(IMAGE, auxiliaryImage.get(IMAGE));
-    container.put("command", Arrays.asList(AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
+    container.put("command", List.of(AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT));
     container.put("imagePullPolicy", getImagePullPolicy(auxiliaryImage));
     container.put("env", createEnv(auxiliaryImage, auxiliaryImageVolumes, getName(index)));
     container.put(VOLUME_MOUNTS, Arrays.asList(getVolumeMount(auxiliaryImage,

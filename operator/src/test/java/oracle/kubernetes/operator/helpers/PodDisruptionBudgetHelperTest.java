@@ -39,17 +39,19 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_EXISTS;
+import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.DomainFailureReason.KUBERNETES;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
-import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -209,6 +211,37 @@ class PodDisruptionBudgetHelperTest {
   }
 
   @Test
+  void onFailedRunWithConflictAndNoExistingPDB_createItOnRetry() {
+    consoleHandlerMemento.ignoreMessage(getPdbCreateLogMessage());
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, HTTP_CONFLICT);
+
+    runPodDisruptionBudgetHelper();
+
+    assertThat(
+            getRecordedPodDisruptionBudget(domainPresenceInfo),
+            is(podDisruptionBudgetWithName(getPdbName())));
+  }
+
+  @Test
+  void onFailedRunWithConflictAndExistingPDB_retryAndUpdateCache() {
+    consoleHandlerMemento.ignoreMessage(getPdbExistsLogMessage());
+    V1PodDisruptionBudget existingPdb = createPDBModel(testSupport.getPacket());
+    existingPdb.getMetadata().setNamespace(NS);
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, HTTP_CONFLICT);
+    testSupport.defineResources(existingPdb);
+
+    runPodDisruptionBudgetHelper();
+
+    assertThat(
+            getRecordedPodDisruptionBudget(domainPresenceInfo),
+            is(podDisruptionBudgetWithName(getPdbName())));
+  }
+
+  @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
@@ -235,7 +268,8 @@ class PodDisruptionBudgetHelperTest {
     assertThat(
         "Expected Event " + DOMAIN_FAILED + " expected with message not found",
         getExpectedEventMessage(testSupport, DOMAIN_FAILED),
-        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+        stringContainsInOrder("Domain", UID, "failed due to",
+            getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
   @Test

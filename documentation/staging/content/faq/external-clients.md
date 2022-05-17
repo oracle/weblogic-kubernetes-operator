@@ -44,7 +44,7 @@ Kubernetes namespace as an application that calls the resource, then:
     as the target resource, then the application
     can simply specify the JNDI name of the resource and
     _it should not specify a URL_.
-  - If the application is running outside of one of the above locations,
+  - If the application is running outside of one of the previously listed locations,
     but is still in the same Kubernetes namespace as the target resource,
     then, in addition to a JNDI name, the application must also specify a `t3`
     or `t3s` URL that includes the DNS name of the target
@@ -197,7 +197,7 @@ Here are the steps:
 
 - In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See [Adding a WebLogic custom channel](#adding-a-weblogic-custom-channel) for samples and details.
 
-- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using OKE/OCI to host your Kubernetes cluster, also see [Using an OCI Load Balancer]({{<relref "/faq/oci-lb">}}).
+- Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using Oracle Container Engine for Kubernetes/Oracle Cloud Infrastructure to host your Kubernetes cluster, also see [Using an Oracle Cloud Infrastructure Load Balancer]({{<relref "/faq/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
 
@@ -273,7 +273,7 @@ For example, here is a snippet of a WebLogic domain `config.xml` file for channe
 </cluster>
 ```
 
-Here is a snippet of offline WLST code that corresponds to the above `config.xml` file snippet:
+Here is a snippet of offline WLST code that corresponds to the previous `config.xml` file snippet:
 
 ```javascript
   templateName = "cluster-1-template"
@@ -293,7 +293,7 @@ Here is a snippet of offline WLST code that corresponds to the above `config.xml
   set('ClientCertificateEnforced', false)
 ```
 
-Here is a snippet of WDT model YAML file configuration that corresponds to the above snippets:
+Here is a snippet of WDT model YAML file configuration that corresponds to the previous snippets:
 
 ```yaml
 topology:

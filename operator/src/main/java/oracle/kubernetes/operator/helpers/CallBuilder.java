@@ -57,8 +57,6 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import okhttp3.Call;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.builders.CallParamsImpl;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
@@ -70,6 +68,8 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.CallBuilderTuning;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
@@ -210,16 +210,6 @@ public class CallBuilder {
           wrap(
               createServiceAsync(
                   usage, requestParams.namespace, (V1Service) requestParams.body, callback));
-  private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createSubjectAccessReviewAsync(
-                  usage, (V1SubjectAccessReview) requestParams.body, callback));
-  private final CallFactory<V1SelfSubjectRulesReview> createSelfsubjectrulesreview =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              createSelfSubjectRulesReviewAsync(
-                  usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
   private final CallFactory<CoreV1Event> readEvent =
       (requestParams, usage, cont, callback) ->
           wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
@@ -486,12 +476,12 @@ public class CallBuilder {
 
 
   public CallBuilder() {
-    this(getCallBuilderTuning(), ClientPool.getInstance());
+    this(ClientPool.getInstance());
   }
 
   private CallBuilder(CallBuilderTuning tuning, ClientPool helper) {
     if (tuning != null) {
-      tuning(tuning.callRequestLimit, tuning.callTimeoutSeconds, tuning.callMaxRetryCount);
+      configureTuning(tuning.getCallRequestLimit(), tuning.getCallTimeoutSeconds(), tuning.getCallMaxRetryCount());
     }
     this.helper = helper;
   }
@@ -568,7 +558,7 @@ public class CallBuilder {
     return this;
   }
 
-  private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
+  private void configureTuning(int limit, int timeoutSeconds, int maxRetryCount) {
     this.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
@@ -2033,13 +2023,6 @@ public class CallBuilder {
 
   /* Token Review */
 
-  private Call createSubjectAccessReviewAsync(
-      ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback)
-      throws ApiException {
-    return new AuthorizationV1Api(client)
-        .createSubjectAccessReviewAsync(body, null, null, null, pretty, callback);
-  }
-
   /**
    * Create self subject access review.
    *
@@ -2066,15 +2049,6 @@ public class CallBuilder {
     RequestParams params
         = new RequestParams("createSelfSubjectRulesReview", null, null, body, callParams);
     return executeSynchronousCall(params, createSelfsubjectrulesreviewCall);
-  }
-
-  private Call createSelfSubjectRulesReviewAsync(
-      ApiClient client,
-      V1SelfSubjectRulesReview body,
-      ApiCallback<V1SelfSubjectRulesReview> callback)
-      throws ApiException {
-    return new AuthorizationV1Api(client)
-        .createSelfSubjectRulesReviewAsync(body, null, null, null, pretty, callback);
   }
 
   /**

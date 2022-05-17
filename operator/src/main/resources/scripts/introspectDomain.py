@@ -114,6 +114,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'BY_SERVERS')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
@@ -223,6 +224,9 @@ class OfflineWlstEnv(object):
 
   def getDomainLogHome(self):
     return self.LOG_HOME
+
+  def getDomainLogHomeLayout(self):
+    return self.LOG_HOME_LAYOUT
 
   def getDataHome(self):
     return self.DATA_HOME
@@ -451,10 +455,13 @@ class TopologyGenerator(Generator):
     serverNamePrefixes = []
     for cluster in self.env.getDomain().getClusters():
       if self.getDynamicServersOrNone(cluster) is not None:
-        if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
-          self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+        if cluster.getDynamicServers().getServerNamePrefix() is None:
+          self.addError("The ServerNamePrefix is not set for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers. The ServerNamePrefix must be set for each WebLogic dynamic cluster.")
         else:
-          serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
+          if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
+            self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+          else:
+            serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -1783,7 +1790,7 @@ class SitConfigGenerator(Generator):
       ret = None
     return ret
 
-  def customizeLog(self, name, bean, isDomainBean):
+  def customizeLog(self, name, bean, isDomainBean=false):
     logs_dir = self.env.getDomainLogHome()
     if logs_dir is None or len(logs_dir) == 0:
       return
@@ -1804,7 +1811,14 @@ class SitConfigGenerator(Generator):
 
     self.writeln("<d:log" + logaction + ">")
     self.indent()
-    self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
+    if self.env.getDomainLogHomeLayout() == 'FLAT':
+      self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
+    else:
+      if not isDomainBean:
+        self.writeln("<d:file-name%s>%s/servers/%s/logs/%s.log</d:file-name>" % (fileaction, logs_dir, name, name))
+      else:
+        self.writeln("<d:file-name%s>%s/%s.log</d:file-name>" % (fileaction, logs_dir, name))
+
     self.undent()
     self.writeln("</d:log>")
 
@@ -1869,8 +1883,13 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:web-server-log>")
       self.indent()
       # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
-      self.writeln("<d:file-name f:combine-mode=\"replace\">"
-                   + logs_dir + "/" + name + "_access.log</d:file-name>")
+      if self.env.getDomainLogHomeLayout() == 'FLAT':
+        self.writeln("<d:file-name f:combine-mode=\"replace\">"
+                     + logs_dir + "/" + name + "_access.log</d:file-name>")
+      else:
+        self.writeln("<d:file-name f:combine-mode=\"replace\">%s/servers/%s/logs/%s_access.log</d:file-name>" % (
+          logs_dir, name, name))
+
       self.undent()
       self.writeln("</d:web-server-log>")
       self.undent()

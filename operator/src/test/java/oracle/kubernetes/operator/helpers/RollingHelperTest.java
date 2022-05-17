@@ -16,7 +16,6 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -30,6 +29,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.PodHelper.ManagedPodStepContext;
 import oracle.kubernetes.operator.helpers.PodHelperTestBase.PassthroughPodAwaiterStepFactory;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -60,6 +60,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_E
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
@@ -280,6 +281,27 @@ class RollingHelperTest {
     assertThat(logRecords, not(containsInfo(DOMAIN_ROLL_START)));
   }
 
+  @Test
+  void whenPacketHasPodsToRoll_podsToRollCleared() {
+    initializeExistingPods();
+    CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
+    getPods().forEach(this::setPodNotReady);
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    DomainPresenceInfo.fromPacket(testSupport.getPacket()).ifPresent(dpi -> dpi.setServersToRoll(rolling));
+    configureDomain().configureCluster(CLUSTER_NAME).withReplicas(3);
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+
+    assertThat(serversMarkedForRoll(testSupport.getPacket()), anEmptyMap());
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Step.StepAndPacket> serversMarkedForRoll(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet)
+        .map(DomainPresenceInfo::getServersToRoll)
+        .orElse(Collections.EMPTY_MAP);
+  }
+
   private WlsServerConfig getServerConfig(String serverName) {
     return domainTopology.getServerConfig(serverName);
   }
@@ -350,10 +372,6 @@ class RollingHelperTest {
 
   private <T> T getFirst(List<T> list) {
     return list.get(0);
-  }
-
-  private List<CoreV1Event> getEvents() {
-    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
 }

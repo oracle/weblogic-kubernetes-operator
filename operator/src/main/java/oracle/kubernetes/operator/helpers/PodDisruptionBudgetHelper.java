@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_PDB_EXISTS;
@@ -42,6 +43,11 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
  * Operations for dealing with namespaces.
  */
 public class PodDisruptionBudgetHelper {
+
+  private PodDisruptionBudgetHelper() {
+    // no-op
+  }
+  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   public static final String PDB_API_VERSION = "policy/v1";
 
@@ -175,6 +181,16 @@ public class PodDisruptionBudgetHelper {
         PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep rhs =
                 ((PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep) other);
         return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+      }
+
+      @Override
+      public int hashCode() {
+        HashCodeBuilder builder =
+            new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(conflictStep);
+
+        return builder.toHashCode();
       }
 
       private Step getConflictStep() {

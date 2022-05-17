@@ -62,11 +62,16 @@ following limitations currently exist for FMW Infrastructure domains:
 #### Obtaining the FMW Infrastructure image
 
 The WebLogic Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
-The FMW Infrastructure 12.2.1.4.0 images do not require patches.
+The standard pre-built FMW Infrastructure General Availability image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already
+has this patch applied. The FMW Infrastructure 12.2.1.4.0 images do not require this patch. For detailed instructions
+on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+
+{{% notice warning %}}
+This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+{{% /notice %}}
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
-using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
+using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.
 
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
@@ -250,7 +255,7 @@ spec:
   type: ClusterIP
 ```
 
-In the example above, the database would be visible in the cluster using the address
+In the previous example, the database would be visible in the cluster using the address
 `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
 When you run the database in the Kubernetes cluster, you will probably want to also
@@ -264,7 +269,7 @@ the Kubernetes cluster and run RCU on another machine with access to the cluster
 If you wish to run the database outside Kubernetes, you need to create a way for containers
 running in pods in Kubernetes to see the database.  This can be done by defining a
 Kubernetes Service with no selector and associating it with an endpoint definition, as shown
-in the example below:
+in the following example:
 
 ```yaml
 kind: Service
@@ -289,7 +294,7 @@ subsets:
 ```
 
 This creates a DNS name `database` in the current namespace, or`default` if no namespace is
-specified, as in the example above. In this example, the fully qualified name would be
+specified, as in the previous example. In this example, the fully qualified name would be
 `database.default.svc.cluster.local`.  The second part is the namespace.
 If you looked up the `ClusterIP` for such a service, it would have an IP address on the overlay
 network, that is the network inside the Kubernetes cluster.  If you are using flannel,
@@ -401,7 +406,7 @@ to enter the `sys` user password.
 #### Create a Kubernetes Secret with the RCU credentials
 
 You also need to create a Kubernetes Secret containing the credentials for the database schemas.
-When you create your domain using the sample provided below, it will obtain the RCU credentials
+When you create your domain using the following sample, it will obtain the RCU credentials
 from this secret.
 
 We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-rcu-credentials/README.md)

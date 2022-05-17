@@ -9,12 +9,16 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
+
+  private LegalNames() {
+    // no-op
+  }
 
   public static final String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   private static final String SERVER_PATTERN = "%s-%s";

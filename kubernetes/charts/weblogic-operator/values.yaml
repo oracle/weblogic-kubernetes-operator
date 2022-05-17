@@ -1,30 +1,40 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
-# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
-serviceAccount: "default"
+# If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
+serviceAccount: default
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
-# that it will manage. Legal values are: List, LabelSelector, RegExp, and Dedicated. If set to 'List',
-# then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
+# that it will manage. Legal values are: LabelSelector, RegExp, List, and Dedicated.
 # If set to 'LabelSelector', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceLabelSelector' as a label selector.
 # If set to 'RegExp', then the operator will manage the set of namespaces discovered by a list
 # of namespaces using the value specified by 'domainNamespaceRegExp' as a regular expression matched
 # against the namespace names.
+# If set to 'List', then the operator will manage the set of namespaces listed by the 'domainNamespaces' value.
 # If set to 'Dedicated', then operator will manage WebLogic Domains only in the same namespace
 # where the operator itself is deployed, which is the namespace of the Helm release.
-domainNamespaceSelectionStrategy: List
+# If not specified, the default is LabelSelector
+domainNamespaceSelectionStrategy: LabelSelector
 
-# This value is deprecated. Please use 'domainNamespaceSelectionStrategy: Dedicated'.
-# dedicated specifies if this operator will manage WebLogic Domains only in the same namespace in
-# which the operator itself is deployed.  If set to 'true', then the 'domainNamespaces' value below
-# is ignored. This value is ignored if 'domainNamespaceSelectionStrategy' is set to a value other
-# than 'List'.
-# dedicated: false
+# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'. If not specified, the default is "weblogic-operator=enabled"
+#
+# Example: manage any namespace with a label named "weblogic-operator" that has value "enabled".
+#
+# domainNamespaceLabelSelector: 'weblogic-operator=enabled'
+
+# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
+# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
+# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
+#
+# Example: manage any namespace where the namespace name starts with "prod".
+#
+# domainNamespaceRegExp: ^prod
 
 # domainNamespaces specifies list of WebLogic Domain namespaces that this operator manages. This value
 # is ignored if 'domainNamespaceSelectionStrategy' is not 'List'. The customer is responsible for creating these
@@ -35,32 +45,13 @@ domainNamespaceSelectionStrategy: List
 # domainNamespaces:
 # - "namespace1"
 # - "namespace2"
-domainNamespaces:
-- "default"
-
-# domainNamespaceLabelSelector specifies the label selector value that the operator will use when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'LabelSelector'.
-#
-# Example: manage any namespace with a label named "weblogic-operator".
-#
-# domainNamespaceLabelSelector: "weblogic-operator"
-#
-# domainNamespaceLabelSelector:
-
-# domainNamespaceRegExp specifies a regular expression that will be matched against namespace names when listing
-# namespaces in search of the namespaces that contain WebLogic Domains that this operator will manage. Ignored
-# if 'domainNamespaceSelectionStrategy' is not 'RegExp'.
-#
-# Example: manage any namespace where the namespace name starts with "prod".
-#
-# domainNamespaceRegExp: "^prod"
-#
-# domainNamespaceRegExp:
 
 # enableClusterRoleBinding specifies whether the roles necessary for the operator to manage domains
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-enableClusterRoleBinding: false
+# If not specified, the default is true unless 'domainNamespaceSelectionStrategy' is 'Dedicated, in which
+# case this value is ignored as all resources will be created in the namespace where the operator is deployed.
+#
+enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
 image: "ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0"
@@ -78,8 +69,8 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
-# externalRestEnabled specifies whether the the operator's REST interface is exposed
-# outside of the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
+# externalRestEnabled specifies whether the operator's REST interface is exposed
+# outside the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
 # property.
 #
 # If set to true, then the customer must provide the SSL certificate and private key for
@@ -99,12 +90,12 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 # externalRestIdentitySecret:
 
-# elkIntegrationEnabled specifies whether or not ELK integration is enabled.
+# elkIntegrationEnabled specifies whether ELK integration is enabled.
 elkIntegrationEnabled: false
 
 # logStashImage specifies the container image containing Logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
-logStashImage: "logstash:6.6.0"
+logStashImage: "logstash:6.8.23"
 
 # elasticSearchHost specifies the hostname of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
@@ -118,7 +109,7 @@ elasticSearchPort: 9200
 # weblogic-operator-logstash-cm should be created during helm install.
 # The ConfigMap contains the Logstash pipeline configuration for the Logstash
 # container running in the operator pod.
-# If set to true, a ConfigMap will be created during heml install using the
+# If set to true, a ConfigMap will be created during Helm install using the
 # logstash.conf file in the kubernetes/samples/charts/weblogic-operator directory.
 # Set createLogStashConfigMap to false if the ConfigMap
 # already exists in the operator's namespace with the Logstash 
@@ -160,12 +151,19 @@ javaLoggingFileCount: 10
 # for more information on node selectors.
 #nodeSelector:
  
-# webhookOnly specifies whether only the webhook deployment named weblogic-operator-webhook
-# should be created during helm install and if the creation of the operator deployment should be skipped.
-# By default, the helm install will create both the webhook deployment and the operator deployment.
-# If set to true, the helm install will only create the webhook deployment.
+# webhookOnly specifies whether only the conversion webhook should be installed during the helm install
+# and that the operator installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the conversion webhook (and not the operator).
 # The default value is false.
 webhookOnly: false
+
+# operatorOnly specifies whether only the operator should be installed during the helm install and that 
+# the conversion webhook installation should be skipped.
+# By default, the helm install command installs both the operator and the conversion webhook.
+# If set to true, the helm install will install only the operator (and not the conversion webhook).
+# The default value is false.
+operatorOnly: false
  
 # preserveWebhook specifies whether the previous webhook deployment should be preserved
 # when the chart is uninstalled using helm uninstall.
@@ -183,7 +181,7 @@ preserveWebhook: false
 # Values related to debugging the operator.
 # Customers should not need to use the following properties
 
-# remoteDebugNodePortEnabled specifies whether or not the operator will provide a Java remote debug interface on the
+# remoteDebugNodePortEnabled specifies whether the operator will provide a Java remote debug interface on the
 # provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
 # until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
@@ -239,14 +237,13 @@ introspectorJobNameSuffix: "-introspector"
 # The default suffix in pre-3.1.0 is "-external".
 externalServiceNameSuffix: "-ext"
 
-
 # clusterSizePaddingValidationEnabled specifies if additional one or two characters
 # need to be reserved to account for longer managed server names because of an increased
 # cluster size.
 # The default value is true.
 clusterSizePaddingValidationEnabled: true
 
-# tokenReviewAuthentication, if set to true, specifies whether the the operator's REST API should use
+# tokenReviewAuthentication, if set to true, specifies whether the operator's REST API should use
 #   1. Kubernetes token review API for authenticating users, and
 #   2. Kubernetes subject access review API for authorizing a user's operation (get, list,
 #      patch, etc) on a resource.
@@ -255,3 +252,9 @@ clusterSizePaddingValidationEnabled: true
 # to the Domain resource so that it is done using the caller's privileges.
 # The default value is false.
 #tokenReviewAuthentication: false
+
+# domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds specify the number of introspector job
+# retries for a Domain and the interval in seconds between these retries, respectively.
+# Defaults to 5 retries and 10 seconds between each retry.
+# domainPresenceFailureRetryMaxCount: 5
+# domainPresenceFailureRetrySeconds: 10

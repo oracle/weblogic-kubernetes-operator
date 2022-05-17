@@ -26,9 +26,9 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
@@ -72,7 +72,7 @@ public class DomainNamespaces {
   private final SemanticVersion productVersion;
 
   AtomicBoolean isStopping(String ns) {
-    return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return namespaceStoppingMap.computeIfAbsent(ns, key -> new AtomicBoolean(false));
   }
 
   boolean isStarting(String ns) {
@@ -164,7 +164,7 @@ public class DomainNamespaces {
    */
   @Nonnull
   NamespaceStatus getNamespaceStatus(@Nonnull String ns) {
-    return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
+    return namespaceStatuses.computeIfAbsent(ns, key -> new NamespaceStatus());
   }
 
   static WatchTuning getWatchTuning() {

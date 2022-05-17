@@ -7,7 +7,7 @@ description: "Learn about container image layering and why it is important."
 ---
 
 
-Container images are composed of layers, as shown in the diagram below.  If you download
+Container images are composed of layers, as shown in the following diagram.  If you download
 the standard `weblogic:12.2.1.4` image from the [Oracle Container Registry](https://container-registry.oracle.com),
 then you can see these layers using the command  `docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4`
 (the domain layer will not be there).  You are not required to use layers, but
@@ -18,7 +18,7 @@ efficient use of layers is considered a best practice.
 #### Why is it important to maintain the layering of images?
 
 Layering is an important technique in container images.  Layers are important because they
-are shared between images.  Let's consider an example.  In the diagram below, we have
+are shared between images.  Let's consider an example.  In the following diagram, we have
 two domains that we have built using layers.  The second domain has some additional
 patches that we needed on top of those provided in the standard WebLogic image.  Those
 are installed in their own layer, and then the second domain is created in another
@@ -27,7 +27,7 @@ layer on top of that.
 Let's assume we have a three-node Kubernetes cluster and we are running both domains
 in this cluster.  Sooner or later, we will end up with servers in each domain running
 on each node, so eventually all of the image layers are going to be needed on all of
-the nodes.  Using the approach shown below (that is, standard image layering techniques)
+the nodes.  Using the approach shown (that is, standard image layering techniques)
 we are going to need to store all six of these layers on each node.  If you add up the
 sizes, then you will see that it comes out to about 1.5GB per node.
 

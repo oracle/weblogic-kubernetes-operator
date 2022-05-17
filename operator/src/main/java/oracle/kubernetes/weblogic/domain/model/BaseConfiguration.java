@@ -294,6 +294,10 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolume(name, path);
   }
 
+  void addAdditionalVolume(V1Volume volume) {
+    serverPod.addAdditionalVolume(volume);
+  }
+
   void addAdditionalPvClaimVolume(String name, String claimName) {
     serverPod.addAdditionalPvClaimVolume(name, claimName);
   }
@@ -362,7 +366,7 @@ public abstract class BaseConfiguration {
     serverService.addAnnotations(name, value);
   }
 
-  String getRestartVersion() {
+  public String getRestartVersion() {
     return restartVersion;
   }
 

@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.rest.OperatorRestServer;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -67,8 +68,6 @@ public class OperatorMain extends BaseMain {
                     Component.createFor(
                             ScheduledExecutorService.class,
                             wrappedExecutorService,
-                            TuningParameters.class,
-                            TuningParameters.getInstance(),
                             ThreadFactory.class,
                             threadFactory));
   }
@@ -81,7 +80,7 @@ public class OperatorMain extends BaseMain {
   static class MainDelegateImpl extends CoreDelegateImpl implements MainDelegate, DomainProcessorDelegate {
 
     private static String getConfiguredServiceAccount() {
-      return TuningParameters.getInstance().get("serviceaccount");
+      return TuningParameters.getInstance().getServiceAccountName();
     }
 
     private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
@@ -281,8 +280,8 @@ public class OperatorMain extends BaseMain {
       startRestServer();
 
       // start periodic retry and recheck
-      int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
-      int stuckPodInterval = getStuckPodInterval();
+      int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
+      int stuckPodInterval = TuningParameters.getInstance().getStuckPodRecheckSeconds();
       mainDelegate.scheduleWithFixedDelay(recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
       mainDelegate.scheduleWithFixedDelay(checkStuckPods(), stuckPodInterval, stuckPodInterval, TimeUnit.SECONDS);
 
@@ -291,13 +290,6 @@ public class OperatorMain extends BaseMain {
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
-  }
-
-  private int getStuckPodInterval() {
-    return Optional.ofNullable(TuningParameters.getInstance())
-          .map(TuningParameters::getMainTuning)
-          .map(t -> t.stuckPodRecheckSeconds)
-          .orElse(DEFAULT_STUCK_POD_RECHECK_SECONDS);
   }
 
   NamespaceWatcher getNamespaceWatcher() {
@@ -317,7 +309,7 @@ public class OperatorMain extends BaseMain {
   }
 
   private Step createDomainRecheckSteps(OffsetDateTime now) {
-    int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    int recheckInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
       mainDelegate.getDomainProcessor().reportSuspendedFibers();
@@ -402,9 +394,8 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-
   /**
-   * Returns true if the operator is configured to use a single dedicated namespace for both itself any any domains.
+   * Returns true if the operator is configured to use a single dedicated namespace for both itself and any domains.
    * @return true, if selection strategy is dedicated mode.
    */
   public static boolean isDedicated() {

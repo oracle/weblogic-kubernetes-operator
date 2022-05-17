@@ -42,7 +42,7 @@ For more details on acquiring the operator image and prerequisites for installin
 
 The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the Domain type defined by this CRD, including its schema, are available [here]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
-The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
+The following diagram shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
 {{< img "High level architecture" "images/high-level-architecture.png" >}}
 
@@ -104,7 +104,7 @@ more details about Domain UID name requirements, see
 
 ### Domain architecture
 
-The diagram below shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
+The following diagram shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
 
 {{< img "Domain architecture" "images/domain-architecture2.png" >}}
 
@@ -124,11 +124,16 @@ This diagram shows the following details:
 Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
 {{% /notice %}}
 
-The diagram below shows the components inside the containers running WebLogic Server instances:
+The following diagram shows the components inside the containers running WebLogic Server instances:
 
 {{< img "Inside a container" "images/inside-a-container.png" >}}
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory. For detailed information about domain images, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}).
+
+{{% notice warning %}}
+The default image is a General Availability image. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+{{% /notice %}}
+
 {{% notice note %}}
 During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}

@@ -79,11 +79,7 @@ Install the operator. Ensure your current directory is `weblogic-kubernetes-oper
 ```
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1 \
   --set serviceAccount=sample-weblogic-operator-sa \
-  --set "enableClusterRoleBinding=true" \
-  --set "domainNamespaceSelectionStrategy=LabelSelector" \
-  --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
 ```
 ```
@@ -117,11 +113,11 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 {{% notice note %}}
-You can sepcify the operator image by changing value of `--set image`. If you run into failures, see [Troubleshooting - WebLogic Kubernetes Operator installation failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-kubernetes-operator-installation-failure" >}}).
+You can specify the operator image by changing value of `--set image`. If you run into failures, see [Troubleshooting - WebLogic Kubernetes Operator installation failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-kubernetes-operator-installation-failure" >}}).
 {{% /notice %}}
 
 {{% notice info %}}
-If you have a Docker image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
+If you have an image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
 {{% /notice %}}
 
 #### Create Docker image
@@ -150,7 +146,7 @@ If you have a Docker image built with domain models following [Model in Image]({
 
    **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`, (`mii` is short for model in image); however, you can use a different location.
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image Docker images.
+1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image images.
 
    ```shell
    $ cd /tmp/mii-sample/model-images
@@ -307,7 +303,7 @@ At this point, you have staged all of the files needed for the image `model-in-i
 
 If you don’t see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites](#image-creation-prerequisites).
 
-Now, you use the Image Tool to create a Docker image named `model-in-image:WLS-v1` with a `FROM` clause that references a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
+Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` with a `FROM` clause that references a base WebLogic image. You’ve already set up this tool during the prerequisite steps.
 
 Run the following commands to create the model image and verify that it worked:
 
@@ -330,7 +326,7 @@ If you don’t see the `imagetool` directory, then you missed a step in the prer
 
 The preceding command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
       - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
       - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -357,9 +353,9 @@ You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled
 
 ##### Pushing the image to Azure Container Registry
 
-AKS can pull Docker images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the Docker image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
+AKS can pull images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
 
-Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
+Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps shown previously.  For simplicity, we use the resource group name as the name of the ACR instance.
 
 ```shell
 $ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_PERS_RESOURCE_GROUP --sku Basic --admin-enabled true
@@ -551,7 +547,7 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-res
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
-Modify the Domain YAML with your values.
+Modify the Domain YAML file with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|

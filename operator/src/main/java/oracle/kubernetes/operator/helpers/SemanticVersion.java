@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Objects;
 
 import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 /** Major, minor and revision version specification for a product. */
 public class SemanticVersion implements Comparable<SemanticVersion> {
@@ -93,12 +94,21 @@ public class SemanticVersion implements Comparable<SemanticVersion> {
   }
 
   @Override
-  public boolean equals(Object o) {
-    return this == o || o instanceof SemanticVersion && equals((SemanticVersion) o);
-  }
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof SemanticVersion)) {
+      return false;
+    }
 
-  private boolean equals(SemanticVersion o) {
-    return major == o.major && minor == o.minor && revision == o.revision;
+    SemanticVersion rhs = ((SemanticVersion) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(major, rhs.major)
+            .append(minor, rhs.minor)
+            .append(revision, rhs.revision);
+    return builder.isEquals();
   }
 
   @Override

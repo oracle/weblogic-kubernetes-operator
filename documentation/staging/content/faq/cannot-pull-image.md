@@ -25,7 +25,7 @@ Let's review what happens when Kubernetes starts a pod.
 
 The definition of the pod contains a list of container specifications.  Each container
 specification contains the name (and optionally, tag) of the image that should be used
-to run that container.  In the example above, there is a container called `c1` which is
+to run that container.  In the previous example, there is a container called `c1` which is
 configured to use the container image `some.registry.com/owner/domain1:1.0`.  This image
 name is in the format `registry address / owner / name : tag`, so in this case the
 registry is `some.registry.com`, the owner is `owner`, the image name is `domain`
@@ -87,7 +87,7 @@ After the secret is created, you need to tell Kubernetes to use it.  This is don
 an `imagePullSecret` to your Kubernetes YAML file.  In the case of a WebLogic domain, you
 add the secret name to the `imagePullSecret` in the domain custom resource YAML file.  
 
-Here is an example of part of a domain custom resource file with the `imagePullSecret` above
+Here is an example of part of a domain custom resource file with the `imagePullSecret`
 specified:
 
 ```yaml
@@ -111,7 +111,7 @@ Alternatively, you can associate the secret with the service account that will b
 the pod.  If you do this, then you will not need to add the `imagePullSecret` to the domain
 resource.  This is useful if you are running multiple domains in the same namespace.
 
-To add the secret shown above to the `default` service account in the `weblogic` namespace, you
+To add the secret shown previously to the `default` service account in the `weblogic` namespace, you
 would use a command like this:
 
 ```shell

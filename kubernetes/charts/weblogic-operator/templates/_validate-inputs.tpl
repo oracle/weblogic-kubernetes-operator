@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.validateInputs" -}}
@@ -33,13 +33,6 @@
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "enableClusterRoleBinding") -}}
-{{- if and .enableClusterRoleBinding (or (eq (default "List" .domainNamespaceSelectionStrategy) "Dedicated") (and .dedicated (eq (default "List" .domainNamespaceSelectionStrategy) "List"))) }}
-{{-   $errorMsg := "The enableClusterRoleBinding value may not be true when either dedicated is true or domainNamespaceSelectionStrategy is Dedicated" -}}
-{{-   include "utils.recordValidationError" (list $scope $errorMsg) -}}
-{{- end -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "List" -}}
-{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
-{{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "elkIntegrationEnabled") -}}
 {{-   if $scope.elkIntegrationEnabled -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
@@ -48,13 +41,17 @@
 {{-     $ignore := include "utils.verifyBoolean" (list $scope "createLogStashConfigMap") -}}
 {{-   end -}}
 {{- end -}}
-{{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
-{{- $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
-{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
-{{- end -}}
-{{- if eq (default "List" $scope.domainNamespaceSelectionStrategy) "RegExp" -}}
-{{-   $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{- if not $scope.webhookOnly -}}
+{{-   $ignore := include "utils.verifyOptionalEnum" (list $scope "domainNamespaceSelectionStrategy" (list "List" "LabelSelector" "RegExp" "Dedicated")) -}}
+{{-   if eq $scope.domainNamespaceSelectionStrategy "List" -}}
+{{-     $ignore := include "utils.verifyStringList" (list $scope "domainNamespaces") -}}
+{{-   end -}}
+{{-   if eq (default "LabelSelector" $scope.domainNamespaceSelectionStrategy) "LabelSelector" -}}
+{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceLabelSelector") -}}
+{{-   end -}}
+{{-   if eq $scope.domainNamespaceSelectionStrategy "RegExp" -}}
+{{-     $ignore := include "utils.verifyString" (list $scope "domainNamespaceRegExp") -}}
+{{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "mockWLS") -}}
 {{- $ignore := include "utils.verifyIntrospectorJobNameSuffix" (list $scope "introspectorJobNameSuffix" 25) -}}

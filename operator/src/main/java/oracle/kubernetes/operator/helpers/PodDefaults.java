@@ -24,6 +24,11 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_V
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INTROSPECTOR_VOLUME;
 
 class PodDefaults {
+
+  private PodDefaults() {
+    // no-op
+  }
+
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =
       "/var/run/secrets/kubernetes.io/serviceaccount";
 

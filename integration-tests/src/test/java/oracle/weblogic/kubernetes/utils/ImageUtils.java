@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
@@ -124,7 +125,9 @@ public class ImageUtils {
                                                 String baseImageTag,
                                                 String domainType) {
     // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final String modelFile =
+        wdtModelFile.contains(WORK_DIR) ? wdtModelFile : MODEL_DIR + "/" + wdtModelFile;
+    final List<String> modelList = Collections.singletonList(modelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createMiiImageAndVerify(

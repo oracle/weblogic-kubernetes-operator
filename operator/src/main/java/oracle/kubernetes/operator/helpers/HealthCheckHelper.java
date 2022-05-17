@@ -3,7 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,11 +16,11 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.OperatorMain;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
@@ -27,11 +28,11 @@ public final class HealthCheckHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final Map<Resource, Operation[]>
-      domainNamespaceAccessChecks = new HashMap<>();
+      domainNamespaceAccessChecks = new EnumMap<>(Resource.class);
   private static final Map<Resource, Operation[]>
-      operatorNamespaceAccessChecks = new HashMap<>();
+      operatorNamespaceAccessChecks = new EnumMap<>(Resource.class);
   private static final Map<Resource, Operation[]>
-      clusterAccessChecks = new HashMap<>();
+      clusterAccessChecks = new EnumMap<>(Resource.class);
 
   // Note: this list should match the policies contained in the YAML script
   // generated for use by the Kubernetes administrator
@@ -77,9 +78,6 @@ public final class HealthCheckHelper {
       Operation.UPDATE,
       Operation.PATCH
   };
-
-  // default namespace or svc account name
-  private static final String DEFAULT_NAMESPACE = "default";
 
   static {
     clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
@@ -127,34 +125,21 @@ public final class HealthCheckHelper {
    * @param namespace Namespace
    * @param isDomainNamespace if true, verify domain namespace access; otherwise, verify operator-only namespaces access
    */
-  public static void verifyAccess(@Nonnull V1SubjectRulesReviewStatus status, @Nonnull String namespace,
+  public static void verifyAccess(V1SubjectRulesReviewStatus status, @Nonnull String namespace,
                                   boolean isDomainNamespace) {
-    // Validate policies allow service account to perform required operations
-    AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
-
     if (status != null) {
+      // Validate policies allow service account to perform required operations
+      LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
+
       List<V1ResourceRule> rules = status.getResourceRules();
 
       if (isDomainNamespace) {
-        for (Resource r : domainNamespaceAccessChecks.keySet()) {
-          for (Operation op : domainNamespaceAccessChecks.get(r)) {
-            check(rules, r, op, namespace);
-          }
-        }
+        domainNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
       } else {
-        for (Resource r : operatorNamespaceAccessChecks.keySet()) {
-          for (Operation op : operatorNamespaceAccessChecks.get(r)) {
-            check(rules, r, op, namespace);
-          }
-        }
+        operatorNamespaceAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
 
         if (!OperatorMain.isDedicated()) {
-          for (Resource r : clusterAccessChecks.keySet()) {
-            for (Operation op : clusterAccessChecks.get(r)) {
-              check(rules, r, op, namespace);
-            }
-          }
+          clusterAccessChecks.forEach((key, value) -> check(rules, key, value, namespace));
         }
       }
     }
@@ -171,7 +156,7 @@ public final class HealthCheckHelper {
       List<V1ResourceRule> rules, Resource res, Operation op) {
     String verb = op.toString();
     String apiGroup = res.getApiGroup();
-    String resource = res.getResource();
+    String resource = res.getResourceName();
     String sub = res.getSubResource();
     if (sub != null && !sub.isEmpty()) {
       resource = resource + "/" + sub;
@@ -192,10 +177,15 @@ public final class HealthCheckHelper {
   }
 
   private static void check(
+      List<V1ResourceRule> rules, Resource r, Operation[] ops, String ns) {
+    Arrays.stream(ops).forEach(operation -> check(rules, r, operation, ns));
+  }
+
+  private static void check(
       List<V1ResourceRule> rules, Resource r, Operation op, String ns) {
 
     if (!check(rules, r, op)) {
-      LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResource(), ns);
+      LOGGER.warning(MessageKeys.VERIFY_ACCESS_DENIED_WITH_NS, op, r.getResourceName(), ns);
     }
   }
 
@@ -218,7 +208,7 @@ public final class HealthCheckHelper {
       CallBuilder cb = new CallBuilder();
       return createAndValidateKubernetesVersion(
           cb.executeSynchronousCallWithRetry(cb::readVersionCode,
-          TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
+          TuningParameters.getInstance().getInitializationRetryDelaySeconds()));
     } catch (Throwable t) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;

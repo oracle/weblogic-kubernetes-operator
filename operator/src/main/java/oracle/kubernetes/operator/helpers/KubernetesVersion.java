@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.openapi.models.VersionInfo;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion extends SemanticVersion {
@@ -63,8 +65,26 @@ public class KubernetesVersion extends SemanticVersion {
   }
 
   @Override
-  public boolean equals(Object o) {
-    return this == o || o instanceof KubernetesVersion && equals(o);
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof KubernetesVersion)) {
+      return false;
+    }
+
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .appendSuper(super.equals(other));
+    return builder.isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .appendSuper(super.hashCode());
+    return builder.toHashCode();
   }
 
   @Override

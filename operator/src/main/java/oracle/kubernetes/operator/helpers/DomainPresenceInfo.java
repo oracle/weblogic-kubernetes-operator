@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,8 +43,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -65,6 +64,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommon;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpecCommonImpl;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
+import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -322,6 +322,20 @@ public class DomainPresenceInfo implements PacketComponent {
     getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
   }
 
+  /**
+   * Applies an add or modify event for a server pod. If the current pod is newer than the one
+   * associated with the event, ignores the event.
+   *
+   * @param serverName the name of the server associated with the event
+   * @param event the pod associated with the event
+   * @param podPredicate predicate to be applied to the original pod
+   * @return boolean result from applying the original pod to the podFunction provided
+   */
+  public boolean setServerPodFromEvent(String serverName, V1Pod event, @Nonnull Predicate<V1Pod> podPredicate) {
+    updateStatus(serverName, event);
+    return podPredicate.test(getSko(serverName).getPod().getAndAccumulate(event, this::getNewerPod));
+  }
+
   private void updateStatus(String serverName, V1Pod event) {
     getSko(serverName)
         .getLastKnownStatus()
@@ -533,8 +547,7 @@ public class DomainPresenceInfo implements PacketComponent {
     try {
       if (webLogicCredentialsSecretLastSet == null
           || webLogicCredentialsSecretLastSet.isAfter(
-              SystemClock.now().minusSeconds(
-                  TuningParameters.getInstance().getMainTuning().weblogicCredentialsSecretRereadIntervalSeconds))) {
+              SystemClock.now().minusSeconds(getWeblogicCredentialsSecretRereadIntervalSeconds()))) {
         return webLogicCredentialsSecret;
       }
     } finally {
@@ -544,6 +557,10 @@ public class DomainPresenceInfo implements PacketComponent {
     // time to clear
     setWebLogicCredentialsSecret(null);
     return null;
+  }
+
+  private int getWeblogicCredentialsSecretRereadIntervalSeconds() {
+    return TuningParameters.getInstance().getCredentialsSecretRereadIntervalSeconds();
   }
 
   /**
@@ -642,7 +659,11 @@ public class DomainPresenceInfo implements PacketComponent {
     return clusters.get(clusterName);
   }
 
-  private List<ClusterSpec> getClusterSpecs() {
+  /**
+   * Get ClusterSpec (Cluster configuration) from all clusters defined in the domain.
+   * @return list of ClusterSpec's.
+   */
+  public List<ClusterSpec> getClusterSpecs() {
     List<ClusterSpec> clusterSpecs = clusters.values().stream().map(Cluster::getSpec)
         .collect(Collectors.toList());
     clusterSpecs.addAll(getDomain().getSpec().getClusters());
@@ -712,16 +733,16 @@ public class DomainPresenceInfo implements PacketComponent {
    * Returns a list of server names whose pods are defined and match the specified criteria.
    * @param criteria a function that returns true for the desired pods.
    */
-  public List<String> getSelectedActiveServerNames(Function<V1Pod,Boolean> criteria) {
+  public List<String> getSelectedActiveServerNames(Predicate<V1Pod> criteria) {
     return servers.entrySet().stream()
           .filter(e -> hasMatchingServer(e, criteria))
           .map(Map.Entry::getKey)
           .collect(Collectors.toList());
   }
 
-  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Function<V1Pod,Boolean> criteria) {
+  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Predicate<V1Pod> criteria) {
     final V1Pod pod = e.getValue().getPod().get();
-    return pod != null && criteria.apply(pod);
+    return pod != null && criteria.test(pod);
   }
 
   /**
@@ -803,6 +824,10 @@ public class DomainPresenceInfo implements PacketComponent {
     return result;
   }
 
+  long getNumDeadlineIncreases() {
+    return getDomain().getOrCreateStatus().getNumDeadlineIncreases(getDomain().getFailureRetryIntervalSeconds());
+  }
+
   @Nonnull
   private Set<String> getExpectedRunningManagedServers() {
     return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
@@ -820,6 +845,18 @@ public class DomainPresenceInfo implements PacketComponent {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
+  public String getRestartVersion() {
+    return getDomain().getSpec().getRestartVersion();
+  }
+
+  public String getIntrospectVersion() {
+    return getDomain().getSpec().getIntrospectVersion();
+  }
+
+  public FluentdSpecification getFluentdSpecification() {
+    return getDomain().getSpec().getFluentdSpecification();
+  }
+
   /**
    * Returns the specification applicable to a particular server/cluster combination.
    *
@@ -830,18 +867,6 @@ public class DomainPresenceInfo implements PacketComponent {
   private ServerSpec getServerSpec(String serverName, String clusterName) {
     return getEffectiveConfigurationFactory().getServerSpec(serverName, clusterName);
   }
-
-  ///**
-  // * Returns the specification applicable to a particular server/cluster combination.
-  // *
-  // * @param server  ManagedServer object.
-  // * @param cluster ClusterSpec; may be null or empty if no applicable cluster.
-  // * @param clusterLimit limit of cluster size.
-  // * @return the effective configuration for the server
-  // */
-  //private ServerSpec getServerSpec(ManagedServer server, ClusterSpec cluster, Integer clusterLimit) {
-  //  return getEffectiveConfigurationFactory().getServerSpec(server, cluster, clusterLimit);
-  //}
 
   /**
    * Returns the specification applicable to a particular cluster.
@@ -1615,6 +1640,11 @@ public class DomainPresenceInfo implements PacketComponent {
           failures.add(DomainValidationMessages.missingRequiredOpssSecret(
               "spec.configuration.opss.walletPasswordSecret"));
         }
+      }
+
+      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
+        failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
+            "spec.fluentdSpecification.elasticSearchCredentials"));
       }
     }
 

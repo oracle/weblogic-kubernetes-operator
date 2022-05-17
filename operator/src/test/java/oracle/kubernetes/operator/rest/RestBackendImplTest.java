@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -23,15 +23,14 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.ws.rs.WebApplicationException;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.DomainAction;
 import oracle.kubernetes.operator.rest.model.DomainActionType;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.utils.TestUtils;
@@ -54,7 +53,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
@@ -93,7 +91,6 @@ class RestBackendImplTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(
@@ -361,7 +358,7 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingTokenReview_userInfoNotNull() {
-    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
     assertThat(restBackend.getUserInfo(), notNullValue());
   }
@@ -377,7 +374,7 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingTokenReview_authorizationCheckCalled() {
-    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     AuthorizationProxyStub authorizationProxyStub = new AuthorizationProxyStub();
     RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces)
         .withAuthorizationProxy(authorizationProxyStub);
@@ -397,13 +394,13 @@ class RestBackendImplTest {
 
   @Test
   void whenUsingTokenReview_configureApiClient() {
-    TuningParameters.getInstance().put("tokenReviewAuthentication", "true");
+    TuningParametersStub.setParameter("tokenReviewAuthentication", "true");
     RestBackendImpl restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
     ApiClient apiClient = restBackend.getCallBuilder().getClientPool().take();
     Authentication authentication = apiClient.getAuthentication("BearerToken");
     assertThat(authentication instanceof ApiKeyAuth, is(true));
     String apiKey = ((ApiKeyAuth) authentication).getApiKey();
-    assertNull(apiKey);
+    assertThat(apiKey, nullValue());
   }
 
 

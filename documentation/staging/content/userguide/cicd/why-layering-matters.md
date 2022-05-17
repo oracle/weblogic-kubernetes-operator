@@ -34,7 +34,7 @@ the small layers are no problem.
 
 But consider a more complicated scenario - let's take updating the JDK as an example
 to understand the impact of layers.  Say we want to update from JDK 8u201 to 8u202
-as shown in the example above.  If we took the "your first domain" image and updated
+as shown in the previous example.  If we took the "your first domain" image and updated
 the JDK, then we would end up with a new layer on top containing JDK 8u202.  That
 other layer with JDK 8u201 is still there; even if we "delete" the directory, we
 don't get that space back.  So now our 1.5GB "image" has grown to 1.75GB.  This is
@@ -90,7 +90,7 @@ encryption key, so that we can still roll the domain and there will be no confli
 If we want to make a change in a lower layer in Domain in Image domains
 without losing our domain encryption
 keys, then we need to find a way to "save" the domain and then put it back into a
-new layer, later, on top of the other new (lower) layers, as depicted in the image below:
+new layer, later, on top of the other new (lower) layers, as depicted in the following image:
 
 {{< img "Rebuilding layers" "images/rebuild.png" >}}
 

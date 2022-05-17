@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -38,15 +38,11 @@ class KubernetesResource {
   }
 
   private void addLabelIfMissing(String name, String value) {
-    if (!labels.containsKey(name)) {
-      labels.put(name, value);
-    }
+    labels.putIfAbsent(name, value);
   }
 
   private void addAnnotationIfMissing(String name, String value) {
-    if (!annotations.containsKey(name)) {
-      annotations.put(name, value);
-    }
+    annotations.putIfAbsent(name, value);
   }
 
   void addLabel(String name, String value) {

@@ -1,7 +1,9 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
+
+import java.util.List;
 
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -104,7 +106,7 @@ class AdminServerTest extends BaseConfigurationTestBase {
 
     assertThat(
         domain.getAdminServerSpec().getAdminService().getChannels(),
-        containsInAnyOrder(channelWith(CHANNEL1, PORT1), channelWith(CHANNEL2, PORT2)));
+        containsInAnyOrder(List.of(channelWith(CHANNEL1, PORT1), channelWith(CHANNEL2, PORT2))));
   }
 
   @Test
@@ -191,6 +193,7 @@ class AdminServerTest extends BaseConfigurationTestBase {
     assertThat(server1, not(equalTo(server2)));
   }
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   void callingGetAdminService_doesNotChangeTheObject() {
     server1.getAdminService();

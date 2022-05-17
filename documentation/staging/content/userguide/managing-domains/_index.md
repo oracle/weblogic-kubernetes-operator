@@ -42,7 +42,7 @@ Be aware of the following important considerations for WebLogic domains running 
   For additional log file tuning information, see [Log files](#log-files).
 
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
-  SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
+  SSL, admin, or custom channel listen addresses (using [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})).  These will become `domainUID` followed by a
   hyphen and then the server name, all lowercase, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
   the WebLogic Server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 
@@ -109,7 +109,8 @@ When a domain resource or WebLogic domain configuration violates the limits, the
 
 ### Creating and managing WebLogic domains
 
-You can locate a WebLogic domain either in a persistent volume (PV) or in an image.
+You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
+For an explanation of each, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
@@ -123,13 +124,13 @@ You can modify the WebLogic domain configuration for Domain in PV, Domain in Ima
 
 When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 
-For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+For Domain in Image and Domain in PV, you can use [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret.
+and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{< relref "/userguide/managing-domains/configoverrides#unsupported-overrides" >}}).
 
-For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+For Model in Image, you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ### About the Domain resource
 
@@ -164,6 +165,34 @@ The operator can export Prometheus-compatible metrics by embedding a WebLogic Mo
 The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
 and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
+
+Server log files are placed in a subdirectory `servers/<server name>/logs`
+by default when both `logHome` and `logHomeEnabled` are set.
+Set `logHomeLayout` to `FLAT` to place all log files at the `logHome` root.
+
+For example, here is the default layout of the log files under the `logHome` root:
+
+```text
+/shared/logs/domain1$ ls -aRtl 
+-rw-r----- 1 docker root 291340 Apr 27 10:26 sample-domain1.log
+-rw-r--r-- 1 docker root  24772 Apr 26 12:50 introspector_script.out
+drwxr-xr-x 1 docker root    108 Apr 25 13:49 servers
+
+./servers/managed-server2/logs:
+-rw-r----- 1 docker root 921385 Apr 27 18:20 managed-server2.log
+-rw-r----- 1 docker root  25421 Apr 27 10:26 managed-server2.out
+-rw-r----- 1 docker root  14711 Apr 27 10:25 managed-server2_nodemanager.log
+-rw-r--r-- 1 docker root  16829 Apr 27 10:25 managed-server2_nodemanager.out
+-rw-r----- 1 docker root      5 Apr 27 10:25 managed-server2.pid
+
+./servers/admin-server/logs:
+-rw-r----- 1 docker root 903878 Apr 27 18:19 admin-server.log
+-rw-r----- 1 docker root  16516 Apr 27 10:25 admin-server_nodemanager.log
+-rw-r--r-- 1 docker root  18610 Apr 27 10:25 admin-server_nodemanager.out
+-rw-r----- 1 docker root  25514 Apr 27 10:25 admin-server.out
+-rw-r----- 1 docker root      5 Apr 27 10:25 admin-server.pid
+
+```
 
 If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic

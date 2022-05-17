@@ -12,11 +12,10 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.ModelInImageDomainType;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -853,6 +852,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
+    DomainPresenceInfo info = createDomainPresenceInfo(myDomain);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -869,6 +869,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
+    DomainPresenceInfo info = createDomainPresenceInfo(myDomain);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -877,8 +878,20 @@ class DomainValidationTest extends DomainValidationTestBase {
         .configureAdminService()
         .withChannel("default");
 
-    TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
+
+    TuningParametersStub.setParameter(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "");
     assertThat(info.getValidationFailures(resourceLookup),  empty());
+  }
+
+  @Test
+  void whenDomainConfiguredWithFluentdWithoutCredentials_reportError() {
+    configureDomain(domain)
+        .withFluentdConfiguration(false, null, null);
+    info.getValidationFailures(resourceLookup);
+    assertThat(info.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "
+            + "spec, a secret containing elastic search credentials must be specified in",
+            "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

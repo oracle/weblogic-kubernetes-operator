@@ -28,8 +28,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
-import oracle.kubernetes.operator.utils.RandomStringGenerator;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -52,8 +51,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainFailureReason.REPLICAS_TOO_HIGH;
-import static oracle.kubernetes.operator.DomainFailureReason.SERVER_POD;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.ClusterStatusMatcher.hasStatusForCluster;
@@ -63,9 +62,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
-import static oracle.kubernetes.operator.EventConstants.SERVER_POD_ERROR;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -87,6 +85,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLE
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.CONFIG_CHANGES_PENDING_RESTART;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -104,8 +104,6 @@ abstract class DomainStatusUpdateTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private final RandomStringGenerator generator = new RandomStringGenerator();
-  private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private List<String> liveServers;
@@ -771,7 +769,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(SERVER_POD_ERROR));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
+        .withMessageContaining(getLocalizedString(SERVER_POD_EVENT_ERROR)));
   }
 
   private void failPod(String serverName) {
@@ -800,7 +799,7 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenAtLeastOnePodAndFailedConditionTrueFound_leaveIt() {
-    domain.getStatus().addCondition(new DomainCondition(FAILED).withStatus(TRUE));
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(SERVER_POD));
     failPod("server2");
 
     updateDomainStatus();
@@ -986,7 +985,8 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(REPLICAS_TOO_HIGH_ERROR));
+    assertThat(testSupport, hasEvent(DOMAIN_FAILED_EVENT)
+        .withMessageContaining(getLocalizedString(REPLICAS_TOO_HIGH_EVENT_ERROR)));
   }
 
   @Test
@@ -1241,10 +1241,10 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getEvents().stream().sorted(this::compareEventTimes).collect(Collectors.toList()),
-        containsInRelativeOrder(
+        containsInRelativeOrder(List.of(
               eventWithReason(DOMAIN_AVAILABLE_EVENT),
               eventWithReason(DOMAIN_ROLL_COMPLETED_EVENT),
-              eventWithReason(DOMAIN_COMPLETED_EVENT)));
+              eventWithReason(DOMAIN_COMPLETED_EVENT))));
   }
 
   private void setUniqueCreationTimestamp(Object event) {
