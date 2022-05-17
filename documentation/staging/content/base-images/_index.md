@@ -9,22 +9,4 @@ The following sections guide you through obtaining, creating, and dynamically up
 
 {{% children style="h4" description="true" %}}
 
-
-#### Use or create WebLogic images depending on [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-
-* Model in Image domains that use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}):
-  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
-  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
-  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
-  * [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
-
-* Model in Image domains that _do not_ use auxiliary images:
-  * [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}})
-
-* Domain in Image domains:
-  * [Create a custom image with your domain inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" >}})
-
-* Domain in Persistent Volume (PV) domains:
-  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
-  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
-  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
+#### [Use or create WebLogic images depending on domain home source type]({{< relref "/managing-domains/choosing-a-model#use-or-create-weblogic-images-depending-on-domain-home-source-type" >}})

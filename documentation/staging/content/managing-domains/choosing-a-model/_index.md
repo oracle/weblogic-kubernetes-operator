@@ -47,3 +47,22 @@ There are advantages for each domain home source type where Model in Image is th
 | CI/CD pipelines may be more complicated because you would need to run WLST against the live domain directory to effect changes.  | CI/CD pipelines are simpler because you can create the whole domain in the image and don't have to worry about a persistent copy of the domain.  | CI/CD pipelines are even simpler because you don't need to generate a domain home. The operator will create a domain home for you based on the model that you supply. |
 | There are fewer images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. | Same as Domain in Image unless you use the [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) approach. With auxiliary images, you can use a single image to distribute your WebLogic installation (similar to Domain on PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.|
 | You may be able to use standard Oracle-provided images or, at least, a very small number of self-built images, for example, with patches installed. | You may need to do more work to set up processes to build and maintain your images. | Same as Domain in Image.|
+
+### Use or create WebLogic images depending on domain home source type
+
+* Model in Image domains that use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}):
+  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
+  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
+  * [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+
+* Model in Image domains that _do not_ use auxiliary images:
+  * [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}})
+
+* Domain in Image domains:
+  * [Create a custom image with your domain inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" >}})
+
+* Domain in Persistent Volume (PV) domains:
+  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
+  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
