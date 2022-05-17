@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -35,13 +35,11 @@ kubectl create namespace istio-system
   tar zxf istio.tar.gz
 )
 
-( kubectl create secret generic docker-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=/home/opc/.docker/config.json -n istio-system
-  kubectl get secrets -n istio-system -o yaml
-)
+( kubectl create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
 
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-secret --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-istio-secret --set meshConfig.enablePrometheusMerge=false -y
   bin/istioctl verify-install
   bin/istioctl version
 )

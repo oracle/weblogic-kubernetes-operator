@@ -25,7 +25,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
@@ -59,12 +58,6 @@ public class IstioUtils {
    */
   public static void installIstio() {
     LoggingFacade logger = getLogger();
-    try {
-      boolean create = new Namespace().name(namespace).create();
-    } catch (ApiException ex) {
-      logger.warning(ex.getResponseBody());
-    }
-    //ImageUtils.createDockerRegistrySecret(namespace, namespace, namespace, namespace, namespace, namespace);
     Path istioInstallPath =
         Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
     String installScript = istioInstallPath.toString();
