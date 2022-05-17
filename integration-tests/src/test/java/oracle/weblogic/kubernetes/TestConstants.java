@@ -207,10 +207,11 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5-debian-elasticsearch7-1.1");
-  public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
+  public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int DEFAULT_LISTEN_PORT = 7100;
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
@@ -280,7 +281,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CHART_VERSION =
       getNonEmptySystemProperty("wko.it.prometheus.chart.version", "15.2.0");
   public static final String GRAFANA_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.22.0");
+      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.29.2");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";

@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -304,18 +305,6 @@ public class DomainStatusUpdater {
    */
   public static Step createIntrospectionFailureSteps(String message) {
     return new FailureStep(INTROSPECTION, message);
-  }
-
-  static class ResetFailureCountStep extends DomainStatusUpdaterStep {
-
-    @Override
-    void modifyStatus(DomainStatus domainStatus) {
-      domainStatus.resetIntrospectJobFailureCount();
-    }
-  }
-
-  public static Step createResetFailureCountStep() {
-    return new ResetFailureCountStep();
   }
 
   abstract static class DomainStatusUpdaterStep extends Step {
@@ -1099,7 +1088,7 @@ public class DomainStatusUpdater {
       private long getMaxReadyWaitTime(V1Pod pod) {
         return Optional.ofNullable(getInfo().getDomain())
             .map(d -> d.getMaxReadyWaitTimeSeconds(getServerName(pod), getClusterNameFromPod(pod)))
-            .orElse(TuningParameters.getInstance().getPodTuning().maxReadyWaitTimeSeconds);
+            .orElse(TuningParameters.getInstance().getMaxReadyWaitTimeSeconds());
       }
 
       private String getServerName(V1Pod pod) {
@@ -1309,7 +1298,8 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        addFailure(status, status.createAdjustedFailedCondition(reason, message, jobUid));
+        addFailure(status, status.createAdjustedFailedCondition(reason, message));
+        Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
       }
 

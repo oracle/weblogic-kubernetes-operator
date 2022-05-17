@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -62,13 +63,14 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -91,7 +93,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -100,9 +101,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventMatcher.hasEvent;
-import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -126,6 +124,7 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
+import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -289,12 +288,42 @@ class DomainProcessorTest {
   private String getResourceVersion(Domain domain) {
     return Optional.of(domain).map(Domain::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse("");
   }
-
+  
   @Test
   void whenDomainExplicitSet_runUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpec_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecButProcessingAborted_dontRunUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainChangedSpecAndProcessingAbortedButInspectionVersionChanged_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+    domainConfigurator.withIntrospectVersion("17");
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
@@ -399,7 +428,7 @@ class DomainProcessorTest {
   }
 
   private void triggerStatusUpdate() {
-    testSupport.setTime((int) TuningParameters.getInstance().getMainTuning().initialShortDelay, TimeUnit.SECONDS);
+    testSupport.setTime(TuningParameters.getInstance().getInitialShortDelay(), TimeUnit.SECONDS);
   }
 
   private void makePodsHealthy() {
@@ -850,7 +879,7 @@ class DomainProcessorTest {
   @Test
   void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
-    TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
+    TuningParametersStub.setParameter(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
         .configureAdminServer()
@@ -923,14 +952,6 @@ class DomainProcessorTest {
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
   }
 
-
-  @Test
-  void whenIntrospectionJobTimedOut_failureCountIncremented() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
-  }
-
   private void runMakeRight_withIntrospectionTimeout() throws JsonProcessingException {
     consoleHandlerMemento.ignoringLoggedExceptions(JobWatcher.DeadlineExceededException.class);
     consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
@@ -949,31 +970,14 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIntrospectionJobTimedOut_createAbortedEvent() throws Exception {
+  void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
     runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
 
-    assertThat(testSupport,
-        hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(ABORTED_EVENT_ERROR)));
-  }
-
-  @Test
-  void whenIntrospectionJobTimedOut_createFailureWithAbortedReason() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getRecordedDomain(), hasCondition(FAILED).withReason(ABORTED));
-  }
-
-  @Test
-  void whenIntrospectionJobTimedOut_activeDeadlineIncremented() throws Exception {
-    runMakeRight_withIntrospectionTimeout();
-
-    executeScheduledRetry();
-
-    assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+    assertThat(
+        Optional.ofNullable(getJob().getSpec()).map(V1JobSpec::getActiveDeadlineSeconds).orElse(0L), is(240L));
   }
 
   @Test

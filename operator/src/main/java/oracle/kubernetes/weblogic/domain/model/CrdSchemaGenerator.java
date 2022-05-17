@@ -8,7 +8,8 @@ import java.util.Optional;
 
 import io.kubernetes.client.custom.Quantity;
 import oracle.kubernetes.json.SchemaGenerator;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.tuning.FeatureGates;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 
 public class CrdSchemaGenerator {
 
@@ -29,7 +30,7 @@ public class CrdSchemaGenerator {
     generator.defineEnabledFeatures(
         Optional.ofNullable(TuningParameters.getInstance())
             .map(TuningParameters::getFeatureGates)
-            .map(TuningParameters.FeatureGates::getEnabledFeatures)
+            .map(FeatureGates::getEnabledFeatures)
             .orElse(Collections.emptyList()));
     return generator;
   }

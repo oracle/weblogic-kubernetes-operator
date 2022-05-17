@@ -3,20 +3,16 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
 import oracle.kubernetes.operator.helpers.EventHelper;
-import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ConversionRequest;
@@ -28,6 +24,8 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAI
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readConversionReview;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeConversionReview;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -92,10 +90,6 @@ public class ConversionWebhookResource extends BaseResource {
             .map(ConversionRequest::getUid).orElse(null);
   }
 
-  private ConversionReviewModel readConversionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
-  }
-
   /**
    * Create the conversion review response.
    * @param conversionRequest The request to be converted.
@@ -112,15 +106,5 @@ public class ConversionWebhookResource extends BaseResource {
             .uid(conversionRequest.getUid())
             .result(new Result().status("Success"))
             .convertedObjects(convertedDomains);
-  }
-
-  private String writeConversionReview(ConversionReviewModel conversionReviewModel) {
-    return getGsonBuilder().toJson(conversionReviewModel, ConversionReviewModel.class);
-  }
-
-  private Gson getGsonBuilder() {
-    return new GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime.class, new GsonOffsetDateTime())
-            .create();
   }
 }

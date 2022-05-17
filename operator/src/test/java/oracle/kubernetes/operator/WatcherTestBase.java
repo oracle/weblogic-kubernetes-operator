@@ -13,11 +13,11 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.utils.BaseTestUtils;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.tuning.FakeWatchTuning;
+import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +28,7 @@ import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
 import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
 import static oracle.kubernetes.operator.builders.StubWatchFactory.AllWatchesClosedListener;
+import static oracle.kubernetes.operator.tuning.TuningParameters.WATCH_BACKSTOP_RECHECK_COUNT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -44,7 +45,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private final List<Memento> mementos = new ArrayList<>();
   private final List<Watch.Response<?>> callBacks = new ArrayList<>();
   private final AtomicBoolean stopping = new AtomicBoolean(false);
-  final WatchTuning tuning = new WatchTuning(30, 0, 5, 24);
+  final WatchTuning tuning = new FakeWatchTuning();
   private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;
 
   private V1ObjectMeta createMetaData() {
@@ -77,6 +78,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(ClientFactoryStub.install());
+    mementos.add(TuningParametersStub.install());
+    mementos.add(TestStepFactory.install());
+
+    TuningParametersStub.setParameter(WATCH_BACKSTOP_RECHECK_COUNT, "1");
     StubWatchFactory.setListener(this);
   }
 
@@ -84,10 +89,8 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException);
   }
 
-  final void addMemento(Memento memento) throws NoSuchFieldException {
+  final void addMemento(Memento memento) {
     mementos.add(memento);
-    mementos.add(TuningParametersStub.install());
-    mementos.add(TestStepFactory.install());
   }
 
   @AfterEach
@@ -262,16 +265,17 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   static class TestStepFactory implements WaitForReadyStep.NextStepFactory {
 
-    private static TestStepFactory factory = new TestStepFactory();
+    private static final TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {
       return StaticStubSupport.install(WaitForReadyStep.class, "nextStepFactory", factory);
     }
 
     @Override
-    public Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+    public Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
                                                   DomainPresenceInfo info, Step next) {
       return next;
     }
   }
+
 }
