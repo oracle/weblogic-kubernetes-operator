@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -44,18 +45,18 @@ public class ValidationUtils {
    * @param proposedDomain domain that needs to be validated.
    * @return true if valid, otherwise false
    */
-  public static boolean validateDomain(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+  public static boolean isProposedChangeAllowed(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
     LOGGER.fine("Validating domain " + proposedDomain + " against " + existingDomain);
-    return unchanged(existingDomain, proposedDomain)
-        || validReplicas(proposedDomain)
+    return isUnchanged(existingDomain, proposedDomain)
+        || areAllClusterReplicaCountsValid(proposedDomain)
         || shouldIntrospect(existingDomain, proposedDomain);
   }
 
-  private static boolean unchanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
-    return existingDomain == proposedDomain || specEquals(existingDomain, proposedDomain);
+  private static boolean isUnchanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+    return existingDomain == proposedDomain || isSpecUnchanged(existingDomain, proposedDomain);
   }
 
-  private static boolean specEquals(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+  private static boolean isSpecUnchanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
     return Optional.of(existingDomain)
         .map(Domain::getSpec)
         .map(s -> isProposedSpecUnchanged(s, proposedDomain))
@@ -79,15 +80,19 @@ public class ValidationUtils {
       case IMAGE:
         return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
       case FROM_MODEL:
-        if (noAuxiliaryImagesConfigured(existingDomain) && noAuxiliaryImagesConfigured(proposedDomain)) {
-          return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
-        } else {
-          return noAuxiliaryImagesConfigured(existingDomain)
-              || noAuxiliaryImagesConfigured(proposedDomain)
-              || !isEqualCollection(existingDomain.getAuxiliaryImages(), proposedDomain.getAuxiliaryImages());
-        }
+        return areAuxiliaryImagesChanged(existingDomain, proposedDomain);
       default:
         return false;
+    }
+  }
+
+  private static boolean areAuxiliaryImagesChanged(@NotNull Domain existingDomain, @NotNull Domain proposedDomain) {
+    if (noAuxiliaryImagesConfigured(existingDomain) && noAuxiliaryImagesConfigured(proposedDomain)) {
+      return !Objects.equals(getImage(existingDomain), getImage(proposedDomain));
+    } else {
+      return noAuxiliaryImagesConfigured(existingDomain)
+          || noAuxiliaryImagesConfigured(proposedDomain)
+          || !isEqualCollection(existingDomain.getAuxiliaryImages(), proposedDomain.getAuxiliaryImages());
     }
   }
 
@@ -99,17 +104,17 @@ public class ValidationUtils {
     return domain.getAuxiliaryImages() == null;
   }
 
-  private static boolean validReplicas(@NotNull Domain domain) {
-    return Optional.of(domain)
-        .map(Domain::getStatus)
-        .map(DomainStatus::getClusters)
-        .orElse(Collections.emptyList())
-        .stream()
-        .allMatch(c -> validClusterReplicas(domain, c));
+  private static boolean areAllClusterReplicaCountsValid(@NotNull Domain domain) {
+    return getClusterStatusList(domain).stream().allMatch(c -> isClusterReplicaCountValid(domain, c));
   }
 
-  private static Boolean validClusterReplicas(@NotNull Domain domain, @NotNull ClusterStatus status) {
-    return getProposedReplicas(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+  @NotNull
+  private static List<ClusterStatus> getClusterStatusList(@NotNull Domain domain) {
+    return Optional.of(domain).map(Domain::getStatus).map(DomainStatus::getClusters).orElse(Collections.emptyList());
+  }
+
+  private static Boolean isClusterReplicaCountValid(@NotNull Domain domain, @NotNull ClusterStatus status) {
+    return getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
   }
 
   private static Cluster getCluster(@NotNull Domain domain, String clusterName) {
@@ -127,11 +132,11 @@ public class ValidationUtils {
     return Optional.ofNullable(clusterStatus).map(ClusterStatus::getMaximumReplicas).orElse(0);
   }
 
-  private static int getProposedReplicas(@NotNull Domain domain, Cluster cluster) {
-    return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicas(domain));
+  private static int getProposedReplicaCount(@NotNull Domain domain, Cluster cluster) {
+    return Optional.ofNullable(cluster).map(Cluster::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
-  private static int getDomainReplicas(@NotNull Domain domain) {
+  private static int getDomainReplicaCount(@NotNull Domain domain) {
     return Optional.of(domain).map(Domain::getSpec).map(DomainSpec::getReplicas).orElse(0);
   }
 }

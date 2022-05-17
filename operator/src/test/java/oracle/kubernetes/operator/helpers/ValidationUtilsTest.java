@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,9 +15,9 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static java.util.Arrays.asList;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -37,8 +36,8 @@ class ValidationUtilsTest {
   public static final String AUX_IMAGE_1 = "image1";
   public static final String AUX_IMAGE_2 = "Image2";
 
-  private final Domain domain1 = createDomain();
-  private final Domain domain2 = createDomain();
+  private final Domain existingDomain = createDomain();
+  private final Domain proposedDomain = createDomain();
 
   private Domain createDomain() {
     Domain domain = createTestDomain().withStatus(createDomainStatus());
@@ -66,279 +65,263 @@ class ValidationUtilsTest {
     return new ClusterStatus().withClusterName(clusterName).withMaximumReplicas(ORIGINAL_REPLICAS);
   }
 
-  @BeforeEach
-  public void setUp() throws Exception {
-    restoreDomain(domain1);
-    restoreDomain(domain2);
-  }
-
-  private void restoreDomain(Domain domain) {
-    domain.getSpec()
-        .withDomainHomeSourceType(null)
-        .withReplicas(ORIGINAL_REPLICAS)
-        .withImage(ORIGINAL_IMAGE_NAME)
-        .withConfiguration(null);
-    domain.getSpec().setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
-    domain.getSpec().getClusters().forEach(c -> c.withReplicas(null));
-  }
-
   @Test
   void whenSameObject_returnTrue() {
-    assertThat(ValidationUtils.validateDomain(domain1, domain1), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, existingDomain), equalTo(true));
   }
 
   @Test
   void whenNothingChanged_returnTrue() {
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenNoSpec_returnTrue() {
-    Domain d1 = createDomain().withSpec(null);
-    Domain d2 = createDomain().withSpec(null);
-    assertThat(ValidationUtils.validateDomain(d1, d2), equalTo(true));
+    existingDomain.withSpec(null);
+    proposedDomain.withSpec(null);
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenSpecRemoved_returnTrue() {
-    Domain d2 = createDomain().withSpec(null);
-    assertThat(ValidationUtils.validateDomain(domain1, d2), equalTo(true));
+    proposedDomain.withSpec(null);
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenSpecAdded_returnTrue() {
-    Domain d1 = createDomain().withSpec(null);
-    assertThat(ValidationUtils.validateDomain(d1, domain2), equalTo(true));
+    existingDomain.withSpec(null);
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedAloneValid_returnTrue() {
-    domain2.getSpec().withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedAloneAndInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenIntrospectionVersionChangedAndDomainReplicasInvalid_returnTrue() {
-    domain2.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainImageChangedAndReplicasInvalid_returnTrue() {
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenLogHomeChangedAndDomainReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().setLogHome("/home/dir");
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome("/home/dir");
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenOneClusterReplicasChangedAloneAndValid_returnTrue() {
-    domain2.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenOneClusterReplicasChangedAloneAndInvalid_returnFalse() {
-    domain2.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenIntrospectionVersionChangedAndOneClusterReplicasInvalid_returnTrue() {
-    domain2.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
-    domain2.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenImageChangedAndOneClusterReplicasInvalid_returnTrue() {
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    domain2.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenLogHomeChangedAndOneClusterReplicasChangedInvalid_returnFalse() {
-    domain2.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
-    domain2.getSpec().setLogHome(NEW_LOG_HOME);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainReplicasChangedInvalidAndOneClusterReplicasChangedValid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().getClusters().get(0).withReplicas(1);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(1);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainReplicasChangedInvalidAndBothClusterReplicasChangedValid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    domain2.getSpec().getClusters().get(1).withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(1).withReplicas(GOOD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainReplicasChangedValidAndOneClusterReplicasChangedInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(GOOD_REPLICAS);
-    domain2.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
-    domain2.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(GOOD_REPLICAS);
+    proposedDomain.getSpec().getClusters().get(1).withReplicas(BAD_REPLICAS);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeChanged_returnTrue() {
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeUnchanged_returnTrue() {
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeUnchangedAndDomainReplicasValid_returnTrue() {
-    domain2.getSpec().withReplicas(GOOD_REPLICAS);
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeUnchangedAndDomainReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.IMAGE);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypePVAndDomainImageChangedReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeBothMIINoAuxImgImageChangedAndDomainImageChangedReplicasInvalid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeBothMIINoAuxImgAndDomainImageChangedReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeBothMIIAddAuxImgAndDomainImageChangedReplicasInvalid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeBothMIIRemoveAuxImgAndDomainImageChangedReplicasInvalid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain1, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(existingDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeBothMIIAuxImgSameAndDomainImageChangedReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain1, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(existingDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeBothMIIAuxImgSameInDifferentOrderAndDomainImageChangedReplicasInvalid_returnFalse() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain1, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_2), createAuxiliaryImage(AUX_IMAGE_1)));
-    setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(existingDomain, asList(createAuxiliaryImage(AUX_IMAGE_2), createAuxiliaryImage(AUX_IMAGE_1)));
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(false));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(false));
   }
 
   @Test
   void whenDomainSourceTypeBothMIIAuxImgDifferentAndDomainImageChangedReplicasInvalid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain1, Collections.singletonList(createAuxiliaryImage(AUX_IMAGE_1)));
-    setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
-    domain1.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
-    domain2.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(existingDomain, Collections.singletonList(createAuxiliaryImage(AUX_IMAGE_1)));
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    existingDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   @Test
   void whenDomainSourceTypeNullWithModelAndDomainImageChangedReplicasInvalid_returnTrue() {
-    domain2.getSpec().withReplicas(BAD_REPLICAS);
-    domain2.getSpec().withImage(NEW_IMAGE_NAME);
-    setAuxiliaryImages(domain2, Arrays.asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
+    setAuxiliaryImages(proposedDomain, asList(createAuxiliaryImage(AUX_IMAGE_1), createAuxiliaryImage(AUX_IMAGE_2)));
 
-    assertThat(ValidationUtils.validateDomain(domain1, domain2), equalTo(true));
+    assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
 
   private AuxiliaryImage createAuxiliaryImage(String imageName) {
