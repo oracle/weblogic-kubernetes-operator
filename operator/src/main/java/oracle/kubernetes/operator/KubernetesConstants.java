@@ -95,4 +95,7 @@ public interface KubernetesConstants {
 
   // A (possibly Ingress-related) timeout occurred internally to Kubernetes. Clients may retry the failed operation.
   int HTTP_GATEWAY_TIMEOUT = HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+
+  String ADMISSION_REVIEW_API_VERSION = "admission.k8s.io/v1";
+  String ADMISSION_REVIEW_KIND = "AdmissionReview";
 }

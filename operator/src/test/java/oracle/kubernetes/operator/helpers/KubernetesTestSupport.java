@@ -63,6 +63,8 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
+import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfigurationList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -122,6 +124,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SELF_SUBJECT_ACCESS_REVIEW = "SelfSubjectAccessReview";
   public static final String SELF_SUBJECT_RULES_REVIEW = "SelfSubjectRulesReview";
   public static final String TOKEN_REVIEW = "TokenReview";
+  public static final String VALIDATING_WEBHOOK_CONFIGURATION = "ValidatingWebhookConfiguration";
 
   private static final String PATH_PATTERN = "\\w+(?:.\\w+)*";
   private static final String OP_PATTERN = "=|==|!=";
@@ -154,6 +157,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     support(TOKEN_REVIEW, V1TokenReview.class);
     support(PV, V1PersistentVolume.class, this::createPvList);
     support(NAMESPACE, V1Namespace.class, this::createNamespaceList);
+    support(VALIDATING_WEBHOOK_CONFIGURATION,
+        V1ValidatingWebhookConfiguration.class, this::createValidatingWebhookConfigurationList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
@@ -196,6 +201,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private V1NamespaceList createNamespaceList(List<V1Namespace> items) {
     return new V1NamespaceList().metadata(createListMeta()).items(items);
+  }
+
+  private V1ValidatingWebhookConfigurationList createValidatingWebhookConfigurationList(
+      List<V1ValidatingWebhookConfiguration> items) {
+    return new V1ValidatingWebhookConfigurationList().metadata(createListMeta()).items(items);
   }
 
   private V1PodList createPodList(List<V1Pod> items) {

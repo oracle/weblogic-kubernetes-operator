@@ -1412,11 +1412,6 @@ window.onload = function() {
           "description": "An optional directory in a server\u0027s container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration.",
           "type": "string"
         },
-        "configOverrides": {
-          "deprecated": "true",
-          "description": "Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides.",
-          "type": "string"
-        },
         "cluster-resource-references": {
           "description": "List of names of Cluster Custom Resources the Operator expects to be deployed in the same namespace that the domain is deployed.  A reference to a cluster custom resource  in order for the cluster elements to be applied.",
           "type": "array",

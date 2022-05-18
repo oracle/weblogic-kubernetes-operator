@@ -40,6 +40,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CONVERSION_FAI
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
+import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readConversionReview;
 
 /**
  * ConversionWebhookResource is a jaxrs resource that implements the REST api for the /webhook
@@ -102,10 +103,6 @@ public class ConversionWebhookResource extends BaseResource implements ClusterCu
   private String getUid(ConversionReviewModel conversionReview) {
     return Optional.ofNullable(conversionReview).map(ConversionReviewModel::getRequest)
             .map(ConversionRequest::getUid).orElse(null);
-  }
-
-  private ConversionReviewModel readConversionReview(String resourceName) {
-    return getGsonBuilder().fromJson(resourceName, ConversionReviewModel.class);
   }
 
   /**
