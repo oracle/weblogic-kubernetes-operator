@@ -15,7 +15,7 @@ description: "Important considerations for managing WebLogic domains in Kubernet
 * [Managing lifecycle operations](#managing-lifecycle-operations)
 * [Scaling clusters](#scaling-clusters)
 * [About domain events](#about-domain-events)
-* [Monitoring a domain](#monitoring-a-domain)
+* [Accessing and monitoring domains](#accessing-and-monitoring-domains)
 * [Logging](#logging)
 
 #### Important considerations for WebLogic domains in Kubernetes
