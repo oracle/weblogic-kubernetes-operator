@@ -6,14 +6,40 @@ weight: 9
 description: "Configure WebLogic Server and domain log settings."
 ---
 
+### Contents
+
+ - [Overview](#overview)
+ - [WebLogic Server log file location](#weblogic-server-log-file-location)
+ - [WebLogic Server log file rotation and size](#weblogic-server-log-file-rotation-and-size)
+
+### Overview
 
 The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.
 This occurs if the Domain `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
-and `domainHomeSourceType` is set to `PersistentVolume`.  When overriding, the log location will be the location specified by the `logHome` setting.
+and `domainHomeSourceType` is set to `PersistentVolume`.
+When overriding, the log location will be the location specified by the `logHome` setting.
 
-Server log files are placed in a subdirectory `servers/<server name>/logs`
-by default when both `logHome` and `logHomeEnabled` are set.
-Set `logHomeLayout` to `FLAT` to place all log files at the `logHome` root.
+WebLogic Server `.out` files contain a subset of WebLogic Server `.log` files.
+The operator, by default, echoes these `.out` files to each server pod log.
+To disable this behavior, set the Domain `includeServerOutInPodLog` to `false`.
+
+Optionally, you can monitor a WebLogic Server and its log using an [Elastic Stack](https://www.elastic.co/elastic-stack/)
+(previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
+For an example, see the WebLogic Server [Elastic Stack]({{<relref "/samples/elastic-stack/weblogic-domain/_index.md">}}) sample.
+
+{{% notice warning %}}
+Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
+For more information, see [Kubernetes Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
+{{% /notice %}}
+
+### WebLogic Server log file location
+
+When `logHomeEnabled` is `false`,
+WebLogic Server log files are placed in a subdirectory `<domain.spec.domainHome>/servers/<server name>/logs`.
+
+When `logHomeEnabled` is `true`,
+WebLogic Server log files are placed in a subdirectory `<domain.spec.logHome>/servers/<server name>/logs`
+by default, or alternatively placed in subdirectory `<domain.spec.logHome>` when `logHomeLayout` is set to `FLAT`.
 
 For example, here is the default layout of the log files under the `logHome` root:
 
@@ -38,6 +64,8 @@ drwxr-xr-x 1 docker root    108 Apr 25 13:49 servers
 -rw-r----- 1 docker root      5 Apr 27 10:25 admin-server.pid
 
 ```
+
+### WebLogic Server log file rotation and size
 
 If you want to fine tune the `.log` and `.out` rotation behavior for WebLogic Servers and domains, then
 you can update the related `Log MBean` in your WebLogic configuration. Alternatively, for WebLogic
@@ -89,7 +117,3 @@ and that end with the corresponding Log MBean attribute name.
 
   For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
 
-{{% notice warning %}}
-Kubernetes stores pod logs on each of its nodes, and, depending on the Kubernetes implementation, extra steps may be necessary to limit their disk space usage.
-For more information, see [Kubernetes Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
-{{% /notice %}}
