@@ -23,13 +23,10 @@ public class Certificates {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getPath = Paths::get;
 
-  private final File externalIdDir;
   final File externalCertificateKey;
   final File externalCertificate;
-  private final File internalIdDir;
   public final File internalCertificateKey;
   public final File internalCertificate;
-  private final File webhookIdDir;
   private final File webhookCertificateKey;
   private final File webhookCertificate;
 
@@ -38,13 +35,13 @@ public class Certificates {
    * @param delegate Core delegate
    */
   public Certificates(CoreDelegate delegate) {
-    externalIdDir = new File(delegate.getDeploymentHome(), "external-identity");
+    File externalIdDir = new File(delegate.getDeploymentHome(), "external-identity");
     externalCertificateKey = new File(externalIdDir, "externalOperatorKey");
     externalCertificate = new File(externalIdDir, "externalOperatorCert");
-    internalIdDir = new File(delegate.getDeploymentHome(), "internal-identity");
+    File internalIdDir = new File(delegate.getDeploymentHome(), "internal-identity");
     internalCertificateKey = new File(internalIdDir, "internalOperatorKey");
     internalCertificate = new File(internalIdDir, "internalOperatorCert");
-    webhookIdDir = new File(delegate.getDeploymentHome(), "webhook-identity");
+    File webhookIdDir = new File(delegate.getDeploymentHome(), "webhook-identity");
     webhookCertificateKey = new File(webhookIdDir, "webhookKey");
     webhookCertificate  = new File(webhookIdDir, "webhookCert");
   }
@@ -97,7 +94,7 @@ public class Certificates {
     try {
       return new String(Files.readAllBytes(getPath.apply(path)));
     } catch (IOException e) {
-      LOGGER.config(failureMessage, path);
+      LOGGER.config(failureMessage, path + " due to: " + e.getMessage());
       return null;
     }
   }

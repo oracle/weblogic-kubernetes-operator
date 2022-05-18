@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import oracle.kubernetes.operator.ConversionWebhookMainDelegate;
+import oracle.kubernetes.operator.WebhookMainDelegate;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -65,7 +65,7 @@ public class InitializeWebhookIdentityStep extends Step {
    * Constructor for the InitializeWebhookIdentityStep.
    * @param next Next step to be executed.
    */
-  public InitializeWebhookIdentityStep(ConversionWebhookMainDelegate delegate, Step next) {
+  public InitializeWebhookIdentityStep(WebhookMainDelegate delegate, Step next) {
     super(next);
     Certificates certificates = new Certificates(delegate);
     this.webhookCertFile = certificates.getWebhookCertificateFile();

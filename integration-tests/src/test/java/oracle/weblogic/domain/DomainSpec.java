@@ -69,6 +69,16 @@ public class DomainSpec {
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @ApiModelProperty(
+      value = "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
+      allowableValues = "range[0,infinity]")
+  private Long failureRetryIntervalSeconds;
+
+  @ApiModelProperty(
+      value = "The time in minutes before the operator will stop retrying Severe failures. Defaults to 1440.",
+      allowableValues = "range[0,infinity]")
+  private Long failureRetryLimitMinutes;
+
+  @ApiModelProperty(
       "An optional, in-pod location for data storage of default and custom file stores. "
           + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
           + "then the data storage directories are determined from the WebLogic domain home configuration.")
@@ -358,6 +368,40 @@ public class DomainSpec {
 
   public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
     this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
+  }
+
+  public DomainSpec failureRetryIntervalSeconds(Long failureRetryIntervalSeconds) {
+    this.failureRetryIntervalSeconds = failureRetryIntervalSeconds;
+    return this;
+  }
+
+  public Long failureRetryIntervalSeconds() {
+    return failureRetryIntervalSeconds;
+  }
+
+  public Long getFailureRetryIntervalSeconds() {
+    return failureRetryIntervalSeconds;
+  }
+
+  public void setFailureRetryIntervalSeconds(Long failureRetryIntervalSeconds) {
+    this.failureRetryIntervalSeconds = failureRetryIntervalSeconds;
+  }
+
+  public DomainSpec failureRetryLimitMinutes(Long failureRetryLimitMinutes) {
+    this.failureRetryLimitMinutes = failureRetryLimitMinutes;
+    return this;
+  }
+
+  public Long failureRetryLimitMinutes() {
+    return failureRetryLimitMinutes;
+  }
+
+  public Long getFailureRetryLimitMinutes() {
+    return failureRetryLimitMinutes;
+  }
+
+  public void setFailureRetryLimitMinutes(Long failureRetryLimitMinutes) {
+    this.failureRetryLimitMinutes = failureRetryLimitMinutes;
   }
 
   public DomainSpec dataHome(String dataHome) {
@@ -729,6 +773,8 @@ public class DomainSpec {
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
             .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+            .append("failureRetryIntervalSeconds", failureRetryIntervalSeconds)
+            .append("failureRetryLimitMinutes", failureRetryLimitMinutes)
             .append("dataHome", dataHome)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("image", image)
@@ -764,6 +810,8 @@ public class DomainSpec {
             .append(logHome)
             .append(logHomeEnabled)
             .append(allowReplicasBelowMinDynClusterSize)
+            .append(failureRetryIntervalSeconds)
+            .append(failureRetryLimitMinutes)
             .append(dataHome)
             .append(includeServerOutInPodLog)
             .append(image)
@@ -807,6 +855,8 @@ public class DomainSpec {
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(allowReplicasBelowMinDynClusterSize, rhs.allowReplicasBelowMinDynClusterSize)
+            .append(failureRetryIntervalSeconds, rhs.failureRetryIntervalSeconds)
+            .append(failureRetryLimitMinutes, rhs.failureRetryLimitMinutes)
             .append(dataHome, rhs.dataHome)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(image, rhs.image)
