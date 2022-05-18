@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -27,17 +27,19 @@ istiodir=${workdir}/istio-${version}
 echo "Installing Istio version [${version}] in location [${istiodir}]"
 
 kubectl delete namespace istio-system --ignore-not-found
-# istio installation will create the namespace 'istio-system' 
-# kubectl create namespace istio-system
+# create the namespace 'istio-system' 
+kubectl create namespace istio-system
 
 ( cd $workdir;
   curl -Lo "istio.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/istio%2Fistio-${version}-linux-amd64.tar.gz";
   tar zxf istio.tar.gz
 )
 
+( kubectl create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
+
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set hub=gcr.io/istio-release --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-istio-secret --set meshConfig.enablePrometheusMerge=false -y
   bin/istioctl verify-install
   bin/istioctl version
 )
