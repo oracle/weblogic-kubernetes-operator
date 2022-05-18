@@ -67,7 +67,6 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -638,7 +637,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   @Override
   public MakeRightDomainOperationImpl createMakeRightOperation(DomainPresenceInfo liveInfo) {
-    return new MakeRightDomainOperationImpl(liveInfo);
+    return new MakeRightDomainOperationImpl(delegate, liveInfo);
   }
 
   Step createPopulatePacketServerMapsStep() {
@@ -686,6 +685,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
+    private final DomainProcessorDelegate delegate;
     private DomainPresenceInfo liveInfo;
     private boolean explicitRecheck;
     private boolean deleting;
@@ -696,9 +696,11 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     /**
      * Create the operation.
+     * @param delegate a class which handles scheduling and other types of processing
      * @param liveInfo domain presence info read from Kubernetes
      */
-    MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
+    MakeRightDomainOperationImpl(DomainProcessorDelegate delegate, DomainPresenceInfo liveInfo) {
+      this.delegate = delegate;
       this.liveInfo = liveInfo;
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       if (!isNewDomain(cachedInfo)
@@ -770,6 +772,16 @@ public class DomainProcessorImpl implements DomainProcessor {
     public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
+    }
+
+    @Override
+    public boolean isDeleting() {
+      return deleting;
+    }
+
+    @Override
+    public boolean isWillInterrupt() {
+      return willInterrupt;
     }
 
     /**
@@ -877,31 +889,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void internalMakeRightDomainPresence() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, getDomainUid());
 
-      Packet packet = new Packet().with(delegate);
+      new DomainPlan(this, delegate, liveInfo).execute();
+    }
+
+    @NotNull
+    private Packet createPacket(DomainPresenceInfo info) {
+      Packet packet = new Packet().with(delegate).with(info);
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
       packet
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(liveInfo, delegate.getKubernetesVersion(),
-                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-
-      new DomainPlan(delegate, getNamespace(), getDomainUid(), createDomainPlanSteps(packet), deleting, willInterrupt)
-            .execute();
-    }
-
-    private StepAndPacket createDomainPlanSteps(Packet packet) {
-      return new StepAndPacket(
-          getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
-    }
-
-    private Step getEventStep(Step next) {
-      return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
-    }
-
-    private Step createEventStep(EventData eventData) {
-      return EventHelper.createEventStep(eventData);
+              Component.createFor(delegate.getKubernetesVersion(),
+                  PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(info.getNamespace()),
+                  JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(info.getNamespace())));
+      return packet;
     }
 
     private Domain getDomain() {
@@ -921,6 +923,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       final List<Step> result = new ArrayList<>();
 
       result.add(willThrow ? createThrowStep() : null);
+      result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
+      result.add(createPopulatePacketServerMapsStep());
       result.add(createStatusInitializationStep());
       if (deleting) {
         result.add(new StartPlanStep(liveInfo, createDomainDownPlan(liveInfo)));
@@ -1015,32 +1019,30 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private class DomainPlan {
+
+    private final MakeRightDomainOperation operation;
     private final DomainProcessorDelegate delegate;
-    private final String ns;
-    private final String domainUid;
+    private final DomainPresenceInfo presenceInfo;
     private final FiberGate gate;
-    private final boolean isDeleting;
-    private final boolean isWillInterrupt;
+
     private final Step firstStep;
     private final Packet packet;
 
-    public DomainPlan(DomainProcessorDelegate delegate, String ns, String domainUid, StepAndPacket stepAndPacket,
-                      boolean isDeleting, boolean isWillInterrupt) {
+    public DomainPlan(
+        MakeRightDomainOperation operation, DomainProcessorDelegate delegate, DomainPresenceInfo presenceInfo) {
+      this.operation = operation;
       this.delegate = delegate;
-      this.ns = ns;
-      this.domainUid = domainUid;
-      this.firstStep = stepAndPacket.step;
-      this.packet = stepAndPacket.packet;
-      this.gate = getMakeRightFiberGate(delegate, ns);
-      this.isDeleting = isDeleting;
-      this.isWillInterrupt = isWillInterrupt;
+      this.presenceInfo = presenceInfo;
+      this.firstStep = operation.createSteps();
+      this.packet = ((MakeRightDomainOperationImpl) operation).createPacket(presenceInfo);
+      this.gate = getMakeRightFiberGate(delegate, presenceInfo.getNamespace());
     }
 
     private void execute() {
-      if (isWillInterrupt) {
-        gate.startFiber(domainUid, firstStep, packet, createCompletionCallback());
+      if (operation.isWillInterrupt()) {
+        gate.startFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
       } else {
-        gate.startFiberIfNoCurrentFiber(domainUid, firstStep, packet, createCompletionCallback());
+        gate.startFiberIfNoCurrentFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
       }
     }
 
@@ -1062,7 +1064,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   
       private void runFailureSteps(Throwable throwable) {
         gate.startFiberIfLastFiberMatches(
-            domainUid,
+            presenceInfo.getDomainUid(),
             Fiber.getCurrentIfSet(),
             getFailureSteps(throwable),
             packet,
@@ -1097,20 +1099,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private DomainPresenceInfo getExistingDomainPresenceInfo() {
-      return DomainProcessorImpl.getExistingDomainPresenceInfo(ns, domainUid);
+      return DomainProcessorImpl
+          .getExistingDomainPresenceInfo(presenceInfo.getNamespace(), presenceInfo.getDomainUid());
     }
 
     class MakeRightRetry {
-      private final DomainPresenceInfo domainPresenceInfo;
+      private final DomainPresenceInfo presenceInfo;
 
-      MakeRightRetry(DomainPresenceInfo domainPresenceInfo) {
-        this.domainPresenceInfo = domainPresenceInfo;
+      MakeRightRetry(DomainPresenceInfo presenceInfo) {
+        this.presenceInfo = presenceInfo;
       }
 
       void execute() {
-        try (ThreadLoggingContext ignored = setThreadContext().namespace(ns).domainUid(domainUid)) {
-          domainPresenceInfo.setPopulated(false);
-          createMakeRightOperation(domainPresenceInfo).withDeleting(isDeleting).withExplicitRecheck().execute();
+        try (ThreadLoggingContext ignored = presenceInfo.setThreadContext()) {
+          presenceInfo.setPopulated(false);
+          createMakeRightOperation(presenceInfo).withDeleting(operation.isDeleting()).withExplicitRecheck().execute();
         }
       }
     }

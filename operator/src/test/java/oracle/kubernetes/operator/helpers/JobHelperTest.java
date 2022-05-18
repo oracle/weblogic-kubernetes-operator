@@ -46,7 +46,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -346,11 +345,7 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   private V1JobSpec createJobSpec() {
-    Packet packet = new Packet();
-    packet
-          .getComponents()
-          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
-    return JobHelper.createJobSpec(packet);
+    return JobHelper.createJobSpec(new Packet().with(domainPresenceInfo));
   }
 
   @Test

@@ -26,7 +26,6 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
 /**
@@ -140,7 +139,7 @@ public class FiberTestSupport {
   }
 
   public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(info);
     return this;
   }
 
