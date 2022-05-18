@@ -9,7 +9,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion extends SemanticVersion {
-  private static final String[] MINIMUM_K8S_VERSIONS = {"1.21.10", "1.22.7", "1.23.4"};
+  private static final String[] MINIMUM_K8S_VERSIONS = {"1.21.10", "1.22.7", "1.23.4", "1.24.0"};
   static final KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final String version;
 
