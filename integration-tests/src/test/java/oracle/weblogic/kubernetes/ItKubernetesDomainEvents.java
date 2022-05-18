@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -319,7 +320,8 @@ class ItKubernetesDomainEvents {
     try {
       V1Patch patch;
       String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER");
+      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "NEVER",
+          spec -> spec.failureRetryLimitMinutes(2L));
       assertNotNull(domain, " Can't create domain resource");
 
       String originalDomainHome = domain.getSpec().getDomainHome();
@@ -730,6 +732,13 @@ class ItKubernetesDomainEvents {
   // Create and start a WebLogic domain in PV
   private static Domain createDomain(String domainNamespace, String domainUid,
                                      String pvName, String pvcName, String serverStartupPolicy) {
+    return createDomain(domainNamespace, domainUid, pvName, pvcName, serverStartupPolicy, UnaryOperator.identity());
+  }
+
+  // Create and start a WebLogic domain in PV
+  private static Domain createDomain(String domainNamespace, String domainUid,
+                                     String pvName, String pvcName, String serverStartupPolicy,
+                                     UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
     String uniquePath = "/shared/" + domainNamespace + "/domains";
 
@@ -784,7 +793,7 @@ class ItKubernetesDomainEvents {
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
                     .namespace(domainNamespace))
-            .spec(new DomainSpec()
+            .spec(domainSpecUnaryOperator.apply(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -821,7 +830,7 @@ class ItKubernetesDomainEvents {
                     .addClustersItem(new Cluster() //cluster
                             .clusterName(cluster1Name)
                             .replicas(replicaCount)
-                            .serverStartState("RUNNING")));
+                            .serverStartState("RUNNING"))));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
