@@ -126,7 +126,7 @@ and [Installation and upgrade]({{< relref "/managing-operators/installation.md" 
   **Notes**:
   - In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained.
   - Before changing the `javaLoggingLevel` setting,
-    consult the [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-logging-level" >}}) advice.
+    consult the [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) advice.
 
 
 ### Operator Helm configuration values
@@ -453,7 +453,7 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 {{% /notice %}}
 
 {{% notice note %}}
-To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+To work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
@@ -663,7 +663,7 @@ Example:
 javaLoggingLevel:  "FINE"
 ```
 
-**Note**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-logging-level" >}}) before changing this setting.
+**Note**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) before changing this setting.
 
 ##### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.

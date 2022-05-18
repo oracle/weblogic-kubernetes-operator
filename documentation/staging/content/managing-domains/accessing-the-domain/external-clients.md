@@ -185,7 +185,7 @@ For example, if a WebLogic Server instance is named `My_Server`
 and the domain UID is `MyUid`, then its listen
 address within the namespace will be `myuid-my-server`.
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 
@@ -536,7 +536,7 @@ In the previous example, `DOMAIN_UID` and `NAMESPACE` are assumed to already be 
 Alternatively, you can substitute the macros with DNS-1123 acceptable values
 (changed to lowercase and underscores converted to dashes).
 For more information on Kubernetes resource compliant naming,
-please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+please see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 #### Security notes

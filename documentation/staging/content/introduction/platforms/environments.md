@@ -11,7 +11,7 @@ weight: 6
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
   - [Oracle Cloud Native Environment](#oracle-cloud-native-environment)
-  - [Oracle Container Engine for Kubernetes](oracle-container-engine-for-kubernetes)
+  - [Oracle Container Engine for Kubernetes](#oracle-container-engine-for-kubernetes)
   - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
   - [Microsoft Azure](#microsoft-azure)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)

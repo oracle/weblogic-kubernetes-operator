@@ -31,7 +31,7 @@ For more information, see [Create custom images]({{< relref "/base-images/custom
 
 This document describes how to obtain and inspect container images
 with WebLogic Server or Fusion Middleware Infrastructure
-from the Oracle Container Registry (OCR) and how to set up Kubernetes to access domain images.
+from the Oracle Container Registry (OCR).
 
 
 ### Understand Oracle Container Registry images
@@ -219,7 +219,7 @@ __Notes:__
 - If you are using a multi-node Kubernetes cluster,
   or your Kubernetes cluster is remote from your locally created or pulled domain image,
   then additional steps are usually required to ensure that your Kubernetes cluster can access the image.
-  See [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images).
+  See [Access domain images]({{< relref "/base-images/access-images.md" >}}).
 - The operator requires domain images to contain WebLogic Server 12.2.1.3.0 or later.
   When using 12.2.1.3 images, the operator requires that
   the images contain patches 29135930 and 27117282;

@@ -160,7 +160,7 @@ will revert to using the default for all values).
 
 Example updates:
 - Change the image of a running operator; see [Upgrade the operator](#upgrade-the-operator).
-- Change the logging level; see [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-logging-level" >}}).
+- Change the logging level; see [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}).
 - Change the managed namespaces; see
   [Namespace management]({{<relref "/managing-operators/namespace-management.md">}}).
 

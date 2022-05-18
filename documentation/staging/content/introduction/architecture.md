@@ -100,7 +100,7 @@ the `weblogic.domainUID` label in a Kubernetes cluster try:
 
 A Domain UID may be up to 45 characters long. For
 more details about Domain UID name requirements, see
-[Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+[Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 
 ### Domain architecture
 
@@ -121,7 +121,7 @@ This diagram shows the following details:
 *	An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.
 
 {{% notice note %}}
-Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
+Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). Therefore, the operator enforces that the names of the Kubernetes resources do not exceed Kubernetes limits (see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 The following diagram shows the components inside the containers running WebLogic Server instances:
@@ -155,7 +155,7 @@ The operator also automatically overrides the `ListenAddress` fields in each
 running WebLogic Server to match its service name in order
 to ensure that the servers will always be able to find each other.
 
-For details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+For details, see [Meet Kubernetes resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 
 ### Domain state stored outside container images
 The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
