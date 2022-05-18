@@ -30,7 +30,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.verifyDefaultTokenExists;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.verifyNamespaceActive;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -233,7 +233,7 @@ public class BuildApplication {
    */
   public static V1Pod setupWebLogicPod(String namespace, V1Container container) {
     final LoggingFacade logger = getLogger();
-    verifyDefaultTokenExists();
+    verifyNamespaceActive();
 
     //want to create a pod with a unique name
     //If a test calls buildApplication for 2 (or more) different applications
