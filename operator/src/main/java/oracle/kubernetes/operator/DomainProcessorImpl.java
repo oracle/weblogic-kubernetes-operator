@@ -100,7 +100,10 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final String DELETED = "DELETED";
   private static final String ERROR = "ERROR";
 
+  /** A map that holds at most one FiberGate per namespace to run make-right steps. */
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
+
+  /** A map that holds at most one FiberGate per namespace to run status update steps. */
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
@@ -294,8 +297,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           JobHelper.createIntrospectionStartStep(null));
   }
 
-  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
-    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info, next);
+  private static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info) {
+    return ConfigMapHelper.createOrReplaceFluentdConfigMapStep(info, null);
   }
 
   /**
@@ -1063,9 +1066,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
   
       private void runFailureSteps(Throwable throwable) {
-        gate.startFiberIfLastFiberMatches(
+        gate.startNewFiberIfCurrentFiberMatches(
             presenceInfo.getDomainUid(),
-            Fiber.getCurrentIfSet(),
             getFailureSteps(throwable),
             packet,
             new FailureReportCompletionCallback());
@@ -1127,7 +1129,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            createOrReplaceFluentdConfigMapStep(info, null),
+            createOrReplaceFluentdConfigMapStep(info),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),

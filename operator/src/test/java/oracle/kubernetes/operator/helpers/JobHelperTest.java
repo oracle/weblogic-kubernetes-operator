@@ -44,6 +44,7 @@ import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -764,7 +765,7 @@ class JobHelperTest extends DomainValidationTestBase {
     int failureCount = 2;
     long expectedActiveDeadlineSeconds =
           INTROSPECTOR_JOB_ACTIVE_DEADLINE
-                + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
+                + (failureCount * TuningParameters.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
 
     final DomainStatus status = new DomainStatus();
     for (int i = 0; i < failureCount; i++) {

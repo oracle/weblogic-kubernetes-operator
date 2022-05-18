@@ -7,11 +7,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.utils.SystemClock;
 
@@ -23,7 +21,9 @@ import oracle.kubernetes.utils.SystemClock;
  */
 public class FiberGate {
   private final Engine engine;
-  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<>();
+
+  /** A map of domain UIDs to the fiber charged with running processing on that domain. **/
+  private final Map<String, Fiber> gateMap = new ConcurrentHashMap<>();
 
   private final Fiber placeholder;
 
@@ -50,86 +50,99 @@ public class FiberGate {
   }
 
   /**
-   * Starts Fiber that cancels any earlier running Fibers with the same key. Fiber map is not
+   * Starts Fiber that cancels any earlier running Fibers with the same domain UID. Fiber map is not
    * updated if no Fiber is started.
    *
-   * @param key Key
+   * @param domainUid the UID for which a fiber should be started
    * @param strategy Step for Fiber to begin with
    * @param packet Packet
    * @param callback Completion callback
-   * @return started Fiber
    */
-  @SuppressWarnings("UnusedReturnValue")
-  public Fiber startFiber(String key, Step strategy, Packet packet, CompletionCallback callback) {
-    return startFiberIfLastFiberMatches(key, null, strategy, packet, callback);
+  public void startFiber(String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
+    requestNewFiberStart(domainUid, null, strategy, packet, callback);
   }
 
   /**
    * Starts Fiber only if there is no running Fiber with the same key. Fiber map is not updated if
    * no Fiber is started.
    *
-   * @param key Key
+   * @param domainUid the UID for which a fiber should be started
    * @param strategy Step for Fiber to begin with
    * @param packet Packet
    * @param callback Completion callback
-   * @return started Fiber
    */
-  @SuppressWarnings("UnusedReturnValue")
-  public Fiber startFiberIfNoCurrentFiber(
-      String key, Step strategy, Packet packet, CompletionCallback callback) {
-    return startFiberIfLastFiberMatches(key, placeholder, strategy, packet, callback);
+  public void startFiberIfNoCurrentFiber(
+      String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
+    requestNewFiberStart(domainUid, placeholder, strategy, packet, callback);
+  }
+
+  /**
+   * Starts a new fiber only if the current running fiber is associated with the specified domain UID.
+   * @param domainUid  the UID for which a fiber should be started
+   * @param strategy Step for Fiber to begin with
+   * @param packet Packet
+   * @param callback Completion callback
+   */
+  public void startNewFiberIfCurrentFiberMatches(
+      String domainUid, Step strategy, Packet packet, CompletionCallback callback) {
+    requestNewFiberStart(domainUid, Fiber.getCurrentIfSet(), strategy, packet, callback);
   }
 
   /**
    * Starts Fiber only if the last started Fiber matches the given old Fiber.
    *
-   * @param key Key
+   * @param domainUid the UID for which a fiber should be started
    * @param old Expected last Fiber
    * @param strategy Step for Fiber to begin with
    * @param packet Packet
    * @param callback Completion callback
-   * @return started Fiber, or null, if no Fiber started
    */
-  public synchronized Fiber startFiberIfLastFiberMatches(
-      String key, Fiber old, Step strategy, Packet packet, CompletionCallback callback) {
-    Fiber f = engine.createFiber();
-    WaitForOldFiberStep wfofs;
-    if (old != null) {
-      if (old == placeholder) {
-        if (gateMap.putIfAbsent(key, f) != null) {
-          return null;
-        }
-      } else if (!gateMap.replace(key, old, f)) {
-        return null;
-      }
-    } else {
-      old = gateMap.put(key, f);
-    }
-    wfofs = new WaitForOldFiberStep(old, strategy);
-    f.getComponents().put(ProcessingConstants.FIBER_COMPONENT_NAME, Component.createFor(wfofs));
-    f.start(
-        wfofs,
-        packet,
-        new CompletionCallback() {
-          @Override
-          public void onCompletion(Packet packet) {
-            try {
-              callback.onCompletion(packet);
-            } finally {
-              gateMap.remove(key, f);
-            }
-          }
+  private synchronized void requestNewFiberStart(
+      String domainUid, Fiber old, Step strategy, Packet packet, CompletionCallback callback) {
+    new FiberRequest(domainUid, old, strategy, packet, callback).invoke();
+  }
 
-          @Override
-          public void onThrowable(Packet packet, Throwable throwable) {
-            try {
-              callback.onThrowable(packet, throwable);
-            } finally {
-              gateMap.remove(key, f);
-            }
-          }
-        });
-    return f;
+  enum RequestType {
+    FORCE,
+    IF_NONE,
+    IF_MATCHES
+  }
+
+  private class FiberRequest {
+
+    private final String domainUid;
+    private final Fiber fiber;
+    private final CompletionCallback gateCallback;
+    private Fiber old;
+    private final Step steps;
+    private final Packet packet;
+
+    FiberRequest(String domainUid, Fiber old, Step steps, Packet packet, CompletionCallback callback) {
+      this.domainUid = domainUid;
+      this.old = old;
+      this.steps = steps;
+      this.packet = packet;
+
+      fiber = engine.createFiber();
+      gateCallback = new FiberGateCompletionCallback(callback, domainUid, fiber);
+    }
+
+    void invoke() {
+      if (isAllowed()) {
+        fiber.start(new WaitForOldFiberStep(old, steps), packet, gateCallback);
+      }
+    }
+
+    private boolean isAllowed() {
+      if (old == null) {
+        old = gateMap.put(domainUid, fiber);
+        return true;
+      } else if (old == placeholder) {
+        return gateMap.putIfAbsent(domainUid, fiber) == null;
+      } else {
+        return gateMap.replace(domainUid, old, fiber);
+      }
+    }
   }
 
   private static class WaitForOldFiberStep extends Step {
@@ -170,6 +183,37 @@ public class FiberGate {
 
     private String getProceedTime() {
       return "starting fiber at " + SystemClock.now().format(DateTimeFormatter.ISO_LOCAL_TIME);
+    }
+  }
+
+  private class FiberGateCompletionCallback implements CompletionCallback {
+
+    private final CompletionCallback callback;
+    private final String domainUid;
+    private final Fiber fiber;
+
+    public FiberGateCompletionCallback(CompletionCallback callback, String domainUid, Fiber fiber) {
+      this.callback = callback;
+      this.domainUid = domainUid;
+      this.fiber = fiber;
+    }
+
+    @Override
+    public void onCompletion(Packet packet) {
+      try {
+        callback.onCompletion(packet);
+      } finally {
+        gateMap.remove(domainUid, fiber);
+      }
+    }
+
+    @Override
+    public void onThrowable(Packet packet, Throwable throwable) {
+      try {
+        callback.onThrowable(packet, throwable);
+      } finally {
+        gateMap.remove(domainUid, fiber);
+      }
     }
   }
 }
