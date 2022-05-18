@@ -1,7 +1,7 @@
 ---
 title: "Istio support"
 date: 2019-08-15T13:30:04-04:00
-weight: 8
+weight: 6
 description: "Run the operator and WebLogic domains managed by the operator when Istio sidecar injection is enabled."
 ---
 

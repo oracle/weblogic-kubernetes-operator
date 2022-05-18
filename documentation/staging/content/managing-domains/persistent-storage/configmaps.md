@@ -1,11 +1,10 @@
 ---
-title: "Providing access to a ConfigMap"
+title: "Provide access to a ConfigMap"
 date: 2020-01-07T15:02:28-05:00
 draft: false
-weight: 10
-description: "I need to provide an instance with access to a ConfigMap."
+weight: 4
+description: "Provide an instance with access to a ConfigMap."
 ---
-> I need to provide an instance with access to a ConfigMap.
 
 Configuration files can be supplied to Kubernetes Pods and Jobs by a
 [ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#create-a-configmap),

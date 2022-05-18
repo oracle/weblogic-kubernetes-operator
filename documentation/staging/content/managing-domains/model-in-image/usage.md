@@ -96,7 +96,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
 
   - __Use a Persistent Volume Claim (PVC)__:
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
-    in a [Persistent Volume Claim]({{< relref "/faq/volumes.md" >}})
+    in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
     and modify `configuration.model.modelHome` and `configuration.model.wdtInstallHome` to
     the corresponding directory within the PVC's mount location.
 

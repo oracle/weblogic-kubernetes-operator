@@ -1,7 +1,7 @@
 +++
 title = "Domain events"
 date = 2020-11-30T16:43:45-05:00
-weight = 12
+weight = 8
 description = "Monitor domain resources using operator-generated events about resources that it manages."
 +++
 

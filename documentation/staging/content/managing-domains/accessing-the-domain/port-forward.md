@@ -2,7 +2,7 @@
 title: "Use port forwarding"
 date: 2019-02-23T17:39:15-05:00
 draft: false
-weight: 4
+weight: 3
 description: "Use port forwarding to access WebLogic Server Administration Consoles and WLST."
 ---
 

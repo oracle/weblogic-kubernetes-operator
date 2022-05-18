@@ -2,7 +2,7 @@
 title: "External WebLogic clients"
 date: 2019-11-21T21:23:03Z
 draft: false
-weight: 11
+weight: 7
 description: "Give WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes."
 ---
 
