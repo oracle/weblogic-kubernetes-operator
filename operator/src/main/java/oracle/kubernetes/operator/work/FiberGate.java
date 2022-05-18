@@ -102,12 +102,6 @@ public class FiberGate {
     new FiberRequest(domainUid, old, strategy, packet, callback).invoke();
   }
 
-  enum RequestType {
-    FORCE,
-    IF_NONE,
-    IF_MATCHES
-  }
-
   private class FiberRequest {
 
     private final String domainUid;
