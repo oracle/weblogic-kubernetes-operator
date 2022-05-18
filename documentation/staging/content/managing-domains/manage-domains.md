@@ -16,6 +16,7 @@ description: "Important considerations for managing WebLogic domains in Kubernet
 * [Scaling clusters](#scaling-clusters)
 * [About domain events](#about-domain-events)
 * [Monitoring a domain](#monitoring-a-domain)
+* [Logging](#logging)
 
 #### Important considerations for WebLogic domains in Kubernetes
 
@@ -154,6 +155,13 @@ The operator lets you initiate scaling of clusters in various ways:
 The operator generates Kubernetes events at key points during domain processing.
 For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 
-### Monitoring a domain
+### Accessing and monitoring domains
 
-The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, [Use the Monitoring Exporter with WebLogic Kubernetes Operator](https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator).
+To access the domain using WLST, console, T3, or a load balancer,  or to export Prometheus-compatible metrics,
+see [Access and monitor domains]({{< relref "/managing-domains/accessing-the-domain/" >}}).
+
+### Logging
+
+To tune log file location and rotation, see [Log Files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
+
+To export operator or domain log files, see the [Elastic Stack]({{< relref "/samples/elastic-stack/" >}}) examples.
