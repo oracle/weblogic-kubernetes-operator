@@ -227,6 +227,14 @@ public class LoggingUtil {
       logger.warning(ex.getMessage());
     }
 
+    // get validatingwebhookconfigurations
+    try {
+      writeToFile(Kubernetes.listValidatingWebhookConfiguration(), resultDir,
+          "list.validating-webhook-configurations.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
     // get domain objects in the given namespace
     try {
       writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");

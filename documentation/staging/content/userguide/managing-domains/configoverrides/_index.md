@@ -103,7 +103,7 @@ See [overrides distribution](#overrides-distribution) for a description of distr
 **IMPORTANT: The operator does not support customer-provided overrides in the following areas.**
 
 * Domain topology (cluster members)
-* Network channel listen address, port, and enabled configuration
+* Network channel `listen address`, `port`, and `enabled` fields
 * Server and domain log locations
 * Default or custom file store directories when `domain.spec.dataHome` is set
 * Node Manager related configuration
@@ -134,7 +134,7 @@ The behavior when using an unsupported override is undefined.
 
 The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection/_index.md#distributing-changes-to-configuration-overrides" >}}) and applied to already running WebLogic Server instances.
 
-For [Domain in PV]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
+For [Domain in PV]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members. However, for most Domain in PV use cases, we recommend using traditional methods to make domain changes rather than introducing configuration overrides.
 
 ---
 ### Override template names and syntax

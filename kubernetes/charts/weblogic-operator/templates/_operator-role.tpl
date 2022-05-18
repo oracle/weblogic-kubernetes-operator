@@ -14,4 +14,7 @@ rules:
 - apiGroups: [""]
   resources: ["events", "secrets", "configmaps"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations"]
+  verbs: ["get", "create", "update", "patch"]
 {{- end }}

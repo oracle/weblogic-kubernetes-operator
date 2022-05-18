@@ -15,8 +15,8 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import oracle.kubernetes.operator.ConversionWebhookMain;
-import oracle.kubernetes.operator.ConversionWebhookMainTest;
+import oracle.kubernetes.operator.WebhookMain;
+import oracle.kubernetes.operator.WebhookMainTest;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -46,10 +46,10 @@ class InitializeWebhookIdentityStepTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
-  private final ConversionWebhookMainTest.ConversionWebhookMainDelegateStub delegate =
-      createStrictStub(ConversionWebhookMainTest.ConversionWebhookMainDelegateStub.class, testSupport);
+  private final WebhookMainTest.WebhookMainDelegateStub delegate =
+      createStrictStub(WebhookMainTest.WebhookMainDelegateStub.class, testSupport);
   private final Step initializeWebhookIdentityStep = new InitializeWebhookIdentityStep(delegate,
-      new ConversionWebhookMain.CheckFailureAndCreateEventStep());
+      new WebhookMain.CheckFailureAndCreateEventStep());
 
   public static final String NS = "namespace";
   private static InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();

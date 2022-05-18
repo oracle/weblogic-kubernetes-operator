@@ -315,12 +315,16 @@ public class ItMiiSampleHelper {
   public void callCheckMiiSampleSource(String args,
                                               String errString) {
     final String baseImageNameKey = "BASE_IMAGE_NAME";
+    final String baseImageTagKey = "BASE_IMAGE_TAG";
     final String origImageName = envMap.get(baseImageNameKey);
+    final String origImageTag = envMap.get(baseImageTagKey);
     try {
       envMap.remove(baseImageNameKey);
+      envMap.remove(baseImageTagKey);
       execTestScriptAndAssertSuccess(domainType, args, errString);
     } finally {
       envMap.put(baseImageNameKey,origImageName);
+      envMap.put(baseImageTagKey,origImageTag);
     }
   }
 
