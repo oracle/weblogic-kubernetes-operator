@@ -587,10 +587,13 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    logger.info("docker login to registry {0}", TEST_IMAGES_REPO_REGISTRY);
-    assertTrue(dockerLogin(TEST_IMAGES_REPO_REGISTRY, 
-          TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD), 
-          "docker login failed");
+    // in case TEST_IMAGES_REPO is not defined 
+    if (TEST_IMAGES_REPO_REGISTRY != null) {
+      logger.info("docker login to registry {0}", TEST_IMAGES_REPO_REGISTRY);
+      assertTrue(dockerLogin(TEST_IMAGES_REPO_REGISTRY,
+             TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD),
+            "docker login failed");
+    }
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry", image);
