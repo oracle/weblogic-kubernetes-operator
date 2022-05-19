@@ -181,6 +181,8 @@ public class MessageKeys {
   public static final String VALIDATION_FAILED = "WLSKO-0230";
   public static final String MATCHING_CLUSTER_NOT_FOUND = "WLSKO-0231";
   public static final String NULL_CLUSTER_NAME = "WLSKO-0232";
+  public static final String WATCH_CLUSTER = "WLSKO-0233";
+  public static final String WATCH_CLUSTER_DELETED = "WLSKO-0234";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

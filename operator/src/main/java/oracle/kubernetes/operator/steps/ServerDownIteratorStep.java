@@ -21,7 +21,6 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class ServerDownIteratorStep extends Step {
   private final Collection<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos;
@@ -38,7 +37,7 @@ public class ServerDownIteratorStep extends Step {
     return serverNames;
   }
 
-  Collection<DomainPresenceInfo.ServerShutdownInfo> getServerShutdownInfos() {
+  private Collection<DomainPresenceInfo.ServerShutdownInfo> getServerShutdownInfos() {
     return serverShutdownInfos;
   }
 
@@ -107,7 +106,6 @@ public class ServerDownIteratorStep extends Step {
   private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(
           Collection<DomainPresenceInfo.ServerShutdownInfo> shutdownInfos, Packet packet) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    Domain domain = info.getDomain();
 
     Map<String, ShutdownClusteredServersStepFactory> factories = new HashMap<>();
     shutdownInfos.stream()

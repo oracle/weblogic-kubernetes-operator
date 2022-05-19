@@ -11,7 +11,7 @@ import io.kubernetes.client.openapi.ApiException;
 public interface ClusterCustomResourceHelper {
   void createClusterResource(Map<String, Object> clusterSpec, Map<String, Object> domain) throws ApiException;
 
-  Map<String, Object> getDeployedClusterResources(String namespace, String domainUid);
+  Map<String, Object> listClusterResources(String namespace, String domainUid);
 
-  List<String> getNamesOfDeployedClusterResources(String namespace, String domainUid);
+  List<String> namesOfClusterResources(String namespace, String domainUid);
 }

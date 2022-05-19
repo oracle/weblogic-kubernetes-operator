@@ -44,7 +44,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
       + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.")
+      + "running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 0.")
   @Range(minimum = 0)
   private Integer replicas;
 

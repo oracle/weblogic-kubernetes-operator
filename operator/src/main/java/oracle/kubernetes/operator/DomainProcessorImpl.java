@@ -641,63 +641,31 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   public void dispatchClusterWatch(Watch.Response<Cluster> item) {
     switch (item.type) {
-      case "ADDED":
+      case ADDED:
         handleAddedCluster(item.object);
         break;
-      case "MODIFIED":
+      case MODIFIED:
         handleModifiedCluster(item.object);
         break;
-      case "DELETED":
+      case DELETED:
         handleDeletedCluster(item.object);
         break;
 
-      case "ERROR":
+      case ERROR:
       default:
     }
   }
 
   private void handleAddedCluster(Cluster cluster) {
-    System.out.println("DomainProcessorImp.handleAddedCluster cluster: " + cluster);
-    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    System.out.println("DomainProcessorImp.handleAddedCluster cachedInfo: " + cachedInfo);
-    if (cachedInfo == null) {
-      return;
-    }
-
-    //LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    //createMakeRightOperation(cluster)
-    //    .interrupt()
-    //    .withExplicitRecheck()
-    //    .withEventData(EventItem.CLUSTER_CREATED, null, cluster)
-    //    .execute();
+    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName());
   }
 
   private void handleModifiedCluster(Cluster cluster) {
-    System.out.println("DomainProcessorImp.handleModifiedCluster cluster: " + cluster);
-    DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    System.out.println("DomainProcessorImp.handleModifiedCluster cachedInfo: " + cachedInfo);
-    if (cachedInfo == null) {
-      return;
-    }
-
-    //LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    //createMakeRightOperation(cluster)
-    //    .interrupt()
-    //    .withExplicitRecheck()
-    //    .withEventData(EventItem.CLUSTER_CHANGED, null, cluster)
-    //    .execute();
+    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName());
   }
 
   private void handleDeletedCluster(Cluster cluster) {
-    System.out.println("DomainProcessorImp.handleDeletedCluster cluster: " + cluster);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    System.out.println("DomainProcessorImp.handleDeletedCluster info: " + info);
-    //Domain domain = info.getDomain();
-    //domain.removeCluster(cluster.getClusterName());
-    //LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    //createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
-    //    .withEventData(EventItem.CLUSTER_DELETED, null, cluster.getClusterName())
-    //    .execute();
+    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName());
   }
 
 

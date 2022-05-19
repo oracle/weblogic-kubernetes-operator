@@ -2389,13 +2389,9 @@ public class CallBuilder {
    * Create a Cluster Custom Resource.
    *
    * @param cluster Cluster custom resource model object
-   * @param cluVersion custom resource's version
    * @throws ApiException if Kubernetes client API call fails
    */
-  public void createClusterCustomResource(Cluster cluster, String... cluVersion) throws ApiException {
-    //public Cluster createClusterCustomResource(Cluster cluster, String... cluVersion) throws ApiException {
-    //String clusterVersion = (cluVersion.length == 0) ? KubernetesConstants.CLUSTER_VERSION : cluVersion[0];
-
+  public void createClusterCustomResource(Cluster cluster) throws ApiException {
     if (cluster == null) {
       throw new IllegalArgumentException(
           "Parameter 'cluster' cannot be null when calling createClusterCustomResource()");
@@ -2415,12 +2411,8 @@ public class CallBuilder {
 
     JsonElement json = convertToJson(cluster);
 
-    try {
-      RequestParams requestParams = new RequestParams("createCluster", namespace, null, json, callParams);
-      executeSynchronousCall(requestParams, createClusterCall);
-    } catch (ApiException apex) {
-      throw apex;
-    }
+    RequestParams requestParams = new RequestParams("createCluster", namespace, null, json, callParams);
+    executeSynchronousCall(requestParams, createClusterCall);
   }
 
   /**
@@ -2488,7 +2480,6 @@ public class CallBuilder {
       return handleResponse(cluster, Cluster.class);
     }
 
-    System.out.println("Cluster Custom Resource '" + clusterName + "' not found in namespace " + namespace);
     return null;
   }
 

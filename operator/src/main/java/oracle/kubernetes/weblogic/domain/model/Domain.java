@@ -645,19 +645,6 @@ public class Domain implements KubernetesObject {
     return emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
-  //public boolean isShuttingDown() {
-  //  return getEffectiveConfigurationFactory().isShuttingDown();
-  //}
-
-  ///**
-  // * Return the names of the exported admin NAPs.
-  // *
-  // * @return a list of names; may be empty
-  // */
-  //List<String> getAdminServerChannelNames() {
-  //  return getEffectiveConfigurationFactory().getAdminServerChannelNames();
-  //}
-
   /**
    * Returns the name of the Kubernetes config map that contains optional configuration overrides.
    *
@@ -769,14 +756,14 @@ public class Domain implements KubernetesObject {
   /**
    * Returns true if the operator should retry a failed make-right on this domain.
    */
-  public boolean shouldRetry() {
+  boolean shouldRetry() {
     return getNextRetryTime() != null;
   }
 
   /**
    * Return the next time a retry should be done.
    */
-  public OffsetDateTime getNextRetryTime() {
+  OffsetDateTime getNextRetryTime() {
     return Optional.ofNullable(getStatus())
           .map(DomainStatus::getLastFailureTime)
           .map(this::addRetryInterval)

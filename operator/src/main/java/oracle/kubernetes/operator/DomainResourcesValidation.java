@@ -45,6 +45,10 @@ class DomainResourcesValidation {
 
   NamespacedResources.Processors getProcessors() {
     return new NamespacedResources.Processors() {
+      private void accept(ClusterList l) {
+        addClusterList(l);
+      }
+
       @Override
       Consumer<V1PodList> getPodListProcessing() {
         return DomainResourcesValidation.this::addPodList;
@@ -72,7 +76,7 @@ class DomainResourcesValidation {
 
       @Override
       Consumer<ClusterList> getClusterListProcessing() {
-        return l -> addClusterList(l);
+        return DomainResourcesValidation.this::addClusterList;
       }
 
       @Override

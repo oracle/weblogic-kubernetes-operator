@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,9 +49,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import org.apache.commons.codec.binary.Base64;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -63,11 +61,9 @@ import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createC
 /** Helper class to ensure Cluster CRD is created. */
 public class ClusterCrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String SCHEMA_LOCATION = "/schema";
   private static final String NO_ERROR = "NO_ERROR";
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
-  private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
   public static final String VERSION_V1 = "v1";
   public static final String WEBHOOK_PATH = "/webhook";
 
@@ -224,27 +220,6 @@ public class ClusterCrdHelper {
                       .caBundle(caBundle)));
     }
 
-    static String getVersionFromCrdSchemaFileName(String name) {
-      // names will be like "cluster-crd-schemav2-201.yaml"
-      // want "v2"
-      String end = name.substring(17);
-      return end.substring(0, end.indexOf('-'));
-    }
-
-    static V1CustomResourceValidation getValidationFromCrdSchemaFile(String fileContents) {
-      Map<String, Object> data = getSnakeYaml(null).load(new StringReader(fileContents));
-      final Gson gson = new Gson();
-      return gson.fromJson(gson.toJsonTree(data), V1CustomResourceValidation.class);
-    }
-
-    private static org.yaml.snakeyaml.Yaml getSnakeYaml(Class<?> type) {
-      LoaderOptions loaderOptions = new LoaderOptions();
-      loaderOptions.setEnumCaseSensitive(false);
-      return type != null ? new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(type, loaderOptions),
-          new Yaml.CustomRepresenter()) :
-          new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
-    }
-
     static V1CustomResourceSubresources createSubresources() {
       return new V1CustomResourceSubresources()
           .status(new HashMap<String, String>()) // this just needs an empty object to enable status subresource
@@ -255,17 +230,6 @@ public class ClusterCrdHelper {
     }
 
     static List<V1CustomResourceDefinitionVersion> getCrdVersions() {
-      //Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
-      //List<V1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
-      //    .sorted(Map.Entry.comparingByKey())
-      //    .map(entry -> new V1CustomResourceDefinitionVersion()
-      //        .name(getVersionFromCrdSchemaFileName(entry.getKey()))
-      //        .schema(getValidationFromCrdSchemaFile(entry.getValue()))
-      //        .subresources(createSubresources())
-      //        .served(true)
-      //        .storage(false))
-      //    .collect(Collectors.toList());
-
       List<V1CustomResourceDefinitionVersion> versions = new ArrayList<>();
 
       versions.add(
@@ -296,14 +260,14 @@ public class ClusterCrdHelper {
       JsonElement jsonElementSpec =
           gson.toJsonTree(createCrdSchemaGenerator().generate(ClusterSpec.class));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
-      //JsonElement jsonElementStatus =
-      //    gson.toJsonTree(createCrdSchemaGenerator().generate(DomainStatus.class));
-      //V1JSONSchemaProps status =
-      //    gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
+      JsonElement jsonElementStatus =
+          gson.toJsonTree(createCrdSchemaGenerator().generate(ClusterStatus.class));
+      V1JSONSchemaProps status =
+          gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
       return new V1JSONSchemaProps()
           .type("object")
-          .putPropertiesItem("spec", spec);
-      //.putPropertiesItem("status", status);
+          .putPropertiesItem("spec", spec)
+      .putPropertiesItem("status", status);
     }
 
     Step verifyCrd(Step next) {
@@ -326,8 +290,8 @@ public class ClusterCrdHelper {
 
     Step updateExistingCrd(Step next, V1CustomResourceDefinition existingCrd) {
       List<V1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
-      for (V1CustomResourceDefinitionVersion version : versions) {
-        version.setStorage(false);
+      for (V1CustomResourceDefinitionVersion ver : versions) {
+        ver.setStorage(false);
       }
       versions.add(0,
           new V1CustomResourceDefinitionVersion()

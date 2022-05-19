@@ -47,7 +47,7 @@ class SchemaConversionUtilsTest {
   private Map<String, Object> v8Domain;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(CommonTestUtils.silenceLogger());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
     
@@ -66,7 +66,7 @@ class SchemaConversionUtilsTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
   }
 
@@ -136,7 +136,8 @@ class SchemaConversionUtilsTest {
 
   @Test
   void testV8toV9ConversionWithClusterCustomResource() throws IOException, ApiException {
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(
+        new ClusterCustomResourceHelperStub(true));
 
     Map<String, Object> domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
     schemaConversionUtils.convertV8toV9(new ClusterCustomResourceHelperStub(true), domain);
@@ -151,7 +152,8 @@ class SchemaConversionUtilsTest {
 
   @Test
   void testV9toV8ConversionWithClusterCustomResource() throws IOException, ApiException {
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(
+        new ClusterCustomResourceHelperStub(false));
 
     Map<String, Object> domain = readAsYaml("sample-domain1-v9.yaml");
     schemaConversionUtils.convertV9toV8(new ClusterCustomResourceHelperStub(false), domain);
@@ -166,8 +168,9 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  public void getClusterResourceReferences_initializedAsEmpty_whenNotDefined() throws IOException {
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+  void getClusterResourceReferences_initializedAsEmpty_whenNotDefined() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(
+        new ClusterCustomResourceHelperStub(true));
 
     Map<String, Object> domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
@@ -178,8 +181,9 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  public void getClusterResourceReferences_exists_whenDefined() throws IOException {
-    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils();
+  void getClusterResourceReferences_exists_whenDefined() throws IOException {
+    SchemaConversionUtils schemaConversionUtils = new SchemaConversionUtils(
+        new ClusterCustomResourceHelperStub(false));
 
     Map<String, Object> domain = readAsYaml("sample-domain1-v9.yaml");
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
@@ -191,7 +195,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  public void getOrCreateClusterSpec_whenNotDefined() throws IOException {
+  void getOrCreateClusterSpec_whenNotDefined() throws IOException {
     Map<String, Object> domain = readAsYaml("sample-domain1-v9.yaml");
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
     List<Object> clusterSpecs = SchemaConversionUtils.getOrCreateClusterSpecs(domainSpec);
@@ -201,7 +205,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  public void getOrCreateClusterSpec_whenDefined() throws IOException {
+  void getOrCreateClusterSpec_whenDefined() throws IOException {
     Map<String, Object> domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
     Map<String, Object> domainSpec = (Map<String, Object>) domain.get("spec");
     List<Object> clusterSpecs = SchemaConversionUtils.getOrCreateClusterSpecs(domainSpec);
@@ -308,18 +312,17 @@ class SchemaConversionUtilsTest {
   private static class ClusterCustomResourceHelperStub implements ClusterCustomResourceHelper {
     private boolean convertV8toV9;
 
-    public ClusterCustomResourceHelperStub(boolean convertV8toV9) {
+    ClusterCustomResourceHelperStub(boolean convertV8toV9) {
       this.convertV8toV9 = convertV8toV9;
     }
 
     @Override
-    public void createClusterResource(Map<String, Object> clusterSpec, Map<String, Object> domain)
-        throws ApiException {
+    public void createClusterResource(Map<String, Object> clusterSpec, Map<String, Object> domain) {
 
     }
 
     @Override
-    public Map<String, Object> getDeployedClusterResources(String namespace, String domainUid) {
+    public Map<String, Object> listClusterResources(String namespace, String domainUid) {
       Map<String, Object> clusterResources = new LinkedTreeMap<>();
       Map<String, Object> clusterResource = new LinkedTreeMap<>();
       clusterResource.put("apiVersion", "weblogic.oracle/v9");
@@ -438,7 +441,7 @@ class SchemaConversionUtilsTest {
     }
 
     @Override
-    public List<String> getNamesOfDeployedClusterResources(String namespace, String domainUid) {
+    public List<String> namesOfClusterResources(String namespace, String domainUid) {
       if (convertV8toV9) {
         return Collections.emptyList();
       }

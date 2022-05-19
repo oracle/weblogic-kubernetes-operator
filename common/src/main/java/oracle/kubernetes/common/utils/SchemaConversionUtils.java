@@ -58,12 +58,19 @@ public class SchemaConversionUtils {
   private final AtomicInteger containerIndex = new AtomicInteger(0);
   private final String targetAPIVersion;
 
-  public SchemaConversionUtils(String targetAPIVersion) {
-    this.targetAPIVersion = targetAPIVersion;
-  }
+  private ClusterCustomResourceHelper clusterCustomResourceHelper;
 
   public SchemaConversionUtils() {
-    this(API_VERSION_V9);
+    this(null);
+  }
+
+  public SchemaConversionUtils(String targetAPIVersion, ClusterCustomResourceHelper clusterCustomResourceHelper) {
+    this.targetAPIVersion = targetAPIVersion;
+    this.clusterCustomResourceHelper = clusterCustomResourceHelper;
+  }
+
+  public SchemaConversionUtils(ClusterCustomResourceHelper clusterCustomResourceHelper) {
+    this(API_VERSION_V9, clusterCustomResourceHelper);
   }
 
   public static SchemaConversionUtils create() {
@@ -76,16 +83,6 @@ public class SchemaConversionUtils {
    * @return Domain The converted domain.
    */
   public Map<String, Object> convertDomainSchema(Map<String, Object> domain) {
-    return convertDomainSchema(null, domain);
-  }
-
-  /**
-   * Convert the domain schema to desired API version.
-   * @param domain Domain to be converted.
-   * @return Domain The converted domain.
-   */
-  public Map<String, Object> convertDomainSchema(ClusterCustomResourceHelper clusterCustomResourceHelper,
-      Map<String, Object> domain) {
     Map<String, Object> spec = getSpec(domain);
     if (spec == null) {
       return domain;
@@ -98,7 +95,7 @@ public class SchemaConversionUtils {
     removeObsoleteConditionsFromDomainStatus(domain);
     removeUnsupportedDomainStatusConditionReasons(domain);
     convertDomainHomeInImageToDomainHomeSourceType(domain);
-    convertClustersToResources(clusterCustomResourceHelper, domain, targetAPIVersion);
+    convertClustersToResources(domain, targetAPIVersion);
     moveConfigOverrides(domain);
     moveConfigOverrideSecrets(domain);
     domain.put("apiVersion", targetAPIVersion);
@@ -120,8 +117,7 @@ public class SchemaConversionUtils {
     return yaml.dump(convertDomainSchema((Map<String, Object>) domain));
   }
 
-  private void convertClustersToResources(ClusterCustomResourceHelper clusterCustomResourceHelper,
-      Map<String, Object> domain, String desiredAPIVersion) {
+  private void convertClustersToResources(Map<String, Object> domain, String desiredAPIVersion) {
     try {
       if (clusterCustomResourceHelper != null) {
         String apiVersion = (String)domain.get("apiVersion");
@@ -144,7 +140,7 @@ public class SchemaConversionUtils {
     List<Object> clusterSpecs = getOrCreateClusterSpecs(domainSpec);
     if (!clusterSpecs.isEmpty()) {
       List<String> clusterResources = clusterCustomResourceHelper
-          .getNamesOfDeployedClusterResources(getNamespace(domain), getDomainUid(domain));
+          .namesOfClusterResources(getNamespace(domain), getDomainUid(domain));
       Iterator<Object> itr = clusterSpecs.iterator();
       while (itr.hasNext()) {
         Map<String, Object> clusterSpec = (Map<String, Object>) itr.next();
@@ -164,17 +160,11 @@ public class SchemaConversionUtils {
   }
 
   private void addClusterResourceReference(Map<String, Object> domainSpec, String clusterName) {
-    Optional.ofNullable(getClusterResourceReferences(domainSpec)).map(c -> c.add(clusterName));
+    Optional.ofNullable(getClusterResourceReferences(domainSpec)).ifPresent(lst -> lst.add(clusterName));
   }
 
   protected List<String> getClusterResourceReferences(Map<String, Object> domainSpec) {
-    List<String> clusterResourceReferences =
-        (List<String>) domainSpec.get(CLUSTER_RESOURCE_REFERENCES);
-    if (clusterResourceReferences == null) {
-      clusterResourceReferences = new ArrayList<>();
-      domainSpec.put(CLUSTER_RESOURCE_REFERENCES, clusterResourceReferences);
-    }
-    return clusterResourceReferences;
+    return (List<String>) domainSpec.computeIfAbsent(CLUSTER_RESOURCE_REFERENCES, c -> new ArrayList<String>());
   }
 
   protected void convertV9toV8(ClusterCustomResourceHelper clusterCustomResourceHelper, Map<String, Object> domain) {
@@ -184,7 +174,7 @@ public class SchemaConversionUtils {
         (List<String>) domainSpec.get(CLUSTER_RESOURCE_REFERENCES);
     if (clusterResourceReferences != null && !clusterResourceReferences.isEmpty()) {
       Map<String, Object> clusterResources = clusterCustomResourceHelper
-          .getDeployedClusterResources(namespace, getDomainUid(domain));
+          .listClusterResources(namespace, getDomainUid(domain));
       if (!clusterResources.isEmpty()) {
         List<Object> clusterSpecs = getOrCreateClusterSpecs(domainSpec);
         Iterator<String> itr = clusterResourceReferences.iterator();

@@ -416,13 +416,13 @@ public class DomainSpec extends BaseConfiguration {
   protected final List<ClusterSpec> clusters = new ArrayList<>();
 
   /**
-   * The list of names of cluster custom resources the operator should reference for cluster
+   * The list of names of cluster resources the operator should reference for cluster
    * configuration elements.
    *
    * @since 4.0
    */
-  @Description("List of names of Cluster Custom Resources the Operator expects to be deployed in the "
-      + "same namespace that the domain is deployed.  A reference to a cluster custom resource "
+  @Description("List of names of Cluster Resources the Operator expects to be deployed in the "
+      + "same namespace that the domain is deployed.  A reference to a cluster resource "
       + " in order for the cluster elements to be applied.")
   @SerializedName("cluster-resource-references")
   protected final List<String> clusterResourceReferences = new ArrayList<>();

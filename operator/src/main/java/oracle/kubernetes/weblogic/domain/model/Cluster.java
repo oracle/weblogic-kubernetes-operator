@@ -217,7 +217,6 @@ public class Cluster implements Comparable<Cluster>, KubernetesObject {
       return;
     }
     spec.fillInFrom(other);
-    //clusterService.fillInFrom(other.clusterService);
   }
 
   @Override
@@ -389,7 +388,7 @@ public class Cluster implements Comparable<Cluster>, KubernetesObject {
   public Cluster withDomainUid(String name) {
     Optional.ofNullable(metadata)
         .map(V1ObjectMeta::getLabels)
-        .map(labels -> labels.put(DOMAINUID_LABEL, name));
+        .ifPresent(labels -> labels.put(DOMAINUID_LABEL, name));
     return this;
   }
 

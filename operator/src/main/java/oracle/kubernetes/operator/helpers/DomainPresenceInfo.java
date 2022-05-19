@@ -678,15 +678,8 @@ public class DomainPresenceInfo implements PacketComponent {
    * @return the effective configuration for the server
    */
   public ServerSpec getServer(String serverName, String clusterName) {
-    //return Optional.ofNullable(clusterName).map(this::getClusterResource)
-    //    .map(c -> getServer(serverName, c)).orElse(getServerSpec(serverName, clusterName));
     return getServerSpec(serverName, clusterName);
   }
-
-  //private ServerSpec getServer(String serverName, Cluster cluster) {
-  //  return getServerSpec(getDomain().getManagedServer(serverName), cluster.getSpec(),
-  //      getReplicaCountFor(cluster.getSpec()));
-  //}
 
   private static OffsetDateTime getCreationTimestamp(KubernetesObject ko) {
     return Optional.ofNullable(ko)

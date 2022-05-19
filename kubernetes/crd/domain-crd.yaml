@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 017aa53359cb1c45254a030bab300a36b45b28fe261ae0a42e6341eaf1ded90d
+    weblogic.sha256: 35a61e2f9f921d1f6978cc18c6dff812951d7ec9ab8053a7c4a1b4ca30f8c3da
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3628,7 +3628,7 @@ spec:
                         started. If cluster members are started because of their related
                         entries under `managedServers`, then this cluster may have
                         more cluster members running than its `replicas` count. Defaults
-                        to `spec.replicas`, which defaults 0.
+                        to `domain.spec.replicas`, which defaults 0.
                       type: number
                       minimum: 0.0
                     clusterName:
@@ -6694,10 +6694,10 @@ spec:
                   storage directories are determined from the WebLogic domain configuration.
                 type: string
               cluster-resource-references:
-                description: List of names of Cluster Custom Resources the Operator
-                  expects to be deployed in the same namespace that the domain is
-                  deployed.  A reference to a cluster custom resource  in order for
-                  the cluster elements to be applied.
+                description: List of names of Cluster Resources the Operator expects
+                  to be deployed in the same namespace that the domain is deployed.  A
+                  reference to a cluster resource  in order for the cluster elements
+                  to be applied.
                 items:
                   type: string
                 type: array
