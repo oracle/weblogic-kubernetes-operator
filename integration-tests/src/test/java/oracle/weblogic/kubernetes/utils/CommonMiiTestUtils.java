@@ -685,6 +685,7 @@ public class CommonMiiTestUtils {
       securityList.add(dbSecretName);
     }
 
+    String uniquePath = "/shared/" + domNamespace + "/" + domainResourceName;
     DomainSpec domainSpec = new DomainSpec()
         .domainUid(domainResourceName)
         .domainHomeSourceType("FromModel")
@@ -697,7 +698,7 @@ public class CommonMiiTestUtils {
             .namespace(domNamespace))
         .includeServerOutInPodLog(true)
         .logHomeEnabled(Boolean.TRUE)
-        .logHome("/shared/logs")
+        .logHome(uniquePath + "/logs")
         .serverStartPolicy("IF_NEEDED")
         .serverPod(new ServerPod()
             .addEnvItem(new V1EnvVar()
@@ -734,7 +735,7 @@ public class CommonMiiTestUtils {
             .introspectorJobActiveDeadlineSeconds(300L));
 
     if (setDataHome) {
-      domainSpec.dataHome("/shared/data");
+      domainSpec.dataHome(uniquePath + "/data");
     }
     // create the domain CR
     Domain domain = new Domain()

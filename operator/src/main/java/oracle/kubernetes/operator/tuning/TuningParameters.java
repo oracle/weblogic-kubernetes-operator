@@ -70,9 +70,13 @@ public class TuningParameters {
   public static final String MAX_READY_WAIT_TIME_SECONDS = "maxReadyWaitTimeSeconds";
   public static final String RESTART_EVICTED_PODS = "restartEvictedPods";
   public static final String INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = "introspectorJobActiveDeadlineSeconds";
+  public static final String INTROSPECTOR_JOB_DEADLINE_INCREMENT_SECONDS = "introspectorJobDeadlineIncrementSeconds";
+  public static final String INTROSPECTOR_JOB_MAX_NUM_INCREMENTS = "introspectorJobMaxNumIncrements";
   public static final String KUBERNETES_PLATFORM_NAME = "kubernetesPlatform";
   public static final String FEATURE_GATES = "featureGates";
   public static final String SERVICE_ACCOUNT_NAME = "serviceaccount";
+
+  public static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -203,8 +207,16 @@ public class TuningParameters {
     return getParameter(RESTART_EVICTED_PODS, true);
   }
 
-  public long getDefaultActiveJobDeadlineSeconds() {
+  public long getActiveJobInitialDeadlineSeconds() {
     return getParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, 120L);
+  }
+
+  public long getActiveDeadlineIncrementSeconds() {
+    return getParameter(INTROSPECTOR_JOB_DEADLINE_INCREMENT_SECONDS, DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
+  }
+
+  public long getActiveDeadlineMaxNumIncrements() {
+    return getParameter(INTROSPECTOR_JOB_MAX_NUM_INCREMENTS, 5);
   }
 
   /**

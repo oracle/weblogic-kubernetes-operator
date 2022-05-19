@@ -75,8 +75,8 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -1789,10 +1789,7 @@ class DomainProcessorTest {
 
   /**/
   private V1Pod createServerPod(String serverName, String clusterName) {
-    Packet packet = new Packet().with(processorDelegate);
-    packet
-          .getComponents()
-          .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(new DomainPresenceInfo(domain)));
+    Packet packet = new Packet().with(processorDelegate).with(new DomainPresenceInfo(domain));
     packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig);
 
     if (ADMIN_NAME.equals(serverName)) {
@@ -1812,12 +1809,6 @@ class DomainProcessorTest {
           .orElseThrow();
   }
 
-
-  private V1ObjectMeta withServerLabels(V1ObjectMeta meta, String serverName) {
-    return KubernetesUtils.withOperatorLabels(DomainProcessorTestSetup.UID, meta)
-        .putLabelsItem(SERVERNAME_LABEL, serverName);
-  }
-  
   private V1Service createServerService(String serverName) {
     return createServerService(serverName, null);
   }
@@ -1825,19 +1816,21 @@ class DomainProcessorTest {
   private V1Service createServerService(String serverName, String clusterName) {
     V1Service service = new V1Service()
         .metadata(
-            withServerLabels(
-                new V1ObjectMeta()
-                    .name(
-                        LegalNames.toServerServiceName(
-                            DomainProcessorTestSetup.UID, serverName))
-                    .namespace(NS),
-                serverName));
-
-    if (clusterName != null && !clusterName.isEmpty()) {
-      service.getMetadata().putLabelsItem(CLUSTERNAME_LABEL, clusterName);
-    }
+            withServerAndClusterLabels(
+                serverName, clusterName, new V1ObjectMeta()
+                    .name(LegalNames.toServerServiceName(DomainProcessorTestSetup.UID, serverName))
+                    .namespace(NS)
+            ));
 
     return AnnotationHelper.withSha256Hash(service);
+  }
+
+  private V1ObjectMeta withServerAndClusterLabels(String serverName, String clusterName, V1ObjectMeta meta) {
+    final V1ObjectMeta objectMeta = KubernetesUtils.withOperatorLabels(UID, meta);
+    if (!OperatorUtils.isNullOrEmpty(clusterName)) {
+      objectMeta.putLabelsItem(CLUSTERNAME_LABEL, clusterName);
+    }
+    return objectMeta.putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
@@ -1994,5 +1987,4 @@ class DomainProcessorTest {
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
-
 }
