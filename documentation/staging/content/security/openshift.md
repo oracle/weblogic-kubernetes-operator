@@ -110,7 +110,7 @@ with UID 1000, and any WebLogic domain it creates will also run with UID 1000.
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
-see [OpenShift]({{<relref  "/userguide/platforms/environments#openshift">}}).
+see [OpenShift]({{<relref  "/introduction/platforms/environments#openshift">}}).
 {{% /notice %}}
 
 #### Use a dedicated namespace
@@ -119,24 +119,24 @@ When the user that installs an individual instance of the operator
 does _not_ have the required privileges to create resources at the Kubernetes cluster level,
 they can use a `Dedicated` namespace selection strategy for the operator instance to limit
 it to managing domain resources in its local namespace only
-(see [Operator namespace management]({{< relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
+(see [Operator namespace management]({{< relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
 and they may need to manually install the Domain Custom Resource (CRD)
-(see [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})).
+(see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})).
 
 #### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
 
 Beginning with operator version 3.3.2,
 set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.
 This property accommodates OpenShift security requirements.
-For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 #### With WIT, set the `target` parameter to `OpenShift`
 
 When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
 `create`, `rebase`, or `update` command, to create a
-[Domain in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) domain home,
-[Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) image,
-or [Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) auxiliary image,
+[Domain in Image](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/) domain home,
+[Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/) image,
+or [Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/) auxiliary image,
 you can specify the `--target` parameter for the target Kubernetes environment.
 Its value can be either `Default` or `OpenShift`.
 The `OpenShift` option changes the domain directory files such that the group permissions
