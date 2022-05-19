@@ -18,7 +18,7 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 * Set `createLogStashConfigMap` to `true` to use the default Logstash configuration, or set it to `false` and create a ConfigMap named `weblogic-operator-logstash-cm` in the operator's namespace with your own Logstash pipeline configuration.
 
-For additional details, see [Elastic Stack integration]({{< relref "/userguide/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
+For additional details, see [Elastic Stack integration]({{< relref "/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
 
 #### Sample to configure Elasticsearch and Kibana
 
