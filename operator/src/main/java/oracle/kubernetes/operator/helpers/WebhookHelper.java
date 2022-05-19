@@ -5,7 +5,9 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
@@ -174,9 +176,48 @@ public class WebhookHelper {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
-        } else {
+        } else if (shouldUpdate(existingWebhookConfig, model)) {
           return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
+        } else {
+          return doNext(packet);
         }
+      }
+
+      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig,
+                                   V1ValidatingWebhookConfiguration model) {
+        return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model))
+            || Objects.equals(getClientConfigCaBundle(existingWebhookConfig), getClientConfigCaBundle(model));
+      }
+
+      private Object getServiceNamespaceFromConfig(V1ValidatingWebhookConfiguration webhookConfig) {
+        return getServiceNamespace(getFirstWebhook(webhookConfig));
+      }
+
+      private String getServiceNamespace(V1ValidatingWebhook webhook) {
+        return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getService)
+            .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
+      }
+
+      private Object getClientConfigCaBundle(V1ValidatingWebhookConfiguration webhookConfig) {
+        return getClientConfigCaBundle(getFirstWebhook(webhookConfig));
+      }
+
+      private byte[] getClientConfigCaBundle(V1ValidatingWebhook webhook) {
+        return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getCaBundle)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.of(webhookConfig)
+            .map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .map(this::getFirstWebhook)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
+        return l.isEmpty() ? null : l.get(0);
       }
 
       private Step createValidatingWebhookConfiguration(Step next) {
