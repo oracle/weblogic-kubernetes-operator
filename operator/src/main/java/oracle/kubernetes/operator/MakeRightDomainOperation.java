@@ -30,6 +30,10 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation interrupt();
 
+  boolean isDeleting();
+
+  boolean isWillInterrupt();
+
   // for unit testing only
   MakeRightDomainOperation throwNPE();
 
@@ -75,6 +79,6 @@ public interface MakeRightDomainOperation {
   }
 
   private static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
-    return Optional.ofNullable((MakeRightDomainOperation) packet.get(MAKE_RIGHT_DOMAIN_OPERATION));
+    return Optional.ofNullable(packet.getValue(MAKE_RIGHT_DOMAIN_OPERATION));
   }
 }
