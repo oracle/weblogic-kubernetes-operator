@@ -18,10 +18,10 @@ description: "Sample for using the operator to set up a WLS cluster on the Azure
 
 ### Introduction
 
-This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relref "/_index.md" >}}) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relref "/_index.md" >}}) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.
 
 **Note:** For an alternative approach to this sample,
-see the [Oracle WebLogic Server on AKS from the Azure Marketplace]({{<relref "/userguide/aks/_index.md">}})
+see the [Oracle WebLogic Server on AKS from the Azure Marketplace]({{<relref "/managing-domains/aks/_index.md">}})
 offering which automates the provisioning of
 AKS cluster, AKS resources, the Azure Container Registry (ACR),
  WebLogic Kubernetes Operator, and WebLogic Server images.
@@ -33,7 +33,7 @@ AKS cluster, AKS resources, the Azure Container Registry (ACR),
 
 #### Domain home source types
 
-This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 - [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits:
 
@@ -53,5 +53,5 @@ This sample demonstrates running the WebLogic cluster on AKS using two domain ho
 ### References
 
 For references to the relevant user documentation, see:
-- [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) user documentation
-- [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+- [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) user documentation
+- [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation
