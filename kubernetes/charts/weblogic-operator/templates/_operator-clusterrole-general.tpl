@@ -36,4 +36,7 @@ rules:
 - apiGroups: ["authorization.k8s.io"]
   resources: ["selfsubjectrulesreviews"]
   verbs: ["create"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["validatingwebhookconfigurations"]
+  verbs: ["get", "create", "update", "patch"]
 {{- end }}

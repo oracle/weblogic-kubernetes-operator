@@ -11,12 +11,12 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -184,25 +184,20 @@ public class SecretUtils {
   }
 
   /**
-   * Verify the default secret exists for the default service account.
-   *
+   * Verify that the namespace is active.
    */
-  public static void verifyDefaultTokenExists() {
+  public static void verifyNamespaceActive() {
     final LoggingFacade logger = getLogger();
 
     testUntil(
         () -> {
-          V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
-          for (V1ServiceAccount sa : sas.getItems()) {
-            if (sa.getMetadata().getName().equals("default")) {
-              List<V1ObjectReference> secrets = sa.getSecrets();
-              return !secrets.isEmpty();
-            }
-          }
-          return false;
+          V1Namespace namespace = Kubernetes.getNamespace("default");
+          return V1NamespaceStatus.PhaseEnum.ACTIVE.equals(
+              Optional.ofNullable(namespace).map(V1Namespace::getStatus)
+                  .map(V1NamespaceStatus::getPhase).orElse(null));
         },
         logger,
-        "the default token to be available in default service account");
+        "waiting for the default namespace to be active");
   }
 
   /**

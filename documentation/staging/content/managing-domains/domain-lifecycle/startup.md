@@ -44,9 +44,7 @@ started, or restarted. To start, stop, or restart servers, modify these fields o
 
 There are fields on the Domain that specify which servers should be running,
 which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
-(for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them. Beginning
-with operator version 2.2.0, there are now fields to control server shutdown handling, such as whether the shutdown
-will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
+(for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them.
 
 ### Starting and stopping servers
 
@@ -221,10 +219,10 @@ time, using the shutdown options set when the WebLogic Server instance Pod is cr
 
 {{% notice note %}}
 The `waitForAllSessions` property does not apply when the `ignoreSessions` property is `true`. When the
-`ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during 
+`ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during
 the WebLogic graceful shutdown process. When the`waitForAllSessions` is `true`, the graceful shutdown
 process will wait for all HTTP sessions to complete or be invalidated before proceeding. When `waitForAllSessions`
-is `false`, the graceful shutdown process will wait only for non-persisted HTTP sessions to complete 
+is `false`, the graceful shutdown process will wait only for non-persisted HTTP sessions to complete
 or be invalidated before proceeding.
 {{% /notice %}}
 
@@ -318,10 +316,6 @@ the Domain will cause neither a restart nor a patch. It is possible to force a r
 such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
-{{% notice note %}}
-Prior to version 2.2.0, the operator incorrectly restarted servers when the `serverStartState` field was changed.  Now,
-this property has no affect on already running servers.
-{{% /notice %}}
 
 ### Rolling restarts
 

@@ -104,7 +104,7 @@ See [overrides distribution](#overrides-distribution) for a description of distr
 **IMPORTANT: The operator does not support customer-provided overrides in the following areas.**
 
 * Domain topology (cluster members)
-* Network channel listen address, port, and enabled configuration
+* Network channel `listen address`, `port`, and `enabled` fields
 * Server and domain log locations
 * Default or custom file store directories when `domain.spec.dataHome` is set
 * Node Manager related configuration
