@@ -57,13 +57,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
@@ -138,9 +137,9 @@ public class CommonMiiTestUtils {
   ) {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", BASE_IMAGES_REPO_SECRET_NAME);
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createOcirRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", BASE_IMAGES_REPO_SECRET_NAME));
+            String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -169,7 +168,7 @@ public class CommonMiiTestUtils {
         domainNamespace,
         imageName,
         adminSecretName,
-        new String[]{BASE_IMAGES_REPO_SECRET_NAME},
+        new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName,
         replicaCount,
         "cluster-1");
@@ -1125,7 +1124,7 @@ public class CommonMiiTestUtils {
                                       .claimName(pvcName))))
                       .imagePullSecrets(Arrays.asList(
                           new V1LocalObjectReference()
-                              .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
 
       String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1574,7 +1573,7 @@ public class CommonMiiTestUtils {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, domainNamespace)) {
+    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace)) {
       createOcirRepoSecret(domainNamespace);
     }
 
@@ -1630,7 +1629,7 @@ public class CommonMiiTestUtils {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -1839,7 +1838,7 @@ public class CommonMiiTestUtils {
     // create the domain object
     Domain domain = create2channelsDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
                replicaCount,
                miiImageName, configMapName);
 
@@ -1911,7 +1910,7 @@ public class CommonMiiTestUtils {
     Domain domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME,
+        TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,

@@ -60,8 +60,9 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -587,13 +588,12 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    // in case TEST_IMAGES_REPO is not defined 
-    if (TEST_IMAGES_REPO_REGISTRY != null) {
-      logger.info("docker login to registry {0}", TEST_IMAGES_REPO_REGISTRY);
-      assertTrue(dockerLogin(TEST_IMAGES_REPO_REGISTRY,
-             TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD),
-            "docker login failed");
+    if (!TEST_IMAGES_REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
+      assertTrue(dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
+                TEST_IMAGES_REPO_PASSWORD), "docker login failed");
     }
+
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry", image);

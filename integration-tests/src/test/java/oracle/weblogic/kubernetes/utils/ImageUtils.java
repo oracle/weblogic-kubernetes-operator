@@ -31,9 +31,9 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -462,28 +462,14 @@ public class ImageUtils {
   /**
    * Create a Docker registry secret in the specified namespace.
    * for TEST_IMAGES_REPO to upload/download test images.
-   * if TEST_IMAGES_REPO is null in case of local/kind run
-   * create the dummy pull secret TEST_IMAGES_REPO_SECRET_NAME with
-   * BASSE_IMAGES_REPO_REGISTRY, else Mii/Aux test will fail as the domain
-   * resource has the test image pull secret defined even if the domain
-   * image is pulled from local repository (TBD)
    * @param namespace the namespace in which the secret will be created
    */
   public static void createOcirRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
-    // Create a dummy test image secret based on BASE_IMAGES_REPO
-    // in case TEST_IMAGES_REPO is not defined
-    if (TEST_IMAGES_REPO_REGISTRY != null) {
-      logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
-      createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
-              TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
-              TEST_IMAGES_REPO_REGISTRY, TEST_IMAGES_REPO_SECRET_NAME, namespace);
-    } else {
-      logger.info("Creating a dummy test image pull secret, since TEST_IMAGES_REPO environment is not set");
-      createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME,
-              BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
-              BASE_IMAGES_REPO_REGISTRY, TEST_IMAGES_REPO_SECRET_NAME, namespace);
-    }
+    logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
+    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
+            TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
+            TEST_IMAGES_REPO, TEST_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**

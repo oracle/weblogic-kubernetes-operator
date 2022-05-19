@@ -51,6 +51,9 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
+  public static final String REPO_DUMMY_VALUE = "dummy";
+
+
   // BASE_IMAGES_REPO constants from where all the base images are pulled
   // Default for BASE_IMAGES_REPO is phx.ocir.io
   // TBD : Why two variables BASE_IMAGES_REPO and BASE_IMAGES_REPO_REGISTRY
@@ -70,16 +73,20 @@ public interface TestConstants {
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String TEST_IMAGES_REPO =
        getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
-  public static final String TEST_IMAGES_REPO_REGISTRY = System.getenv("TEST_IMAGES_REPO");
-  public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
-  public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
-  public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
+  public static final String TEST_IMAGES_REPO_REGISTRY = TEST_IMAGES_REPO;
+  public static final String TEST_IMAGES_REPO_USERNAME = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String TEST_IMAGES_REPO_PASSWORD = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String TEST_IMAGES_REPO_EMAIL = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+
   public static final String TEST_IMAGES_REPO_SECRET_NAME = "test-images-repo-secret";
   public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
-  // ocir default image values, these values will be used while running locally
-  // Defaults for all the base images name. It depends on the default value of 
-  // BASE_IMAGES_REPO. Following defaults are based on OCIR as default.
+  // Default image names, tags to be used to downlaod base images 
+  // It depends on the default value of BASE_IMAGES_REPO. 
+  // Following defaults are assumining OCIR as default for BASE_IMAGES_REPO.
   public static final String WEBLOGIC_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/weblogic";
   public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "12.2.1.4";
   public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "weblogick8s/test-images/fmw-infrastructure";
