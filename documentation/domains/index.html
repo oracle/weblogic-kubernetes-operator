@@ -1081,7 +1081,7 @@ window.onload = function() {
           "minimum": 1.0
         },
         "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 0.",
           "type": "number",
           "minimum": 0.0
         },
@@ -1413,7 +1413,7 @@ window.onload = function() {
           "type": "string"
         },
         "cluster-resource-references": {
-          "description": "List of names of Cluster Custom Resources the Operator expects to be deployed in the same namespace that the domain is deployed.  A reference to a cluster custom resource  in order for the cluster elements to be applied.",
+          "description": "List of names of Cluster Resources the Operator expects to be deployed in the same namespace that the domain is deployed.  A reference to a cluster resource  in order for the cluster elements to be applied.",
           "type": "array",
           "items": {
             "type": "string"

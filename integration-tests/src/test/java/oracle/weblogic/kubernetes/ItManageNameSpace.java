@@ -444,7 +444,7 @@ class ItManageNameSpace {
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
     //add label to domain namespace
-    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespaceAsObject(domainNS));
+    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
     assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
     namespaceObject1.getMetadata().setLabels(labels);
     assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));

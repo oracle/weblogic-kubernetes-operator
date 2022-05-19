@@ -69,8 +69,7 @@ import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
 
 public class JobStepContext extends BasePodStepContext {
-  static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
-  
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
@@ -306,11 +305,6 @@ public class JobStepContext extends BasePodStepContext {
     return emptyToNull(getDomain().getConfigOverrides());
   }
 
-  private long getIntrospectorJobActiveDeadlineSeconds() {
-    return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
-        .orElse(TuningParameters.getInstance().getDefaultActiveJobDeadlineSeconds());
-  }
-
   // ---------------------- model methods ------------------------------
 
   private String getWdtConfigMap() {
@@ -336,14 +330,19 @@ public class JobStepContext extends BasePodStepContext {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
-  private long getActiveDeadlineSeconds() {  // todo maybe create fields for the tuning parameter values we need
+  private long getActiveDeadlineSeconds() {
     return getIntrospectorJobActiveDeadlineSeconds()
-          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * getNumDeadlineIncreases());
+          + (TuningParameters.getInstance().getActiveDeadlineIncrementSeconds() * getNumDeadlineIncreases());
+  }
+
+  private long getIntrospectorJobActiveDeadlineSeconds() {
+    return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
+        .orElse(TuningParameters.getInstance().getActiveJobInitialDeadlineSeconds());
   }
 
   @NotNull
   private Long getNumDeadlineIncreases() {
-    return Math.min(5, info.getNumDeadlineIncreases());
+    return Math.min(TuningParameters.getInstance().getActiveDeadlineMaxNumIncrements(), info.getNumDeadlineIncreases());
   }
 
   V1JobSpec createJobSpec() {

@@ -261,7 +261,7 @@ Here are the steps:
    ```
      {{% /expand %}}
 
-   - If the introspector job fails, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
+   - If the introspector job fails, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
 1. Call the sample web application to:
 
@@ -314,7 +314,7 @@ The `testPool='Passed'` for `mynewdatasource` verifies that your update to the d
 
 If you see a `testPool='Failed'` error, then it is likely you did not deploy the database or your database is not deployed correctly.
 
-If you see any other error, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
+If you see any other error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
 This completes the sample scenarios.
 

@@ -15,12 +15,12 @@ The WebLogic Kubernetes Operator (the “operator”) is open source and free, l
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
-For more information, see [Pricing and licensing]({{< relref "/userguide/platforms/environments#pricing-and-licensing" >}}).
+For more information, see [Pricing and licensing]({{< relref "/introduction/platforms/environments#pricing-and-licensing" >}}).
 
 #### How can I get help?
 
 You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
-To learn how, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
+To learn how, see [Get help]({{< relref "/introduction/get-help.md" >}}).
 
 #### WebLogic Server Certification
 
@@ -58,14 +58,14 @@ The operator does not specify how a WebLogic domain home configuration is create
 
 **A:**
 
-* _HTTP communication to your applications from locations outside the cluster_: Typically, this is accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you); see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+* _HTTP communication to your applications from locations outside the cluster_: Typically, this is accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you); see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 For an example, see the Quick Start, [Install the operator and ingress controller]({{< relref "/quickstart/install.md" >}}).
 
-* _JMS, EJB, and other types of RMI communication with locations outside of the Kubernetes cluster_: This is typically accomplished by tunneling the RMI traffic over HTTP through a load balancer or, less commonly accomplished by using T3 or T3S directly with Kubernetes NodePorts; see [External WebLogic clients]({{< relref "/faq/external-clients.md" >}}).
+* _JMS, EJB, and other types of RMI communication with locations outside of the Kubernetes cluster_: This is typically accomplished by tunneling the RMI traffic over HTTP through a load balancer or, less commonly accomplished by using T3 or T3S directly with Kubernetes NodePorts; see [External WebLogic clients]({{< relref "/managing-domains/accessing-the-domain/external-clients.md" >}}).
 
 * _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
 
-* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
+* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
@@ -84,7 +84,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 **Q:** Load balancing and failover inside a DataCenter (HTTPS and T3s)?
 
-**A:** We originally certified on Traefik with the Kubernetes cluster; this is a very basic load balancer.  We have also certified other more sophisticated load balancers. See [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+**A:** We originally certified on Traefik with the Kubernetes cluster; this is a very basic load balancer.  We have also certified other more sophisticated load balancers. See [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 
 ***
 
@@ -92,7 +92,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 **Q:** How to deal with grow and shrink? Cluster and non-cluster mode.
 
-**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}).
+**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
 * Manually, using Kubernetes command-line interface, `kubectl`.
 * WLDF rules and policies; when the rule is met the Administration Server sends a REST call to the operator which calls the Kubernetes API to start a new pod/container/server.
 * We have developed and made open source the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) which exports WebLogic metrics to Prometheus and Grafana.  In Prometheus, you can set rules similar to WLDF and when these rules are met, a REST call is made to the operator which invokes a Kubernetes API to start a new pod.
@@ -108,7 +108,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 These operations also can be done manually using the Kubernetes command-line interface, `kubectl`.
 
-For more information, see the [Domain life cycle]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
+For more information, see the [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}}) documentation.
 
 ***
 
@@ -119,18 +119,18 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **A:** Download pre-patched images from the Oracle Container Registry or use WebLogic Image Tool to create your own.
 For additional information on WebLogic container images on Oracle Container registry,
-see [Obtain images from the Oracle Container Registry]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+see [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 For additional information on creating new container images with the WebLogic Image Tool,
-see [Create custom images]({{< relref "/userguide/base-images/custom-images.md" >}}).
+see [Create custom images]({{< relref "/base-images/custom-images.md" >}}).
 
 **Q:** How do I apply patches without impacting my application's uptime?
 
-**A:** See [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}).
+**A:** See [Rolling restarts]({{< relref "/managing-domains/domain-lifecycle/restarting#overview" >}}).
 
 **Q:** How do I integrate patching with my continuous integration and continuous deployment processes?
 
-**A:** See [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** See [CI/CD considerations]({{< relref "/managing-domains/cicd/_index.md" >}}).
 
 ***
 
