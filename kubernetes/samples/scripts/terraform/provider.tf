@@ -21,6 +21,14 @@ variable "region" {
   default = "us-phoenix-1"
 }
 
+terraform {
+    required_providers {
+        oci = {
+            source  = "oracle/oci"
+        }
+    }
+}
+
 provider "oci" {
   region           = var.region
   tenancy_ocid     = var.tenancy_ocid
