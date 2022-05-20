@@ -627,6 +627,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Restart pods using restartVersion flag")
   @Tag("gate")
+  @Tag("crio")
   void testRestartVersion() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -693,6 +694,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Check restart of pods after image change")
   @Tag("gate")
+  @Tag("crio")
   void testRestartWithImageChange() {
 
     String tag = getDateAndTimeStamp();

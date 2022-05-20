@@ -199,7 +199,7 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
+    withLongRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
