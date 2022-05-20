@@ -9,6 +9,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,8 +33,6 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.rest.RestConfig;
-import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -111,6 +110,25 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   private static Function<String, Path> getInMemoryPath = inMemoryFileSystem::getPath;
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
+  private final String testNamespace = "ns1";
+  private final byte[] testCaBundle = new byte[] { (byte)0xe0, 0x4f, (byte)0xd0,
+      0x20, (byte)0xea, 0x3a, 0x69, 0x10, (byte)0xa2, (byte)0xd8, 0x08, 0x00, 0x2b,
+      0x30, 0x30, (byte)0x9d };
+
+  private V1ValidatingWebhookConfiguration testValidatingWebhookConfig;
+
+  private V1ValidatingWebhook createValidatingWebhook() {
+    return new V1ValidatingWebhook().clientConfig(createWebhookClientConfig());
+  }
+
+  private AdmissionregistrationV1WebhookClientConfig createWebhookClientConfig() {
+    return new AdmissionregistrationV1WebhookClientConfig().service(createServiceReference());
+  }
+
+  private AdmissionregistrationV1ServiceReference createServiceReference() {
+    return new AdmissionregistrationV1ServiceReference().namespace(getWebhookNamespace());
+  }
+
   static {
     buildProperties = new PropertiesBuilder()
               .withProperty(GIT_BUILD_VERSION_KEY, GIT_BUILD_VERSION)
@@ -148,6 +166,11 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     HelmAccessStub.defineVariable(WEBHOOK_NAMESPACE_ENV, WEBHOOK_NAMESPACE);
     HelmAccessStub.defineVariable(WEBHOOK_POD_NAME_ENV, WEBHOOK_POD_NAME);
+
+    // this has to be done after WEBHOOK_NAMESPACE_ENV is defined in HelmAccessStub
+    testValidatingWebhookConfig = new V1ValidatingWebhookConfiguration()
+        .metadata(createNameOnlyMetadata())
+        .addWebhooksItem(createValidatingWebhook());
   }
 
   @AfterEach
@@ -237,8 +260,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   void whenValidatingWebhookCreated_logStartupMessage() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
 
-    WebhookMain main = new WebhookMain(delegate);
-    main.startDeployment(null);
+    testSupport.runSteps(main.createStartupSteps());
 
     assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
     assertThat(logRecords,
@@ -247,9 +269,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreated_foundExpectedContents() {
-    WebhookMain main = new WebhookMain(delegate);
-
-    main.startDeployment(null);
+    testSupport.runSteps(main.createStartupSteps());
 
     logRecords.clear();
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
@@ -264,16 +284,11 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespace_replaceIt() {
-    V1ValidatingWebhookConfiguration resource
-        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
-        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
-            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
-    testSupport.defineResources(resource);
+  void whenValidatingWebhookCreatedAgainWithDifferentNamespace_replaceIt() {
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
 
-    WebhookMain main = new WebhookMain(delegate);
-
-    main.startDeployment(null);
+    testSupport.runSteps(main.createStartupSteps());
 
     logRecords.clear();
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
@@ -283,12 +298,28 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenValidatingWebhookCreatedAgainWithSameNamespaceDifferentCABundle_replaceIt() {
+    setServiceCaBundle(testCaBundle);
+    testSupport.defineResources(testValidatingWebhookConfig);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getCaBundle(generatedConfiguration), not(equalTo(testCaBundle)));
+    assertThat(getCreatedValidatingWebhookConfigurationCount(), equalTo(1));
+  }
+
+  @Test
   void whenValidatingWebhookCreatedAfterFailure401_logStartupMessage() {
+    testSupport.addRetryStrategy(retryStrategy);
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
 
-    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, 401);
-    WebhookMain main = new WebhookMain(delegate);
-    main.startDeployment(null);
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, 401);
+
+    testSupport.runSteps(main.createStartupSteps());
 
     assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
     assertThat(logRecords,
@@ -296,28 +327,24 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespaceAfterFailure401_replaceIt() {
-    byte[] caBundle = new byte[] { (byte)0xe0, 0x4f, (byte)0xd0,
-        0x20, (byte)0xea, 0x3a, 0x69, 0x10, (byte)0xa2, (byte)0xd8, 0x08, 0x00, 0x2b,
-        0x30, 0x30, (byte)0x9d };
-    V1ValidatingWebhookConfiguration resource
-        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
-        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
-            .caBundle(caBundle)
-            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
-    testSupport.defineResources(resource);
+  void whenValidatingWebhookCreatedAgainWithFailure401onReplace_replaceItOnRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+
+    setServiceCaBundle(testCaBundle);
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
+
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 401);
 
-    WebhookMain main = new WebhookMain(delegate);
-
-    main.startDeployment(null);
+    testSupport.runSteps(main.createStartupSteps());
 
     logRecords.clear();
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
 
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
-    assertThat(getCaBundle(generatedConfiguration), not(equalTo(caBundle)));
+    assertThat(getCaBundle(generatedConfiguration), not(equalTo(testCaBundle)));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+    assertThat(getCreatedValidatingWebhookConfigurationCount(), equalTo(1));
   }
 
   @Test
@@ -327,7 +354,6 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, 400);
 
-    WebhookMain main = new WebhookMain(delegate);
     testSupport.runSteps(main.createStartupSteps());
 
     assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
@@ -336,16 +362,13 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedWithClientServiceDifferentNamespaceAfterFailure404_replaceIt() {
+  void whenValidatingWebhookCreatedWithDifferentNamespaceAfterFailure404_replaceIt() {
     testSupport.addRetryStrategy(retryStrategy);
-    V1ValidatingWebhookConfiguration resource
-        = new V1ValidatingWebhookConfiguration().metadata(createNameOnlyMetadata(VALIDATING_WEBHOOK_NAME))
-        .addWebhooksItem(new V1ValidatingWebhook().clientConfig(new AdmissionregistrationV1WebhookClientConfig()
-            .service(new AdmissionregistrationV1ServiceReference().namespace("ns1"))));
-    testSupport.defineResources(resource);
+
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 404);
 
-    WebhookMain main = new WebhookMain(delegate);
     testSupport.runSteps(main.createStartupSteps());
 
     logRecords.clear();
@@ -355,77 +378,102 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
   }
 
-  private V1ObjectMeta createNameOnlyMetadata(String name) {
-    return new V1ObjectMeta().name(name);
+  private V1ObjectMeta createNameOnlyMetadata() {
+    return new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME);
   }
 
-  @Nullable
   private String getName(V1ValidatingWebhookConfiguration configuration) {
-    return configuration.getMetadata().getName();
+    return Optional.ofNullable(getMetadata(configuration)).map(V1ObjectMeta::getName).orElse("");
   }
 
-  @Nullable
   private Map<String, String> getLabels(V1ValidatingWebhookConfiguration configuration) {
-    return configuration.getMetadata().getLabels();
+    return Optional.ofNullable(getMetadata(configuration)).map(V1ObjectMeta::getLabels).orElse(new HashMap<>());
   }
 
-  @Nullable
+  private V1ObjectMeta getMetadata(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.ofNullable(configuration).map(V1ValidatingWebhookConfiguration::getMetadata).orElse(null);
+  }
+
   private String getServiceNamespace(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
-        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+    return Optional.ofNullable(getService(configuration))
         .map(AdmissionregistrationV1ServiceReference::getNamespace)
         .orElse("");
   }
 
-  @Nullable
   private Integer getServicePort(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
-        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+    return Optional.ofNullable(getService(configuration))
         .map(AdmissionregistrationV1ServiceReference::getPort)
         .orElse(0);
   }
 
-  @Nullable
   private String getServicePath(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
-        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+    return Optional.ofNullable(getService(configuration))
         .map(AdmissionregistrationV1ServiceReference::getPath)
         .orElse("");
   }
 
   @Nullable
   private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(configuration).map(V1ValidatingWebhookConfiguration::getWebhooks).get().get(0);
+    return (V1ValidatingWebhook) Optional.of(configuration)
+        .map(V1ValidatingWebhookConfiguration::getWebhooks)
+        .map(this::getFirstElement)
+        .orElse(null);
   }
 
   @Nullable
   private V1RuleWithOperations getFirstRule(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getRules).get().get(0);
+    return (V1RuleWithOperations) Optional.ofNullable(getFirstWebhook(configuration))
+        .map(V1ValidatingWebhook::getRules)
+        .map(this::getFirstElement)
+        .orElse(null);
   }
 
-  @Nullable
   private String getRuleOperation(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstRule(configuration)).map(V1RuleWithOperations::getOperations).get().get(0);
+    return (String) Optional.ofNullable(getFirstRule(configuration))
+        .map(V1RuleWithOperations::getOperations).map(this::getFirstElement).orElse(null);
   }
 
-  @Nullable
+  private <T> Object getFirstElement(List<T> l) {
+    return l.isEmpty() ? null : l.get(0);
+  }
+
   private String getServiceName(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
-        .map(AdmissionregistrationV1WebhookClientConfig::getService)
+    return Optional.ofNullable(getService(configuration))
         .map(AdmissionregistrationV1ServiceReference::getName)
         .orElse("");
   }
 
+  private AdmissionregistrationV1ServiceReference getService(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.ofNullable(getClientConfig(configuration))
+        .map(AdmissionregistrationV1WebhookClientConfig::getService).orElse(null);
+  }
+
+  private AdmissionregistrationV1WebhookClientConfig getClientConfig(V1ValidatingWebhookConfiguration configuration) {
+    return Optional.ofNullable(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig).orElse(null);
+  }
+
   @Nullable
   private byte[] getCaBundle(V1ValidatingWebhookConfiguration configuration) {
-    return Optional.of(getFirstWebhook(configuration)).map(V1ValidatingWebhook::getClientConfig)
+    return Optional.ofNullable(getClientConfig(configuration))
         .map(AdmissionregistrationV1WebhookClientConfig::getCaBundle)
         .orElse(null);
   }
 
+  private void setServiceNamespace(String ns) {
+    Optional.ofNullable(getService(testValidatingWebhookConfig)).ifPresent(s -> s.namespace(ns));
+  }
+
+  private void setServiceCaBundle(byte[] caBundle) {
+    Optional.ofNullable(getClientConfig(testValidatingWebhookConfig)).ifPresent(s -> s.caBundle(caBundle));
+  }
+
   V1ValidatingWebhookConfiguration getCreatedValidatingWebhookConfiguration() {
     return (V1ValidatingWebhookConfiguration)
-        testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION).get(0);
+        getFirstElement(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION));
+  }
+
+  int getCreatedValidatingWebhookConfigurationCount() {
+    return testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION).size();
   }
 
   public abstract static class WebhookMainDelegateStub implements WebhookMainDelegate {
@@ -485,99 +533,5 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   public static Certificates getCertificates() {
     return new Certificates(new CoreDelegateImpl(buildProperties, null));
-  }
-
-  static class RestConfigStub implements RestConfig {
-    private final Certificates certificates;
-
-    RestConfigStub(Certificates certificates) {
-      this.certificates = certificates;
-    }
-
-    @Override
-    public String getHost() {
-      return null;
-    }
-
-    @Override
-    public int getExternalHttpsPort() {
-      return 0;
-    }
-
-    @Override
-    public int getInternalHttpsPort() {
-      return 0;
-    }
-
-    @Override
-    public int getWebhookHttpsPort() {
-      return 0;
-    }
-
-    @Override
-    public String getOperatorExternalCertificateData() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorInternalCertificateData() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorExternalCertificateFile() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorInternalCertificateFile() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorExternalKeyData() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorInternalKeyData() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorExternalKeyFile() {
-      return null;
-    }
-
-    @Override
-    public String getOperatorInternalKeyFile() {
-      return null;
-    }
-
-    @Override
-    public RestBackend getBackend(String accessToken) {
-      return null;
-    }
-
-    @Override
-    public String getWebhookCertificateData() {
-      return certificates.getWebhookCertificateData();
-    }
-
-    @Override
-    public String getWebhookCertificateFile() {
-      return null;
-    }
-
-    @Override
-    public String getWebhookKeyData() {
-      return null;
-    }
-
-    @Override
-    public String getWebhookKeyFile() {
-      return certificates.getWebhookKeyFilePath();
-    }
-
   }
 }

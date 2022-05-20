@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -84,11 +85,9 @@ public class WebhookHelper {
   static class ValidatingWebhookConfigurationContext {
     private final Step conflictStep;
     private final V1ValidatingWebhookConfiguration model;
-    private final Certificates certificates;
 
     ValidatingWebhookConfigurationContext(Step conflictStep, Certificates certificates) {
       this.conflictStep = conflictStep;
-      this.certificates = certificates;
       this.model = createModel(certificates);
     }
 
@@ -177,26 +176,39 @@ public class WebhookHelper {
         V1ValidatingWebhookConfiguration existingWebhookConfig = callResponse.getResult();
         if (existingWebhookConfig == null) {
           return doNext(createValidatingWebhookConfiguration(getNext()), packet);
-        } else if (shouldUpdate(existingWebhookConfig, model)) {
+        } else if (shouldUpdate(existingWebhookConfig)) {
           return doNext(replaceValidatingWebhookConfiguration(getNext(), existingWebhookConfig), packet);
         } else {
           return doNext(packet);
         }
       }
 
-      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig,
-                                   V1ValidatingWebhookConfiguration model) {
-        return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model));
+      private boolean shouldUpdate(V1ValidatingWebhookConfiguration existingWebhookConfig) {
+        return !getServiceNamespaceFromConfig(existingWebhookConfig).equals(getServiceNamespaceFromConfig(model))
+            || !Arrays.equals(getClientConfigCaBundle(existingWebhookConfig), getClientConfigCaBundle(model));
       }
 
       private Object getServiceNamespaceFromConfig(V1ValidatingWebhookConfiguration webhookConfig) {
-        return getServiceNamespace(getFirstWebhook(webhookConfig));
-      }
-
-      private String getServiceNamespace(V1ValidatingWebhook webhook) {
-        return Optional.ofNullable(webhook).map(V1ValidatingWebhook::getClientConfig)
+        return Optional.ofNullable(getFirstWebhook(webhookConfig)).map(V1ValidatingWebhook::getClientConfig)
             .map(AdmissionregistrationV1WebhookClientConfig::getService)
             .map(AdmissionregistrationV1ServiceReference::getNamespace).orElse("");
+      }
+
+      private byte[] getClientConfigCaBundle(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.ofNullable(getFirstWebhook(webhookConfig)).map(V1ValidatingWebhook::getClientConfig)
+            .map(AdmissionregistrationV1WebhookClientConfig::getCaBundle)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
+        return Optional.of(webhookConfig)
+            .map(V1ValidatingWebhookConfiguration::getWebhooks)
+            .map(this::getFirstWebhook)
+            .orElse(null);
+      }
+
+      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
+        return l.isEmpty() ? null : l.get(0);
       }
 
       private Step createValidatingWebhookConfiguration(Step next) {
@@ -214,42 +226,8 @@ public class WebhookHelper {
       }
 
       private V1ValidatingWebhookConfiguration updateModel(V1ValidatingWebhookConfiguration existing) {
-        setServiceNamespace(existing);
-        setCaBundle(existing);
-        return existing;
-      }
-
-      private void setServiceNamespace(V1ValidatingWebhookConfiguration existing) {
-        Optional.ofNullable(getServiceFromConfig(existing)).ifPresent(s -> s.namespace(getWebhookNamespace()));
-      }
-
-      private void setCaBundle(V1ValidatingWebhookConfiguration existing) {
-        Optional.ofNullable(getClientConfig(existing)).ifPresent(s -> s.caBundle(getCaBundle(certificates)));
-      }
-
-      private AdmissionregistrationV1ServiceReference getServiceFromConfig(
-          V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.ofNullable(getClientConfig(webhookConfig))
-            .map(AdmissionregistrationV1WebhookClientConfig::getService)
-            .orElse(null);
-      }
-
-      private AdmissionregistrationV1WebhookClientConfig getClientConfig(
-          V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.ofNullable(getFirstWebhook(webhookConfig))
-            .map(V1ValidatingWebhook::getClientConfig)
-            .orElse(null);
-      }
-
-      private V1ValidatingWebhook getFirstWebhook(V1ValidatingWebhookConfiguration webhookConfig) {
-        return Optional.of(webhookConfig)
-            .map(V1ValidatingWebhookConfiguration::getWebhooks)
-            .map(this::getFirstWebhook)
-            .orElse(null);
-      }
-
-      private V1ValidatingWebhook getFirstWebhook(List<V1ValidatingWebhook> l) {
-        return l.isEmpty() ? null : l.get(0);
+        model.setMetadata(existing.getMetadata());
+        return model;
       }
 
       @Override
