@@ -124,8 +124,8 @@ public class CommonLBTestUtils {
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     Path pvHostPath = get(PV_ROOT, testClassName, "sharing-persistentVolume");
 
-    String sharingPvName = getUniqueName(domainNamespace + "-sharing-pv");
-    String sharingPvcName = getUniqueName(domainNamespace + "-sharing-pvc");
+    String sharingPvName = getUniqueName("sharing-pv-");
+    String sharingPvcName = getUniqueName("sharing-pvc-");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
