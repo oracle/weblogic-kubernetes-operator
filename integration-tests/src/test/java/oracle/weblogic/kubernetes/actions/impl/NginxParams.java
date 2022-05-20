@@ -9,6 +9,11 @@ import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
+
 /**
  * All parameters needed to install NGINX ingress controller.
  */
@@ -21,6 +26,11 @@ public class NginxParams {
   private static final String NODEPORTS_HTTPS = "controller.service.nodePorts.https";
   private static final String ADMISSIONWEBHOOKS_ENABLED = "controller.admissionWebhooks.enabled";
   private static final String INGRESS_CLASS_NAME = "controller.ingressClassResource.name";
+  private static final String NGINX_IMAGE_REGISTRY = "controller.image.registry";
+  private static final String NGINX_IMAGE = "controller.image.image";
+  private static final String NGINX_IMAGE_TAG = "controller.image.tag";
+  private static final String NGINX_IMAGE_DIGEST = "controller.image.digest";
+  private static final String IMAGE_PULL_SECRET = "imagePullSecrets[0].name";  
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
@@ -28,6 +38,11 @@ public class NginxParams {
   private boolean webhooksEnabled = false;
   private HelmParams helmParams;
   private String ingressClassName;
+  private String imageRegistry = OCIR_DEFAULT;
+  private String nginxImage = OCIR_NGINX_IMAGE_NAME;
+  private String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
+  private String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
+  private String imageRepoSecret;
 
   public NginxParams() {
     ingressClassName = UniqueName.uniqueName("nginx-");
@@ -52,14 +67,39 @@ public class NginxParams {
     return ingressClassName;
   }
 
-  public NginxParams helmParams(HelmParams helmParams) {
-    this.helmParams = helmParams;
-    return this;
-  }
-
   public HelmParams getHelmParams() {
     return helmParams;
   }
+
+  public NginxParams imageRegistry(String imageRegistry) {
+    this.imageRegistry = imageRegistry;
+    return this;
+  }
+
+  public NginxParams nginxImage(String nginxImage) {
+    this.nginxImage = nginxImage;
+    return this;
+  }
+
+  public NginxParams nginxImageTag(String nginxImageTag) {
+    this.nginxImageTag = nginxImageTag;
+    return this;
+  }
+
+  public NginxParams nginxImageDigest(String nginxImageDigest) {
+    this.nginxImageDigest = nginxImageDigest;
+    return this;
+  }
+  
+  public NginxParams imageRepoSecret(String imageRepoSecret) {
+    this.imageRepoSecret = imageRepoSecret;
+    return this;
+  }  
+
+  public NginxParams helmParams(HelmParams helmParams) {
+    this.helmParams = helmParams;
+    return this;
+  }  
 
   /**
    * Loads Helm values into a value map.
@@ -78,7 +118,15 @@ public class NginxParams {
 
     values.put(ADMISSIONWEBHOOKS_ENABLED, webhooksEnabled);
     values.put(INGRESS_CLASS_NAME, ingressClassName);
-
+    values.put(NGINX_IMAGE_REGISTRY, imageRegistry);
+    values.put(NGINX_IMAGE, nginxImage);
+    values.put(NGINX_IMAGE_TAG, nginxImageTag);
+    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);
+    
+    if (imageRepoSecret != null) {
+      values.put(IMAGE_PULL_SECRET, imageRepoSecret);
+    }
+    
     values.values().removeIf(Objects::isNull);
     return values;
   }
