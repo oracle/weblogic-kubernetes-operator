@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -703,10 +704,11 @@ public class DbUtils {
     FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
     replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
-    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", BASE_IMAGES_REPO_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
         "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
     createOcirRepoSecret(namespace);
+    createSecretForBaseImages(namespace);
 
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + operatorYamlDestFile);
