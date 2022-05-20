@@ -287,7 +287,6 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            sudo yum install -y python36
                             mkdir -p ${WORKSPACE}/oci
                             cd ${WORKSPACE}/oci
                             curl -LO https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh
