@@ -54,6 +54,7 @@ import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
+import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
@@ -62,6 +63,9 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_POD_NAME_ENV;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -77,6 +81,7 @@ import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOO
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
 import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -313,11 +318,11 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure401_logStartupMessage() {
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
     testSupport.addRetryStrategy(retryStrategy);
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
 
-    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, 401);
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());
 
@@ -327,14 +332,69 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAgainWithFailure401onReplace_replaceItOnRetry() {
+  void whenValidatingWebhookCreatedAfterFailure401_notCreated() {
+    testSupport.addRetryStrategy(retryStrategy);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords,
+        VALIDATING_WEBHOOK_CONFIGURATION_CREATED, CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED);
+
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_UNAUTHORIZED);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), empty());
+    assertThat(logRecords,
+        not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        containsInfo(CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAgainWithDifferentNamespaceAfterFailure504_replaceIt() {
+    testSupport.addRetryStrategy(retryStrategy);
+
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_GATEWAY_TIMEOUT);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAgainWithFailure401onReplace_dontReplaceItOnRetry() {
     testSupport.addRetryStrategy(retryStrategy);
 
     setServiceCaBundle(testCaBundle);
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
 
-    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 401);
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_UNAUTHORIZED);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getCaBundle(generatedConfiguration), equalTo(testCaBundle));
+    assertThat(getServiceNamespace(generatedConfiguration), equalTo(testNamespace));
+    assertThat(getCreatedValidatingWebhookConfigurationCount(), equalTo(1));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAgainWithFailure404onReplace_replaceItOnRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+
+    setServiceCaBundle(testCaBundle);
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
+
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_NOT_FOUND);
 
     testSupport.runSteps(main.createStartupSteps());
 
@@ -348,26 +408,14 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure400_logStartupMessage() {
-    testSupport.addRetryStrategy(retryStrategy);
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
-
-    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, 400);
-
-    testSupport.runSteps(main.createStartupSteps());
-
-    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
-    assertThat(logRecords,
-        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
-  }
-
-  @Test
-  void whenValidatingWebhookCreatedWithDifferentNamespaceAfterFailure404_replaceIt() {
+  void whenValidatingWebhookCreatedAgainWithFailure504onReplace_replaceItOnRetry() {
     testSupport.addRetryStrategy(retryStrategy);
 
+    setServiceCaBundle(testCaBundle);
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
-    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, 404);
+
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());
 
@@ -375,7 +423,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
 
     assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(getCaBundle(generatedConfiguration), not(equalTo(testCaBundle)));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
+    assertThat(getCreatedValidatingWebhookConfigurationCount(), equalTo(1));
   }
 
   private V1ObjectMeta createNameOnlyMetadata() {

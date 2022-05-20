@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -245,7 +246,11 @@ public class WebhookHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(getConflictStep(), packet, callResponse);
+        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       @Override
@@ -275,7 +280,13 @@ public class WebhookHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return super.onFailure(getConflictStep(), packet, callResponse);
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       @Override
