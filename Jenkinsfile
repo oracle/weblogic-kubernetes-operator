@@ -210,15 +210,6 @@ pipeline {
     }
 
     stages {
-        stage('Filter unwanted branches') {
-            when {
-                anyOf {
-                    changeRequest()
-                    branch 'main'
-                    branch 'release/3.3'
-                    branch 'release/3.4'
-                }
-            }
             stages {
                 stage('Workaround JENKINS-41929 Parameters bug') {
                     steps {
