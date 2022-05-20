@@ -9,6 +9,11 @@ import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
+
 /**
  * All parameters needed to install NGINX ingress controller.
  */
@@ -21,6 +26,10 @@ public class NginxParams {
   private static final String NODEPORTS_HTTPS = "controller.service.nodePorts.https";
   private static final String ADMISSIONWEBHOOKS_ENABLED = "controller.admissionWebhooks.enabled";
   private static final String INGRESS_CLASS_NAME = "controller.ingressClassResource.name";
+  private static final String NGINX_IMAGE_REGISTRY = "controller.image.registry";
+  private static final String NGINX_IMAGE = "controller.image.image";
+  private static final String NGINX_IMAGE_TAG = "controller.image.tag";
+  private static final String NGINX_IMAGE_DIGEST = "controller.image.digest";  
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
@@ -28,6 +37,10 @@ public class NginxParams {
   private boolean webhooksEnabled = false;
   private HelmParams helmParams;
   private String ingressClassName;
+  private final String imageRegistry = OCIR_DEFAULT;
+  private final String nginxImage = OCIR_NGINX_IMAGE_NAME;
+  private final String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
+  private final String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
 
   public NginxParams() {
     ingressClassName = UniqueName.uniqueName("nginx-");
@@ -78,6 +91,10 @@ public class NginxParams {
 
     values.put(ADMISSIONWEBHOOKS_ENABLED, webhooksEnabled);
     values.put(INGRESS_CLASS_NAME, ingressClassName);
+    values.put(NGINX_IMAGE_REGISTRY, imageRegistry);
+    values.put(NGINX_IMAGE, nginxImage);
+    values.put(NGINX_IMAGE_TAG, nginxImageTag);
+    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);    
 
     values.values().removeIf(Objects::isNull);
     return values;
