@@ -1225,8 +1225,6 @@ class ItMultiDomainModelsWithLoadBalancer {
   // verify the admin console login using admin node port
   private void verifyAdminConsoleLoginUsingAdminNodePort(String domainUid, String domainNamespace) {
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(

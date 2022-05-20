@@ -124,7 +124,7 @@ public class NginxParams {
     values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);
     
     if (imageRepoSecret != null) {
-      values.put(IMAGE_PULL_SECRET, nginxImageDigest);
+      values.put(IMAGE_PULL_SECRET, imageRepoSecret);
     }
     
     values.values().removeIf(Objects::isNull);
