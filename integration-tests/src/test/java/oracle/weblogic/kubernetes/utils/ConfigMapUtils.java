@@ -22,6 +22,9 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readString;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -99,6 +102,14 @@ public class ConfigMapUtils {
     assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
+
+    // wait until the CM is created
+    testUntil(withLongRetryPolicy,
+        () -> doesCMExist(configMapName, namespace),
+        logger,
+        "configmap {0} is created in namespace {1}",
+        configMapName,
+        namespace);
   }
 
   /**
