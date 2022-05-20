@@ -583,12 +583,14 @@
             <id>wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItKubernetesDomainEvents,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMultiDomainModels,
-                    **/ItPodsRestart
-                </includes-failsafe>
+                <groups>gate,samples-gate</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>crio-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>crio</groups>
             </properties>
         </profile>
         <profile>

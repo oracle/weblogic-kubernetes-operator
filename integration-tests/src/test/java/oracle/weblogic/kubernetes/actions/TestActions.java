@@ -77,6 +77,8 @@ import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -839,6 +841,13 @@ public class TestActions {
     String cmNamespace = configMap.getMetadata().getNamespace();
     if (doesCMExist(cmName, cmNamespace)) {
       deleteConfigMap(cmName, cmNamespace);
+      // wait until the cm is deleted
+      testUntil(withLongRetryPolicy,
+          () -> !doesCMExist(cmName, cmNamespace),
+          getLogger(),
+          "configmap {0} in namespace {1} is deleted",
+          cmName,
+          cmNamespace);
     }
 
     return ConfigMap.create(configMap);

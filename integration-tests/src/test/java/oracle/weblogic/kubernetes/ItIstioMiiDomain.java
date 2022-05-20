@@ -147,6 +147,7 @@ class ItIstioMiiDomain {
   @Order(1)
   @DisplayName("Create WebLogic Domain with mii model with istio")
   @Tag("gate")
+  @Tag("crio")
   void testIstioModelInImage() {
 
     // Create the repo secret to pull the image
