@@ -13,6 +13,7 @@ import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -24,7 +25,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
@@ -38,7 +38,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Test a single operator can manage multiple WebLogic domains with a single Traefik fronted loadbalancer.
@@ -118,10 +117,9 @@ class ItLBTwoDomainsTraefik {
    * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
    */
   @Test
+  @DisabledOnSlimImage
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   void testTraefikHostRoutingAdminServer() {
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
-
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyAdminServerAccess(false, getTraefikLbNodePort(false), true,
