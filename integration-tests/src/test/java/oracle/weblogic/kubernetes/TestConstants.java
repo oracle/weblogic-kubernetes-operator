@@ -178,7 +178,7 @@ public interface TestConstants {
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
   public static final String NGINX_INGRESS_IMAGE_DIGEST = 
       "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";  
-  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
+  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/test-images/ingress-nginx/controller";
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
