@@ -1220,8 +1220,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private boolean hasCorrectPodHash(V1Pod currentPod) {
-      if (isLegacyAuxImageOperatorVersion(currentPod)) {
-        return canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod));
+      if ((isLegacyAuxImageOperatorVersion(currentPod))
+          && canAdjustAuxImagesToMatchHash(AnnotationHelper.getHash(currentPod))) {
+        return true;
       } else if (!isLegacyPod(currentPod)) {
         return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
       } else {
