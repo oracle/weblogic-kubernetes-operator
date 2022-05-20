@@ -24,7 +24,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -59,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -114,7 +112,6 @@ class ItExternalLbTunneling {
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static NginxParams nginxHelmParams = null;
   private static int replicaCount = 2;
   private static String clusterName = "cluster-1";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -356,7 +353,6 @@ class ItExternalLbTunneling {
   @Test
   @DisplayName("Verify RMI access WLS through Route in OKD ")
   void testExternalRmiAccessThruRouteHttpTunneling() {
-    logger.info("Installing Nginx controller using helm");
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -571,14 +567,7 @@ class ItExternalLbTunneling {
             .as("Test uninstallTraefik returns true")
             .withFailMessage("uninstallTraefik() did not return true")
             .isTrue();
-      }
-      // uninstall NGINX
-      if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-            .as("Test uninstallNginx returns true")
-            .withFailMessage("uninstallNginx() did not return true")
-            .isTrue();
-      }
+      }     
     }
   }
 

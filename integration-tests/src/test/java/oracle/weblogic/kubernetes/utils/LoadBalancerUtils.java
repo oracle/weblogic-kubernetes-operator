@@ -39,12 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
@@ -53,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
@@ -62,7 +58,6 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
@@ -174,10 +169,7 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
-    if (BASE_IMAGES_REPO.contains(BASE_IMAGES_REPO_DEFAULT)) {
-      testUntil(() -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
-          logger, "docker login to be successful");
-    }
+    createOcirRepoSecret(nginxNamespace);
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -193,8 +185,9 @@ public class LoadBalancerUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams);
-
+        .helmParams(nginxHelmParams);    
+    // set secret to pull images from private registry
+    nginxParams.imageRepoSecret(TEST_IMAGES_REPO_SECRET_NAME);
     if (nodeportshttp != 0 && nodeportshttps != 0) {
       nginxParams
           .nodePortsHttp(nodeportshttp)

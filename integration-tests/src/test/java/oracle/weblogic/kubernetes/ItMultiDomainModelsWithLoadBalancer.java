@@ -30,6 +30,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -258,6 +259,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersByPatchingDomainResource(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -322,6 +324,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersWithRestApi(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -368,6 +371,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersWithWLDF(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -1220,8 +1224,6 @@ class ItMultiDomainModelsWithLoadBalancer {
 
   // verify the admin console login using admin node port
   private void verifyAdminConsoleLoginUsingAdminNodePort(String domainUid, String domainNamespace) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");
