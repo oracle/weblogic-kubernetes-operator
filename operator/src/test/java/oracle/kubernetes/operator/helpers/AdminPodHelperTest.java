@@ -158,6 +158,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
     return ReferenceObjects.ADMIN_MII_AUX_IMAGE_POD_3_3;
   }
 
+  @Override
+  String getReferenceMiiConvertedAuxImagePodYaml_3_4() {
+    return ReferenceObjects.ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4;
+  }
+
   String getDomainValidationFailedKey() {
     return DOMAIN_VALIDATION_FAILED;
   }
