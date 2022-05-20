@@ -29,7 +29,8 @@ public class NginxParams {
   private static final String NGINX_IMAGE_REGISTRY = "controller.image.registry";
   private static final String NGINX_IMAGE = "controller.image.image";
   private static final String NGINX_IMAGE_TAG = "controller.image.tag";
-  private static final String NGINX_IMAGE_DIGEST = "controller.image.digest";  
+  private static final String NGINX_IMAGE_DIGEST = "controller.image.digest";
+  private static final String IMAGE_PULL_SECRET = "imagePullSecrets[0].name";  
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
@@ -37,10 +38,11 @@ public class NginxParams {
   private boolean webhooksEnabled = false;
   private HelmParams helmParams;
   private String ingressClassName;
-  private final String imageRegistry = OCIR_DEFAULT;
-  private final String nginxImage = OCIR_NGINX_IMAGE_NAME;
-  private final String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
-  private final String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
+  private String imageRegistry = OCIR_DEFAULT;
+  private String nginxImage = OCIR_NGINX_IMAGE_NAME;
+  private String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
+  private String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
+  private String imageRepoSecret;
 
   public NginxParams() {
     ingressClassName = UniqueName.uniqueName("nginx-");
@@ -65,14 +67,39 @@ public class NginxParams {
     return ingressClassName;
   }
 
-  public NginxParams helmParams(HelmParams helmParams) {
-    this.helmParams = helmParams;
-    return this;
-  }
-
   public HelmParams getHelmParams() {
     return helmParams;
   }
+
+  public NginxParams imageRegistry(String imageRegistry) {
+    this.imageRegistry = imageRegistry;
+    return this;
+  }
+
+  public NginxParams nginxImage(String nginxImage) {
+    this.nginxImage = nginxImage;
+    return this;
+  }
+
+  public NginxParams nginxImageTag(String nginxImageTag) {
+    this.nginxImageTag = nginxImageTag;
+    return this;
+  }
+
+  public NginxParams nginxImageDigest(String nginxImageDigest) {
+    this.nginxImageDigest = nginxImageDigest;
+    return this;
+  }
+  
+  public NginxParams imageRepoSecret(String imageRepoSecret) {
+    this.imageRepoSecret = imageRepoSecret;
+    return this;
+  }  
+
+  public NginxParams helmParams(HelmParams helmParams) {
+    this.helmParams = helmParams;
+    return this;
+  }  
 
   /**
    * Loads Helm values into a value map.
@@ -94,8 +121,12 @@ public class NginxParams {
     values.put(NGINX_IMAGE_REGISTRY, imageRegistry);
     values.put(NGINX_IMAGE, nginxImage);
     values.put(NGINX_IMAGE_TAG, nginxImageTag);
-    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);    
-
+    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);
+    
+    if (imageRepoSecret != null) {
+      values.put(IMAGE_PULL_SECRET, nginxImageDigest);
+    }
+    
     values.values().removeIf(Objects::isNull);
     return values;
   }
