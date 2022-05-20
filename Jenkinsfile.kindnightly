@@ -209,16 +209,6 @@ pipeline {
         )
     }
 
-    stages {
-        stage('Filter unwanted branches') {
-            when {
-                anyOf {
-                    changeRequest()
-                    branch 'main'
-                    branch 'release/3.3'
-                    branch 'release/3.4'
-                }
-            }
             stages {
                 stage('Workaround JENKINS-41929 Parameters bug') {
                     steps {
@@ -288,42 +278,6 @@ pipeline {
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
-
-                stage('Run Sonar Analysis') {
-                    steps {
-                        sh '''
-                            rm -rf ${WORKSPACE}/.mvn/maven.config
-                            mkdir -p ${WORKSPACE}/.mvn
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            if [ -z "${CHANGE_ID}" ]; then
-                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                            else
-                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                        '''
-                        withSonarQubeEnv('SonarCloud') {
-                            // For whatever reason, defining this property in the maven.config file is not working...
-                            //
-                            sh "mvn sonar:sonar"
-                        }
-                    }
-                }
-
-                 stage('Verify Sonar Quality Gate') {
-                    steps {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                        }
-                    }
-                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
@@ -564,6 +518,9 @@ EOF
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
+                            if [ "${MAVEN_PROFILE_NAME}" = "integration-test" ]; then
+                                mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
+                            fi
                         '''
                     }
                     post {
@@ -611,6 +568,5 @@ EOF
                     '''
                 }
             }
-        }
-    }
+
 }
