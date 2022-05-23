@@ -24,10 +24,10 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -54,12 +54,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -86,7 +84,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The use case described in this class verifies that an external RMI client
@@ -108,13 +105,13 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
+@DisabledOnSlimImage
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static NginxParams nginxHelmParams = null;
   private static int replicaCount = 2;
   private static String clusterName = "cluster-1";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -251,8 +248,6 @@ class ItExternalLbTunneling {
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
   void testExternalRmiAccessThruTraefik() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -311,8 +306,6 @@ class ItExternalLbTunneling {
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
   void testExternalRmiAccessThruTraefikHttpsTunneling() {
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-
     // Build the standalone JMS Client to send and receive messages
     buildClient();
 
@@ -361,9 +354,6 @@ class ItExternalLbTunneling {
   @DisplayName("Verify RMI access WLS through Route in OKD ")
   void testExternalRmiAccessThruRouteHttpTunneling() {
 
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-    logger.info("Installing Nginx controller using helm");
-
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -392,8 +382,6 @@ class ItExternalLbTunneling {
   @Test
   @DisplayName("Verify tls RMI access WLS through Route in OKD ")
   void testExternalRmiAccessThruRouteHttpsTunneling() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -579,14 +567,7 @@ class ItExternalLbTunneling {
             .as("Test uninstallTraefik returns true")
             .withFailMessage("uninstallTraefik() did not return true")
             .isTrue();
-      }
-      // uninstall NGINX
-      if (nginxHelmParams != null) {
-        assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
-            .as("Test uninstallNginx returns true")
-            .withFailMessage("uninstallNginx() did not return true")
-            .isTrue();
-      }
+      }     
     }
   }
 

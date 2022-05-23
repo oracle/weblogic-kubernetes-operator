@@ -92,9 +92,9 @@ specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
 For more information, see
-[Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
+[Configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
 and
-[Runtime updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md">}}).
+[Runtime updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md">}}).
 {{% /notice %}}
 
 #### Operator image pull secret
@@ -105,7 +105,7 @@ alternatively, the image pull secret can be specified on the operator's service 
 
 {{% notice info %}}
 For more information, see
-[Customizing operator image name, pull secret, and private registry]({{<relref "/userguide/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
+[Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
 {{% /notice %}}
 
 #### Operator external REST interface secret
@@ -115,7 +115,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see [REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
+For more information, see [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
 {{% /notice %}}
 
 #### Operator internal REST interface secret

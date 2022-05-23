@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
@@ -38,7 +37,6 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.equalTo;
@@ -83,7 +81,7 @@ class ServicePresenceTest {
     packet.put(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     packet.put(CLUSTER_NAME, CLUSTER);
     packet.put(SERVER_NAME, SERVER);
-    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    packet.with(info);
   }
 
   private void disableMakeRightDomainProcessing() {
@@ -92,9 +90,7 @@ class ServicePresenceTest {
 
   @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test

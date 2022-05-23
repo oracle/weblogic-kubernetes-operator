@@ -23,6 +23,18 @@ def kind_k8s_map = [
         '1.21':    'kindest/node:v1.21.10@sha256:84709f09756ba4f863769bdcabe5edafc2ada72d3c8c44d6515fc581b66b029c',
         '1.20.15': 'kindest/node:v1.20.15@sha256:393bb9096c6c4d723bb17bceb0896407d7db581532d11ea2839c80b28e5d8deb',
         '1.20':    'kindest/node:v1.20.15@sha256:393bb9096c6c4d723bb17bceb0896407d7db581532d11ea2839c80b28e5d8deb'
+    ],
+    '0.13.0': [
+        '1.24.0':  'kindest/node:v1.24.0@sha256:406fd86d48eaf4c04c7280cd1d2ca1d61e7d0d61ddef0125cb097bc7b82ed6a1',
+        '1.24':    'kindest/node:v1.24.0@sha256:406fd86d48eaf4c04c7280cd1d2ca1d61e7d0d61ddef0125cb097bc7b82ed6a1',
+        '1.23.6':  'kindest/node:v1.23.6@sha256:1af0f1bee4c3c0fe9b07de5e5d3fafeb2eec7b4e1b268ae89fcab96ec67e8355',
+        '1.23':    'kindest/node:v1.23.6@sha256:1af0f1bee4c3c0fe9b07de5e5d3fafeb2eec7b4e1b268ae89fcab96ec67e8355',
+        '1.22.9':  'kindest/node:v1.22.9@sha256:6e57a6b0c493c7d7183a1151acff0bfa44bf37eb668826bf00da5637c55b6d5e',
+        '1.22':    'kindest/node:v1.22.9@sha256:6e57a6b0c493c7d7183a1151acff0bfa44bf37eb668826bf00da5637c55b6d5e',
+        '1.21.12': 'kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e',
+        '1.21':    'kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3',
+        '1.20':    'kindest/node:v1.20.15@sha256:a6ce604504db064c5e25921c6c0fffea64507109a1f2a512b1b562ac37d652f3'
     ]
 ]
 def _kind_image = null
@@ -87,21 +99,27 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.13.0',
                    '0.12.0',
                    '0.11.1'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.10, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.21.10',
+                    '1.21.12',
+                    '1.24',
+                    '1.24.0',
+                    '1.23.6',
                     '1.23.4',
                     '1.23.3',
                     '1.23',
-                    '1.22.10',
+                    '1.22.9',
+                    '1.22.7',
                     '1.22.5',
                     '1.22',
+                    '1.21.10',
                     '1.21.1',
                     '1.21',
                     '1.20.15',
