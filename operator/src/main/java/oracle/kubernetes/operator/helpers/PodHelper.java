@@ -415,9 +415,9 @@ public class PodHelper {
     }
 
     @Override
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars() {
       List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
-      addStartupEnvVars(vars, tuningParameters);
+      addStartupEnvVars(vars);
       return vars;
     }
 
@@ -574,11 +574,11 @@ public class PodHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars() {
       List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
       List<V1EnvVar> vars = new ArrayList<>(envVars);
-      addStartupEnvVars(vars, tuningParameters);
+      addStartupEnvVars(vars);
       return vars;
     }
   }

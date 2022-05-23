@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -44,16 +43,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
@@ -308,134 +303,6 @@ public class JobHelper {
       if (!volumeMounts.contains(mount) && mount.getName().startsWith(COMPATIBILITY_MODE)) {
         volumeMounts.add(mount);
       }
-    }
-
-    private String getAsName() {
-      return domainTopology.getAdminServerName();
-    }
-
-    private Integer getAsPort() {
-      return domainTopology
-          .getServerConfig(getAsName())
-          .getLocalAdminProtocolChannelPort();
-    }
-
-    private boolean isLocalAdminProtocolChannelSecure() {
-      return domainTopology
-          .getServerConfig(getAsName())
-          .isLocalAdminProtocolChannelSecure();
-    }
-
-    private String getAsServiceName() {
-      return LegalNames.toServerServiceName(getDomainUid(), getAsName());
-    }
-
-    @Override
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      // Pod for introspector job would use same environment variables as for admin server
-      List<V1EnvVar> vars =
-            PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
-
-      addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
-      addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
-      addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
-      addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
-      addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
-      addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
-      addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
-      addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
-      addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
-      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
-      addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
-              Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
-      Optional.ofNullable(getKubernetesPlatform(tuningParameters))
-              .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
-
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
-      if (isIstioEnabled()) {
-        // Only add the following Istio configuration environment variables when explicitly configured
-        // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
-        // hash code of the set of environment variables.
-        if (!isLocalhostBindingsEnabled()) {
-          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS, "false");
-        }
-
-        if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {
-          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
-        }
-      }
-      if (isUseOnlineUpdate()) {
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, "true");
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,
-            Long.toString(getDomain().getWDTActivateTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT,
-            Long.toString(getDomain().getWDTConnectTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT,
-            Long.toString(getDomain().getWDTDeployTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT,
-            Long.toString(getDomain().getWDTReDeployTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT,
-            Long.toString(getDomain().getWDTUnDeployTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT,
-            Long.toString(getDomain().getWDTStartApplicationTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT,
-            Long.toString(getDomain().getWDTStopApplicationTimeoutMillis()));
-        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT,
-            Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
-      }
-
-      String dataHome = getDataHome();
-      if (dataHome != null && !dataHome.isEmpty()) {
-        addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
-      }
-
-      // Populate env var list used by the MII introspector job's 'short circuit' MD5
-      // check. To prevent a false trip of the circuit breaker, the list must be the
-      // same regardless of whether domainTopology == null.
-      StringBuilder sb = new StringBuilder(vars.size() * 32);
-      for (V1EnvVar var : vars) {
-        sb.append(var.getName()).append(',');
-      }
-      sb.deleteCharAt(sb.length() - 1);
-      addEnvVar(vars, "OPERATOR_ENVVAR_NAMES", sb.toString());
-
-      if (domainTopology != null) {
-        // The domainTopology != null when the job is rerun for the same domain. In which
-        // case we should now know how to contact the admin server, the admin server may
-        // already be running, and the job may want to contact the admin server.
-
-        addEnvVar(vars, "ADMIN_NAME", getAsName());
-        addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
-        if (isLocalAdminProtocolChannelSecure()) {
-          addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
-        }
-        addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
-      }
-
-      String modelHome = getModelHome();
-      if (modelHome != null && !modelHome.isEmpty()) {
-        addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
-      }
-
-      String wdtInstallHome = getWdtInstallHome();
-      if (wdtInstallHome != null && !wdtInstallHome.isEmpty()) {
-        addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
-      }
-
-      Optional.ofNullable(getAuxiliaryImagePaths(getServerSpec().getAuxiliaryImages(),
-          getDomain().getAuxiliaryImageVolumes()))
-              .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
-      return vars;
-    }
-
-    private String getKubernetesPlatform(TuningParameters tuningParameters) {
-      return tuningParameters.getKubernetesPlatform();
     }
 
   }

@@ -38,13 +38,17 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
   public static final String KUBERNETES_PLATFORM_HELM_VARIABLE = "kubernetesPlatform";
+  public static final String USER_MEM_ARGS = "USER_MEM_ARGS";
+  protected final String kubernetesPlatform;
 
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
+    kubernetesPlatform = TuningParameters.getInstance().getKubernetesPlatform();
   }
 
   final <T> T updateForDeepSubstitution(V1PodSpec podSpec, T target) {
@@ -206,15 +210,6 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   /**
-   * Abstract method to be implemented by subclasses to return a list of configured and additional
-   * environment variables to be set up in the pod.
-   *
-   * @param tuningParameters TuningParameters that can be used when obtaining
-   * @return A list of configured and additional environment variables
-   */
-  abstract List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters);
-
-  /**
    * Return a list of environment variables to be set up in the pod. This method does some
    * processing of the list of environment variables such as token substitution before returning the
    * list.
@@ -225,13 +220,36 @@ public abstract class BasePodStepContext extends StepContextBase {
    */
   final List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
 
-    List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
+    List<V1EnvVar> vars = new ArrayList<>();
+    addConfiguredEnvVarsExcludingAuxImagePaths(vars);
 
     addDefaultEnvVarIfMissing(
-        vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
+        vars, USER_MEM_ARGS, "-Djava.security.egd=file:/dev/./urandom");
+
+    addAuxImagePathsEnvVarIfExists(vars);
 
     hideAdminUserCredentials(vars);
     return doDeepSubstitution(varsToSubVariables(vars), vars);
+  }
+
+  /**
+   * Abstract method to be implemented by subclasses to return a list of configured and additional
+   * environment variables to be set up in the pod.
+   *
+   * @return A list of configured and additional environment variables
+   */
+  abstract List<V1EnvVar> getConfiguredEnvVars();
+
+  private void addConfiguredEnvVarsExcludingAuxImagePaths(List<V1EnvVar> vars) {
+    getConfiguredEnvVars().stream()
+            .filter(v -> !AUXILIARY_IMAGE_PATHS.equals(v.getName()))
+            .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+  }
+
+  private void addAuxImagePathsEnvVarIfExists(List<V1EnvVar> vars) {
+    getConfiguredEnvVars().stream()
+            .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
+            .forEach(envVar -> addIfMissing(vars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
   }
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
@@ -239,7 +257,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   private void addEnvVar(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
-    if ((value != null) && (!value.isEmpty())) {
+    if (((value != null) && (!value.isEmpty())) || (valueFrom == null)) {
       addEnvVar(vars, name, value);
     } else {
       addEnvVarWithValueFrom(vars, name, valueFrom);
@@ -355,5 +373,9 @@ public abstract class BasePodStepContext extends StepContextBase {
         getMountPath(auxiliaryImage, auxiliaryImageVolumes)));
     return Arrays.stream(auxiliaryImagePaths.toString().split(Pattern.quote(","))).distinct()
             .filter(st -> !st.isEmpty()).collect(Collectors.joining(","));
+  }
+
+  protected String getKubernetesPlatform() {
+    return kubernetesPlatform;
   }
 }
