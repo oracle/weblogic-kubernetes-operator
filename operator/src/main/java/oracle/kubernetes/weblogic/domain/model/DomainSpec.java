@@ -824,10 +824,11 @@ public class DomainSpec extends BaseConfiguration {
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getEnabled)
-        .orElse(false);
+    return false;
+    //    return Optional.ofNullable(configuration)
+    //        .map(Configuration::getIstio)
+    //        .map(Istio::getEnabled)
+    //        .orElse(false);
   }
 
   Istio getIstio() {

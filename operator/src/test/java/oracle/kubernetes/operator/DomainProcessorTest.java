@@ -1716,18 +1716,23 @@ class DomainProcessorTest {
     List<V1Pod> runningPods = getRunningPods();
     assertThat(runningPods.size(), equalTo(6));
 
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(8888));
-    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(8888));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server1"), equalTo(8003));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-server2"), equalTo(8004));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server1"), equalTo(7104));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-managed-server2"), equalTo(7104));
+    assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7001));
 
     // default  is not set
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"), equalTo(null));
-    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"), equalTo(null));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
+        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+    assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
+        equalTo(null));
 
   }
 

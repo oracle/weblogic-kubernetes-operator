@@ -797,17 +797,6 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenExposingDefaultChannelIfIstio_Enabled() {
-    configureDomain(domain)
-        .withDomainHomeSourceType(IMAGE)
-        .withIstio()
-        .withDomainType(ModelInImageDomainType.WLS)
-        .configureAdminServer()
-        .configureAdminService()
-        .withChannel("default");
-
-    assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
-          "Istio is enabled and the domain resource specified to expose channel",
-          "default")));
   }
 
   @Test

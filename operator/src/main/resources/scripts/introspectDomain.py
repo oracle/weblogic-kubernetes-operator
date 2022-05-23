@@ -955,28 +955,25 @@ class TopologyGenerator(Generator):
     # Change the name to follow the istio port naming convention
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
-    if istio_enabled == 'true':
-      name = nap.getName()
-      if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
-          or name.startswith('https-'):
-        # skip istio ports already defined by WDT filtering for MII
-        return
-      http_protocol = [ 'http' ]
-      https_protocol = ['https','admin']
-      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
-      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
-      if nap_protocol in http_protocol:
-        name = 'http-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in https_protocol:
-        name = 'https-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in tcp_protocol:
-        name = 'tcp-' + nap.getName().replace(' ', '_')
-      elif nap_protocol in tls_protocol:
-        name = 'tls-' + nap.getName().replace(' ', '_')
-      else:
-        name = 'tcp-' + nap.getName().replace(' ', '_')
+    name = nap.getName()
+    if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
+        or name.startswith('https-'):
+      # skip istio ports already defined by WDT filtering for MII
+      return
+    http_protocol = [ 'http' ]
+    https_protocol = ['https','admin']
+    tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
+    tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
+    if nap_protocol in http_protocol:
+      name = 'http-' + nap.getName().replace(' ', '_')
+    elif nap_protocol in https_protocol:
+      name = 'https-' + nap.getName().replace(' ', '_')
+    elif nap_protocol in tcp_protocol:
+      name = 'tcp-' + nap.getName().replace(' ', '_')
+    elif nap_protocol in tls_protocol:
+      name = 'tls-' + nap.getName().replace(' ', '_')
     else:
-      name=self.name(nap)
+      name = 'tcp-' + nap.getName().replace(' ', '_')
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
 
@@ -1598,6 +1595,7 @@ class SitConfigGenerator(Generator):
       self.writeln('</d:coherence-member-config>')
 
   def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
+    # TODO  safe to remove .. verify readiness port is set in operator
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
@@ -1653,6 +1651,7 @@ class SitConfigGenerator(Generator):
                           bind_to_localhost="false")
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
+    # TODO  safe to remove .. verify readiness port is set in operator
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
@@ -1729,8 +1728,10 @@ class SitConfigGenerator(Generator):
                                               listen_port=ssl_listen_port, protocol='t3s')
 
   def customizeIstioReplicationChannel(self, server, listen_address, listen_port, is_server_template):
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'false' or server.getCluster() is None :
+    # TODO  safe to remove .. should be reverted back to the default service channel, need to verify replication
+    # integration test
+
+    if server.getCluster() is None :
       return
 
     repl_channel_name = server.getCluster().getReplicationChannel()

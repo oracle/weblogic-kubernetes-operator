@@ -380,9 +380,8 @@ public class JobStepContext extends BasePodStepContext {
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.JOBNAME_LABEL, createJobName(getDomainUid()));
-    if (isIstioEnabled()) {
-      metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
-    }
+    // always set it to false
+    metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     return metadata;
   }
 

@@ -282,7 +282,7 @@ public class MonitoringExporterSteps {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
+      return "metrics";
     }
 
     private HttpRequest createConfigurationQueryRequest() {

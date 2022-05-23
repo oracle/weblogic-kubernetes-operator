@@ -296,11 +296,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1ContainerPort> ports = new ArrayList<>();
     getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
-    if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
-      addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-      addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-      addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
-    }
+    addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
 
     return ports;
   }
@@ -325,8 +323,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void addContainerPort(List<V1ContainerPort> ports, String name,
                                 @Nullable Integer listenPort, V1ContainerPort.ProtocolEnum protocol) {
     if (listenPort != null) {
-      name = createContainerPortName(ports, name);
-      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+      String finalName = createContainerPortName(ports, name);
+      // add if needed
+      if (ports.stream().noneMatch(p -> p.getProtocol().equals(protocol) && p.getContainerPort().equals(listenPort)
+          && Objects.equals(p.getName(), finalName))) {
+        ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+      }
     }
   }
 
@@ -875,33 +877,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     try {
-      boolean istioEnabled = getDomain().isIstioEnabled();
-      if (istioEnabled) {
-        int istioReadinessPort = getDomain().getIstioReadinessPort();
-        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
-        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
-        // request.
-        //
-        if (isDomainWideAdminPortEnabled()) {
-          readinessProbe =
-              readinessProbe.httpGet(
-                  httpGetAction(
-                      READINESS_PATH,
-                      getLocalAdminProtocolChannelPort(),
-                      isLocalAdminProtocolChannelSecure()));
-        } else {
-          readinessProbe =
-              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
-                  false));
-        }
-      } else {
-        readinessProbe =
-            readinessProbe.httpGet(
-                httpGetAction(
-                    READINESS_PATH,
-                    getLocalAdminProtocolChannelPort(),
-                    isLocalAdminProtocolChannelSecure()));
-      }
+      readinessProbe =
+          readinessProbe.httpGet(
+              httpGetAction(
+                  READINESS_PATH,
+                  getLocalAdminProtocolChannelPort(),
+                  isLocalAdminProtocolChannelSecure()));
     } catch (Exception e) {
       // do nothing
     }
@@ -1488,7 +1469,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
+      return "tcp-metrics";
     }
 
     private String createJavaOptions() {

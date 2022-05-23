@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -179,17 +180,35 @@ public class ServiceHelper {
     return new ExternalServiceStepContext(null, packet).createModel();
   }
 
-  static List<String> getAppProtocolAndPortName(String portName) {
+  static List<String> getAppProtocolAndPortName(String portName, String protocol) {
     List<String> results = new ArrayList<>();
-    String[] tokens = portName.split("-");
-    
+    List<String> httpProtocols = new ArrayList<>(Arrays.asList("http"));
+    List<String> httpsProtocols = new ArrayList<>(Arrays.asList("https", "admin"));
+    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips"));
+
+    String appProtocol = "tcp";
+    if (httpProtocols.contains(protocol)) {
+      appProtocol = "http";
+    } else if (httpsProtocols.contains(protocol)) {
+      appProtocol = "https";
+    } else if (tlsProtocols.contains(protocol)) {
+      appProtocol = "tls";
+    }
+
     if (!ISTIO_METRICS_SERVICE_NAME.equals(portName)) {
-      if (tokens.length > 0 && "http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-          || "tls".equals(tokens[0])) {
-        results.add(tokens[0]);
-        int index = portName.indexOf('-');
-        // normalize channel name since we use appProtocol
-        results.add(portName.substring(index + 1));
+      results.add(appProtocol);
+      if ("default".equals(portName)) {
+        results.add(portName);
+      } else if ("default-admin".equals(portName) || "default-secure".equals(portName)) {
+        results.add(portName);
+      } else {
+        String[] tokens = portName.split("-");
+        if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+            || "tls".equals(tokens[0])) {
+          int index = portName.indexOf('-');
+          // normalize channel name since we use appProtocol
+          results.add(portName.substring(index + 1));
+        }
       }
     }
     return results;
@@ -346,13 +365,11 @@ public class ServiceHelper {
       if (port == null) {
         return;
       }
-      String appProtocol = null;
-      if (isIstioEnabled()) {
-        List<String> results = getAppProtocolAndPortName(portName);
-        if (results.size() == 2) {
-          appProtocol = results.get(0);
-          portName = results.get(1);
-        }
+      String appProtocol = "tcp";
+      List<String> results = getAppProtocolAndPortName(portName, protocol);
+      if (results.size() == 2) {
+        appProtocol = results.get(0);
+        portName = results.get(1);
       }
       addServicePortIfNeeded(ports, createServicePort(portName, port, appProtocol));
       if (isSipProtocol(protocol)) {
@@ -432,11 +449,10 @@ public class ServiceHelper {
       for (NetworkAccessPoint networkAccessPoint : getNetworkAccessPoints(serverConfig)) {
         addNapServicePort(ports, networkAccessPoint);
       }
-      if (!isIstioEnabled()) {
-        addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
-        addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
-        addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
-      }
+
+      addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
+      addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
+      addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
@@ -446,7 +462,7 @@ public class ServiceHelper {
     }
 
     private String getMetricsPortName() {
-      return getDomain().isIstioEnabled() ? ISTIO_METRICS_SERVICE_NAME : METRICS_SERVICE_NAME;
+      return ISTIO_METRICS_SERVICE_NAME;
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -815,13 +831,13 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
-      String appProtocol = null;
-      if (isIstioEnabled()) {
-        List<String> results = getAppProtocolAndPortName(portName);
-        if (results.size() == 2) {
-          appProtocol = results.get(0);
-          portName = results.get(1);
-        }
+      String appProtocol = "tcp";
+      // TODO: may not be the best way, probably need to change how introspector write out just the portName and
+      // then here use the protocol to determine the appProtocol
+      List<String> results = getAppProtocolAndPortName(portName, protocol);
+      if (results.size() == 2) {
+        appProtocol = results.get(0);
+        portName = results.get(1);
       }
 
       if (port != null) {
@@ -1002,9 +1018,9 @@ public class ServiceHelper {
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
-      String appProtocol = null;
-      if (channel == null && isIstioEnabled() && channelName != null) {
-        List<String> results = getAppProtocolAndPortName(channelName);
+      String appProtocol = "tcp";
+      if (channel == null && channelName != null) {
+        List<String> results = getAppProtocolAndPortName(channelName, protocol);
         if (results.size() == 2) {
           appProtocol = results.get(0);
           channelName = results.get(1);

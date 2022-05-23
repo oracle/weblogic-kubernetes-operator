@@ -1194,12 +1194,12 @@ public class Domain implements KubernetesObject {
     }
 
     private void verifyIstioExposingDefaultChannel() {
-      if (spec.isIstioEnabled()) {
-        Optional.ofNullable(spec.getAdminServer())
-            .map(AdminServer::getAdminService)
-            .map(AdminService::getChannels)
-            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
-      }
+    //      if (spec.isIstioEnabled()) {
+    //        Optional.ofNullable(spec.getAdminServer())
+    //            .map(AdminServer::getAdminService)
+    //            .map(AdminService::getChannels)
+    //            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
+    //      }
     }
 
     private void checkForDefaultNameExposed(Channel channel) {

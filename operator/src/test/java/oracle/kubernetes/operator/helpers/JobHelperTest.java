@@ -1339,14 +1339,14 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainIsIstioEnabled_localhostBindingsDisabled_hasIstioUseLocalhostBindingsEnv() {
-    configureDomain().withIstioLocalhostBindingsEnabled(false);
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
-    );
+  //    configureDomain().withIstioLocalhostBindingsEnabled(false);
+  //
+  //    V1JobSpec jobSpec = createJobSpec();
+  //
+  //    assertThat(
+  //          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+  //          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
+  //    );
   }
 
   @Test
@@ -1363,15 +1363,15 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainIsIstioEnabled_replicationChannelPort_hasIstioEnvVar() {
-    final String REPLICATION_CHANNEL_PORT = "6789";
-    configureDomain().withIstioReplicationChannelPort(Integer.valueOf(REPLICATION_CHANNEL_PORT));
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
-    );
+  //    final String REPLICATION_CHANNEL_PORT = "6789";
+  //    configureDomain().withIstioReplicationChannelPort(Integer.valueOf(REPLICATION_CHANNEL_PORT));
+  //
+  //    V1JobSpec jobSpec = createJobSpec();
+  //
+  //    assertThat(
+  //          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+  //          hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
+  //    );
   }
 
   @Test
@@ -1383,19 +1383,6 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(
           getMatchingContainerEnv(domainPresenceInfo, jobSpec),
           not(hasEnvVar(ISTIO_REPLICATION_PORT, Integer.toString(Istio.DEFAULT_REPLICATION_PORT))));
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_istioLocalhostBindingsEnabledEnv_hasIstioUseLocalhostBindingsEnv() {
-    TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "false");
-    configureDomain().withIstio();
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
-    );
   }
 
   @Test
