@@ -454,7 +454,7 @@ EOF
                             export NO_PROXY="${K8S_NODEPORT_HOST}"
 
                             if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                echo "-Dit.test=\"!!ItExternalRmiTunneling, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItPodRestart\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dit.test=\"${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMiiSample, !ItMonitoringExporter*, !ItPodRestart\"" >> ${WORKSPACE}/.mvn/maven.config
                             elif [ ! -z "${IT_TEST}" ]; then
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
