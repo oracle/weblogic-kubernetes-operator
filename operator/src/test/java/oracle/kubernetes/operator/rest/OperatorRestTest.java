@@ -5,15 +5,25 @@ package oracle.kubernetes.operator.rest;
 
 import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.google.gson.Gson;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
 import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
@@ -22,7 +32,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-class RestTest extends RestTestBase {
+class OperatorRestTest extends RestTestBase {
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
   private static final String V1_HREF = OPERATOR_HREF + "/" + V1;
@@ -36,6 +46,24 @@ class RestTest extends RestTestBase {
   private static final String DOMAIN2_HREF = DOMAINS_HREF + "/uid2";
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
+
+  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
+
+  @Override
+  protected Application configure() {
+    return new OperatorRestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
+  }
+
+  // Note: the #configure method is called during class initialization, before the restBackend field
+  // is initialized. We therefore populate the ResourceConfig with this supplier method, so that
+  // it will return the initialized and configured field.
+  private RestBackend getRestBackend() {
+    return restBackend;
+  }
+
+  Map getJsonResponse(String href) {
+    return new Gson().fromJson(createRequest(href).get(String.class), Map.class);
+  }
 
   @Test
   void whenNoAuthenticationHeader_rejectRequest() {
@@ -257,6 +285,53 @@ class RestTest extends RestTestBase {
     return params;
   }
 
+  abstract static class RestBackendStub implements RestBackend {
+    private final Map<String, List<ClusterState>> domainClusters = new HashMap<>();
+
+    void addDomain(String domain, String... clusterNames) {
+      domainClusters.put(
+          domain, Arrays.stream(clusterNames).map(ClusterState::new).collect(Collectors.toList()));
+    }
+
+    Integer getNumManagedServers(String domain, String clusterName) {
+      return getClusterStateStream(domain, clusterName)
+          .findFirst()
+          .map(ClusterState::getScale)
+          .orElse(0);
+    }
+
+    @Override
+    public Set<String> getDomainUids() {
+      return domainClusters.keySet();
+    }
+
+    @Override
+    public boolean isDomainUid(String domainUid) {
+      return domainClusters.containsKey(domainUid);
+    }
+
+    @Override
+    public Set<String> getClusters(String domainUid) {
+      return domainClusters.get(domainUid).stream()
+          .map(ClusterState::getClusterName)
+          .collect(Collectors.toSet());
+    }
+
+    @Override
+    public boolean isCluster(String domainUid, String cluster) {
+      return getClusters(domainUid).contains(cluster);
+    }
+
+    @Override
+    public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
+      getClusterStateStream(domainUid, cluster).forEach(cs -> cs.setScale(managedServerCount));
+    }
+
+    Stream<ClusterState> getClusterStateStream(String domainUid, String cluster) {
+      return domainClusters.get(domainUid).stream().filter(cs -> cs.hasClusterName(cluster));
+    }
+  }
+
   static class ClusterState {
     private final String clusterName;
     private Integer scale;
@@ -279,6 +354,38 @@ class RestTest extends RestTestBase {
 
     void setScale(Integer scale) {
       this.scale = scale;
+    }
+  }
+
+  abstract static class RestConfigStub implements RestConfig {
+    private final Supplier<RestBackend> restBackendSupplier;
+
+    RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
+      this.restBackendSupplier = restBackendSupplier;
+    }
+
+    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, restBackendSupplier);
+    }
+
+    @Override
+    public RestBackend getBackend(String accessToken) {
+      return restBackendSupplier.get();
+    }
+
+    @Override
+    public String getHost() {
+      return "localhost";
+    }
+
+    @Override
+    public int getExternalHttpsPort() {
+      return 8081;
+    }
+
+    @Override
+    public int getInternalHttpsPort() {
+      return 8082;
     }
   }
 }
