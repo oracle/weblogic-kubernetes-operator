@@ -23,11 +23,13 @@ import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.helpers.ClusterCrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CONVERSION_WEBHOOK_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createConversionWebhookEvent;
@@ -45,7 +47,8 @@ public class WebhookMain extends BaseMain {
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
 
-    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
+    WebhookMainDelegateImpl(Properties buildProps,
+        ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
     }
 
@@ -141,14 +144,23 @@ public class WebhookMain extends BaseMain {
 
   Step createCRDRecheckSteps() {
     return Step.chain(createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
-            new Certificates(delegate)), createCRDPresenceCheck());
+            new Certificates(delegate)), createDomainCRDPresenceCheck(),
+        createClusterCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
+        createClusterCRDPresenceCheck());
   }
 
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
   // domains in the operator's namespace. That should succeed (although usually returning an empty list)
   // if the CRD is present.
-  private Step createCRDPresenceCheck() {
+  private Step createDomainCRDPresenceCheck() {
     return new CallBuilder().listDomainAsync(getWebhookNamespace(), new CrdPresenceResponseStep());
+  }
+
+  // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
+  // domains in the operator's namespace. That should succeed (although usually returning an empty list)
+  // if the CRD is present.
+  private Step createClusterCRDPresenceCheck() {
+    return new CallBuilder().listClusterAsync(getWebhookNamespace(), new ClusterCrdPresenceResponseStep());
   }
 
   // on failure, aborts the processing.
@@ -162,6 +174,25 @@ public class WebhookMain extends BaseMain {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
+      if (!warnedOfCrdAbsence) {
+        LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
+        warnedOfCrdAbsence = true;
+      }
+      return doNext(null, packet);
+    }
+  }
+
+  // on failure, aborts the processing.
+  private class ClusterCrdPresenceResponseStep extends DefaultResponseStep<ClusterList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<ClusterList> callResponse) {
+      warnedOfCrdAbsence = false;
+      return super.onSuccess(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<ClusterList> callResponse) {
       if (!warnedOfCrdAbsence) {
         LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
         warnedOfCrdAbsence = true;
@@ -204,9 +235,4 @@ public class WebhookMain extends BaseMain {
     }
   }
 
-  public static class DeploymentException extends Exception {
-    public DeploymentException(Exception e) {
-      super(e);
-    }
-  }
 }

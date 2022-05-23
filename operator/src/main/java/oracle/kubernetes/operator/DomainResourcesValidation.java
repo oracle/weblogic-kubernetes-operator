@@ -45,9 +45,6 @@ class DomainResourcesValidation {
 
   NamespacedResources.Processors getProcessors() {
     return new NamespacedResources.Processors() {
-      private void accept(ClusterList l) {
-        addClusterList(l);
-      }
 
       @Override
       Consumer<V1PodList> getPodListProcessing() {
