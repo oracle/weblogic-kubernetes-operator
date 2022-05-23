@@ -33,7 +33,7 @@ public class WebhookRestServer extends BaseRestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  private WebhookRestServer(RestConfig config) {
+  WebhookRestServer(RestConfig config) {
     super(config);
     LOGGER.entering();
     baseWebhookHttpsUri = "https://" + config.getHost() + ":" + config.getWebhookHttpsPort();
