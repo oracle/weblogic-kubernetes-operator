@@ -10,11 +10,14 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
@@ -22,6 +25,7 @@ import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
@@ -63,6 +67,20 @@ class WebhookRestTest extends RestTestBase {
     request.setObject(new Object());
     request.setOldObject(new Object());
     return request;
+  }
+
+  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
+
+  @Override
+  protected Application configure() {
+    return new WebhookRestServer(RestConfigStub.create(this::getRestBackend)).createResourceConfig();
+  }
+
+  // Note: the #configure method is called during class initialization, before the restBackend field
+  // is initialized. We therefore populate the ResourceConfig with this supplier method, so that
+  // it will return the initialized and configured field.
+  private RestBackend getRestBackend() {
+    return restBackend;
   }
 
   @Test
@@ -220,4 +238,34 @@ class WebhookRestTest extends RestTestBase {
     return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
   }
 
+  abstract static class RestBackendStub implements RestBackend {
+  }
+
+  abstract static class RestConfigStub implements RestConfig {
+    private final Supplier<RestBackend> restBackendSupplier;
+
+    RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
+      this.restBackendSupplier = restBackendSupplier;
+    }
+
+    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, restBackendSupplier);
+    }
+
+    @Override
+    public RestBackend getBackend(String accessToken) {
+      return restBackendSupplier.get();
+    }
+
+    @Override
+    public String getHost() {
+      return "localhost";
+    }
+
+    @Override
+    public int getWebhookHttpsPort() {
+      return 8084;
+    }
+  }
 }
+
