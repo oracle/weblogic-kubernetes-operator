@@ -32,9 +32,9 @@ setupTerraform() {
     mkdir ${terraformDir}
     cd ${terraformDir}
     if [[ "${OSTYPE}" == "darwin"* ]]; then
-      os_type = "darwin"
+      os_type="darwin"
     elif [[ "${OSTYPE}" == "linux"* ]]; then
-       os_type = "linux"
+       os_type="linux"
     else
        echo "Unsupported OS"
     fi
