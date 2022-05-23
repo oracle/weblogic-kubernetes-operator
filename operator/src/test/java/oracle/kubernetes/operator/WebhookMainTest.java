@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -55,7 +56,10 @@ import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.common.logging.MessageKeys.CONVERSION_WEBHOOK_STARTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CRD_NOT_INSTALLED;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
+import static oracle.kubernetes.common.logging.MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED;
 import static oracle.kubernetes.common.logging.MessageKeys.WAIT_FOR_CRD_INSTALLATION;
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_CONFIG_NAMESPACE;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
@@ -64,6 +68,7 @@ import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILE
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.KubernetesConstants.WEBHOOK_NAMESPACE_ENV;
@@ -158,7 +163,11 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(loggerControl);
+    mementos.add(loggerControl.withLogLevel(Level.INFO)
+        .collectLogMessages(logRecords,
+            VALIDATING_WEBHOOK_CONFIGURATION_CREATED, VALIDATING_WEBHOOK_CONFIGURATION_REPLACED,
+            CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED, REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
+            READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED));
     mementos.add(testSupport.install());
     mementos.add(TestStepFactory.install());
     mementos.add(HelmAccessStub.install());
@@ -176,6 +185,8 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     testValidatingWebhookConfig = new V1ValidatingWebhookConfiguration()
         .metadata(createNameOnlyMetadata())
         .addWebhooksItem(createValidatingWebhook());
+
+    testSupport.addRetryStrategy(retryStrategy);
   }
 
   @AfterEach
@@ -263,8 +274,6 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreated_logStartupMessage() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
-
     testSupport.runSteps(main.createStartupSteps());
 
     assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
@@ -286,6 +295,53 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
     assertThat(getServicePort(generatedConfiguration), equalTo(CONVERSION_WEBHOOK_HTTPS_PORT));
     assertThat(getServicePath(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_PATH));
+  }
+
+  @Test
+  void whenValidatingWebhookReadFailed404_createIt() {
+    testSupport.failOnRead(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_NOT_FOUND);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookReadFailed500_dontCreateIt() {
+    testSupport.failOnRead(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_INTERNAL_ERROR);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), empty());
+    assertThat(logRecords,
+        not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        containsInfo(READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+  }
+
+  @Test
+  void whenValidatingWebhookReadFailed504_createItOnRetry() {
+    testSupport.failOnRead(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_GATEWAY_TIMEOUT);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+  }
+
+  @Test
+  void whenValidatingWebhookReadFailed401_dontCreateIt() {
+    testSupport.failOnRead(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_UNAUTHORIZED);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        containsInfo(READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
   }
 
   @Test
@@ -318,10 +374,27 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
-    testSupport.addRetryStrategy(retryStrategy);
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, VALIDATING_WEBHOOK_CONFIGURATION_CREATED);
+  void whenValidatingWebhookCreatedAgainWithSameNamespaceSameCABundle_noLogMessagesFound() {
+    testSupport.defineResources(testValidatingWebhookConfig);
 
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(getName(generatedConfiguration), equalTo(VALIDATING_WEBHOOK_NAME));
+    assertThat(logRecords,
+        not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        not(containsInfo(CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_REPLACED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        not(containsInfo(REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAfterFailure504_logStartupMessage() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());
@@ -329,14 +402,12 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
     assertThat(logRecords,
         containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME));
+    assertThat(logRecords,
+        not(containsInfo(CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
   }
 
   @Test
-  void whenValidatingWebhookCreatedAfterFailure401_notCreated() {
-    testSupport.addRetryStrategy(retryStrategy);
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords,
-        VALIDATING_WEBHOOK_CONFIGURATION_CREATED, CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED);
-
+  void whenValidatingWebhookCreatedAfterFailure401_dontCreateIt() {
     testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_UNAUTHORIZED);
 
     testSupport.runSteps(main.createStartupSteps());
@@ -349,9 +420,21 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenValidatingWebhookCreatedAgainWithDifferentNamespaceAfterFailure504_replaceIt() {
-    testSupport.addRetryStrategy(retryStrategy);
+  void whenValidatingWebhookCreatedAfterFailure500_dontCreateIt() {
+    testSupport.failOnCreate(VALIDATING_WEBHOOK_CONFIGURATION, null, HTTP_INTERNAL_ERROR);
 
+    testSupport.runSteps(main.createStartupSteps());
+
+    assertThat(testSupport.getResources(VALIDATING_WEBHOOK_CONFIGURATION), notNullValue());
+    assertThat(logRecords,
+        not(containsInfo(VALIDATING_WEBHOOK_CONFIGURATION_CREATED).withParams(VALIDATING_WEBHOOK_NAME)));
+    assertThat(logRecords,
+        containsInfo(CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME));
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAgainWithDifferentNamespaceAfterFailure504_replaceIt() {
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_GATEWAY_TIMEOUT);
@@ -367,12 +450,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreatedAgainWithFailure401onReplace_dontReplaceItOnRetry() {
-    testSupport.addRetryStrategy(retryStrategy);
-
     setServiceCaBundle(testCaBundle);
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
-
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_UNAUTHORIZED);
 
     testSupport.runSteps(main.createStartupSteps());
@@ -388,12 +468,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreatedAgainWithFailure404onReplace_replaceItOnRetry() {
-    testSupport.addRetryStrategy(retryStrategy);
-
     setServiceCaBundle(testCaBundle);
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
-
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_NOT_FOUND);
 
     testSupport.runSteps(main.createStartupSteps());
@@ -409,12 +486,9 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   @Test
   void whenValidatingWebhookCreatedAgainWithFailure504onReplace_replaceItOnRetry() {
-    testSupport.addRetryStrategy(retryStrategy);
-
     setServiceCaBundle(testCaBundle);
     setServiceNamespace(testNamespace);
     testSupport.defineResources(testValidatingWebhookConfig);
-
     testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_GATEWAY_TIMEOUT);
 
     testSupport.runSteps(main.createStartupSteps());
@@ -426,6 +500,21 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(getCaBundle(generatedConfiguration), not(equalTo(testCaBundle)));
     assertThat(getServiceNamespace(generatedConfiguration), equalTo(getWebhookNamespace()));
     assertThat(getCreatedValidatingWebhookConfigurationCount(), equalTo(1));
+  }
+
+  @Test
+  void whenValidatingWebhookCreatedAgainWithFailure500onReplace_dontReplaceItOnRetry() {
+    setServiceCaBundle(testCaBundle);
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
+    testSupport.failOnReplace(VALIDATING_WEBHOOK_CONFIGURATION, VALIDATING_WEBHOOK_NAME, null, HTTP_INTERNAL_ERROR);
+
+    testSupport.runSteps(main.createStartupSteps());
+
+    logRecords.clear();
+    assertThat(logRecords,
+        not(containsInfo(REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   private V1ObjectMeta createNameOnlyMetadata() {

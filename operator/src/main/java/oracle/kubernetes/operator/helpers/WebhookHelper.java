@@ -21,7 +21,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -34,6 +33,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CO
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
 import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
@@ -167,7 +167,8 @@ public class WebhookHelper {
       return new ReadResponseStep(next);
     }
 
-    private class ReadResponseStep extends DefaultResponseStep<V1ValidatingWebhookConfiguration> {
+    
+    private class ReadResponseStep extends WebhookConfigResponseStep {
       ReadResponseStep(Step next) {
         super(next);
       }
@@ -232,25 +233,24 @@ public class WebhookHelper {
       }
 
       @Override
-      protected NextAction onFailureNoRetry(Packet packet,
-                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        return isNotAuthorizedOrForbidden(callResponse)
-            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
-      }
-    }
-
-    private class CreateResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
-      CreateResponseStep(Step next) {
-        super(next);
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+            ? onSuccess(packet, callResponse)
+            : super.onFailure(packet, callResponse);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
-        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
-          return onFailureNoRetry(packet, callResponse);
-        } else {
-          return super.onFailure(getConflictStep(), packet, callResponse);
-        }
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        LOGGER.info(MessageKeys.READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
+            VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
+        return super.onFailureNoRetry(packet, callResponse);
+      }
+    }
+
+    private class CreateResponseStep extends WebhookConfigResponseStep {
+      CreateResponseStep(Step next) {
+        super(next);
       }
 
       @Override
@@ -264,8 +264,7 @@ public class WebhookHelper {
                                             CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         LOGGER.info(MessageKeys.CREATE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
             VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
-        return isNotAuthorizedOrForbidden(callResponse)
-            ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+        return super.onFailureNoRetry(packet, callResponse);
       }
     }
 
@@ -273,7 +272,7 @@ public class WebhookHelper {
       return new ReplaceResponseStep(next);
     }
 
-    private class ReplaceResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+    private class ReplaceResponseStep extends WebhookConfigResponseStep {
       ReplaceResponseStep(Step next) {
         super(next);
       }
@@ -282,16 +281,38 @@ public class WebhookHelper {
       public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
           return super.onFailure(getConflictStep(), packet, callResponse);
-        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
-          return onFailureNoRetry(packet, callResponse);
         } else {
-          return super.onFailure(getConflictStep(), packet, callResponse);
+          return super.onFailure(packet, callResponse);
         }
       }
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        LOGGER.info(MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_REPLACED, getName(callResponse.getResult()));
         return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet,
+                                            CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        LOGGER.info(MessageKeys.REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED,
+            VALIDATING_WEBHOOK_NAME, callResponse.getE().getResponseBody());
+        return super.onFailureNoRetry(packet, callResponse);
+      }
+    }
+
+    private class WebhookConfigResponseStep extends ResponseStep<V1ValidatingWebhookConfiguration> {
+      WebhookConfigResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1ValidatingWebhookConfiguration> callResponse) {
+        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return super.onFailure(getConflictStep(), packet, callResponse);
+        }
       }
 
       @Override
