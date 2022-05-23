@@ -9,7 +9,7 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:8-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk18.0.1.1/65ae32619e2f40f3a9af3af1851d6e19/2/GPL/openjdk-18.0.1.1_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
@@ -34,8 +34,8 @@ COPY --from=jre-build /jre jre
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
-    microdnf -y install jq; \
     microdnf -y update; \
+    microdnf -y install jq; \
     microdnf clean all; \
     for bin in /jre/bin/*; do \
         base="$(basename "$bin")"; \
