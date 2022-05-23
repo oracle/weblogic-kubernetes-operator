@@ -31,8 +31,15 @@ generateTFVarFile() {
 setupTerraform() {
     mkdir ${terraformDir}
     cd ${terraformDir}
-    curl -O https://releases.hashicorp.com/terraform/1.2.0/terraform_1.2.0_${OSTYPE}_amd64.zip
-    unzip terraform_1.2.0_${OSTYPE}_amd64.zip
+    if [[ "${OSTYPE}" == "darwin"* ]]; then
+      os_type = "darwin"
+    elif [[ "${OSTYPE}" == "linux"* ]]; then
+       os_type = "linux"
+    else
+       echo "Unsupported OS"
+    fi
+    curl -O https://releases.hashicorp.com/terraform/1.2.0/terraform_1.2.0_${os_type}_amd64.zip
+    unzip terraform_1.2.0_${os_type}_amd64.zip
     chmod +x ${terraformDir}/terraform
     export PATH=${terraformDir}:${PATH}
 }
