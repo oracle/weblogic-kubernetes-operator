@@ -3,88 +3,45 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.gson.Gson;
-import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import oracle.kubernetes.common.utils.BaseTestUtils;
 import oracle.kubernetes.operator.ServerStartState;
-import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
-import oracle.kubernetes.operator.rest.model.AdmissionRequest;
-import oracle.kubernetes.operator.rest.model.AdmissionResponse;
-import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
-import oracle.kubernetes.operator.rest.model.AdmissionReview;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
-import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import org.glassfish.jersey.test.JerseyTest;
-import org.glassfish.jersey.test.inmemory.InMemoryTestContainerFactory;
-import org.glassfish.jersey.test.spi.TestContainerException;
-import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.hamcrest.Description;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
-import static oracle.kubernetes.operator.EventTestUtils.getEvents;
-import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
-import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KIND;
 import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
-import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
-import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
-import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
-import static org.hamcrest.Matchers.containsString;
+import static oracle.kubernetes.operator.rest.RestTestBase.JsonArrayMatcher.withValues;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-class RestTest extends JerseyTest {
-
-  private static final String CONVERSION_REVIEW_RESPONSE = "conversion-review-response.yaml";
-  private static final String CONVERSION_REVIEW_REQUEST = "conversion-review-request.yaml";
-  private static final String VALIDATING_REVIEW_RESPONSE_ACCEPT = "domain-validating-webhook-response-accept.yaml";
-  private static final String VALIDATING_REVIEW_REQUEST_1 = "domain-validating-webhook-request-1.yaml";
-  private static final String VALIDATING_REVIEW_REQUEST_2 = "domain-validating-webhook-request-2.yaml";
+class OperatorRestTest extends RestTestBase {
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
-  private static final String WEBHOOK_HREF = "/webhook";
-  private static final String VALIDATING_WEBHOOK_HREF = "/admission";
   private static final String V1_HREF = OPERATOR_HREF + "/" + V1;
   private static final String LATEST_HREF = OPERATOR_HREF + "/latest";
 
@@ -96,43 +53,8 @@ class RestTest extends JerseyTest {
   private static final String DOMAIN2_HREF = DOMAINS_HREF + "/uid2";
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
-  private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
 
-  private final List<Memento> mementos = new ArrayList<>();
-  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
-  private boolean includeRequestedByHeader = true;
-  private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
-  private final AdmissionReview admissionReview = createAdmissionReview();
-
-  private AdmissionReview createAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createAdmissionRequest());
-  }
-
-  private AdmissionRequest createAdmissionRequest() {
-    AdmissionRequest request = new AdmissionRequest();
-    request.setUid(RESPONSE_UID);
-    request.setKind(new HashMap<>());
-    request.setResource(new HashMap<>());
-    request.setSubResource(new HashMap<>());
-    request.setObject(new Object());
-    request.setOldObject(new Object());
-    return request;
-  }
-
-  @BeforeEach
-  public void setupRestTest() throws Exception {
-    setUp();
-    mementos.add(testSupport.install());
-    mementos.add(BaseTestUtils.silenceJsonPathLogger());
-    mementos.add(TestUtils.silenceOperatorLogger());
-  }
-
-  @AfterEach
-  public void restore() throws Exception {
-    tearDown();
-    mementos.forEach(Memento::revert);
-  }
+  final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
 
   @Override
   protected Application configure() {
@@ -146,9 +68,8 @@ class RestTest extends JerseyTest {
     return restBackend;
   }
 
-  @Override
-  protected TestContainerFactory getTestContainerFactory() throws TestContainerException {
-    return new InMemoryTestContainerFactory();
+  Map getJsonResponse(String href) {
+    return new Gson().fromJson(createRequest(href).get(String.class), Map.class);
   }
 
   @Test
@@ -180,21 +101,6 @@ class RestTest extends JerseyTest {
     assertThat(result, hasJsonPath("$.items[0].latest", equalTo(true)));
     assertThat(result, hasJsonPath("$.items[0].lifecycle", equalTo("active")));
     assertThat(result, hasJsonPath("$.items[0].links[?(@.rel=='self')].href", withValues(V1_HREF)));
-  }
-
-  private Map getJsonResponse(String href) {
-    return new Gson().fromJson(createRequest(href).get(String.class), Map.class);
-  }
-
-  private Invocation.Builder createRequest(String href) {
-    Invocation.Builder request = target(href).request();
-    if (authorizationHeader != null) {
-      request.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
-    }
-    if (includeRequestedByHeader) {
-      request.header("X-Requested-By", "TestClient");
-    }
-    return request;
   }
 
   @Test
@@ -348,161 +254,6 @@ class RestTest extends JerseyTest {
         sendScaleRequest("cluster1", 3).getStatus(), equalTo(HttpURLConnection.HTTP_BAD_REQUEST));
   }
 
-  @Test
-  void whenConversionWebhookRequestSent_hasExpectedResponse() {
-    String conversionReview = getAsString(CONVERSION_REVIEW_REQUEST);
-    Response response = sendConversionWebhookRequest(conversionReview);
-    String responseString = getAsString((ByteArrayInputStream)response.getEntity());
-
-    assertThat(responseString, equalTo(getAsString(CONVERSION_REVIEW_RESPONSE)));
-  }
-
-  private Response sendConversionWebhookRequest(String conversionReview) {
-    return createRequest(WEBHOOK_HREF)
-            .post(createWebhookRequest(conversionReview));
-  }
-
-  @Test
-  void whenGoodValidatingWebhookRequestSent_hasExpectedResponse() {
-    String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_1));
-
-    assertThat(responseString, equalTo(getAsString(VALIDATING_REVIEW_RESPONSE_ACCEPT)));
-  }
-
-  @Test
-  void whenInvalidValidatingWebhookRequestSent_hasExpectedResponse() {
-    String resultAllowed = "\"allowed\":false";
-    String resultMessage = "\"message\":\"Exception: com.google.gson.JsonSyntaxException";
-
-    String responseString = sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_2));
-
-    assertThat(responseString, containsString(resultAllowed));
-    assertThat(responseString, containsString(resultMessage));
-  }
-
-  @Test
-  void whenGoodValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
-    AdmissionResponse expectedResponse = new AdmissionResponse();
-    expectedResponse.setUid(RESPONSE_UID);
-    expectedResponse.setAllowed(true);
-    expectedResponse.setStatus(new AdmissionResponseStatus().code(HTTP_OK));
-    AdmissionReview expectedReview = new AdmissionReview();
-    expectedReview.setResponse(expectedResponse);
-    expectedReview.setApiVersion(ADMISSION_REVIEW_API_VERSION);
-    expectedReview.setKind(ADMISSION_REVIEW_KIND);
-
-    AdmissionReview responseReview
-        = sendValidatingRequestAsAdmissionReview(readAdmissionReview(getAsString(VALIDATING_REVIEW_REQUEST_1)));
-
-    assertThat(responseReview.toString(), equalTo(expectedReview.toString()));
-  }
-
-  @Test
-  void whenInvalidValidatingWebhookRequestSentUsingJavaResponse_hasExpectedResponse() {
-    String resultMessage = "Exception: com.google.gson.JsonSyntaxException";
-
-    AdmissionReview responseReview
-        = readAdmissionReview(sendValidatingRequestAsString(getAsString(VALIDATING_REVIEW_REQUEST_2)));
-
-    assertThat(getAllowed(responseReview), equalTo(false));
-    assertThat(getResultMessage(responseReview), containsString(resultMessage));
-  }
-
-  @Test
-  void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
-
-    assertThat(getAllowed(responseReview), equalTo(true));
-    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
-    assertThat(getUid(responseReview), equalTo(RESPONSE_UID));
-  }
-
-  @Test
-  void whenGoodValidatingWebhookRequestSentUsingJavaWithoutRequest_hasExpectedResponse() {
-    AdmissionResponseStatus expectedStatus = new AdmissionResponseStatus();
-    expectedStatus.setCode(HTTP_OK);
-    expectedStatus.setMessage(null);
-    admissionReview.request(null);
-
-    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
-
-    assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
-  }
-
-  private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
-    return readAdmissionReview(sendValidatingRequestAsString(writeAdmissionReview(admissionReview)));
-  }
-
-  private String sendValidatingRequestAsString(String admissionReviewString) {
-    Response response = sendValidatingWebhookRequest(admissionReviewString);
-    return getAsString((ByteArrayInputStream)response.getEntity());
-  }
-
-  private AdmissionResponseStatus getResultStatus(AdmissionReview responseReview) {
-    return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getStatus).orElse(null);
-  }
-
-  private String getResultMessage(AdmissionReview responseReview) {
-    return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse)
-        .map(AdmissionResponse::getStatus)
-        .map(AdmissionResponseStatus::getMessage)
-        .orElse("");
-  }
-
-  private int getResultCode(AdmissionReview responseReview) {
-    return Optional.ofNullable(responseReview)
-        .map(AdmissionReview::getResponse)
-        .map(AdmissionResponse::getStatus)
-        .map(AdmissionResponseStatus::getCode)
-        .orElse(HTTP_OK);
-  }
-
-  private String getUid(AdmissionReview admissionReview) {
-    return Optional.ofNullable(admissionReview)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getUid).orElse("");
-  }
-
-  private boolean getAllowed(AdmissionReview admissionResponse) {
-    return Optional.ofNullable(admissionResponse)
-        .map(AdmissionReview::getResponse).map(AdmissionResponse::getAllowed).orElse(false);
-  }
-
-  private Response sendValidatingWebhookRequest(String admissionReview) {
-    return createRequest(VALIDATING_WEBHOOK_HREF)
-        .post(createWebhookRequest(admissionReview));
-  }
-
-  private String getAsString(String fileName) {
-    return getAsString(inputStreamFromClasspath(fileName));
-  }
-
-  private String getAsString(InputStream inputStream) {
-    return new BufferedReader(
-            new InputStreamReader(inputStream, StandardCharsets.UTF_8))
-            .lines()
-            .collect(Collectors.joining("\n"));
-  }
-
-  private Entity<String> createWebhookRequest(String jsonStr) {
-    return Entity.entity(jsonStr, MediaType.APPLICATION_JSON);
-  }
-
-  @Test
-  void whenConversionWebhookHasAnException_responseHasFailedStatusAndFailedEventGenerated() {
-
-    String conversionReview = "some_unexpected_string";
-    Response response = sendConversionWebhookRequest(conversionReview);
-    String responseString = getAsString((ByteArrayInputStream) response.getEntity());
-
-    assertThat(responseString.contains("\"status\":\"Failed\""), equalTo(Boolean.TRUE));
-
-    MatcherAssert.assertThat("Found 1 CONVERSION_FAILED_EVENT event with expected count 1",
-        containsEventsWithCountOne(getEvents(testSupport),
-            CONVERSION_WEBHOOK_FAILED_EVENT, 1), is(true));
-  }
-
   private void excludeRequestedByHeader() {
     includeRequestedByHeader = false;
   }
@@ -583,38 +334,6 @@ class RestTest extends JerseyTest {
     }
   }
 
-  abstract static class RestConfigStub implements RestConfig {
-    private final Supplier<RestBackend> restBackendSupplier;
-
-    RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
-      this.restBackendSupplier = restBackendSupplier;
-    }
-
-    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
-      return createStrictStub(RestConfigStub.class, restBackendSupplier);
-    }
-
-    @Override
-    public RestBackend getBackend(String accessToken) {
-      return restBackendSupplier.get();
-    }
-
-    @Override
-    public String getHost() {
-      return "localhost";
-    }
-
-    @Override
-    public int getExternalHttpsPort() {
-      return 8081;
-    }
-
-    @Override
-    public int getInternalHttpsPort() {
-      return 8082;
-    }
-  }
-
   abstract static class RestBackendStub implements RestBackend {
     private final Map<String, List<ClusterState>> domainClusters = new HashMap<>();
 
@@ -684,6 +403,38 @@ class RestTest extends JerseyTest {
 
     void setScale(Integer scale) {
       this.scale = scale;
+    }
+  }
+
+  abstract static class RestConfigStub implements RestConfig {
+    private final Supplier<RestBackend> restBackendSupplier;
+
+    RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
+      this.restBackendSupplier = restBackendSupplier;
+    }
+
+    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, restBackendSupplier);
+    }
+
+    @Override
+    public RestBackend getBackend(String accessToken) {
+      return restBackendSupplier.get();
+    }
+
+    @Override
+    public String getHost() {
+      return "localhost";
+    }
+
+    @Override
+    public int getExternalHttpsPort() {
+      return 8081;
+    }
+
+    @Override
+    public int getInternalHttpsPort() {
+      return 8082;
     }
   }
 }
