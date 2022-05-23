@@ -116,7 +116,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -132,20 +131,36 @@
                             <skip>${skipITs}</skip>
                             <rules>
                                 <requireEnvironmentVariable>
-                                    <message>Set the BASE_IMAGES_REPO environment variable to specify the repo for pulling base images.</message>
+                                    <message>Set the BASE_IMAGES_REPO environment variable to specify the repo for pulling base weblogic/fmw images.</message>
                                     <variableName>BASE_IMAGES_REPO</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the BASE_IMAGES_REPO_USERNAME environment variable to specify the username to use for pulling base images.</message>
+                                    <message>Set the BASE_IMAGES_REPO_USERNAME environment variable to create pull secret for BASE_IMAGES_REPO.</message>
                                     <variableName>BASE_IMAGES_REPO_USERNAME</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the BASE_IMAGES_REPO_PASSWORD environment variable to specify the password to use for pulling base images.</message>
+                                    <message>Set the BASE_IMAGES_REPO_PASSWORD environment variable to create pull secret for BASE_IMAGES_REPO.</message>
                                     <variableName>BASE_IMAGES_REPO_PASSWORD</variableName>
                                 </requireEnvironmentVariable>
                                 <requireEnvironmentVariable>
-                                    <message>Set the BASE_IMAGES_REPO_EMAIL environment variable to specify the user's email address to use for creating the image pull secreti to pull the base image.</message>
+                                    <message>Set the BASE_IMAGES_REPO_EMAIL environment variable to create pull secret for BASE_IMAGES_REPO.</message>
                                     <variableName>BASE_IMAGES_REPO_EMAIL</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the TEST_IMAGES_REPO environment variable to specify the repo for pulling local infra images and domain images.</message>
+                                    <variableName>TEST_IMAGES_REPO</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the TEST_IMAGES_REPO_USERNAME environment variable to create pull secret for TEST_IMAGES_REPO.</message>
+                                    <variableName>TEST_IMAGES_REPO_USERNAME</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the TEST_IMAGES_REPO_PASSWORD environment variable to create pull secret for TEST_IMAGES_REPO.</message>
+                                    <variableName>TEST_IMAGES_REPO_PASSWORD</variableName>
+                                </requireEnvironmentVariable>
+                                <requireEnvironmentVariable>
+                                    <message>Set the TEST_IMAGES_REPO_EMAIL environment variable to create pull secret for TEST_IMAGES_REPO.</message>
+                                    <variableName>TEST_IMAGES_REPO_EMAIL</variableName>
                                 </requireEnvironmentVariable>
                             </rules>
                         </configuration>

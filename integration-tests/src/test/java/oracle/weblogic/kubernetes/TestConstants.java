@@ -54,7 +54,8 @@ public interface TestConstants {
   public static final String REPO_DUMMY_VALUE = "dummy";
 
 
-  // BASE_IMAGES_REPO constants from where all the base images are pulled
+  // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
+  // and InfraStructure images are pulled
   // Default for BASE_IMAGES_REPO is phx.ocir.io
   // TBD : Why two variables BASE_IMAGES_REPO and BASE_IMAGES_REPO_REGISTRY
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
@@ -67,20 +68,18 @@ public interface TestConstants {
   public static final String BASE_IMAGES_REPO_SECRET_NAME = "base-images-repo-secret";
   public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
 
-  // TEST_IMAGES_REPO constants to which all test domain images are pushed into
+  // TEST_IMAGES_REPO represents the repository (a) which contains few external
+  // images such as nginx,elasticsearch,Oracle DB operator (b) all test domain 
+  // images to be pushed into it.
   // Default for TEST_IMAGES_REPO is phx.ocir.io
   // TBD : Why two variables TEST_IMAGES_REPO and TEST_IMAGES_REPO_REGISTRY
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String TEST_IMAGES_REPO =
        getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
   public static final String TEST_IMAGES_REPO_REGISTRY = TEST_IMAGES_REPO;
-  public static final String TEST_IMAGES_REPO_USERNAME = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_USERNAME"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String TEST_IMAGES_REPO_PASSWORD = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_PASSWORD"))
-      .orElse(REPO_DUMMY_VALUE);
-  public static final String TEST_IMAGES_REPO_EMAIL = Optional.ofNullable(System.getenv("TEST_IMAGES_REPO_EMAIL"))
-      .orElse(REPO_DUMMY_VALUE);
-
+  public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
+  public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
+  public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
   public static final String TEST_IMAGES_REPO_SECRET_NAME = "test-images-repo-secret";
   public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
