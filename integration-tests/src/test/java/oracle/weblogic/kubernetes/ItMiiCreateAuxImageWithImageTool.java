@@ -140,7 +140,7 @@ class ItMiiCreateAuxImageWithImageTool {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (dockerImageExists(miiAuxiliaryImage, miiAuxiliaryImageTag)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -223,7 +223,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    if (dockerImageExists(miiAuxiliaryImage, miiAuxiliaryImageTag)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0}:{1} using imagetool.sh ",
@@ -296,7 +296,7 @@ class ItMiiCreateAuxImageWithImageTool {
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    if (dockerImageExists(miiAuxiliaryImage, miiAuxiliaryImageTag)) {
+    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);

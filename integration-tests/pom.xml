@@ -393,10 +393,9 @@
                     **/ItMiiSampleWlsMain,
                     **/ItMiiSampleWlsAux,
                     **/ItMiiSampleFmwAux,
-                    **/ItFmwSample,
-                    **/ItWlsSamples,
                     **/ItMiiMultiModel,
-                    **/ItLiftAndShiftFromOnPremDomain
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItLivenessProbeCustomization
                </includes-failsafe>
             </properties>
         </profile>
