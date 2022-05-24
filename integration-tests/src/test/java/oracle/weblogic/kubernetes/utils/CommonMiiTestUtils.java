@@ -633,7 +633,7 @@ public class CommonMiiTestUtils {
       AuxiliaryImage auxImage = new AuxiliaryImage()
           .image(cmImageName).imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
       if (OKE_CLUSTER) {
-        auxImage.setImagePullPolicy(ImagePullPolicyEnum.ALWAYS);
+        auxImage.setImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
       }
       //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
       if (index == 0) {
