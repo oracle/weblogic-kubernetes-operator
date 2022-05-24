@@ -38,6 +38,12 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
+def MAVEN_PROFILE_NAME = 'integration-tests'
+def PARALLEL_RUN = true
+if (env.JOB_NAME.contains('Sequential')) {
+    MAVEN_PROFILE_NAME = 'kind-sequential'
+    PARALLEL_RUN = false
+}
 
 pipeline {
     agent { label 'VM.Standard2.8' }
@@ -86,15 +92,7 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
-                choices: [
-                        'wls-srg',
-                        'integration-tests',
-                        'kind-sequential',
-                        'toolkits-srg'
-                ]
-        )
+
         string(name: 'IT_TEST',
                description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
                defaultValue: ''
@@ -149,10 +147,6 @@ pipeline {
                    '1.10.4',
                    '1.9.9'
                ]
-        )
-        booleanParam(name: 'PARALLEL_RUN',
-                     description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: true
         )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
@@ -521,7 +515,7 @@ EOF
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
-                            if [ "${MAVEN_PROFILE_NAME}" = "integration-test" ]; then
+                            if [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
                                 mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
                             fi
                         '''
