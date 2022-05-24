@@ -180,7 +180,7 @@ The following Domain fields are specific to Model in Image domains.
 
 **Notes**:
 
- - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
+ - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/DomainResource.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 

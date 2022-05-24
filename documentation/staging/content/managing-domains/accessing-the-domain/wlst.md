@@ -111,7 +111,7 @@ an open port for you.
 
 For more details on exposing the T3 channel using a NodePort service,
 run the `kubectl explain domain.spec.adminServer.adminService.channels` command
-or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}).
+or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/DomainResource.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}).
 
 For example, if a `domainUID` is `domain1`,
 the Administration Server name is `admin-server`,

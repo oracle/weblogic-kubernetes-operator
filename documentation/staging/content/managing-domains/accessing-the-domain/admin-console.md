@@ -62,7 +62,7 @@ http://hostname:adminserver-NodePort/
 ```
 
 The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
-For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) document.
+For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/DomainResource.md) document.
 For an example of setting up the `NodePort` on an Administration Server,
 see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}).
 
