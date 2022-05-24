@@ -25,7 +25,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.util.Yaml;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.codec.binary.Base64;
 
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.KIND_API_SERVICE;
@@ -154,8 +154,8 @@ public class ParsedKubernetesYaml {
     return (TypeHandler<V1Deployment>) getHandler(KIND_DEPLOYMENT);
   }
 
-  TypeHandler<Domain> getDomains() {
-    return (TypeHandler<Domain>) getHandler(KIND_DOMAIN);
+  TypeHandler<DomainResource> getDomains() {
+    return (TypeHandler<DomainResource>) getHandler(KIND_DOMAIN);
   }
 
   TypeHandler<V1Ingress> getIngresses() {
@@ -395,13 +395,13 @@ public class ParsedKubernetesYaml {
     }
   }
 
-  private static class DomainHandler extends TypeHandler<Domain> {
+  private static class DomainHandler extends TypeHandler<DomainResource> {
     private DomainHandler() {
-      super(Domain.class);
+      super(DomainResource.class);
     }
 
     @Override
-    protected V1ObjectMeta getMetadata(Domain instance) {
+    protected V1ObjectMeta getMetadata(DomainResource instance) {
       return instance.getMetadata();
     }
   }

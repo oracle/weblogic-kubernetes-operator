@@ -36,7 +36,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,10 +69,10 @@ class RestBackendImplTest {
   private final List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
   private final V1Namespace namespace = createNamespace(NS);
-  private final Domain domain1 = createDomain(NS, DOMAIN1);
-  private final Domain domain2 = createDomain(NS, DOMAIN2);
+  private final DomainResource domain1 = createDomain(NS, DOMAIN1);
+  private final DomainResource domain2 = createDomain(NS, DOMAIN2);
   private final Collection<String> namespaces = new ArrayList<>(Collections.singletonList(NS));
-  private Domain updatedDomain;
+  private DomainResource updatedDomain;
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain1);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
@@ -81,8 +81,8 @@ class RestBackendImplTest {
     return new V1Namespace().metadata(new V1ObjectMeta().name(name));
   }
 
-  private static Domain createDomain(String namespace, String name) {
-    return new Domain()
+  private static DomainResource createDomain(String namespace, String name) {
+    return new DomainResource()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(name))
         .withSpec(new DomainSpec().withDomainUid(name));
   }
@@ -98,7 +98,7 @@ class RestBackendImplTest {
     testSupport.defineResources(namespace, domain1, domain2);
     testSupport.doOnCreate(TOKEN_REVIEW, r -> authenticate((V1TokenReview) r));
     testSupport.doOnCreate(SUBJECT_ACCESS_REVIEW, s -> allow((V1SubjectAccessReview) s));
-    testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (Domain) d);
+    testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (DomainResource) d);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
 
@@ -175,16 +175,16 @@ class RestBackendImplTest {
   }
 
   private String getUpdatedIntrospectVersion() {
-    return getOptionalDomain1().map(Domain::getIntrospectVersion).orElse(null);
+    return getOptionalDomain1().map(DomainResource::getIntrospectVersion).orElse(null);
   }
 
   @Nonnull
-  private Optional<Domain> getOptionalDomain1() {
-    return testSupport.<Domain>getResources(DOMAIN).stream().filter(this::isDomain1).findFirst();
+  private Optional<DomainResource> getOptionalDomain1() {
+    return testSupport.<DomainResource>getResources(DOMAIN).stream().filter(this::isDomain1).findFirst();
   }
 
-  private boolean isDomain1(Domain domain) {
-    return Optional.ofNullable(domain).map(Domain::getMetadata).filter(this::isDomain1Meta).isPresent();
+  private boolean isDomain1(DomainResource domain) {
+    return Optional.ofNullable(domain).map(DomainResource::getMetadata).filter(this::isDomain1Meta).isPresent();
   }
 
   private boolean isDomain1Meta(V1ObjectMeta meta) {
@@ -221,7 +221,7 @@ class RestBackendImplTest {
   }
 
   private String getUpdatedRestartVersion() {
-    return getOptionalDomain1().map(Domain::getRestartVersion).orElse(null);
+    return getOptionalDomain1().map(DomainResource::getRestartVersion).orElse(null);
   }
 
   @Test
@@ -288,7 +288,7 @@ class RestBackendImplTest {
     assertThat(getUpdatedDomain(), nullValue());
   }
 
-  private Domain getUpdatedDomain() {
+  private DomainResource getUpdatedDomain() {
     return updatedDomain;
   }
 

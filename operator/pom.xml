@@ -149,7 +149,7 @@
               <goal>generate</goal>
             </goals>
             <configuration>
-              <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
+              <rootClass>oracle.kubernetes.weblogic.domain.model.DomainResource</rootClass>
               <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>

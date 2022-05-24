@@ -19,7 +19,7 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class EventProcessingTest {
           .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
   private final List<Memento> mementos = new ArrayList<>();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private final Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
+  private final DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));

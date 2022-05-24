@@ -21,7 +21,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
@@ -107,9 +107,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public Watchable<Domain> createDomainWatch(String namespace) throws ApiException {
+  public Watchable<DomainResource> createDomainWatch(String namespace) throws ApiException {
     return factory.createWatch(
-        callParams, Domain.class, new ListDomainsCall(namespace));
+        callParams, DomainResource.class, new ListDomainsCall(namespace));
   }
 
   /**

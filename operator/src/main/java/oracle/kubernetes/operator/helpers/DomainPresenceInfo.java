@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -60,7 +60,7 @@ public class DomainPresenceInfo implements PacketComponent {
   private static final String COMPONENT_KEY = "dpi";
   private final String namespace;
   private final String domainUid;
-  private final AtomicReference<Domain> domain;
+  private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
@@ -82,7 +82,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public DomainPresenceInfo(Domain domain) {
+  public DomainPresenceInfo(DomainResource domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
     this.domainUid = domain.getDomainUid();
@@ -596,7 +596,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @return Domain
    */
-  public Domain getDomain() {
+  public DomainResource getDomain() {
     return domain.get();
   }
 
@@ -605,7 +605,7 @@ public class DomainPresenceInfo implements PacketComponent {
    *
    * @param domain Domain
    */
-  public void setDomain(Domain domain) {
+  public void setDomain(DomainResource domain) {
     this.domain.set(domain);
   }
 
@@ -681,7 +681,7 @@ public class DomainPresenceInfo implements PacketComponent {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
-    Domain d = getDomain();
+    DomainResource d = getDomain();
     if (d != null) {
       sb.append(
           String.format(

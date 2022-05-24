@@ -12,20 +12,20 @@ import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
  * This class handles Domain watching. It receives domain events and sends them into the operator
  * for processing.
  */
-public class DomainWatcher extends Watcher<Domain> {
+public class DomainWatcher extends Watcher<DomainResource> {
   private final String ns;
 
   private DomainWatcher(
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<Domain> listener,
+      WatchListener<DomainResource> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -46,7 +46,7 @@ public class DomainWatcher extends Watcher<Domain> {
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<Domain> listener,
+      WatchListener<DomainResource> listener,
       AtomicBoolean isStopping) {
     DomainWatcher watcher =
         new DomainWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
@@ -55,7 +55,7 @@ public class DomainWatcher extends Watcher<Domain> {
   }
 
   @Override
-  public Watchable<Domain> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<DomainResource> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.createDomainWatch(ns);
   }
 
@@ -65,7 +65,7 @@ public class DomainWatcher extends Watcher<Domain> {
   }
 
   @Override
-  public String getDomainUid(Response<Domain> item) {
-    return Optional.ofNullable(item.object).map(Domain::getDomainUid).orElse(null);
+  public String getDomainUid(Response<DomainResource> item) {
+    return Optional.ofNullable(item.object).map(DomainResource::getDomainUid).orElse(null);
   }
 }

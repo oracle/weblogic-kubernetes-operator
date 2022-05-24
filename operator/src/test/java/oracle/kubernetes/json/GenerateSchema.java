@@ -6,7 +6,7 @@ package oracle.kubernetes.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class GenerateSchema {
 
@@ -27,7 +27,7 @@ public class GenerateSchema {
     // JsonSchemaConfig config = JsonSchemaConfig.create(...);
     // JsonSchemaGenerator generator = new JsonSchemaGenerator(objectMapper, config);
 
-    JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(Domain.class);
+    JsonNode jsonSchema = jsonSchemaGenerator.generateJsonSchema(DomainResource.class);
 
     String jsonSchemaAsString =
         objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema);

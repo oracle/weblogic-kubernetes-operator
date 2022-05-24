@@ -26,9 +26,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,13 +89,13 @@ class AsyncRequestStepTest {
   private final DomainList smallList = generateDomainList(5);
   private final DomainList largeListPartOne
       = generateDomainList(50).withMetadata(new V1ListMeta()._continue(CONTINUE));
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   private static DomainList generateDomainList(int size) {
-    List<Domain> domains = new ArrayList<>();
+    List<DomainResource> domains = new ArrayList<>();
     for (int i = 0; i < size; i++) {
-      domains.add(new Domain().withMetadata(new V1ObjectMeta().name("domain" + i)));
+      domains.add(new DomainResource().withMetadata(new V1ObjectMeta().name("domain" + i)));
     }
     return new DomainList().withItems(domains);
   }

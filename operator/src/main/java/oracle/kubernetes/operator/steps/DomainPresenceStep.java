@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.steps;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class DomainPresenceStep extends Step {
 
@@ -15,7 +15,7 @@ public class DomainPresenceStep extends Step {
   }
 
   public static DomainPresenceStep createDomainPresenceStep(
-      Domain dom, Step domainUpSteps, Step managedServerStep) {
+      DomainResource dom, Step domainUpSteps, Step managedServerStep) {
     return new DomainPresenceStep(dom.isShuttingDown() ? managedServerStep : domainUpSteps);
   }
 

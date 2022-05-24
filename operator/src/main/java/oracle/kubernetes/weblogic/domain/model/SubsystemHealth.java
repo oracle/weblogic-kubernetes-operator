@@ -132,7 +132,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(Domain.sortOrNull(symptoms))
+        .append(DomainResource.sortOrNull(symptoms))
         .append(health)
         .append(subsystemName)
         .toHashCode();
@@ -148,7 +148,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth>, PatchableCo
     }
     SubsystemHealth rhs = ((SubsystemHealth) other);
     return new EqualsBuilder()
-        .append(Domain.sortOrNull(symptoms), Domain.sortOrNull(rhs.symptoms))
+        .append(DomainResource.sortOrNull(symptoms), DomainResource.sortOrNull(rhs.symptoms))
         .append(health, rhs.health)
         .append(subsystemName, rhs.subsystemName)
         .isEquals();

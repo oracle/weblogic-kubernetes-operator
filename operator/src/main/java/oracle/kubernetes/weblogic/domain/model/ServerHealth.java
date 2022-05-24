@@ -124,7 +124,7 @@ public class ServerHealth {
     return new HashCodeBuilder()
         .append(overallHealth)
         .append(activationTime)
-        .append(Domain.sortOrNull(subsystems))
+        .append(DomainResource.sortOrNull(subsystems))
         .toHashCode();
   }
 
@@ -140,7 +140,7 @@ public class ServerHealth {
     return new EqualsBuilder()
         .append(overallHealth, rhs.overallHealth)
         .append(activationTime, rhs.activationTime)
-        .append(Domain.sortOrNull(subsystems), Domain.sortOrNull(rhs.subsystems))
+        .append(DomainResource.sortOrNull(subsystems), DomainResource.sortOrNull(rhs.subsystems))
         .isEquals();
   }
 

@@ -65,8 +65,8 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -172,7 +172,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
 
   private final TerminalStep terminalStep = new TerminalStep();
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -235,13 +235,13 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     }
   }
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
         .withMetadata(new V1ObjectMeta().name(UID).namespace(NS))
         .withSpec(createDomainSpec());
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
 
@@ -1114,7 +1114,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             getLocalizedString(KUBERNETES_EVENT_ERROR)));
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return testSupport.getResourceWithName(DOMAIN, UID);
   }
 
@@ -1243,8 +1243,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     logRecords.clear();
   }
 
-  private Domain getUpdatedDomain() {
-    return testSupport.<Domain>getResources(DOMAIN).get(0);
+  private DomainResource getUpdatedDomain() {
+    return testSupport.<DomainResource>getResources(DOMAIN).get(0);
   }
 
   @Test

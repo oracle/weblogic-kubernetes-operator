@@ -36,7 +36,7 @@ public class DomainList implements KubernetesListObject {
   @Expose
   @Valid
   @NotNull
-  private List<Domain> items = new ArrayList<>();
+  private List<DomainResource> items = new ArrayList<>();
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -97,7 +97,7 @@ public class DomainList implements KubernetesListObject {
    *
    * @return items
    */
-  public List<Domain> getItems() {
+  public List<DomainResource> getItems() {
     return items;
   }
 
@@ -107,7 +107,7 @@ public class DomainList implements KubernetesListObject {
    *
    * @param items items
    */
-  public void setItems(List<Domain> items) {
+  public void setItems(List<DomainResource> items) {
     this.items = items;
   }
 
@@ -118,7 +118,7 @@ public class DomainList implements KubernetesListObject {
    * @param items items
    * @return this
    */
-  public DomainList withItems(List<Domain> items) {
+  public DomainList withItems(List<DomainResource> items) {
     this.items = items;
     return this;
   }

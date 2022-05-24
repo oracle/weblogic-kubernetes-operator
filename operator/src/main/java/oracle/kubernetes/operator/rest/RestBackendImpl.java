@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.rest.model.DomainActionType;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -129,7 +129,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private String getNamespace(String domainUid) {
-    return getDomain(domainUid).map(Domain::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+    return getDomain(domainUid).map(DomainResource::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
 
@@ -171,14 +171,14 @@ public class RestBackendImpl implements RestBackend {
   public Set<String> getDomainUids() {
     authorize(null, Operation.LIST);
 
-    return getDomainStream().map(Domain::getDomainUid).collect(Collectors.toSet());
+    return getDomainStream().map(DomainResource::getDomainUid).collect(Collectors.toSet());
   }
 
-  private Stream<Domain> getDomainStream() {
+  private Stream<DomainResource> getDomainStream() {
     return domainNamespaces.get().stream().map(this::getDomains).flatMap(Collection::stream);
   }
 
-  private List<Domain> getDomains(String ns) {
+  private List<DomainResource> getDomains(String ns) {
     try {
       return callBuilder.listDomain(ns).getItems();
     } catch (ApiException e) {
@@ -218,7 +218,7 @@ public class RestBackendImpl implements RestBackend {
     forDomainDo(domainUid, this::markForIntrospection);
   }
 
-  private void markForIntrospection(Domain domain) {
+  private void markForIntrospection(DomainResource domain) {
     updateVersionField(domain, domain.getIntrospectVersion(), "/spec/introspectVersion");
   }
 
@@ -234,11 +234,11 @@ public class RestBackendImpl implements RestBackend {
     forDomainDo(domainUid, this::markDomainForRestart);
   }
 
-  private void markDomainForRestart(Domain domain) {
+  private void markDomainForRestart(DomainResource domain) {
     updateVersionField(domain, domain.getRestartVersion(), "/spec/restartVersion");
   }
 
-  private void updateVersionField(Domain domain, String version, String fieldPath) {
+  private void updateVersionField(DomainResource domain, String version, String fieldPath) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     Optional.ofNullable(version).ifPresentOrElse(
         v -> patchBuilder.replace(fieldPath, nextVersion(v)),
@@ -247,7 +247,7 @@ public class RestBackendImpl implements RestBackend {
     patchDomain(domain, patchBuilder);
   }
 
-  private void forDomainDo(String domainUid, Consumer<Domain> consumer) {
+  private void forDomainDo(String domainUid, Consumer<DomainResource> consumer) {
     if (domainUid == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
@@ -259,7 +259,7 @@ public class RestBackendImpl implements RestBackend {
     throw createWebApplicationException(Status.NOT_FOUND, MessageKeys.MATCHING_DOMAIN_NOT_FOUND, domainUid);
   }
 
-  private Optional<Domain> getDomain(String domainUid) {
+  private Optional<DomainResource> getDomain(String domainUid) {
     authorize(null, Operation.LIST);
     
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
@@ -302,12 +302,12 @@ public class RestBackendImpl implements RestBackend {
     LOGGER.exiting();
   }
 
-  private void performScaling(Domain domain, String cluster, int managedServerCount) {
+  private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
     patchClusterReplicas(domain, cluster, managedServerCount);
   }
 
-  private void patchClusterReplicas(Domain domain, String cluster, int replicas) {
+  private void patchClusterReplicas(DomainResource domain, String cluster, int replicas) {
     if (replicas == domain.getReplicaCount(cluster)) {
       return;
     }
@@ -323,7 +323,7 @@ public class RestBackendImpl implements RestBackend {
     patchDomain(domain, patchBuilder);
   }
 
-  private void patchDomain(Domain domain, JsonPatchBuilder patchBuilder) {
+  private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {
       callBuilder
           .patchDomain(
@@ -334,7 +334,7 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private int getClusterIndex(Domain domain, String cluster) {
+  private int getClusterIndex(DomainResource domain, String cluster) {
     for (int i = 0; i < domain.getSpec().getClusters().size(); i++) {
       if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) {
         return i;
@@ -345,7 +345,7 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private void verifyWlsConfiguredClusterCapacity(
-      Domain domain, String cluster, int requestedSize) {
+      DomainResource domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
     WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUid(), cluster);

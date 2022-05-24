@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainSpecTest {
+class DomainResourceSpecTest {
 
   @Test
   void whenEffectiveDomainSpecsWithDefaultImage_domainSpecEquals() {
