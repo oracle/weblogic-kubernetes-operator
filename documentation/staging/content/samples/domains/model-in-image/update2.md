@@ -12,14 +12,14 @@ This use case demonstrates concurrently deploying a domain that is similar to th
 - Using a different (unique) domain name, `domain2`, for the different domains.
 - Deploying secrets and a model update ConfigMap that are uniquely labeled and named for the new domain.
 
-Note that this use case shows Model in Image's unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}):
+Note that this use case shows Model in Image's unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}):
 
 - Domain in Image does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. This use case takes advantage of model macros to ensure that its two different domains have a different domain name:
 
   - First, you define the domain name in the model YAML file using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
   - Second, you set the value of the `CUSTOM_DOMAIN_NAME` environment variable to be different using the `env` stanza in each Domain's YAML file.
 
-- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [Why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD considerations). This necessarily means that two Domain in Image domains that share the same image can decrypt each other's encrypted passwords. On the other hand, a Model in Image's domain encryption key is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started.
+- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [Why layering matters]({{< relref "/managing-domains/cicd/why-layering-matters.md" >}}) in CI/CD considerations). This necessarily means that two Domain in Image domains that share the same image can decrypt each other's encrypted passwords. On the other hand, a Model in Image's domain encryption key is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started.
 
 {{% notice warning %}}
 Oracle requires interoperating WebLogic domains to have different domain names. This is necessary when two domains communicate, or when a WebLogic Server or WebLogic Java client concurrently connects to multiple domains.
@@ -110,7 +110,7 @@ Here are the steps for this use case:
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
      - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case.
 
-   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
+   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
 
    {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
@@ -505,7 +505,7 @@ Here are the steps for this use case:
 
 A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/debugging.md" >}}).
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
 You will not be using the `sample-domain2` domain again in this sample; if you wish, you can shut it down now by calling `kubectl -n sample-domain1-ns delete domain sample-domain2`.
 

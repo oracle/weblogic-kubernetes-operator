@@ -15,7 +15,7 @@ and WebLogic Server pods and services.
 
 #### Prerequisites
 
-Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
 The following prerequisites must be met prior to running the create domain script:
 
@@ -23,7 +23,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
 
   {{% notice warning %}}
-  This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
+  This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/managing-domains/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
   {{% /notice %}}
 
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
@@ -38,7 +38,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:  
-  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
+  * Configure access to your database. For details, see [here]({{< relref "/managing-domains/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
@@ -136,7 +136,7 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.    **NOTE**: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.    **NOTE**: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/managing-domains/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |

@@ -15,6 +15,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -101,6 +102,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.EventTestUtils.getNumberOfEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
+import static oracle.kubernetes.operator.NamespaceTest.createDomainNamespaces;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
@@ -146,6 +148,7 @@ class EventHelperTest {
   private static final String WILL_NOT_RETRY =
       "The reported problem should be corrected, and the domain will not be retried "
           + "until the domain resource is updated.";
+  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
 
   @BeforeEach
   void setUp() throws Exception {
@@ -489,7 +492,7 @@ class EventHelperTest {
   @Test
   void whenCreateEventStepCalledForStartManagingNamespace_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
-    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
+    assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.START_MANAGING_NAMESPACE_EVENT,
             getFormattedMessage(START_MANAGING_NAMESPACE_EVENT_PATTERN, NS)), is(true));
@@ -498,7 +501,7 @@ class EventHelperTest {
   @Test
   void whenCreateEventStepCalledForStOPManagingNamespace_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
-    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.STOP_MANAGING_NAMESPACE_EVENT,
             getFormattedMessage(STOP_MANAGING_NAMESPACE_EVENT_PATTERN, NS)), is(true));
@@ -506,7 +509,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedNamespace() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED_EVENT, NS), is(true));
@@ -514,7 +517,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedLabels() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
@@ -523,11 +526,16 @@ class EventHelperTest {
             NAMESPACE_WATCHING_STARTED_EVENT, expectedLabels), is(true));
   }
 
+  private void runCreateNSWatchingStartedEventStep() {
+    testSupport.runSteps(createEventStep(domainNamespaces,
+        new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS), null));
+  }
+
   @Test
   void whenNSWatchStartedEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
     dispatchAddedEventWatches();
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with expected count",
         containsOneEventWithCount(getEvents(testSupport),
@@ -536,10 +544,11 @@ class EventHelperTest {
 
   @Test
   void whenNSWatchStartedEventCreated_thenDelete_eventCreatedTwice() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
     dispatchAddedEventWatches();
     dispatchDeletedEventWatches();
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
+
 
     assertThat("Found 2 NAMESPACE_WATCHING_STARTED events",
         containsEventsWithCountOne(getEvents(testSupport),
@@ -551,7 +560,7 @@ class EventHelperTest {
     loggerControl.collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.failOnCreate(EVENT, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     assertThat(logRecords, containsWarning(CREATING_EVENT_FORBIDDEN));
   }
@@ -560,7 +569,7 @@ class EventHelperTest {
   void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGenerated() {
     testSupport.failOnCreate(EVENT, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     assertThat("Found 1 NAMESPACE_WATCHING_STARTED_FAILED event",
         containsEventsWithCountOne(getEvents(testSupport),
@@ -571,7 +580,7 @@ class EventHelperTest {
   void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedMessage() {
     testSupport.failOnCreate(EVENT, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     assertThat("Found 1 NAMESPACE_WATCHING_STARTED_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -583,7 +592,7 @@ class EventHelperTest {
   void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedLabel() {
     testSupport.failOnCreate(EVENT, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
     Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
 
@@ -596,7 +605,7 @@ class EventHelperTest {
   void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedNS() {
     testSupport.failOnCreate(EVENT, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
 
     assertThat("Found 1 NAMESPACE_WATCHING_STARTED_FAILED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
@@ -679,7 +688,8 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledForNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    runCreateNSWatchingStartedEventStep();
+
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED_EVENT,

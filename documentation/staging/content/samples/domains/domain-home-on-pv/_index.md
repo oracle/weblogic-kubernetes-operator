@@ -10,7 +10,7 @@ The sample scripts demonstrate the creation of a WebLogic domain home on an exis
 
 #### Prerequisites
 
-Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
+Before you begin, read this document, [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
 The following prerequisites must be met prior to running the create domain script:
 
@@ -18,7 +18,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * The operator requires a WebLogic image with Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server General Availability image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has this patch applied.
 
    {{% notice warning %}}
-   This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
+   This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
    {{% /notice %}}
 
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
@@ -120,7 +120,7 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Server image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server General Availability (GA) image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has this patch applied. **NOTE**: The example base images are GA images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
+| `image` | WebLogic Server image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server General Availability (GA) image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has this patch applied. **NOTE**: The example base images are GA images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For details on how to obtain or create the image, see [WebLogic images]({{< relref "/base-images/_index.md" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
@@ -445,7 +445,7 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation.md" >}}).
+   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/managing-operators/installation.md" >}}).
 
 
 **Message**: `ERROR: Unable to create folder /shared/domains`  

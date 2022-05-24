@@ -587,6 +587,7 @@ public class DomainUtils {
                                                          String pvcName,
                                                          String clusterName,
                                                          int replicaCount) {
+    String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
     // create the domain custom resource
     getLogger().info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -597,7 +598,7 @@ public class DomainUtils {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/u01/shared/domains/" + domainUid)
+            .domainHome(uniquePath)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
@@ -609,7 +610,7 @@ public class DomainUtils {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/u01/shared/logs/" + domainUid)
+            .logHome(uniquePath + "/logs")
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
@@ -670,6 +671,8 @@ public class DomainUtils {
     domainScriptFiles.add(domainCreationScriptFile);
     domainScriptFiles.add(domainPropertiesFile);
     domainScriptFiles.add(modelFile);
+    
+    String uniquePath = "/u01/shared/" + namespace + "/domains/" + domainUid;
 
     getLogger().info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm-" + testClassName.toLowerCase();
@@ -695,7 +698,7 @@ public class DomainUtils {
             .value("/u01/shared/wdt"))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid));
+            .value(uniquePath));
 
     if (HTTP_PROXY != null) {
       jobCreationContainer.addEnvItem(new V1EnvVar().name("http_proxy").value(HTTP_PROXY));

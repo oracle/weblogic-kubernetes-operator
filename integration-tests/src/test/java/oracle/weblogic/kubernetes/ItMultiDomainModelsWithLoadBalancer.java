@@ -30,6 +30,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -258,6 +259,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersByPatchingDomainResource(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -322,6 +324,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersWithRestApi(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -368,6 +371,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
+  @DisabledOnSlimImage
   void testScaleClustersWithWLDF(String domainType) {
 
     Domain domain = createOrStartDomainBasedOnDomainType(domainType);
@@ -623,7 +627,8 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     Domain domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
     String domainUid = domainOnPV.getSpec().getDomainUid();
-    String domainNamespace = domainOnPV.getMetadata().getNamespace();
+    String domainNamespace = domainOnPV.getMetadata().getNamespace();    
+    String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
 
     // check in admin server pod, there is a data file for JMS server created in /u01/customFileStore
     String dataFileToCheck = "/u01/customFileStore/FILESTORE-0000000.DAT";
@@ -632,7 +637,7 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check in admin server pod, the default admin server data file is in default data store
     String defaultAdminDataFile =
-        "/u01/shared/domains/" + domainUid + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
+        uniquePath + "/servers/admin-server/data/store/default/_WLS_ADMIN-SERVER000000.DAT";
     waitForFileExistsInPod(domainNamespace, adminServerPodName, defaultAdminDataFile);
 
     // check in managed server pod, there is no custom data file for JMS is created
@@ -646,7 +651,7 @@ class ItMultiDomainModelsWithLoadBalancer {
           String.format("found file %s in pod %s in namespace %s, expect not exist",
               customDataFile, managedServerPodName, domainNamespace));
 
-      String defaultMSDataFile = "/u01/shared/domains/" + domainUid + "/servers/managed-server" + i
+      String defaultMSDataFile = uniquePath + "/servers/managed-server" + i
           + "/data/store/default/_WLS_MANAGED-SERVER" + i + "000000.DAT";
       waitForFileExistsInPod(domainNamespace, managedServerPodName, defaultMSDataFile);
     }
@@ -1219,8 +1224,6 @@ class ItMultiDomainModelsWithLoadBalancer {
 
   // verify the admin console login using admin node port
   private void verifyAdminConsoleLoginUsingAdminNodePort(String domainUid, String domainNamespace) {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     logger.info("Getting node port for default channel");

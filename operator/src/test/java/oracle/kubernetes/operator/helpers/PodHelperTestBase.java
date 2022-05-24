@@ -731,6 +731,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
+  // Returns the YAML for a 3.4 Mii pod with converted aux image.
+  abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
+
   @Test
   void afterUpgradingPlainPortPodFrom30_patchIt() {
   //    useProductionHash();
@@ -775,6 +778,25 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             .name("aux-image-volume-auxiliaryimagevolume1"))
         .addVolumeMountsItem(new V1VolumeMount().mountPath("/weblogic-operator/scripts")
             .name("weblogic-scripts-cm-volume"));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith3_4_ConvertedAuxImages_patchIt() {
+    configureDomain().withInitContainer(createInitContainer())
+        .withRequestRequirement("memory", "768Mi")
+        .withRequestRequirement("cpu", "250m")
+        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+            .emptyDir(new V1EmptyDirVolumeSource()));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   @Test
@@ -1818,6 +1840,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   @Test
   void whenPodCreated_containerUsesListenPort() {
     final V1ContainerPort plainPort = getContainerPort("default");
+
     assertThat(plainPort, notNullValue());
     assertThat(plainPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(plainPort.getContainerPort(), equalTo(listenPort));
