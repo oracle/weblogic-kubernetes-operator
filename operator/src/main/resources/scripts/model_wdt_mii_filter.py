@@ -172,11 +172,11 @@ def filter_model(model):
         customizeNodeManagerCreds(topology)
         customizeDomainLogPath(topology)
 
-        if 'Cluster' in topology:
-          # If Istio enabled, inject replication channel for each cluster
-          # before creating the corresponding NAP for each server and
-          # server-template
-          customizeIstioClusters(model)
+        # if 'Cluster' in topology:
+        #   # If Istio enabled, inject replication channel for each cluster
+        #   # before creating the corresponding NAP for each server and
+        #   # server-template
+        #   customizeIstioClusters(model)
 
         if 'Server' in topology:
           customizeServers(model)
@@ -236,7 +236,7 @@ def customizeServerTemplate(topology, template, template_name):
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
   #customizeManagedIstioNetworkAccessPoint(template, listen_address)
-  customizeIstioReplicationChannel(template, template_name, listen_address)
+  #customizeIstioReplicationChannel(template, template_name, listen_address)
   if getCoherenceClusterSystemResourceOrNone(topology, template) is not None:
     customizeCoherenceMemberConfig(template, listen_address)
 
@@ -355,8 +355,6 @@ def customizeServer(model, server, name):
   # use the default name 'AdminServer'.
   if (name == adminServer or  name == 'AdminServer'):
     addAdminChannelPortForwardNetworkAccessPoints(server)
-  else:
-    customizeIstioReplicationChannel(server, name, listen_address)
   if getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None:
     customizeCoherenceMemberConfig(server, listen_address)
 

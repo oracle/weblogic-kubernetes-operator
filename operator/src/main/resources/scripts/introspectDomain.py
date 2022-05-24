@@ -1269,7 +1269,7 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:cluster>")
       self.indent()
       self.writeln("<d:name>" + cluster.getName() + "</d:name>")
-      self.writeln("<d:replication-channel f:combine-mode='add'>" + 'istiorepl' + "</d:replication-channel>")
+      #self.writeln("<d:replication-channel f:combine-mode='add'>" + 'istiorepl' + "</d:replication-channel>")
       self.undent()
       self.writeln("</d:cluster>")
 
@@ -1366,10 +1366,6 @@ class SitConfigGenerator(Generator):
     #self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     if server.getName() == admin_server_name:
       self.addAdminChannelPortForwardNetworkAccessPoints(server)
-    else:
-      self.customizeIstioReplicationChannel(server, listen_address,
-                                            self.env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564),
-                                            is_server_template=False)
     if self.getCoherenceClusterSystemResourceOrNone(server) is not None:
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1393,9 +1389,6 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
     #self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
-    self.customizeIstioReplicationChannel(template, listen_address,
-                                          self.env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564),
-                                          is_server_template=True)
     if self.getCoherenceClusterSystemResourceOrNone(template) is not None:
       self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
