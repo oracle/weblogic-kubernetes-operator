@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
-import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
@@ -16,17 +15,10 @@ import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
-import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_GROUP_KEY;
-import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_KEY;
-import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_VERSION_KEY;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.operator.utils.ValidationUtils.isProposedChangeAllowed;
@@ -117,10 +109,9 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
-    boolean isAllowed = isProposedChangesAllowed(request);
     return new AdmissionResponse()
         .uid(getUid(request))
-        .allowed(isAllowed)
+        .allowed(isProposedChangesAllowed(request))
         .status(new AdmissionResponseStatus().code(HTTP_OK));
   }
 
@@ -133,19 +124,7 @@ public class AdmissionWebhookResource extends BaseResource {
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
 
-    if (isDomain(request)) {
-      return isProposedChangeAllowed(request.getOldObject(), request.getObject());
-    }
-    return true;
+    return isProposedChangeAllowed(request.getOldObject(), request.getObject());
   }
 
-  private boolean isDomain(@NotNull AdmissionRequest request) {
-    return Optional.of(request).map(AdmissionRequest::getResource).map(this::isDomain).orElse(false);
-  }
-
-  private boolean isDomain(@NotNull Map<String, String> resource) {
-    return DOMAIN_GROUP.equals(resource.get(RESOURCE_GROUP_KEY))
-        && DOMAIN_VERSION.equals(resource.get(RESOURCE_VERSION_KEY))
-        && DOMAIN_PLURAL.equals(resource.get(RESOURCE_KEY));
-  }
 }

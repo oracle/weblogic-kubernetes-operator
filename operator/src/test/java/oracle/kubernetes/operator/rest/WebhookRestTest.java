@@ -244,8 +244,22 @@ class WebhookRestTest extends RestTestBase {
     assertThat(getAllowed(responseReview), equalTo(true));
   }
 
+  @Test
+  void whenProposedObjectMissing_acceptIt() {
+    setNullObject();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(getAllowed(responseReview), equalTo(true));
+  }
+
   private void setExistingAndProposedDomain() {
     admissionReview.getRequest().oldObject(existingDomain).object(proposedDomain);
+  }
+
+  private void setNullObject() {
+    admissionReview.getRequest().setObject(null);
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {

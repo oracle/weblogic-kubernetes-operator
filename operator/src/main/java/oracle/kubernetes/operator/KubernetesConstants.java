@@ -90,8 +90,4 @@ public interface KubernetesConstants {
 
   String ADMISSION_REVIEW_API_VERSION = "admission.k8s.io/v1";
   String ADMISSION_REVIEW_KIND = "AdmissionReview";
-
-  String RESOURCE_GROUP_KEY = "group";
-  String RESOURCE_VERSION_KEY = "version";
-  String RESOURCE_KEY = "resource";
 }
