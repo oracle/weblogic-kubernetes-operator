@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -318,10 +319,14 @@ class ItMiiCreateAuxImageWithImageTool {
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1");
+    V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
+    if(OKE_CLUSTER) {
+      imagePullPolicy = V1Container.ImagePullPolicyEnum.ALWAYS;
+    }
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage)
-            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+            .imagePullPolicy(imagePullPolicy)
             .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
             .sourceModelHome(customWdtModelHome));
 
