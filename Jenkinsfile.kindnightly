@@ -100,7 +100,7 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
-                    '0.11.1'
+                   '0.11.1',
                    '0.13.0',
                    '0.12.0',
                ]
