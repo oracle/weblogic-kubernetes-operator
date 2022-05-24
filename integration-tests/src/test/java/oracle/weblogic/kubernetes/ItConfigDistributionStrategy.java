@@ -766,24 +766,52 @@ class ItConfigDistributionStrategy {
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName1;
     String dsOverrideTestUrl = baseUri + appURI;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+    
+    testUntil(
+        () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (configUpdated) {
+            if (!(response.body().contains("getMaxCapacity:10"))) {
+              logger.info("Did get getMaxCapacity:10");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:4"))) {
+              logger.info("Did get getInitialCapacity:4");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl2))) {
+              logger.info("Didn't get Url:" + dsUrl2);
+              return false;
+            }
+          } else {
+            if (!(response.body().contains("getMaxCapacity:15"))) {
+              logger.info("Did get getMaxCapacity:15");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:1"))) {
+              logger.info("Did get getInitialCapacity:1");
+              return false;
+            }
+            if (!(response.body().contains("Url:" + dsUrl1))) {
+              logger.info("Didn't get Url:" + dsUrl1);
+              return false;
+            }
+          }
+          return true;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
 
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("getMaxCapacity:10"), "Did get getMaxCapacity:10");
-      assertTrue(response.body().contains("getInitialCapacity:4"), "Did get getInitialCapacity:4");
-      assertTrue(response.body().contains("Url:" + dsUrl2), "Didn't get Url:" + dsUrl2);
-    } else {
-      assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
-      assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
-      assertTrue(response.body().contains("Url:" + dsUrl1), "Didn't get Url:" + dsUrl1);
-    }
 
     //test connection pool in all managed servers of dynamic cluster
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       assertEquals(200, response.statusCode(), "Status code not equals to 200");
       assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
     }
