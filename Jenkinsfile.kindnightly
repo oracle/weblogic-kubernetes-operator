@@ -100,16 +100,16 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                    '0.11.1'
                    '0.13.0',
                    '0.12.0',
-                   '0.11.1'
                ]
         )
         choice(name: 'KUBE_VERSION',
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.21.12',
+                    '1.21.1',
                     '1.24',
                     '1.24.0',
                     '1.23.6',
@@ -136,7 +136,7 @@ pipeline {
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-               defaultValue: '3.7.2'
+               defaultValue: '3.8.1'
         )
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
