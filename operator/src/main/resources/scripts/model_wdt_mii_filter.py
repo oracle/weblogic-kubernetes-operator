@@ -235,7 +235,7 @@ def customizeServerTemplate(topology, template, template_name):
   listen_address=env.toDNS1123Legal(domain_uid + "-" + server_name_prefix + "${id}")
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
-  customizeManagedIstioNetworkAccessPoint(template, listen_address)
+  #customizeManagedIstioNetworkAccessPoint(template, listen_address)
   customizeIstioReplicationChannel(template, template_name, listen_address)
   if getCoherenceClusterSystemResourceOrNone(topology, template) is not None:
     customizeCoherenceMemberConfig(template, listen_address)
@@ -350,7 +350,7 @@ def customizeServer(model, server, name):
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
-  customizeServerIstioNetworkAccessPoint(server, listen_address)
+  #customizeServerIstioNetworkAccessPoint(server, listen_address)
   # If the admin server name is not provided in the WDT model,
   # use the default name 'AdminServer'.
   if (name == adminServer or  name == 'AdminServer'):

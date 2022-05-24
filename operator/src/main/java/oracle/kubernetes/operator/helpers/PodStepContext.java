@@ -1469,7 +1469,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private String getMetricsPortName() {
-      return "tcp-metrics";
+      return "metrics";
     }
 
     private String createJavaOptions() {

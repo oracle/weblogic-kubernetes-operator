@@ -117,7 +117,7 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
   @ValueSource(strings = {"http", "https", "tcp", "tls"})
   void whenIstioPortAdded_createExternalPort(String protocol) {
     final String configuredChannelName = "istio";
-    final String channelName = protocol + "-" + configuredChannelName;
+    final String channelName = configuredChannelName;
     configureDomain().withIstio()
         .configureAdminServer().configureAdminService().withChannel(configuredChannelName, NODE_PORT);
     getServerConfig().addNetworkAccessPoint(

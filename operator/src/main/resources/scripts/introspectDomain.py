@@ -946,8 +946,9 @@ class TopologyGenerator(Generator):
       for nap in naps:
         self.addNetworkAccessPoint(server, nap, is_server_template)
 
-    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    if len(naps) != 0 or added_istio_yaml:
+    # added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
+    # if len(naps) != 0 or added_istio_yaml:
+    if len(naps) != 0:
       self.undent()
 
   def addNetworkAccessPoint(self, server, nap, is_server_template):
@@ -956,24 +957,24 @@ class TopologyGenerator(Generator):
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     name = nap.getName()
-    if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
-        or name.startswith('https-'):
-      # skip istio ports already defined by WDT filtering for MII
-      return
-    http_protocol = [ 'http' ]
-    https_protocol = ['https','admin']
-    tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
-    tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
-    if nap_protocol in http_protocol:
-      name = 'http-' + nap.getName().replace(' ', '_')
-    elif nap_protocol in https_protocol:
-      name = 'https-' + nap.getName().replace(' ', '_')
-    elif nap_protocol in tcp_protocol:
-      name = 'tcp-' + nap.getName().replace(' ', '_')
-    elif nap_protocol in tls_protocol:
-      name = 'tls-' + nap.getName().replace(' ', '_')
-    else:
-      name = 'tcp-' + nap.getName().replace(' ', '_')
+    # if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
+    #     or name.startswith('https-'):
+    #   # skip istio ports already defined by WDT filtering for MII
+    #   return
+    # http_protocol = [ 'http' ]
+    # https_protocol = ['https','admin']
+    # tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
+    # tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
+    # if nap_protocol in http_protocol:
+    #   name = 'http-' + nap.getName().replace(' ', '_')
+    # elif nap_protocol in https_protocol:
+    #   name = 'https-' + nap.getName().replace(' ', '_')
+    # elif nap_protocol in tcp_protocol:
+    #   name = 'tcp-' + nap.getName().replace(' ', '_')
+    # elif nap_protocol in tls_protocol:
+    #   name = 'tls-' + nap.getName().replace(' ', '_')
+    # else:
+    #   name = 'tcp-' + nap.getName().replace(' ', '_')
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
 

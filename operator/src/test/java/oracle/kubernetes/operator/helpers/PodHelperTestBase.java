@@ -559,7 +559,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenExporterContainerCreated_hasMetricsPortsItem() {
     defineExporterConfiguration();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
@@ -569,7 +569,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenExporterContainerCreatedWithPort_hasMetricsPortsItem() {
     defineExporterConfiguration().withMonitoringExporterPort(300);
 
-    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(300));
@@ -579,7 +579,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
     defineExporterConfiguration().withIstio();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));

@@ -261,13 +261,13 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport
         .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
-        .addNetworkAccessPoint("tcp-" + NAP_1, NAP_PORT_1)
-        .addNetworkAccessPoint("tls-" + NAP_2, NAP_PORT_2);
+        .addNetworkAccessPoint(NAP_1, NAP_PORT_1)
+        .addNetworkAccessPoint(NAP_2, NAP_PORT_2);
 
     configSupport
         .addWlsServer(TEST_SERVER, TEST_PORT)
         .setAdminPort(ADMIN_PORT)
-        .addNetworkAccessPoint("http-" + NAP_3, NAP_PORT_3);
+        .addNetworkAccessPoint(NAP_3, NAP_PORT_3);
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
