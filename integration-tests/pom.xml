@@ -386,7 +386,17 @@
                   **/ItOperatorRestart,
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
-                  **/ItManageNameSpace
+                  **/ItManageNameSpace,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiCreateAuxImageWithImageTool,
+                    **/ItMiiDynamicUpdate*,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiSampleFmwAux,
+                    **/ItFmwSample,
+                    **/ItWlsSamples,
+                    **/ItMiiMultiModel,
+                    **/ItLiftAndShiftFromOnPremDomain
                </includes-failsafe>
             </properties>
         </profile>
