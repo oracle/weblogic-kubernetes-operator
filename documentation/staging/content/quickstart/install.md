@@ -21,13 +21,14 @@ Create a namespace for the ingress controller.
 $ kubectl create namespace traefik
 ```
 
-Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/values.yaml) file in the sample but set `kubernetes.namespaces` specifically.
+Set the unsecure and secure nodeports of the Traefik ingress controller and the `kubernetes.namespaces`.
 
 
 ```shell
 $ helm install traefik-operator traefik/traefik \
     --namespace traefik \
-    --values kubernetes/samples/charts/traefik/values.yaml \
+    --set "ports.web.nodePort=30305" \
+    --set "ports.websecure.nodePort=30443" \
     --set "kubernetes.namespaces={traefik}"
 ```
 
@@ -45,10 +46,15 @@ $ helm install traefik-operator traefik/traefik \
     $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
     ```
 
-3.  Use `helm` to install and start the operator from the directory you just cloned:	 
+3.  Access the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`. Each version of the Helm chart defaults to using an operator image from the matching version.
+
+    ```
+    $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
+    ```
+    Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator` ...
 
     ```shell
-    $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
+    $ helm install sample-weblogic-operator weblogic-operator/weblogic-operator \
       --namespace sample-weblogic-operator-ns \
       --set serviceAccount=sample-weblogic-operator-sa \
       --wait
@@ -58,7 +64,7 @@ $ helm install traefik-operator traefik/traefik \
 
 
 4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one
-for the operator.
+for the operator and one for the conversion webhook.
 
     ```shell
     $ kubectl get pods -n sample-weblogic-operator-ns

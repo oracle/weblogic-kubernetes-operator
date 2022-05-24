@@ -1,0 +1,42 @@
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+topology:
+    Name: sample-domain1
+    EnableEeCompliantClassloadingForEmbeddedAdapters: true
+    AdminServerName: admin-server
+    DomainVersion: 12.2.1.4.0
+    CdiContainer:
+        ImplicitBeanDiscoveryEnabled: false
+    JMX:
+        PlatformMBeanServerUsed: true
+    Cluster:
+        cluster-1:
+            DynamicServers:
+                ServerNamePrefix: managed-server
+                CalculatedListenPorts: false
+                MachineMatchType: name
+                MaximumDynamicServerCount: 5
+                ServerTemplate: server-template_1
+                DynamicClusterSize: 5
+    Server:
+        admin-server: {}
+    ServerTemplate:
+        server-template_1:
+            ListenPort: '@@PROP:ServerTemp.server-template_1.ListenPort@@'
+            Cluster: cluster-1
+            JTAMigratableTarget:
+                Cluster: cluster-1
+            SSL:
+                ListenPort: '@@PROP:ServerTemp.server-template_1.SSL.ListenPort@@'
+            AutoMigrationEnabled: false
+    SecurityConfiguration:
+        Realm:
+            myrealm:
+                CertPathBuilder: WebLogicCertPathProvider
+appDeployments:
+    Application:
+        quickstart:
+            SourcePath: wlsdeploy/applications/quickstart.war
+            ModuleType: war
+            Target: cluster-1

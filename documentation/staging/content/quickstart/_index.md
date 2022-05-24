@@ -21,9 +21,3 @@ You may need to adjust the instructions in this guide to suit your particular fl
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}). This guide assumes a single node cluster.
 
 The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}}).
-
-**NOTE**: You should clone the operator repository to your local machine so that you have access to the
-various sample files mentioned throughout this guide:
-```shell
-$ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator
-```

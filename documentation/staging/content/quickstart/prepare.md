@@ -24,7 +24,20 @@ weight: 5
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}"
     ```
 
-{{% notice note %}}
-If you have reached this point while following the "Model in Image" sample, please
-stop here and return to the [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}).
-{{% /notice %}}
+1. Accept the license agreement for the WebLogic Server images.
+
+    In a browser, navigate to https://container-registry.oracle.com/ and sign in.
+    Search for `weblogic`, and select the image name in the results, click Continue, then read and accept the license agreement.
+
+1. Create a docker-registry secret to enable pulling the example image from the registry.
+
+   ```shell
+   $ kubectl create secret docker-registry operator-repo-credentials \
+        --docker-server=container-registry.oracle.com \
+        --docker-username=YOUR_REGISTRY_USERNAME \
+        --docker-password=YOUR_REGISTRY_PASSWORD \
+        --docker-email=YOUR_REGISTRY_EMAIL \
+        -n sample-domain1-ns
+   ```
+   Replace YOUR_REGISTRY_USERNAME, YOUR_REGISTRY_PASSWORD, and YOUR_REGISTRY_EMAIL with the values you use to access the registry.
+
