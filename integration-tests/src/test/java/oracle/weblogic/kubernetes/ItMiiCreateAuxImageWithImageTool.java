@@ -320,7 +320,7 @@ class ItMiiCreateAuxImageWithImageTool {
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, "cluster-1");
     V1Container.ImagePullPolicyEnum imagePullPolicy = V1Container.ImagePullPolicyEnum.IFNOTPRESENT;
-    if(OKE_CLUSTER) {
+    if (OKE_CLUSTER) {
       imagePullPolicy = V1Container.ImagePullPolicyEnum.ALWAYS;
     }
     domainCR.spec().configuration().model()
