@@ -38,11 +38,11 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-def MAVEN_PROFILE_NAME = 'integration-tests'
-def PARALLEL_RUN = true
+def maven_profile_name = 'integration-tests'
+def parallel_run = true
 if (env.JOB_NAME.contains('Sequential')) {
-    MAVEN_PROFILE_NAME = 'kind-sequential'
-    PARALLEL_RUN = false
+    maven_profile_name = 'kind-sequential'
+    parallel_run = false
 }
 
 pipeline {
@@ -445,6 +445,8 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        MAVEN_PROFILE_NAME = "${maven_profile_name}"
+                        PARALLEL_RUN = "${parallel_run}"
                     }
                     steps {
                         sh '''
