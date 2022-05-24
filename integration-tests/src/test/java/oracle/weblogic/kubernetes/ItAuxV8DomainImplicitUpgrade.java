@@ -417,7 +417,7 @@ class ItAuxV8DomainImplicitUpgrade {
    */
   @Test
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
-  void testErrorPathV8DomaineFilePermission() {
+  void testErrorPathV8DomainFilePermission() {
 
     if (doesDomainExist(domainUid, DOMAIN_VERSION, domainNamespace)) {
       deleteDomainResource(domainNamespace, domainUid);

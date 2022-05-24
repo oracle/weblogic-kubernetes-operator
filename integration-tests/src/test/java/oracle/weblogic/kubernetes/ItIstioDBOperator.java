@@ -235,6 +235,7 @@ class ItIstioDBOperator {
   @Test
   @DisplayName("Create Istio enabled FMW Domain model in image domain")
   void  testIstioEnabledFmwModelInImageWithDbOperator() {
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(fmwDomainNamespace);
@@ -385,6 +386,10 @@ class ItIstioDBOperator {
    */
   @Test
   void  testIstioWlsModelInImageWithDbOperator() {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(wlsDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

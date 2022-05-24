@@ -66,7 +66,6 @@ import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -77,6 +76,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -604,7 +604,7 @@ public class DomainUtils {
             .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
             .imagePullSecrets(Collections.singletonList(
                 new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET)))
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -797,7 +797,7 @@ public class DomainUtils {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME)));  // this secret is used only for non-kind cluster
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
     }
@@ -913,7 +913,7 @@ public class DomainUtils {
             .domainHomeSourceType("Image")
             .image(imageName)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
