@@ -1363,7 +1363,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
-    self.customizeServerIstioNetworkAccessPoint(listen_address, server)
+    #self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     if server.getName() == admin_server_name:
       self.addAdminChannelPortForwardNetworkAccessPoints(server)
     else:
@@ -1392,7 +1392,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
-    self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
+    #self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     self.customizeIstioReplicationChannel(template, listen_address,
                                           self.env.getEnvOrDef("ISTIO_REPLICATION_PORT", 4564),
                                           is_server_template=True)
