@@ -66,7 +66,6 @@ import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static String ISTIO_METRICS_SERVICE_NAME = "tcp-metrics";
   private static String METRICS_SERVICE_NAME = "metrics";
 
   private ServiceHelper() {
@@ -194,38 +193,6 @@ public class ServiceHelper {
       appProtocol = "tls";
     }
     return appProtocol;
-  }
-
-
-  static List<String> getAppProtocolAndPortName(String portName, String protocol) {
-    List<String> results = new ArrayList<>();
-    List<String> httpProtocols = new ArrayList<>(Arrays.asList("http"));
-    List<String> httpsProtocols = new ArrayList<>(Arrays.asList("https", "admin"));
-    List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips"));
-
-    String appProtocol = "tcp";
-    if (httpProtocols.contains(protocol)) {
-      appProtocol = "http";
-    } else if (httpsProtocols.contains(protocol)) {
-      appProtocol = "https";
-    } else if (tlsProtocols.contains(protocol)) {
-      appProtocol = "tls";
-    }
-    results.add(appProtocol);
-    if ("default".equals(portName) || METRICS_SERVICE_NAME.equals(portName)) {
-      results.add(portName);
-    } else if ("default-admin".equals(portName) || "default-secure".equals(portName)) {
-      results.add(portName);
-    } else {
-      String[] tokens = portName.split("-");
-      if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
-          || "tls".equals(tokens[0])) {
-        int index = portName.indexOf('-');
-        // normalize channel name since we use appProtocol
-        results.add(portName.substring(index + 1));
-      }
-    }
-    return results;
   }
 
   private static class ForServerStep extends ServiceHelperStep {
@@ -379,12 +346,6 @@ public class ServiceHelper {
       if (port == null) {
         return;
       }
-      //String appProtocol = getAppProtocol(protocol);
-      //      List<String> results =
-      //      if (results.size() == 2) {
-      //        appProtocol = results.get(0);
-      //        portName = results.get(1);
-      //      }
       addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       if (isSipProtocol(protocol)) {
         addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
@@ -845,14 +806,6 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
-      String appProtocol = "tcp";
-      // TODO: may not be the best way, probably need to change how introspector write out just the portName and
-      // then here use the protocol to determine the appProtocol
-      //      List<String> results = getAppProtocolAndPortName(portName, protocol);
-      //      if (results.size() == 2) {
-      //        appProtocol = results.get(0);
-      //        portName = results.get(1);
-      //      }
 
       if (port != null) {
         addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
@@ -1032,13 +985,7 @@ public class ServiceHelper {
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
-      //String appProtocol = "tcp";
       if (channel == null && channelName != null) {
-        //        List<String> results = getAppProtocolAndPortName(channelName, protocol);
-        //        if (results.size() == 2) {
-        //          appProtocol = results.get(0);
-        //          channelName = results.get(1);
-        //        }
         channel = getChannel(channelName);
       }
       if (channel == null || internalPort == null) {
