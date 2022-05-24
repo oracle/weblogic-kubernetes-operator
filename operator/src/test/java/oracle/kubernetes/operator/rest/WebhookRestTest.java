@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +34,14 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountO
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KIND;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.createDomain;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGeneratorTest.inputStreamFromClasspath;
@@ -53,6 +63,8 @@ class WebhookRestTest extends RestTestBase {
   private static final String RESPONSE_UID = "705ab4f5-6393-11e8-b7cc-42010a800002";
 
   private final AdmissionReview admissionReview = createAdmissionReview();
+  private final Domain existingDomain = createDomain();
+  private final Domain proposedDomain = createDomain();
 
   private AdmissionReview createAdmissionReview() {
     return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createAdmissionRequest());
@@ -62,11 +74,19 @@ class WebhookRestTest extends RestTestBase {
     AdmissionRequest request = new AdmissionRequest();
     request.setUid(RESPONSE_UID);
     request.setKind(new HashMap<>());
-    request.setResource(new HashMap<>());
+    request.setResource(createResource());
     request.setSubResource(new HashMap<>());
-    request.setObject(new Object());
-    request.setOldObject(new Object());
+    request.setObject(null);
+    request.setOldObject(null);
     return request;
+  }
+
+  private Map<String, String> createResource() {
+    Map<String, String> resource = new HashMap<>();
+    resource.put("group", DOMAIN_GROUP);
+    resource.put("version", DOMAIN_VERSION);
+    resource.put("resource", DOMAIN_PLURAL);
+    return resource;
   }
 
   final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
@@ -94,7 +114,6 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenConversionWebhookHasAnException_responseHasFailedStatusAndFailedEventGenerated() {
-
     String conversionReview = "some_unexpected_string";
     Response response = sendConversionWebhookRequest(conversionReview);
     String responseString = getAsString((ByteArrayInputStream) response.getEntity());
@@ -176,6 +195,57 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(getResultStatus(responseReview).equals(expectedStatus), equalTo(true));
+  }
+
+  @Test
+  void whenDomainReplicasChangedAloneValid_acceptIt() {
+    proposedDomain.getSpec().withReplicas(GOOD_REPLICAS);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(getAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenDomainReplicasChangedAloneAndInvalid_rejectIt() {
+    proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(getAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenLogHomeChangedAndOneClusterReplicasChangedInvalid_rejectIt() {
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(getAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenIntrospectVersionChangedAndOneClusterReplicasChangedInvalid_acceptIt() {
+    proposedDomain.getSpec().setIntrospectVersion(NEW_INTROSPECT_VERSION);
+    proposedDomain.getSpec().getClusters().get(0).withReplicas(BAD_REPLICAS);
+    proposedDomain.getSpec().setLogHome(NEW_LOG_HOME);
+    setExistingAndProposedDomain();
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
+
+    assertThat(getResultCode(responseReview), equalTo(HTTP_OK));
+    assertThat(getAllowed(responseReview), equalTo(true));
+  }
+
+  private void setExistingAndProposedDomain() {
+    admissionReview.getRequest().oldObject(existingDomain).object(proposedDomain);
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
@@ -268,4 +338,3 @@ class WebhookRestTest extends RestTestBase {
     }
   }
 }
-

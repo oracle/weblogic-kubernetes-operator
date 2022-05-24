@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
@@ -15,11 +16,20 @@ import oracle.kubernetes.operator.rest.model.AdmissionRequest;
 import oracle.kubernetes.operator.rest.model.AdmissionResponse;
 import oracle.kubernetes.operator.rest.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.rest.model.AdmissionReview;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_GROUP_KEY;
+import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_KEY;
+import static oracle.kubernetes.operator.KubernetesConstants.RESOURCE_VERSION_KEY;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.utils.GsonBuilderUtils.writeAdmissionReview;
+import static oracle.kubernetes.operator.utils.ValidationUtils.isProposedChangeAllowed;
 
 /**
  * AdmissionWebhookResource is a jaxrs resource that implements the REST api for the /admission
@@ -59,15 +69,34 @@ public class AdmissionWebhookResource extends BaseResource {
       admissionResponse = createAdmissionResponse(admissionRequest);
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
-      admissionResponse = new AdmissionResponse()
-          .uid(getUid(admissionRequest))
-          .status(new AdmissionResponseStatus().message("Exception: " + e));
+      admissionResponse = createResponseWithException(admissionRequest, e);
     }
 
-    return writeAdmissionReview(new AdmissionReview()
-        .apiVersion(Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null))
-        .kind(Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null))
-        .response(admissionResponse));
+    return writeAdmissionReview(createResponseAdmissionReview(admissionReview, admissionResponse));
+  }
+
+  private AdmissionResponse createResponseWithException(AdmissionRequest admissionRequest, Exception e) {
+    return new AdmissionResponse()
+        .uid(getUid(admissionRequest))
+        .status(new AdmissionResponseStatus().message("Exception: " + e));
+  }
+
+  private AdmissionReview createResponseAdmissionReview(AdmissionReview admissionReview,
+                                                        AdmissionResponse admissionResponse) {
+    return new AdmissionReview()
+        .apiVersion(getRequestApiVersion(admissionReview))
+        .kind(getRequestKind(admissionReview))
+        .response(admissionResponse);
+  }
+
+  @Nullable
+  private String getRequestKind(AdmissionReview admissionReview) {
+    return Optional.ofNullable(admissionReview).map(AdmissionReview::getKind).orElse(null);
+  }
+
+  @Nullable
+  private String getRequestApiVersion(AdmissionReview admissionReview) {
+    return Optional.ofNullable(admissionReview).map(AdmissionReview::getApiVersion).orElse(null);
   }
 
   private AdmissionRequest getAdmissionRequest(AdmissionReview admissionReview) {
@@ -88,14 +117,15 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
+    boolean isAllowed = isProposedChangesAllowed(request);
     return new AdmissionResponse()
         .uid(getUid(request))
-        .allowed(validate(request))
+        .allowed(isAllowed)
         .status(new AdmissionResponseStatus().code(HTTP_OK));
   }
 
-  private boolean validate(AdmissionRequest request) {
-    if (request == null) {
+  private boolean isProposedChangesAllowed(AdmissionRequest request) {
+    if (request == null || request.getOldObject() == null  || request.getObject() == null) {
       return true;
     }
 
@@ -103,7 +133,19 @@ public class AdmissionWebhookResource extends BaseResource {
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
 
-    // TODO add implementation of the validation in the next PR
+    if (isDomain(request)) {
+      return isProposedChangeAllowed(request.getOldObject(), request.getObject());
+    }
     return true;
+  }
+
+  private boolean isDomain(@NotNull AdmissionRequest request) {
+    return Optional.of(request).map(AdmissionRequest::getResource).map(this::isDomain).orElse(false);
+  }
+
+  private boolean isDomain(@NotNull Map<String, String> resource) {
+    return DOMAIN_GROUP.equals(resource.get(RESOURCE_GROUP_KEY))
+        && DOMAIN_VERSION.equals(resource.get(RESOURCE_VERSION_KEY))
+        && DOMAIN_PLURAL.equals(resource.get(RESOURCE_KEY));
   }
 }

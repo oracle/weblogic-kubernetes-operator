@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /**
  * AdmissionRequest represents a Kubernetes admission request sent by the Kubernetes ApiServer upon invoking an
@@ -53,14 +54,14 @@ public class AdmissionRequest {
    */
   @SerializedName("object")
   @Expose
-  protected Object object;
+  protected Domain object;
 
   /**
    * The existing object.
    */
   @SerializedName("oldObject")
   @Expose
-  protected Object oldObject;
+  protected Domain oldObject;
 
   public String getUid() {
     return uid;
@@ -94,20 +95,30 @@ public class AdmissionRequest {
     this.subResource = subResource;
   }
 
-  public Object getObject() {
+  public Domain getObject() {
     return object;
   }
 
-  public void setObject(Object object) {
+  public void setObject(Domain object) {
     this.object = object;
   }
 
-  public Object getOldObject() {
+  public AdmissionRequest object(Domain object) {
+    setObject(object);
+    return this;
+  }
+
+  public Domain getOldObject() {
     return oldObject;
   }
 
-  public void setOldObject(Object oldObject) {
+  public void setOldObject(Domain oldObject) {
     this.oldObject = oldObject;
+  }
+
+  public AdmissionRequest oldObject(Domain oldObject) {
+    setOldObject(oldObject);
+    return this;
   }
 
   @Override
