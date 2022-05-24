@@ -74,6 +74,20 @@ draft: false
 ##### Changes by Kind
 
 Domain schema:
+* Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
+* Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
+* Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
+* (Not Done Yet) Content under `.spec.clusters[*]` is moved to the new Cluster resource `.spec` and is replaced in the Domain schema with references to the Cluster resources.
+* (Not Done Yet) Removed `.spec.configuration.istio.localhostBindingsEnabled` as the field is no longer required.
+* The previously deprecated fields `.spec.domainHomeInImage`, `.spec.configOverrides`, and `.spec.configOverrideSecrets` have been removed.
+* Added `.spec.logHomeLayout` for configuring the directory layout for WebLogic Server logs.
+* Added `.spec.serverPod.shutdown.waitForAllSessions` to enhance the configuration of server shutdown options.
+* The field `.spec.adminServer.adminChannelPortForwardingEnabled` now defaults to `true`. It previously defaulted to `false`.
+* Added `.spec.failureRetryIntervalSeconds` and `.spec.failureRetryLimitMinutes` for configuration of failure retry timing.
+* Added `.spec.serverPod.maxReadyWaitTimeSeconds` for configuring maximum time before considering servers as stalled during startup.
+* Added `.status.serverStatus[*].podReady` and `.status.serverStatus[*].podPhase` with additional information about the pod associated with each WebLogic Server instance.
+* The field `.status.lastIntrospectJobProcessedUid` was renamed as `.status.failedIntrospectionUid` and added fields `.status.initialFailureTime` and `.status.lastFailureTime`.
+* Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
 
 Helm chart:
 * The default value for `domainNamespaceSelectionStrategy` is now `LabelSelector`. It was previously `List`.
