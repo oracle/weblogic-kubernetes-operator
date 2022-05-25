@@ -12,7 +12,7 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.jupiter.api.Test;
@@ -36,11 +36,11 @@ class ValidationUtilsTest {
   public static final String AUX_IMAGE_1 = "image1";
   public static final String AUX_IMAGE_2 = "Image2";
 
-  private final Domain existingDomain = createDomain();
-  private final Domain proposedDomain = createDomain();
+  private final DomainResource existingDomain = createDomain();
+  private final DomainResource proposedDomain = createDomain();
 
-  private Domain createDomain() {
-    Domain domain = createTestDomain().withStatus(createDomainStatus());
+  private DomainResource createDomain() {
+    DomainResource domain = createTestDomain().withStatus(createDomainStatus());
     domain.getSpec()
         .withReplicas(ORIGINAL_REPLICAS)
         .withImage(ORIGINAL_IMAGE_NAME)
@@ -328,7 +328,7 @@ class ValidationUtilsTest {
     return new AuxiliaryImage().image(imageName);
   }
 
-  private void setAuxiliaryImages(Domain domain, List<AuxiliaryImage> images) {
+  private void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
   }
 

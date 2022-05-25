@@ -28,9 +28,9 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
-import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
-import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
+import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
+import oracle.kubernetes.operator.http.client.HttpResponseStub;
 import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerProcessing;
 import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -107,7 +107,7 @@ class ShutdownManagedServerStepTest {
       .createShutdownManagedServerStep(terminalStep, MANAGED_SERVER1, standaloneManagedServer1);
   private final Step shutdownDynamicManagedServer = ShutdownManagedServerStep
       .createShutdownManagedServerStep(terminalStep, DYNAMIC_MANAGED_SERVER1, dynamicManagedServer1);
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach

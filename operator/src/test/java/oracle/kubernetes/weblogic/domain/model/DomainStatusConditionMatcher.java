@@ -83,7 +83,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     return condition.getMessage() != null && condition.getMessage().contains(expectedMessage);
   }
 
-  private DomainStatus getStatus(Domain domain) {
+  private DomainStatus getStatus(DomainResource domain) {
     return Optional.ofNullable(domain.getStatus()).orElse(new DomainStatus());
   }
 

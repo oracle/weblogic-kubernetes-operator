@@ -84,7 +84,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNames
 import static oracle.kubernetes.operator.helpers.WebhookHelper.UPDATE;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_NAME;
 import static oracle.kubernetes.operator.helpers.WebhookHelper.VALIDATING_WEBHOOK_PATH;
-import static oracle.kubernetes.operator.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
+import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;

@@ -23,8 +23,8 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -210,13 +210,14 @@ public abstract class ResponseStep<T> extends Step {
         .ifPresent(domain -> updateFailureStatus(domain, requestParams, apiException));
   }
 
-  private void updateFailureStatus(@Nonnull Domain domain, RequestParams requestParams, ApiException apiException) {
+  private void updateFailureStatus(
+      @Nonnull DomainResource domain, RequestParams requestParams, ApiException apiException) {
     DomainCondition condition = new DomainCondition(FAILED).withReason(KUBERNETES)
         .withMessage(createMessage(requestParams, apiException));
     addFailureStatus(domain, condition);
   }
 
-  private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
+  private void addFailureStatus(@Nonnull DomainResource domain, DomainCondition condition) {
     domain.getOrCreateStatus().addCondition(condition);
   }
 

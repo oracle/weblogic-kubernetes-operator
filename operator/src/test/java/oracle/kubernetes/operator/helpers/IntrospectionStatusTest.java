@@ -28,7 +28,7 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -80,7 +80,7 @@ class IntrospectionStatusTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
-    final Domain domain = DomainProcessorTestSetup.createTestDomain();
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     domain.setStatus(new DomainStatus().withMessage("").withReason(""));
     presenceInfoMap.put(NS, Map.of(UID, new DomainPresenceInfo(domain)));
     testSupport.defineResources(domain);
@@ -98,7 +98,7 @@ class IntrospectionStatusTest {
     assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
-  private Domain getDomain() {
+  private DomainResource getDomain() {
     return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
   }
 

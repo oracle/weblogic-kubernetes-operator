@@ -24,14 +24,14 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.builders.WatchEvent;
-import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.http.rest.ScanCacheStub;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,7 +94,7 @@ class PodPresenceTest {
 
     domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
     disableDomainProcessing();
-    Domain domain = DomainProcessorTestSetup.createTestDomain();
+    DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     testSupport.defineResources(domain);
     info.setDomain(domain);

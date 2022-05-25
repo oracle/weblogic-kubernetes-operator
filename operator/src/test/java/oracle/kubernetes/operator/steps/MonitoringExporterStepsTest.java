@@ -29,8 +29,8 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
-import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
+import oracle.kubernetes.operator.http.client.HttpResponseStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
@@ -38,7 +38,7 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,7 +82,7 @@ class MonitoringExporterStepsTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final WlsDomainConfig domainConfig =
         new WlsDomainConfigSupport(DOMAIN_NAME)
@@ -125,7 +125,7 @@ class MonitoringExporterStepsTest {
     testSupport.defineResources(pod, service);
   }
 
-  private DomainConfigurator configureDomain(Domain domain) {
+  private DomainConfigurator configureDomain(DomainResource domain) {
     return DomainConfiguratorFactory.forDomain(domain);
   }
 

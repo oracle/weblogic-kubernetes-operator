@@ -29,10 +29,10 @@ public abstract class DomainTestBase {
   static final String NS = "test-namespace";
   static final String DOMAIN_UID = "uid1";
 
-  final Domain domain = createDomain();
+  final DomainResource domain = createDomain();
 
-  static Domain createDomain() {
-    return new Domain()
+  static DomainResource createDomain() {
+    return new DomainResource()
         .withMetadata(new V1ObjectMeta().namespace(NS))
         .withSpec(
               new DomainSpec()
@@ -40,7 +40,7 @@ public abstract class DomainTestBase {
                     .withDomainUid(DOMAIN_UID));
   }
 
-  static DomainConfigurator configureDomain(Domain domain) {
+  static DomainConfigurator configureDomain(DomainResource domain) {
     DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
     commonConfigurator.configureAdminServer();
     return commonConfigurator;
@@ -59,10 +59,10 @@ public abstract class DomainTestBase {
   }
 
   @SuppressWarnings("SameParameterValue")
-  protected Domain readDomain(String resourceName) throws IOException {
+  protected DomainResource readDomain(String resourceName) throws IOException {
     String json = jsonFromYaml(resourceName);
     Gson gson = new GsonBuilder().create();
-    return gson.fromJson(json, Domain.class);
+    return gson.fromJson(json, DomainResource.class);
   }
 
   private String jsonFromYaml(String resourceName) throws IOException {
