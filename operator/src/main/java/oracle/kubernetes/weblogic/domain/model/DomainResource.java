@@ -56,7 +56,7 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-public class Domain implements KubernetesObject {
+public class DomainResource implements KubernetesObject {
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -181,7 +181,7 @@ public class Domain implements KubernetesObject {
    * @param apiVersion API version
    * @return this
    */
-  public Domain withApiVersion(String apiVersion) {
+  public DomainResource withApiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
     return this;
   }
@@ -216,7 +216,7 @@ public class Domain implements KubernetesObject {
    * @param kind Kind
    * @return this
    */
-  public Domain withKind(String kind) {
+  public DomainResource withKind(String kind) {
     this.kind = kind;
     return this;
   }
@@ -248,7 +248,7 @@ public class Domain implements KubernetesObject {
    * @param metadata Metadata
    * @return this
    */
-  public Domain withMetadata(V1ObjectMeta metadata) {
+  public DomainResource withMetadata(V1ObjectMeta metadata) {
     this.metadata = metadata;
     return this;
   }
@@ -405,7 +405,7 @@ public class Domain implements KubernetesObject {
    * @param spec Specification
    * @return this
    */
-  public Domain withSpec(DomainSpec spec) {
+  public DomainResource withSpec(DomainSpec spec) {
     this.spec = spec;
     return this;
   }
@@ -450,7 +450,7 @@ public class Domain implements KubernetesObject {
    * @param status Status
    * @return this instance
    */
-  public Domain withStatus(DomainStatus status) {
+  public DomainResource withStatus(DomainStatus status) {
     setStatus(status);
     return this;
   }
@@ -894,10 +894,10 @@ public class Domain implements KubernetesObject {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof Domain)) {
+    if (!(other instanceof DomainResource)) {
       return false;
     }
-    Domain rhs = ((Domain) other);
+    DomainResource rhs = ((DomainResource) other);
     return new EqualsBuilder()
         .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)

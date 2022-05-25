@@ -9,7 +9,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
   private final DomainStatusConditionMatcher statusMatcher;
 
   private DomainConditionMatcher(DomainStatusConditionMatcher statusMatcher) {
@@ -41,7 +41,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   }
 
   @Override
-  protected boolean matchesSafely(Domain item, Description mismatchDescription) {
+  protected boolean matchesSafely(DomainResource item, Description mismatchDescription) {
     return statusMatcher.matchesSafely(item.getStatus(), mismatchDescription);
   }
 

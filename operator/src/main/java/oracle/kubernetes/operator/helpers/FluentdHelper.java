@@ -18,7 +18,7 @@ import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
@@ -39,7 +39,7 @@ public class FluentdHelper {
    * @param domain  Domain.
    */
   public static void addFluentdContainer(FluentdSpecification fluentdSpecification, List<V1Container> containers,
-                                         Domain domain, boolean isJobPod) {
+                                         DomainResource domain, boolean isJobPod) {
 
     V1Container fluentdContainer = new V1Container();
     fluentdContainer
@@ -178,7 +178,7 @@ public class FluentdHelper {
         .labels(labels)
         .namespace(namespace);
 
-    Domain domain = info.getDomain();
+    DomainResource domain = info.getDomain();
     if (domain != null) {
       V1ObjectMeta domainMetadata = domain.getMetadata();
       meta.addOwnerReferencesItem(
@@ -196,8 +196,9 @@ public class FluentdHelper {
         .metadata(meta).data(data);
   }
 
-  private static void addFluentdContainerEnvList(FluentdSpecification fluentdSpecification,
-                                                 V1Container fluentdContainer, Domain domain, boolean isJobPod) {
+  private static void addFluentdContainerEnvList(
+      FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
+      DomainResource domain, boolean isJobPod) {
 
     addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
         "elasticsearchhost");

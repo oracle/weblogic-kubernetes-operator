@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainBasicTest extends DomainTestBase {
+class DomainResourceBasicTest extends DomainTestBase {
 
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
@@ -437,7 +437,7 @@ class DomainBasicTest extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", null);
 
     assertThat(
@@ -453,7 +453,7 @@ class DomainBasicTest extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
@@ -461,7 +461,7 @@ class DomainBasicTest extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.getReplicaCount("cluster2"), equalTo(5));
     assertThat(

@@ -62,7 +62,7 @@ public class CrdSchemaGeneratorTest {
                           DOMAIN_V2_SAMPLE_YAML_4, DOMAIN_V2_SAMPLE_YAML_5})
   void validateSchemaAgainstSamples(String fileName) throws IOException {
     final JsonNode jsonToValidate = convertToJson(fileName);
-    final JsonSchema schema = createJsonSchema(Domain.class);
+    final JsonSchema schema = createJsonSchema(DomainResource.class);
 
     Set<ValidationMessage> validationResult = schema.validate(jsonToValidate);
     if (!validationResult.isEmpty()) {

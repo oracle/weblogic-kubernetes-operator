@@ -26,8 +26,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
@@ -890,7 +890,7 @@ public class EventHelper {
     public String getUID() {
       return Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getMetadata)
+          .map(DomainResource::getMetadata)
           .map(V1ObjectMeta::getUid)
           .orElse("");
     }

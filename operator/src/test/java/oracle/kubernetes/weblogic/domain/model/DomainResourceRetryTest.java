@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainRetryTest extends DomainTestBase {
+class DomainResourceRetryTest extends DomainTestBase {
   private final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
@@ -58,7 +58,7 @@ class DomainRetryTest extends DomainTestBase {
 
   @Test
   void readFailureRetryParametersFromYaml() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getFailureRetryIntervalSeconds(), equalTo(90L));
     assertThat(domain.getFailureRetryLimitMinutes(), equalTo(1000L));

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public class ServerDownIteratorStep extends Step {
   private final Collection<DomainPresenceInfo.ServerShutdownInfo> serverShutdownInfos;
@@ -83,11 +83,11 @@ public class ServerDownIteratorStep extends Step {
     return ssi.getClusterName() != null;
   }
 
-  private int getMaxConcurrentShutdown(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
+  private int getMaxConcurrentShutdown(DomainResource domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
     return domain.getMaxConcurrentShutdown(ssi.getClusterName());
   }
 
-  private int getReplicaCount(Domain domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
+  private int getReplicaCount(DomainResource domain, DomainPresenceInfo.ServerShutdownInfo ssi) {
     return domain.getReplicaCount(ssi.getClusterName());
   }
 
@@ -107,7 +107,7 @@ public class ServerDownIteratorStep extends Step {
   private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(
           Collection<DomainPresenceInfo.ServerShutdownInfo> shutdownInfos, Packet packet) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    Domain domain = info.getDomain();
+    DomainResource domain = info.getDomain();
 
     Map<String, ShutdownClusteredServersStepFactory> factories = new HashMap<>();
     shutdownInfos.stream()
