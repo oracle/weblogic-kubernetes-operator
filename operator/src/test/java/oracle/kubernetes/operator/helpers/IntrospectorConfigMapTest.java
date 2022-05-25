@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.http.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
