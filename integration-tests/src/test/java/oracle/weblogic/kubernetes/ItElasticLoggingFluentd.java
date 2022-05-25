@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
@@ -375,11 +376,11 @@ class ItElasticLoggingFluentd {
     final String volumeName = "weblogic-domain-storage-volume";
     final String logHomeRootPath = "/scratch";
     // create the domain CR
-
+    String imagePoolPolicy = OKE_CLUSTER ? "Always" : "IfNotPresent";
     FluentdSpecification fluentdSpecification = new FluentdSpecification();
     fluentdSpecification.setImage(FLUENTD_IMAGE);
     fluentdSpecification.setWatchIntrospectorLogs(true);
-    fluentdSpecification.setImagePullPolicy("IfNotPresent");
+    fluentdSpecification.setImagePullPolicy(imagePoolPolicy);
     fluentdSpecification.setElasticSearchCredentials("weblogic-credentials");
     fluentdSpecification.setVolumeMounts(Arrays.asList(new V1VolumeMount()
         .name(volumeName)
