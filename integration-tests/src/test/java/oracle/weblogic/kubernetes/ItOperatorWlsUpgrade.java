@@ -48,7 +48,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
@@ -67,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REP
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -206,9 +206,11 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
+   * Currently we do not support AuxDomain upgrade 3.3.5 to Latest with 
+   * independent webhook only WebLogic Operator in Latest branch.
+   * Temporarily disabled, re-enable after webhook not pre-created in 
+   * InitializationTasks or the test is moved to a different test suite.
    */
-  // Temporarily disabled, re-enable after webhook not pre-created in InitializationTasks
-  // or the test is moved to a different test suite.
   @Disabled
   @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
   void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
@@ -675,7 +677,7 @@ class ItOperatorWlsUpgrade {
                     .domainHomeSourceType(domainHomeSourceType)
                     .image(domainImage)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET_NAME))
+                            .name(TEST_IMAGES_REPO_SECRET_NAME))
                     .webLogicCredentialsSecret(new V1SecretReference()
                             .name(adminSecretName)
                             .namespace(domainNamespace))
