@@ -40,7 +40,7 @@ def kind_k8s_map = [
 def _kind_image = null
 def maven_profile_name = 'integration-tests'
 def parallel_run = true
-if (env.JOB_NAME.containsIgnoreCase('sequential')) {
+if (env.JOB_NAME.contains('sequential')) {
     maven_profile_name = 'kind-sequential'
     parallel_run = false
 }
@@ -517,7 +517,7 @@ EOF
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
-                            
+
                         '''
                     }
                     post {
