@@ -60,7 +60,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
-import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +100,6 @@ import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLAT
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
-import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -1347,7 +1345,6 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainIsIstioEnabled_localhostBindingsEnabled_doesNotHaveIstioUseLocalhostBindingsEnv() {
-    configureDomain().withIstioLocalhostBindingsEnabled(true);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1358,20 +1355,8 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainIsIstioEnabled_defaultReplicationChannelPort_doesNotHaveIstioEnvVar() {
-    configureDomain().withIstio();
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_REPLICATION_PORT, Integer.toString(Istio.DEFAULT_REPLICATION_PORT))));
-  }
-
-  @Test
   void whenDomainIsIstioEnabled_istioLocalhostBindingsDisabledEnv_hasIstioUseLocalhostBindingsEnv() {
     TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "true");
-    configureDomain().withIstio();
 
     V1JobSpec jobSpec = createJobSpec();
 

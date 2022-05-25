@@ -1617,7 +1617,6 @@ class DomainProcessorTest {
             + "      sslListenPort: 8004\n";
 
     //establishPreviousIntrospection(null);
-    domainConfigurator.withIstio();
     domainConfigurator.configureCluster("cluster-1").withReplicas(2);
 
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1706,7 +1705,6 @@ class DomainProcessorTest {
         + "      sslListenPort: 8004\n";
 
     //establishPreviousIntrospection(null);
-    domainConfigurator.withIstio();
     domainConfigurator.configureCluster("cluster-1").withReplicas(2);
 
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));

@@ -47,7 +47,6 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.NotNull;
@@ -257,24 +256,8 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().isUseOnlineUpdate();
   }
 
-  public boolean isIstioEnabled() {
-    return getDomain().isIstioEnabled();
-  }
-
   public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
     return Domain.isAdminChannelPortForwardingEnabled(domainSpec);
-  }
-
-  int getIstioReadinessPort() {
-    return getDomain().getIstioReadinessPort();
-  }
-
-  int getIstioReplicationPort() {
-    return getDomain().getIstioReplicationPort();
-  }
-
-  boolean isLocalhostBindingsEnabled() {
-    return getDomain().isLocalhostBindingsEnabled();
   }
 
   String getEffectiveLogHome() {
@@ -686,17 +669,11 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
     addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
     Optional.ofNullable(getKubernetesPlatform())
             .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
 
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
-    addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
-    if (isIstioEnabled()) {
-      addIstioEnvVars(vars);
-    }
     if (isUseOnlineUpdate()) {
       addOnlineUpdateEnvVars(vars);
     }
@@ -751,19 +728,6 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
-  }
-
-  private void addIstioEnvVars(List<V1EnvVar> vars) {
-    // Only add the following Istio configuration environment variables when explicitly configured
-    // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
-    // hash code of the set of environment variables.
-    if (!isLocalhostBindingsEnabled()) {
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS, "false");
-    }
-
-    if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {
-      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
-    }
   }
 
   private void addOnlineUpdateEnvVars(List<V1EnvVar> vars) {

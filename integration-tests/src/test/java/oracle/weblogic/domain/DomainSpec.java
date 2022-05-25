@@ -207,9 +207,6 @@ public class DomainSpec {
   @ApiModelProperty("Configuration for the clusters.")
   private List<Cluster> clusters = new ArrayList<>();
 
-  @ApiModelProperty("Experimental feature configurations.")
-  private Experimental experimental;
-
   @ApiModelProperty("Configuration affecting server pods.")
   private ServerPod serverPod;
 
@@ -647,23 +644,6 @@ public class DomainSpec {
     this.clusters = clusters;
   }
 
-  public DomainSpec experimental(Experimental experimental) {
-    this.experimental = experimental;
-    return this;
-  }
-
-  public Experimental experimental() {
-    return experimental;
-  }
-
-  public Experimental getExperimental() {
-    return experimental;
-  }
-
-  public void setExperimental(Experimental experimental) {
-    this.experimental = experimental;
-  }
-
   public DomainSpec serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -788,7 +768,6 @@ public class DomainSpec {
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
-            .append("experimental", experimental)
             .append("serverStartState", serverStartState)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
@@ -825,7 +804,6 @@ public class DomainSpec {
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
-            .append(experimental)
             .append(serverPod)
             .append(serverService)
             .append(serverStartState)
@@ -870,7 +848,6 @@ public class DomainSpec {
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
-            .append(experimental, rhs.experimental)
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)

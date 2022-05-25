@@ -577,7 +577,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
-    defineExporterConfiguration().withIstio();
+    defineExporterConfiguration();
 
     V1ContainerPort metricsPort = getExporterContainerPort("metrics");
     assertThat(metricsPort, notNullValue());

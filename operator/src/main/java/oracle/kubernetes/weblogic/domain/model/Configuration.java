@@ -43,9 +43,6 @@ public class Configuration {
       + "`domains.spec.introspectVersion`. Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
-  @Description("The Istio service mesh integration settings.")
-  private Istio istio;
-
   public Model getModel() {
     return model;
   }
@@ -109,19 +106,6 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
-  public Istio getIstio() {
-    return istio;
-  }
-
-  public void setIstio(Istio istio) {
-    this.istio = istio;
-  }
-
-  public Configuration withIstio(Istio istio) {
-    this.istio = istio;
-    return this;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -131,8 +115,7 @@ public class Configuration {
             .append("secrets", secrets)
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
-            .append("istio", istio);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
 
     return builder.toString();
   }
@@ -145,8 +128,7 @@ public class Configuration {
           .append(secrets)
           .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
-          .append(introspectorJobActiveDeadlineSeconds)
-          .append(istio);
+          .append(introspectorJobActiveDeadlineSeconds);
 
     return builder.toHashCode();
   }
@@ -167,8 +149,7 @@ public class Configuration {
             .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
-            .append(istio, rhs.istio);
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
 
     return builder.isEquals();
   }

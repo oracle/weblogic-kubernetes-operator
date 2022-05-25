@@ -45,8 +45,6 @@ public class Configuration {
   @ApiModelProperty("Rollback the changes if the update require domain restart.")
   private Boolean rollBackIfRestartRequired = false;
 
-  @ApiModelProperty("Istio service mesh integration")
-  private Istio istio;
 
   public Configuration model(Model model) {
     this.model = model;
@@ -187,23 +185,6 @@ public class Configuration {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
-  public Configuration istio(Istio istio) {
-    this.istio = istio;
-    return this;
-  }
-
-  public Istio istio() {
-    return istio;
-  }
-
-  public Istio getIstio() {
-    return istio;
-  }
-
-  public void setIstio(Istio istio) {
-    this.istio = istio;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -214,8 +195,7 @@ public class Configuration {
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
             .append("useOnlineUpdate", useOnlineUpdate)
-            .append("rollBackIfRestartRequired", rollBackIfRestartRequired)
-            .append("istio", istio);
+            .append("rollBackIfRestartRequired", rollBackIfRestartRequired);
 
     return builder.toString();
   }
@@ -230,8 +210,7 @@ public class Configuration {
             .append(overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds)
             .append(useOnlineUpdate)
-            .append(rollBackIfRestartRequired)
-            .append(istio);
+            .append(rollBackIfRestartRequired);
 
     return builder.toHashCode();
   }
@@ -254,8 +233,7 @@ public class Configuration {
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
             .append(useOnlineUpdate, rhs.useOnlineUpdate)
-            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
-            .append(istio, rhs.istio);
+            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired);
 
     return builder.isEquals();
   }

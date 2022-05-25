@@ -40,7 +40,6 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -651,9 +650,6 @@ public class Domain implements KubernetesObject {
         .map(OnlineUpdate::getWdtTimeouts);
   }
 
-  public boolean isIstioEnabled() {
-    return spec.isIstioEnabled();
-  }
 
   /**
    * check if the admin channel port forwarding is enabled for the admin server.
@@ -666,33 +662,6 @@ public class Domain implements KubernetesObject {
             .map(AdminServer::isAdminChannelPortForwardingEnabled).orElse(true);
   }
 
-  public int getIstioReadinessPort() {
-    return spec.getIstioReadinessPort();
-  }
-
-  public int getIstioReplicationPort() {
-    return spec.getIstioReplicationPort();
-  }
-
-  /**
-   * For Istio version prior to 1.10, proxy redirects traffic to localhost and thus requires
-   * localhostBindingsEnabled configuration to be true.  Istio 1.10 and later redirects traffic
-   * to server pods' IP interface and thus localhostBindingsEnabled configuration should be false.
-   * @return true if if the proxy redirects traffic to localhost, false otherwise.
-   */
-  public boolean isLocalhostBindingsEnabled() {
-    Boolean isLocalHostBindingsEnabled = spec.isLocalhostBindingsEnabled();
-    if (isLocalHostBindingsEnabled != null) {
-      return isLocalHostBindingsEnabled;
-    }
-
-    String istioLocalhostBindingsEnabled = TuningParameters.getInstance().get("istioLocalhostBindingsEnabled");
-    if (istioLocalhostBindingsEnabled != null) {
-      return Boolean.parseBoolean(istioLocalhostBindingsEnabled);
-    }
-
-    return true;
-  }
 
   /**
    * Returns the domain home. May be null, but will not be an empty string.
