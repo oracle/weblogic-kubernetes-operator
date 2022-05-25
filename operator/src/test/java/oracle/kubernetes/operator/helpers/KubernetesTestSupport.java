@@ -394,6 +394,20 @@ public class KubernetesTestSupport extends FiberTestSupport {
     selectRepository(resourceType).addDeleteAction(consumer);
   }
 
+
+  /**
+   * Specifies that a read operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnRead(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.read, resourceType, name, namespace, httpStatus);
+  }
+
   /**
    * Specifies that a create operation should fail if it matches the specified conditions. Applies to
    * namespaced resources and replaces any existing failure checks.
