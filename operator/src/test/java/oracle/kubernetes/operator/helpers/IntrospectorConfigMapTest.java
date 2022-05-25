@@ -28,7 +28,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +86,7 @@ class IntrospectorConfigMapTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final TerminalStep terminalStep = new TerminalStep();
   private final IntrospectResult introspectResult = new IntrospectResult();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
@@ -207,11 +207,11 @@ class IntrospectorConfigMapTest {
   }
 
   @Nonnull
-  private Domain getDomain() {
-    return testSupport.<Domain>getResources(KubernetesTestSupport.DOMAIN)
+  private DomainResource getDomain() {
+    return testSupport.<DomainResource>getResources(KubernetesTestSupport.DOMAIN)
           .stream()
           .findFirst()
-          .orElse(new Domain());
+          .orElse(new DomainResource());
   }
 
   @Test

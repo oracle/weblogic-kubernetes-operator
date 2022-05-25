@@ -617,9 +617,9 @@ public class DomainStatus {
         .append(startTime)
         .append(initialFailureTime)
         .append(lastFailureTime)
-        .append(Domain.sortOrNull(servers))
-        .append(Domain.sortOrNull(clusters))
-        .append(Domain.sortOrNull(conditions))
+        .append(DomainResource.sortOrNull(servers))
+        .append(DomainResource.sortOrNull(clusters))
+        .append(DomainResource.sortOrNull(conditions))
         .append(message)
         .append(failedIntrospectionUid)
         .toHashCode();
@@ -640,8 +640,8 @@ public class DomainStatus {
         .append(initialFailureTime, rhs.initialFailureTime)
         .append(lastFailureTime, rhs.lastFailureTime)
         .append(servers, rhs.servers)
-        .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
-        .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
+        .append(DomainResource.sortOrNull(clusters), DomainResource.sortOrNull(rhs.clusters))
+        .append(DomainResource.sortOrNull(conditions), DomainResource.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
         .append(failedIntrospectionUid, rhs.failedIntrospectionUid)
         .isEquals();

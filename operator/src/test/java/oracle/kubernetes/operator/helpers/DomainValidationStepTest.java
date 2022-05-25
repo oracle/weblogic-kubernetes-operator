@@ -24,8 +24,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -66,7 +66,7 @@ class DomainValidationStepTest {
   private static final String TEST_SECRET_PREFIX = "TEST_SECRET";
   private static final String TEST_CONFIGMAP_PREFIX = "TEST_CM";
 
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -117,7 +117,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(domainValidationSteps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(FAILED).withReason(INTROSPECTION));
     assertThat(updatedDomain, not(hasCondition(FAILED).withReason(DOMAIN_INVALID)));
   }
@@ -137,7 +137,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(domainValidationSteps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
@@ -149,7 +149,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(domainValidationSteps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, not(hasCondition(FAILED).withReason(DOMAIN_INVALID).withMessageContaining("obsolete")));
   }
 
@@ -173,12 +173,12 @@ class DomainValidationStepTest {
         hasEvent(DOMAIN_FAILED_EVENT).withMessageContaining(getLocalizedString(DOMAIN_INVALID_EVENT_ERROR)));
   }
 
-  private String getStatusReason(Domain updatedDomain) {
-    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getReason).orElse(null);
+  private String getStatusReason(DomainResource updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getReason).orElse(null);
   }
 
-  private String getStatusMessage(Domain updatedDomain) {
-    return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getMessage).orElse(null);
+  private String getStatusMessage(DomainResource updatedDomain) {
+    return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getMessage).orElse(null);
   }
 
   private void defineDuplicateServerNames() {
@@ -192,7 +192,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(domainValidationSteps);
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", NS));
   }

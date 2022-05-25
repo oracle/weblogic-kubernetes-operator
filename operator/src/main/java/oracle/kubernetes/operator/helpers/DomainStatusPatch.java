@@ -8,8 +8,8 @@ import io.kubernetes.client.openapi.ApiException;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonValue;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 public class DomainStatusPatch {
@@ -19,18 +19,18 @@ public class DomainStatusPatch {
   private final JsonPatchBuilder patchBuilder;
 
   @SuppressWarnings("SameParameterValue")
-  static void updateSynchronously(Domain domain, DomainFailureReason reason, String message) {
+  static void updateSynchronously(DomainResource domain, DomainFailureReason reason, String message) {
     new DomainStatusPatch(domain, reason.toString(), message).update();
     updateCachedDomainStatus(domain, reason.toString(), message);
   }
 
-  private DomainStatusPatch(Domain domain, String reason, String message) {
+  private DomainStatusPatch(DomainResource domain, String reason, String message) {
     name = domain.getMetadata().getName();
     namespace = domain.getMetadata().getNamespace();
     patchBuilder = getPatchBuilder(domain, reason, message);
   }
 
-  private static JsonPatchBuilder getPatchBuilder(Domain domain, String reason, String message) {
+  private static JsonPatchBuilder getPatchBuilder(DomainResource domain, String reason, String message) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     if (domain.getStatus() == null) {
       patchBuilder.add("/status", JsonValue.EMPTY_JSON_OBJECT);
@@ -43,7 +43,7 @@ public class DomainStatusPatch {
     return patchBuilder;
   }
 
-  private static void updateCachedDomainStatus(Domain domain, String reason, String message) {
+  private static void updateCachedDomainStatus(DomainResource domain, String reason, String message) {
     if (domain.getStatus() == null) {
       domain.setStatus(new DomainStatus());
     }

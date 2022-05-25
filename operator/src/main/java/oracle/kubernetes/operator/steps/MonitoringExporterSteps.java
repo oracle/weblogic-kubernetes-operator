@@ -30,7 +30,7 @@ import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterConfiguration;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
@@ -88,7 +88,7 @@ public class MonitoringExporterSteps {
       private boolean hasExporterConfiguration(Packet packet, String serverName) {
         return DomainPresenceInfo.fromPacket(packet)
               .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getMonitoringExporterConfiguration)
+              .map(DomainResource::getMonitoringExporterConfiguration)
               .isPresent();
       }
 
@@ -219,7 +219,7 @@ public class MonitoringExporterSteps {
   private static String getExporterConfiguration(Packet packet) {
     return DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getMonitoringExporterConfiguration)
+          .map(DomainResource::getMonitoringExporterConfiguration)
           .map(MonitoringExporterConfiguration::asJsonString)
           .orElse("");
   }
@@ -277,7 +277,7 @@ public class MonitoringExporterSteps {
       return getMetricsPortName().equals(servicePort.getName());
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 

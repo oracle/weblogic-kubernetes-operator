@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +47,7 @@ class PodHelperTest {
 
 
   private DomainPresenceInfo createDomainPresenceInfo() {
-    return new DomainPresenceInfo(new Domain().withMetadata(new V1ObjectMeta().namespace(NS)));
+    return new DomainPresenceInfo(new DomainResource().withMetadata(new V1ObjectMeta().namespace(NS)));
   }
 
   @BeforeEach

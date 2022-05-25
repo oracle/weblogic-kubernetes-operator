@@ -28,7 +28,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -50,8 +50,8 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   private final ReadServerHealthStepFactoryFake stepFactory = new ReadServerHealthStepFactoryFake();
   private final FiberTestSupport testSupport = new FiberTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final Domain domain =
-      new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
+  private final DomainResource domain =
+      new DomainResource().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach

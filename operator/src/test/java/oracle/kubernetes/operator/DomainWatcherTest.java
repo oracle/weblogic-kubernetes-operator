@@ -10,7 +10,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.Test;
 
@@ -20,20 +20,20 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /** This test class verifies the behavior of the DomainWatcher. */
-class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
+class DomainWatcherTest extends WatcherTestBase implements WatchListener<DomainResource> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
   private static final String BOOKMARK_RESOURCE_VERSION = "987";
   private static final String UID = "uid";
 
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
 
-  private static Domain createDomain() {
-    return new Domain().withSpec(new DomainSpec().withDomainUid(UID));
+  private static DomainResource createDomain() {
+    return new DomainResource().withSpec(new DomainSpec().withDomainUid(UID));
   }
 
   @Override
-  public void receivedResponse(Watch.Response<Domain> response) {
+  public void receivedResponse(Watch.Response<DomainResource> response) {
     recordCallBack(response);
   }
 
@@ -64,7 +64,7 @@ class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain>
   @SuppressWarnings("unchecked")
   @Override
   protected <T> T createObjectWithMetaData(V1ObjectMeta metaData) {
-    return (T) new Domain().withMetadata(metaData);
+    return (T) new DomainResource().withMetadata(metaData);
   }
 
   @Override

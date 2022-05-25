@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class DomainSpecTest {
+class DomainResourceSpecTest {
 
   @Test
   void whenEffectiveDomainSpecsWithDefaultImage_domainSpecEquals() {
