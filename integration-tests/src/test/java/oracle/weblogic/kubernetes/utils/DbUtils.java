@@ -65,6 +65,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -226,7 +227,7 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
-                            .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                            .imagePullPolicy(IMAGE_PULL_POLICY)
                             .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
@@ -337,7 +338,7 @@ public class DbUtils {
                 new V1Container()
                     .name("rcu")
                     .image(fmwBaseImageName)
-                    .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                    .imagePullPolicy(IMAGE_PULL_POLICY)
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
@@ -991,7 +992,7 @@ public class DbUtils {
                     .containers(Arrays.asList(new V1Container()
                         .name(name)
                         .image("mauilion/hostpath-provisioner:dev")
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .addEnvItem(new V1EnvVar()
                             .name("NODE_NAME")
                             .valueFrom(new V1EnvVarSource()

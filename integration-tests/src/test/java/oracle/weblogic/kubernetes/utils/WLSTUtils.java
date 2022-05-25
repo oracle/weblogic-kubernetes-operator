@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
@@ -111,7 +112,7 @@ public class WLSTUtils {
                     .containers(Arrays.asList(jobContainer
                         .name("execute-wlst-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
+                        .imagePullPolicy(IMAGE_PULL_POLICY)
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("wlst-job-cm-volume") // WLST script volume

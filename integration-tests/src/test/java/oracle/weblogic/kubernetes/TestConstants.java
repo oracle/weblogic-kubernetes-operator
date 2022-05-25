@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import static io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
@@ -315,6 +316,8 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final ImagePullPolicyEnum IMAGE_PULL_POLICY =
+          OKE_CLUSTER ? ImagePullPolicyEnum.ALWAYS : ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
   public static final boolean OKD =
