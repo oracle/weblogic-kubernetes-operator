@@ -40,7 +40,7 @@ def kind_k8s_map = [
 def _kind_image = null
 def maven_profile_name = 'integration-tests'
 def parallel_run = true
-if (env.JOB_NAME.contains('Sequential')) {
+if (env.JOB_NAME.containsIgnoreCase('sequential')) {
     maven_profile_name = 'kind-sequential'
     parallel_run = false
 }
