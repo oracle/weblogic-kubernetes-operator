@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.util.Arrays;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
