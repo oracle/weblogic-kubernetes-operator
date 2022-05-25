@@ -796,10 +796,6 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenExposingDefaultChannelIfIstio_Enabled() {
-  }
-
-  @Test
   void whenDomainUidExceedMaxAllowed_reportError() {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
     Domain myDomain = createTestDomain(domainUID);

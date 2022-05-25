@@ -78,7 +78,6 @@ import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.c
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.UniquePortsMatcher.hasOnlyUniquePortNames;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -87,7 +86,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -402,10 +400,6 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     List<V1ServicePort> ports = testFacade.getRecordedService(domainPresenceInfo).getSpec().getPorts();
     for (V1ServicePort port: ports) {
       assertThat(port.getAppProtocol(), notNullValue());
-      assertThat(port.getName(), not(startsWith("tcp-")));
-      assertThat(port.getName(), not(startsWith("tls-")));
-      assertThat(port.getName(), not(startsWith("http-")));
-      assertThat(port.getName(), not(startsWith("https-")));
     }
   }
 

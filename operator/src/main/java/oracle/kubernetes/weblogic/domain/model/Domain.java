@@ -932,7 +932,6 @@ public class Domain implements KubernetesObject {
       addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
-      verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
       verifyLivenessProbeSuccessThreshold();
       verifyContainerNameValidInPodSpec();
@@ -1190,22 +1189,6 @@ public class Domain implements KubernetesObject {
       if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
-      }
-    }
-
-    private void verifyIstioExposingDefaultChannel() {
-    //      if (spec.isIstioEnabled()) {
-    //        Optional.ofNullable(spec.getAdminServer())
-    //            .map(AdminServer::getAdminService)
-    //            .map(AdminService::getChannels)
-    //            .ifPresent(cs -> cs.forEach(this::checkForDefaultNameExposed));
-    //      }
-    }
-
-    private void checkForDefaultNameExposed(Channel channel) {
-      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
-            || "default-secure".equals(channel.getChannelName())) {
-        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
       }
     }
 

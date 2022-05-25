@@ -1358,19 +1358,6 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainIsIstioEnabled_replicationChannelPort_hasIstioEnvVar() {
-  //    final String REPLICATION_CHANNEL_PORT = "6789";
-  //    configureDomain().withIstioReplicationChannelPort(Integer.valueOf(REPLICATION_CHANNEL_PORT));
-  //
-  //    V1JobSpec jobSpec = createJobSpec();
-  //
-  //    assertThat(
-  //          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-  //          hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
-  //    );
-  }
-
-  @Test
   void whenDomainIsIstioEnabled_defaultReplicationChannelPort_doesNotHaveIstioEnvVar() {
     configureDomain().withIstio();
 

@@ -734,37 +734,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
 
-  @Test
-  void afterUpgradingPlainPortPodFrom30_patchIt() {
-  //    useProductionHash();
-  //    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingMiiDomainWithAuxImages_patchIt() {
-  //    configureDomain().withInitContainer(createInitContainer())
-  //        .withRequestRequirement("memory", "768Mi")
-  //        .withRequestRequirement("cpu", "250m")
-  //        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
-  //        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
-  //            .emptyDir(new V1EmptyDirVolumeSource()));
-  //
-  //    useProductionHash();
-  //    initializeExistingPod(loadPodModel(getReferenceMiiAuxImagePodYaml_3_3()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
   private V1Container createInitContainer() {
     return new V1Container().name("compatibility-mode-operator-aux-container1").image("model-in-image:WLS-AI-v1")
         .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
@@ -799,61 +768,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
-  @Test
-  void afterUpgradingPlainPortPodFrom31_patchIt() {
-  //    useProductionHash();
-  //    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_1()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom30_patchIt() {
-  //    useProductionHash();
-  //    getServerTopology().setSslListenPort(7002);
-  //    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_0()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
-
-  @Test
-  void afterUpgradingSslPortPodFrom31_patchIt() {
-  //    useProductionHash();
-  //    getServerTopology().setSslListenPort(7002);
-  //    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_1()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
-  }
 
   void useProductionHash() {
     hashMemento.revert();
-  }
-
-  @Test
-  void afterUpgradingMiiPodFrom31_patchIt() {
-  //    useProductionHash();
-  //    testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
-  //    testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
-  //    disableAutoIntrospectOnNewMiiPods();
-  //    initializeExistingPod(loadPodModel(getReferenceMiiPodYaml()));
-  //
-  //    verifyPodPatched();
-  //
-  //    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
-  //    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
-  //    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   private V1Pod loadPodModel(String podYaml) {

@@ -806,7 +806,6 @@ public class ServiceHelper {
 
     @Override
     void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
-
       if (port != null) {
         addServicePortIfNeeded(ports, createServicePort(portName, port, getAppProtocol(protocol)));
       }

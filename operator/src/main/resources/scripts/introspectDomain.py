@@ -946,8 +946,6 @@ class TopologyGenerator(Generator):
       for nap in naps:
         self.addNetworkAccessPoint(server, nap, is_server_template)
 
-    # added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    # if len(naps) != 0 or added_istio_yaml:
     if len(naps) != 0:
       self.undent()
 
@@ -957,24 +955,6 @@ class TopologyGenerator(Generator):
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     name = nap.getName()
-    # if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
-    #     or name.startswith('https-'):
-    #   # skip istio ports already defined by WDT filtering for MII
-    #   return
-    # http_protocol = [ 'http' ]
-    # https_protocol = ['https','admin']
-    # tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
-    # tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
-    # if nap_protocol in http_protocol:
-    #   name = 'http-' + nap.getName().replace(' ', '_')
-    # elif nap_protocol in https_protocol:
-    #   name = 'https-' + nap.getName().replace(' ', '_')
-    # elif nap_protocol in tcp_protocol:
-    #   name = 'tcp-' + nap.getName().replace(' ', '_')
-    # elif nap_protocol in tls_protocol:
-    #   name = 'tls-' + nap.getName().replace(' ', '_')
-    # else:
-    #   name = 'tcp-' + nap.getName().replace(' ', '_')
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
 
@@ -1269,7 +1249,6 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:cluster>")
       self.indent()
       self.writeln("<d:name>" + cluster.getName() + "</d:name>")
-      #self.writeln("<d:replication-channel f:combine-mode='add'>" + 'istiorepl' + "</d:replication-channel>")
       self.undent()
       self.writeln("</d:cluster>")
 
@@ -1363,7 +1342,6 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
-    #self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     if server.getName() == admin_server_name:
       self.addAdminChannelPortForwardNetworkAccessPoints(server)
     if self.getCoherenceClusterSystemResourceOrNone(server) is not None:
@@ -1388,7 +1366,6 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
-    #self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     if self.getCoherenceClusterSystemResourceOrNone(template) is not None:
       self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
@@ -1404,11 +1381,6 @@ class SitConfigGenerator(Generator):
     #   'add' PublicAddress/Port via custom sit-cfg.
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
-
-    # istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    # istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    # if istio_enabled  == 'true' and istio_use_localhost_bindings == 'true':
-    #   listen_address = '127.0.0.1'
 
     nap_name=nap.getName()
     if nap_name in ISTIO_NAP_NAMES:
@@ -1588,115 +1560,9 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln('</d:coherence-member-config>')
 
-  def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
-    # TODO  safe to remove .. verify readiness port is set in operator
-    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-    if istio_readiness_port is None:
-      return
-    admin_server_port = getRealListenPort(server)
-    # readiness probe
-    self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
-    # Generate NAP for each protocols
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='ldap')
-
-      self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='t3')
-
-      self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='http')
-
-      self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='snmp')
-
-      self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
-
-      self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
-                          listen_port=admin_server_port, protocol='iiop')
-
-      ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
-
-      if ssl_listen_port is not None:
-        self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
-
-        self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='ldaps')
-
-        self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='t3s')
-
-        self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-        self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='iiops')
-
-      if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-        self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                            listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
-    else:
-      self._writeIstioNAP(name='http-probe-ext', server=server, listen_address=listen_address,
-                          listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                          bind_to_localhost="false")
-
-  def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
-    # TODO  safe to remove .. verify readiness port is set in operator
-    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-    if istio_readiness_port is None:
-      return
-    listen_port = getRealListenPort(template)
-    self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http')
-
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='t3', http_enabled='false')
-
-      self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='http')
-
-      self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='snmp')
-
-      self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='CLUSTER-BROADCAST')
-
-      self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
-                          listen_port=listen_port, protocol='iiop')
-
-      ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
-
-      if ssl_listen_port is not None:
-        self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='https')
-
-        self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='ldaps')
-
-        self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
-
-        self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-        self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
-                            listen_port=ssl_listen_port, protocol='iiops')
-    else:
-      self._writeIstioNAP(name='http-probe-ext', server=template, listen_address=listen_address,
-                         listen_port=istio_readiness_port, protocol='http', bind_to_localhost="false")
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
-    # istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    # istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
-    # admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-    # if (admin_channel_port_forward_enabled == 'false') or \
-    #     (istio_enabled == 'true' and istio_use_localhost_bindings == 'true'):
-    #   return
 
     index = 0
     for nap in server.getNetworkAccessPoints():
@@ -1721,26 +1587,6 @@ class SitConfigGenerator(Generator):
         self._writeAdminChannelPortForwardNAP(name='internal-t3s', server=server,
                                               listen_port=ssl_listen_port, protocol='t3s')
 
-  def customizeIstioReplicationChannel(self, server, listen_address, listen_port, is_server_template):
-    # TODO  safe to remove .. should be reverted back to the default service channel, need to verify replication
-    # integration test
-
-    if server.getCluster() is None :
-      return
-
-    repl_channel_name = server.getCluster().getReplicationChannel()
-    if repl_channel_name is not None and (repl_channel_name == 'istiorepl'
-                                          or repl_channel_name != 'ReplicationChannel'):
-      return
-
-    self._verify_replication_port_conflict(server, listen_port, is_server_template)
-
-    bind_to_localhost = 'false'
-    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
-      bind_to_localhost = 'true'
-
-    self._writeIstioReplicationChannelNAP('istiorepl', listen_address, listen_port,
-                                          bind_to_localhost)
 
   def _verify_replication_port_conflict(self, server, replication_port, is_server_template):
     name = server.getName()
