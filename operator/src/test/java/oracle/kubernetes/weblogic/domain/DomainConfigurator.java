@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 /**
@@ -37,17 +37,17 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 @SuppressWarnings("UnusedReturnValue")
 public abstract class DomainConfigurator {
 
-  private Domain domain;
+  private DomainResource domain;
 
   protected DomainConfigurator() {
     // no-op
   }
 
-  protected DomainConfigurator(Domain domain) {
+  protected DomainConfigurator(DomainResource domain) {
     this.domain = domain;
   }
 
-  public abstract DomainConfigurator createFor(Domain domain);
+  public abstract DomainConfigurator createFor(DomainResource domain);
 
   /**
    * Sets the home for the domain.

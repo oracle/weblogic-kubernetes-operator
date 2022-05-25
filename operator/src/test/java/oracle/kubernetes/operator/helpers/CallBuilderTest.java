@@ -64,9 +64,9 @@ import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -179,7 +179,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void listDomains_returnsListAsJson() throws ApiException {
-    DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
+    DomainList list = new DomainList().withItems(Arrays.asList(new DomainResource(), new DomainResource()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
     assertThat(callBuilder.withFieldSelector("xxx").listDomain(NAMESPACE), equalTo(list));
@@ -188,14 +188,14 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void readDomain_returnsResource() throws InterruptedException {
-    Domain resource = new Domain().withMetadata(createMetadata());
+    DomainResource resource = new DomainResource().withMetadata(createMetadata());
     defineHttpGetResponse(DOMAIN_RESOURCE, UID, resource);
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().readDomainAsync(UID, NAMESPACE, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(resource));
   }
@@ -204,9 +204,9 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomain_sendsNewDomain() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
 
@@ -217,9 +217,9 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainStatus_sendsNewDomain() throws ApiException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
     callBuilder.replaceDomainStatus(UID, NAMESPACE, domain);
 
@@ -229,7 +229,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void replaceDomain_errorResponseCode_throws() {
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
@@ -238,7 +238,7 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void replaceDomain_conflictResponseCode_throws() {
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
@@ -248,15 +248,15 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().replaceDomainAsync(UID, NAMESPACE, domain, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -265,15 +265,15 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void replaceDomainStatusAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata());
+    DomainResource domain = new DomainResource().withMetadata(createMetadata());
     defineHttpPutResponse(
-        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, Domain.class)));
+        DOMAIN_RESOURCE, UID + "/status", domain, (json) -> requestBody.set(fromJson(json, DomainResource.class)));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().replaceDomainStatusAsync(UID, NAMESPACE, domain, responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -282,11 +282,12 @@ class CallBuilderTest {
   @ResourceLock(value = "server")
   void patchDomainAsync_returnsUpdatedDomain() throws InterruptedException {
     AtomicReference<Object> requestBody = new AtomicReference<>();
-    Domain domain = new Domain().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
+    DomainResource domain
+        = new DomainResource().withMetadata(createMetadata()).withSpec(new DomainSpec().withReplicas(5));
     defineHttpPatchResponse(
         DOMAIN_RESOURCE, UID, domain, (json) -> requestBody.set(json));
 
-    KubernetesTestSupportTest.TestResponseStep<Domain> responseStep
+    KubernetesTestSupportTest.TestResponseStep<DomainResource> responseStep
         = new KubernetesTestSupportTest.TestResponseStep<>();
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
@@ -294,7 +295,7 @@ class CallBuilderTest {
     testSupport.runSteps(new CallBuilder().patchDomainAsync(UID, NAMESPACE,
         new V1Patch(patchBuilder.build().toString()), responseStep));
 
-    Domain received = responseStep.waitForAndGetCallResponse().getResult();
+    DomainResource received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(domain));
   }
@@ -302,14 +303,14 @@ class CallBuilderTest {
   @Test
   @ResourceLock(value = "server")
   void listDomainsAsync_returnsDomains() throws InterruptedException {
-    Domain domain1 = new Domain();
+    DomainResource domain1 = new DomainResource();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
     domain1.setStatus(domainStatus1);
 
     domainStatus1.getConditions().add(new DomainCondition(PROGRESSING).withLastTransitionTime(null));
     domainStatus1.getConditions().add(new DomainCondition(AVAILABLE).withLastTransitionTime(null));
 
-    Domain domain2 = new Domain();
+    DomainResource domain2 = new DomainResource();
     DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
     domain2.setStatus(domainStatus2);
 

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
@@ -21,6 +22,7 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -56,6 +58,8 @@ public abstract class BaseMain {
   static final File deploymentHome;
   static final File probesHome;
   final CoreDelegate delegate;
+
+  private final AtomicReference<BaseRestServer> restServer = new AtomicReference<>();
 
   static {
     try {
@@ -128,7 +132,17 @@ public abstract class BaseMain {
     }
   }
 
-  abstract void startRestServer() throws Exception;
+  void startRestServer(Container container) throws Exception {
+    BaseRestServer value = createRestServer();
+    restServer.set(value);
+    value.start(container);
+  }
+
+  abstract BaseRestServer createRestServer() throws Exception;
+
+  void stopRestServer() {
+    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseRestServer::stop);
+  }
 
   abstract Step createStartupSteps();
 

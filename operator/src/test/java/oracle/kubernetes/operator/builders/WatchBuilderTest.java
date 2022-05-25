@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.NoopWatcherStarter;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,28 +76,28 @@ class WatchBuilderTest {
 
   @Test
   void whenDomainWatchReceivesAddResponse_returnItFromIterator() throws Exception {
-    Domain domain =
-        new Domain()
+    DomainResource domain =
+        new DomainResource()
             .withApiVersion(API_VERSION)
             .withKind("Domain")
             .withMetadata(createMetaData("domain1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(domain));
 
-    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
     assertThat(domainWatch, contains(addEvent(domain)));
   }
 
   @Test
   void whenDomainWatchReceivesBookmarkResponse_updateResourceVersion() throws Exception {
-    Domain domain =
-            new Domain()
+    DomainResource domain =
+            new DomainResource()
                     .withApiVersion(API_VERSION)
                     .withKind("Domain")
                     .withMetadata(createMetaData("domain1", NAMESPACE, BOOKMARK_RESOURCE_VERSION));
     StubWatchFactory.addCallResponses(createBookmarkResponse(domain));
 
-    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
     assertThat(domainWatch, contains(bookmarkEvent(domain)));
   }
@@ -125,14 +125,14 @@ class WatchBuilderTest {
 
   @Test
   void afterWatchClosed_returnClientToPool() throws Exception {
-    Domain domain =
-        new Domain()
+    DomainResource domain =
+        new DomainResource()
             .withApiVersion(API_VERSION)
             .withKind("Domain")
             .withMetadata(createMetaData("domain1", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(domain));
 
-    try (Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
+    try (Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
       domainWatch.next();
     }
 
@@ -141,7 +141,7 @@ class WatchBuilderTest {
 
   @Test
   void afterWatchError_closeDoesNotReturnClientToPool() throws ApiException {
-    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
     assertThrows(NoSuchElementException.class, domainWatch::next);
 
     assertThat(ClientPoolStub.getPooledClients(), is(empty()));
@@ -150,19 +150,19 @@ class WatchBuilderTest {
   @Test
   void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator()
       throws Exception {
-    Domain domain1 =
-        new Domain()
+    DomainResource domain1 =
+        new DomainResource()
             .withApiVersion(API_VERSION)
             .withKind("Domain")
             .withMetadata(createMetaData("domain1", NAMESPACE));
-    Domain domain2 =
-        new Domain()
+    DomainResource domain2 =
+        new DomainResource()
             .withApiVersion(API_VERSION)
             .withKind("Domain")
             .withMetadata(createMetaData("domain2", NAMESPACE));
     StubWatchFactory.addCallResponses(createModifyResponse(domain1), createDeleteResponse(domain2));
 
-    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
     assertThat(domainWatch, contains(List.of(modifyEvent(domain1), deleteEvent(domain2))));
   }
@@ -171,7 +171,7 @@ class WatchBuilderTest {
   void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
     StubWatchFactory.addCallResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE));
 
-    Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
+    Watchable<DomainResource> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
 
     assertThat(domainWatch, contains(errorEvent(HTTP_ENTITY_TOO_LARGE)));
   }

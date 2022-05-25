@@ -24,8 +24,8 @@ import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +71,7 @@ class DomainStatusUpdaterTest {
   private static final String JOB_UID = "JOB";
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final RandomStringGenerator generator = new RandomStringGenerator();
   private final String message = generator.getUniqueString();
@@ -282,7 +282,7 @@ class DomainStatusUpdaterTest {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
-  private Domain getRecordedDomain() {
+  private DomainResource getRecordedDomain() {
     return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, NAME);
   }
 

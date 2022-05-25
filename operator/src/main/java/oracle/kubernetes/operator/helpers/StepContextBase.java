@@ -10,14 +10,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.Pair;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
-import static oracle.kubernetes.weblogic.domain.model.Domain.TOKEN_END_MARKER;
+import static oracle.kubernetes.weblogic.domain.model.DomainResource.TOKEN_END_MARKER;
 
 public abstract class StepContextBase implements StepContextConstants {
   protected final DomainPresenceInfo info;
@@ -86,7 +87,7 @@ public abstract class StepContextBase implements StepContextConstants {
   }
 
   private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
-  private static final String DOMAIN_MODEL_PACKAGE = Domain.class.getPackageName();
+  private static final String DOMAIN_MODEL_PACKAGE = DomainResource.class.getPackageName();
 
   private boolean isModelClass(Class<?> cls) {
     return cls.getPackageName().startsWith(MODELS_PACKAGE)
@@ -124,17 +125,30 @@ public abstract class StepContextBase implements StepContextConstants {
   private String translate(final Map<String, String> substitutionVariables, String rawValue, boolean requiresDns1123) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
-      if (result != null && result.contains(Domain.TOKEN_START_MARKER) && entry.getValue() != null) {
-        result = result.replace(String.format("%s%s%s", Domain.TOKEN_START_MARKER, entry.getKey(), TOKEN_END_MARKER),
-            requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue());
+      if (hasToken(result, entry)) {
+        result = result.replace(getToken(entry), getReplacement(requiresDns1123, entry));
       }
     }
     return result;
   }
 
+  private boolean hasToken(String result, Entry<String, String> entry) {
+    return result != null
+        && result.contains(DomainResource.TOKEN_START_MARKER)
+        && entry.getValue() != null;
+  }
+
+  private String getToken(Entry<String, String> entry) {
+    return String.format("%s%s%s", DomainResource.TOKEN_START_MARKER, entry.getKey(), TOKEN_END_MARKER);
+  }
+
+  private String getReplacement(boolean requiresDns1123, Entry<String, String> entry) {
+    return requiresDns1123 ? LegalNames.toDns1123LegalName(entry.getValue()) : entry.getValue();
+  }
+
   protected V1ObjectMeta updateForOwnerReference(V1ObjectMeta metadata) {
     if (info != null) {
-      Domain domain = info.getDomain();
+      DomainResource domain = info.getDomain();
       if (domain != null) {
         V1ObjectMeta domainMetadata = domain.getMetadata();
         metadata.addOwnerReferencesItem(

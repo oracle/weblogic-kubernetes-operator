@@ -51,7 +51,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,7 +109,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return MS_PREFIX + n;
   }
 
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
 
@@ -136,8 +136,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return dpi;
   }
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
             .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
             .withKind(KubernetesConstants.DOMAIN)
             .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))

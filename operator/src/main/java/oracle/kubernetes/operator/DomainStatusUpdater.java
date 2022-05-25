@@ -38,10 +38,10 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.http.rest.Scan;
+import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.rest.Scan;
-import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -53,9 +53,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -329,12 +329,12 @@ public class DomainStatusUpdater {
     }
 
     // Note: this step is created with no next step, as that is added via a call to Step.chain, later.
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context) {
+    private ResponseStep<DomainResource> createResponseStep(DomainStatusUpdaterContext context) {
       return new StatusReplaceResponseStep(this, context, null);
     }
   }
 
-  static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
+  static class StatusReplaceResponseStep extends DefaultResponseStep<DomainResource> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
@@ -346,7 +346,7 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       if (callResponse.getResult() != null) {
         packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       }
@@ -354,7 +354,7 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
@@ -371,15 +371,15 @@ public class DomainStatusUpdater {
     }
   }
 
-  static class DomainUpdateStep extends ResponseStep<Domain> {
+  static class DomainUpdateStep extends ResponseStep<DomainResource> {
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
       return callResponse.getStatusCode() == HTTP_NOT_FOUND
           ? doNext(null, packet)
           : super.onFailure(packet, callResponse);
@@ -437,7 +437,7 @@ public class DomainStatusUpdater {
       return getDomain().getStatus();
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 
@@ -458,8 +458,8 @@ public class DomainStatusUpdater {
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString());
       }
-      Domain oldDomain = getDomain();
-      Domain newDomain = new Domain()
+      DomainResource oldDomain = getDomain();
+      DomainResource newDomain = new DomainResource()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .withMetadata(oldDomain.getMetadata())
@@ -990,7 +990,7 @@ public class DomainStatusUpdater {
       private MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
         return DomainPresenceInfo.fromPacket(packet)
             .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
+            .map(DomainResource::getSpec)
             .map(DomainSpec::getConfiguration)
             .map(Configuration::getModel)
             .map(Model::getOnlineUpdate)
@@ -1156,7 +1156,7 @@ public class DomainStatusUpdater {
   static class DomainStatusFactory {
 
     @Nonnull
-    private final Domain domain;
+    private final DomainResource domain;
     private final WlsDomainConfig domainConfig;
     private final Function<String, Boolean> isServerConfiguredToRun;
 
@@ -1167,7 +1167,7 @@ public class DomainStatusUpdater {
      * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
-    public DomainStatusFactory(@Nonnull Domain domain,
+    public DomainStatusFactory(@Nonnull DomainResource domain,
                                @Nonnull WlsDomainConfig domainConfig,
                                @Nonnull Function<String, Boolean> isServerConfiguredToRun) {
       this.domain = domain;
