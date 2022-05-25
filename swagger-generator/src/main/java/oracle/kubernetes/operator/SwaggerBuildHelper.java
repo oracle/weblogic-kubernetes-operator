@@ -34,7 +34,7 @@ public class SwaggerBuildHelper {
       doBuild("swagger-generator/src/main/resources/operator-swagger.json", "documentation/swagger/index.html");
       doDomain(
           "swagger-generator/src/main/resources/domain-swagger.json",
-          "documentation/domains/DomainResource.json",
+          "documentation/domains/Domain.json",
           "documentation/domains/index.html");
     } catch (Throwable e) {
       e.printStackTrace();
@@ -63,7 +63,7 @@ public class SwaggerBuildHelper {
     Map<String, Map<String, Object>> domainMap = fromJson(domainJson);
     Map<String, Object> domainDefinitions = domainMap.get("definitions");
 
-    // copy all definitions from DomainResource.json to swagger
+    // copy all definitions from Domain.json to swagger
     swaggerDefinitions.putAll(domainDefinitions);
 
     @SuppressWarnings("unchecked")

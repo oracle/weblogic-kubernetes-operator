@@ -150,6 +150,7 @@
             </goals>
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.model.DomainResource</rootClass>
+              <outputFile>oracle/kubernetes/weblogic/domain/model/Domain.json</outputFile>
               <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
