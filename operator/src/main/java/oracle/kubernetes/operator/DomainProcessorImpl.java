@@ -941,10 +941,9 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step createDomainDownPlan(DomainPresenceInfo info) {
       String ns = info.getNamespace();
-      String domainUid = info.getDomainUid();
       return Step.chain(
           new DownHeadStep(info, ns),
-          new DeleteDomainStep(info, ns, domainUid),
+          new DeleteDomainStep(),
           new UnregisterStep(info));
     }
 
