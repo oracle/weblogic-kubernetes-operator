@@ -575,16 +575,6 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(metricsPort.getContainerPort(), equalTo(300));
   }
 
-  @Test
-  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
-    defineExporterConfiguration();
-
-    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
-    assertThat(metricsPort, notNullValue());
-    assertThat(metricsPort.getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.TCP));
-    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
-  }
-
   private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
     return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
           .filter(p -> name.equals(p.getName())).findFirst().orElse(null);

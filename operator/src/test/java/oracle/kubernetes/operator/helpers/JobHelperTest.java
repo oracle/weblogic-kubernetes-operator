@@ -100,7 +100,6 @@ import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLAT
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
-import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -1331,40 +1330,6 @@ class JobHelperTest extends DomainValidationTestBase {
     return new V1Pod().metadata(new V1ObjectMeta().creationTimestamp(SystemClock.now()));
   }
 
-  @Test
-  void whenDomainIsIstioEnabled_localhostBindingsDisabled_hasIstioUseLocalhostBindingsEnv() {
-  //    configureDomain().withIstioLocalhostBindingsEnabled(false);
-  //
-  //    V1JobSpec jobSpec = createJobSpec();
-  //
-  //    assertThat(
-  //          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-  //          hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false")
-  //    );
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_localhostBindingsEnabled_doesNotHaveIstioUseLocalhostBindingsEnv() {
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
-    );
-  }
-
-  @Test
-  void whenDomainIsIstioEnabled_istioLocalhostBindingsDisabledEnv_hasIstioUseLocalhostBindingsEnv() {
-    TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "true");
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
-    );
-  }
 
   private V1Job job;
 

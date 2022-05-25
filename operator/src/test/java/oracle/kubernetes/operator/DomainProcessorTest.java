@@ -1553,7 +1553,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
+  void whenDomainWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"
@@ -1646,7 +1646,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenIstioDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() {
+  void whenDomainNoWideAdminPortEnabled_checkReadinessPortAndScheme() {
 
     String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
         + "#WebLogic User Configuration File; 2\n"

@@ -252,7 +252,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return serverConfig;
   }
 
-  public void setUpIstioServicePortPatterns() {
+  public void setUpServicePortPatterns() {
     configureAdminServer()
         .configureAdminService();
 
@@ -391,10 +391,9 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  void onIstioPortNamePatternedService_verifyPortNamesAreNormalizedWithAppProtocolSet() {
+  void verifyPortNamesAreNormalizedWithAppProtocolSet() {
     consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
-    //configureDomain().withIstio();
-    setUpIstioServicePortPatterns();
+    setUpServicePortPatterns();
 
     runServiceHelper();
     List<V1ServicePort> ports = testFacade.getRecordedService(domainPresenceInfo).getSpec().getPorts();

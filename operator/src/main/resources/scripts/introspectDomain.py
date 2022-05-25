@@ -100,7 +100,6 @@ sys.path.append(tmp_scriptdir)
 from utils import *
 from weblogic.management.configuration import LegalHelper
 
-ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
 
 class OfflineWlstEnv(object):
 
@@ -1383,9 +1382,6 @@ class SitConfigGenerator(Generator):
     #   since the runtime default is the server listen-address.
 
     nap_name=nap.getName()
-    if nap_name in ISTIO_NAP_NAMES:
-      # skip customizing internal channels that were generated
-      return
 
     # replace listen address to bind to server pod IP
     if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
@@ -1428,43 +1424,6 @@ class SitConfigGenerator(Generator):
       sys.exit(1)
     else:
       return add_action, "add"
-
-  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol,
-        http_enabled="true", bind_to_localhost="true", use_fast_serialization='false',
-        tunneling_enabled='false', outbound_enabled='false'):
-
-    action, type = self._getNapConfigOverrideAction(server, "http-probe")
-
-    # For add, we must put the combine mode as add
-    # For replace, we must omit it
-    if type == "add":
-      self.writeln('<d:network-access-point %s>' % action)
-    else:
-      self.writeln('<d:network-access-point>')
-
-    self.indent()
-    if type == "add":
-      self.writeln('<d:name %s>%s</d:name>' % (action, name))
-    else:
-      self.writeln('<d:name>%s</d:name>' % name)
-
-    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
-    if bind_to_localhost == "true":
-      self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    else:
-      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
-    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
-                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
-    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
-                 (action, http_enabled))
-    # This needs to be enabled, since we are splitting from server default channel
-    self.writeln('<d:outbound-enabled %s>%s</d:outbound-enabled>' % (action, outbound_enabled))
-    self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:use-fast-serialization %s>%s</d:use-fast-serialization>' % (action, use_fast_serialization))
-    self.writeln('<d:tunneling-enabled %s>%s</d:tunneling-enabled>' % (action, tunneling_enabled))
-    self.undent()
-    self.writeln('</d:network-access-point>')
 
   def _getPortForwardNapConfigOverrideAction(self, svr, testname):
     add_action = 'f:combine-mode="add"'
@@ -1509,25 +1468,6 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-  def _writeIstioReplicationChannelNAP(self, name, listen_address, listen_port,
-                                       bind_to_localhost="true"):
-    action = 'f:combine-mode="add"'
-    self.writeln('<d:network-access-point %s>' % action)
-    self.indent()
-    self.writeln('<d:name %s>%s</d:name>' % (action, name))
-    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, 't3'))
-    if bind_to_localhost == "true":
-      self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    else:
-      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
-    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
-                                    self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
-    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
-    self.writeln('<d:use-fast-serialization %s>true</d:use-fast-serialization>' % action)
-    self.undent()
-    self.writeln('</d:network-access-point>')
 
   def getCoherenceClusterSystemResourceOrNone(self, serverOrTemplate):
     try:

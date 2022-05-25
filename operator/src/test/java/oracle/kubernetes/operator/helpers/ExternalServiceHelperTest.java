@@ -115,15 +115,15 @@ class ExternalServiceHelperTest extends ServiceHelperTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"http", "https", "tcp", "tls"})
-  void whenIstioPortAdded_createExternalPort(String protocol) {
+  void whenOldStyledIstioUserDefinedPortAdded_createExternalPort(String protocol) {
     final String configuredChannelName = "istio";
-    final String channelName = configuredChannelName;
+    final String channelName = protocol + "=" + configuredChannelName;
     configureDomain()
-        .configureAdminServer().configureAdminService().withChannel(configuredChannelName, NODE_PORT);
+        .configureAdminServer().configureAdminService().withChannel(channelName, NODE_PORT);
     getServerConfig().addNetworkAccessPoint(
         new NetworkAccessPoint(channelName, "t3", LISTEN_PORT, 0));
 
-    final V1ServicePort createdPort = getServerPortWithName(configuredChannelName);
+    final V1ServicePort createdPort = getServerPortWithName(channelName);
     assertThat(createdPort, notNullValue());
     assertThat(createdPort.getPort(), equalTo(LISTEN_PORT));
     assertThat(createdPort.getNodePort(), equalTo(NODE_PORT));
