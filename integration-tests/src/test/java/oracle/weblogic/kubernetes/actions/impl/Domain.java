@@ -402,11 +402,13 @@ public class Domain {
    * @param namespace namespace in which the domain exists
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
    * @return true if patch domain custom resource succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace,
-                                                               String clusterName, int numOfServers)
+                                                               String clusterName, int numOfServers,
+                                                               String introspectVersion)
       throws ApiException {
     LoggingFacade logger = getLogger();
     // get the domain cluster list
@@ -434,7 +436,9 @@ public class Domain {
         .append("/replicas\", ")
         .append("\"value\": ")
         .append(numOfServers)
-        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]");
+        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": ")
+        .append(introspectVersion)
+        .append("}]");
 
     logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
         clusterName, domainUid, patchStr.toString());

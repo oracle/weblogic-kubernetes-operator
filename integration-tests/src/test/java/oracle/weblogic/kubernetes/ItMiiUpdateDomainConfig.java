@@ -608,7 +608,7 @@ class ItMiiUpdateDomainConfig {
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
     boolean p1Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, "12345"),
         String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -682,7 +682,7 @@ class ItMiiUpdateDomainConfig {
     // Here managed-server5 should not come up as new MaxClusterSize is 4
     logger.info("[After Patching] updating the replica count to 5");
     boolean p3Success = assertDoesNotThrow(() ->
-            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, "abcds"),
         String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
