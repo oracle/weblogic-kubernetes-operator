@@ -517,9 +517,7 @@ EOF
                             if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                 echo "integration-tests failed"
                             fi
-                            if [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter*, !ItPodRestart, !ItResilience"  -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"
-                            fi
+                            
                         '''
                     }
                     post {
