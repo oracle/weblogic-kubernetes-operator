@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -94,7 +94,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
-    Domain domain = createDomain(UID1, NS);
+    DomainResource domain = createDomain(UID1, NS);
     testSupport.defineResources(domain);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
@@ -105,9 +105,9 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenDomainsDeletedButAlreadyInPresence_deleteFromPresenceMap() {
-    Domain domain1 = createDomain(UID1, NS);
-    Domain domain2 = createDomain(UID2, NS);
-    Domain domain3 = createDomain(UID3, NS);
+    DomainResource domain1 = createDomain(UID1, NS);
+    DomainResource domain2 = createDomain(UID2, NS);
+    DomainResource domain3 = createDomain(UID3, NS);
     testSupport.defineResources(domain1, domain2, domain3);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
@@ -127,8 +127,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(createDomain(uid, namespace));
   }
 
-  private Domain createDomain(String uid, String namespace) {
-    return new Domain()
+  private DomainResource createDomain(String uid, String namespace) {
+    return new DomainResource()
         .withSpec(new DomainSpec().withDomainUid(uid))
         .withMetadata(
             new V1ObjectMeta()

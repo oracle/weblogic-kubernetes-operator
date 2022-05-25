@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -117,7 +117,7 @@ public class AdminService implements ServiceConfigurator {
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(Domain.sortOrNull(channels))
+        .append(DomainResource.sortOrNull(channels))
         .append(labels)
         .append(annotations)
         .toHashCode();
@@ -133,7 +133,7 @@ public class AdminService implements ServiceConfigurator {
     }
     AdminService as = (AdminService) o;
     return new EqualsBuilder()
-        .append(Domain.sortOrNull(channels), Domain.sortOrNull(as.channels))
+        .append(DomainResource.sortOrNull(channels), DomainResource.sortOrNull(as.channels))
         .append(labels, as.labels)
         .append(annotations, as.annotations)
         .isEquals();
