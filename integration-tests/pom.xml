@@ -370,7 +370,7 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
 		  **/ItMultiDomainModels,
-                  **/ItServerStartPolicy,
+                  **/ItServerStartPolicy*,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
@@ -387,15 +387,28 @@
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
                   **/ItManageNameSpace,
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiCreateAuxImageWithImageTool,
-                    **/ItMiiDynamicUpdate*,
-                    **/ItMiiSampleWlsMain,
-                    **/ItMiiSampleWlsAux,
-                    **/ItMiiSampleFmwAux,
-                    **/ItMiiMultiModel,
+                    **/ItMii*
                     **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItLivenessProbeCustomization
+                    **/ItLivenessProbeCustomization,
+                    **/ItConfigDistributionStrategy,
+                    **/ItDiagnosticsCompleteAvailableCondition,
+                    **/ItDiagnosticsFailedCondition,
+                    **/ItMultiDomainModels*,
+                    **/ItWlsSamples,
+                    **/ItIstio*,
+                    **/ItKubernetes*,
+                    **/ItLB*,
+                    **/ItLogHomeFlatStructure,
+                    **/ItManagedCoherence,
+                    **/ItFmw*,
+                    **/ItElastic*,
+                    **/ItDBOperator,
+                    **/ItExternalNodePortService
+
+
+
+
+
                </includes-failsafe>
             </properties>
         </profile>
