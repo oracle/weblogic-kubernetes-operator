@@ -58,8 +58,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -110,8 +110,8 @@ class ItAuxV8DomainImplicitUpgrade {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-    createOcrRepoSecret(domainNamespace); // needed for AuxDomain
+    createTestRepoSecret(domainNamespace);
+    createBaseRepoSecret(domainNamespace); // needed for AuxDomain
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

@@ -57,31 +57,26 @@ public interface TestConstants {
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
   // Default for BASE_IMAGES_REPO is phx.ocir.io
-  // TBD : Why two variables BASE_IMAGES_REPO and BASE_IMAGES_REPO_REGISTRY
   public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String BASE_IMAGES_REPO =
       getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
-  public static final String BASE_IMAGES_REPO_REGISTRY = System.getenv("BASE_IMAGES_REPO");
+  // public static final String BASE_IMAGES_REPO = System.getenv("BASE_IMAGES_REPO");
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
   public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
   public static final String BASE_IMAGES_REPO_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
   public static final String BASE_IMAGES_REPO_SECRET_NAME = "base-images-repo-secret";
-  public static final String BASE_IMAGES_REPO_SECRET = BASE_IMAGES_REPO_SECRET_NAME;
 
   // TEST_IMAGES_REPO represents the repository (a) which contains few external
   // images such as nginx,elasticsearch,Oracle DB operator (b) all test domain 
   // images to be pushed into it.
   // Default for TEST_IMAGES_REPO is phx.ocir.io
-  // TBD : Why two variables TEST_IMAGES_REPO and TEST_IMAGES_REPO_REGISTRY
   public static final String TEST_IMAGES_REPO_DEFAULT = "phx.ocir.io";
   public static final String TEST_IMAGES_REPO =
        getNonEmptySystemProperty("wko.it.test.images.repo", TEST_IMAGES_REPO_DEFAULT);
-  public static final String TEST_IMAGES_REPO_REGISTRY = TEST_IMAGES_REPO;
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
   public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
   public static final String TEST_IMAGES_REPO_SECRET_NAME = "test-images-repo-secret";
-  public static final String TEST_IMAGES_REPO_SECRET = TEST_IMAGES_REPO_SECRET_NAME;
 
   // Default image names, tags to be used to downlaod base images 
   // It depends on the default value of BASE_IMAGES_REPO. 
@@ -97,7 +92,6 @@ public interface TestConstants {
   // (a) for kind cluster push to kind repo
   // (b) for OKD or OKE push to TEST_IMAGES_REPO 
   // (c) for local runs don't push the domain images to any repo
-  // TBD: Can we replace DOMAIN_IMAGES_REPO with TEST_IMAGES_REPO
   public static final String DOMAIN_IMAGES_REPO = Optional.ofNullable(KIND_REPO)
       .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
           ? getNonEmptySystemProperty("wko.it.test.images.repo") + "/weblogick8s/" : "");

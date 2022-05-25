@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
@@ -37,8 +37,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_UR
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -149,12 +149,12 @@ public class ItMiiSampleHelper {
     logger.info("Setting up docker secrets");
     // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created for domain image successfully in namespace {1}",
         TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
     // Create the repo secret to pull the base image
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} for base image created successfully in namespace {1}",
         BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
 
@@ -169,9 +169,9 @@ public class ItMiiSampleHelper {
 
       // create ocr/ocir docker registry secret to pull the db images
       // this secret is used only for non-kind cluster
-      createSecretForBaseImages(dbNamespace);
+      createBaseRepoSecret(dbNamespace);
       logger.info("Docker registry secret {0} created successfully in namespace {1}",
-          BASE_IMAGES_REPO_SECRET, dbNamespace);
+              TestConstants.BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }
   }
 
@@ -282,7 +282,7 @@ public class ItMiiSampleHelper {
       envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
       envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
       envMap.put("DB_NAMESPACE", dbNamespace);
-      envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+      envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
       // run JRF use cases irrespective of WLS use cases fail/pass

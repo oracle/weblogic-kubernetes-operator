@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -41,7 +42,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
@@ -167,9 +167,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // docker login to BASE_IMAGES_REPO if BASE_IMAGES_REPO_USERNAME i
         // and BASE_IMAGES_REPO_PASSWORD is provided in env var
-        if (BASE_IMAGES_REPO.equals(BASE_IMAGES_REPO_REGISTRY)) {
+        if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
           testUntil(withVeryLongRetryPolicy,
-                () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+                () -> dockerLogin(TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
                 "docker login to BASE_IMAGES_REPO to be successful");
         } 
@@ -244,7 +244,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info("docker login");
         testUntil(withVeryLongRetryPolicy,
-              () -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+              () -> dockerLogin(TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
               "docker login to BASE_IMAGES_REPO to be successful");
 
@@ -396,7 +396,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         .append(scriptPath.toFile().getAbsolutePath())
         .append(" -u " + BASE_IMAGES_REPO_USERNAME)
         .append(" -p \"" + BASE_IMAGES_REPO_PASSWORD + "\"")
-        .append(" -e " + BASE_IMAGES_REPO_REGISTRY);
+        .append(" -e " + TestConstants.BASE_IMAGES_REPO);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(cmd.toString(), true);

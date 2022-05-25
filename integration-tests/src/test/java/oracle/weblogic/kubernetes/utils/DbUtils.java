@@ -51,6 +51,7 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -62,7 +63,6 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
@@ -82,8 +82,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -124,7 +124,7 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
+    createBaseRepoSecret(dbNamespace);
 
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
@@ -244,7 +244,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
         dbNamespace, dbListenerPort);
@@ -341,7 +341,7 @@ public class DbUtils {
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))));  // secret for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
@@ -707,8 +707,8 @@ public class DbUtils {
     replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
         "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
-    createOcirRepoSecret(namespace);
-    createSecretForBaseImages(namespace);
+    createTestRepoSecret(namespace);
+    createBaseRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + operatorYamlDestFile);
@@ -774,7 +774,7 @@ public class DbUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
-    createOcirRepoSecret(namespace);
+    createTestRepoSecret(namespace);
 
     createHostPathProvisioner(namespace, hostPath);
 

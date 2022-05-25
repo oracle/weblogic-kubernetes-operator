@@ -45,8 +45,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -74,9 +73,9 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusCond
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodPhaseAndPodReady;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -135,7 +134,7 @@ class ItDiagnosticsFailedCondition {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createBaseRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -315,7 +314,7 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     logger.info("Creating a docker secret with invalid credentials");
-    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO_REGISTRY,
+    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
@@ -370,7 +369,7 @@ class ItDiagnosticsFailedCondition {
               .imagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT)
               .imagePullSecrets(Arrays.asList(
                   new V1LocalObjectReference()
-                      .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+                      .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))) // this secret for non-kind cluster
               .webLogicCredentialsSecret(new V1SecretReference()
                   .name(adminSecretName)
                   .namespace(domainNamespace))

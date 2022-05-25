@@ -41,9 +41,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -71,7 +71,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -340,7 +340,7 @@ public class ItMiiDomainModelInPV {
 
   private static V1Pod setupWebLogicPod(String namespace) {
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(namespace);
+    createBaseRepoSecret(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
     V1PodSpec podSpec = new V1PodSpec()
@@ -356,7 +356,7 @@ public class ItMiiDomainModelInPV {
                             .name(pvName) // mount the persistent volume to /shared inside the pod
                             .mountPath(modelMountPath)))))
             .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)))
+                .name(BASE_IMAGES_REPO_SECRET_NAME)))
             // the persistent volume claim used by the test
             .volumes(Arrays.asList(
                 new V1Volume()
@@ -434,7 +434,7 @@ public class ItMiiDomainModelInPV {
     logger = getLogger();
     // login to docker
     logger.info("docker login");
-    testUntil(() -> dockerLogin(BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+    testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
           "docker login to be successful");
 

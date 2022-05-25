@@ -73,9 +73,9 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -169,8 +169,8 @@ class ItDBOperator {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(fmwDomainNamespace);
-    createSecretForBaseImages(wlsDomainNamespace);
+    createBaseRepoSecret(fmwDomainNamespace);
+    createBaseRepoSecret(wlsDomainNamespace);
 
     //install Oracle Database Operator
     assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
@@ -196,7 +196,7 @@ class ItDBOperator {
   void  testFmwModelInImageWithDbOperator() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(fmwDomainNamespace);
+    createTestRepoSecret(fmwDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

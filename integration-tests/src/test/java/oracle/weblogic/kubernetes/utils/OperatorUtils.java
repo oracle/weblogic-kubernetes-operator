@@ -34,7 +34,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -459,7 +459,7 @@ public class OperatorUtils {
     // Create Docker registry secret in the operator namespace to pull the image from repository
     // this secret is used only for non-kind cluster
     logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
-    createOcirRepoSecret(opNamespace);
+    createTestRepoSecret(opNamespace);
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();

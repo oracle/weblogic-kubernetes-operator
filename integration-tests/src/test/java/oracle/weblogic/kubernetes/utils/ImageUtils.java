@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -26,7 +27,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -452,11 +452,11 @@ public class ImageUtils {
    *
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createOcrRepoSecret(String namespace) {
+  public static void createBaseRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating base image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
     createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
-        BASE_IMAGES_REPO_REGISTRY, BASE_IMAGES_REPO_SECRET_NAME, namespace);
+            TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**
@@ -464,7 +464,7 @@ public class ImageUtils {
    * for TEST_IMAGES_REPO to upload/download test images.
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createOcirRepoSecret(String namespace) {
+  public static void createTestRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
     createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
@@ -520,8 +520,8 @@ public class ImageUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(BASE_IMAGES_REPO_REGISTRY)) {
-      createOcrRepoSecret(namespace);
+    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
+      createBaseRepoSecret(namespace);
     }
   }
 
@@ -536,7 +536,7 @@ public class ImageUtils {
     if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
       logger.info("docker login");
-      assertTrue(dockerLogin(BASE_IMAGES_REPO_REGISTRY, 
+      assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
            BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), "docker login failed");
 
       logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
@@ -573,7 +573,7 @@ public class ImageUtils {
 
     //create registry docker secret
     createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
-        BASE_IMAGES_REPO_REGISTRY, secretName, namespace);
+            TestConstants.BASE_IMAGES_REPO, secretName, namespace);
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(image);
 
