@@ -82,7 +82,7 @@ public class WebhookMain extends BaseMain {
       main.waitForDeath();
 
       // stop the webhook REST server
-      stopWebhookRestServer();
+      main.stopRestServer();
     } finally {
       LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
@@ -118,7 +118,7 @@ public class WebhookMain extends BaseMain {
   void completeBegin() {
     try {
       // start the conversion webhook REST server
-      startRestServer();
+      startRestServer(container);
 
       // start periodic recheck of CRD
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -171,15 +171,9 @@ public class WebhookMain extends BaseMain {
   }
 
   @Override
-  protected void startRestServer()
+  protected BaseRestServer createRestServer()
           throws Exception {
-    WebhookRestServer.create(restConfig);
-    BaseRestServer.getInstance().start(container);
-  }
-
-  private static void stopWebhookRestServer() {
-    BaseRestServer.getInstance().stop();
-    BaseRestServer.destroy();
+    return WebhookRestServer.create(restConfig);
   }
 
   @Override

@@ -39,7 +39,6 @@ public abstract class BaseRestServer {
   static final String[] SSL_PROTOCOLS = {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
-  static BaseRestServer INSTANCE = null;
   final RestConfig config;
 
   /**
@@ -51,33 +50,6 @@ public abstract class BaseRestServer {
    */
   BaseRestServer(RestConfig config) {
     this.config = config;
-  }
-
-  /**
-   * Accessor for obtaining reference to the RestServer or WebhookRestServer singleton instance.
-   *
-   * @return RestServer - Singleton instance of the RestServer
-   */
-  public static synchronized BaseRestServer getInstance() {
-    return INSTANCE;
-  }
-
-  /**
-   * Release singleton instance for RestServer or WebhookRestServer. Should only be called once. Throws
-   * IllegalStateException if singleton instance not created.
-   */
-  public static void destroy() {
-    LOGGER.entering();
-    try {
-      if (INSTANCE != null) {
-        INSTANCE = null;
-        return;
-      }
-
-      throw new IllegalStateException();
-    } finally {
-      LOGGER.exiting();
-    }
   }
 
   /**
@@ -109,7 +81,7 @@ public abstract class BaseRestServer {
    *
    * @param container Container
    * @throws Exception if the REST api could not be started for reasons other than a port was not
-   *     configured. When an exception is thrown, then none of the ports will be leftrunning,
+   *     configured. When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
    */
   public abstract void start(Container container) throws Exception;

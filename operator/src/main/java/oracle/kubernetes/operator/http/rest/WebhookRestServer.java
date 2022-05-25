@@ -41,20 +41,15 @@ public class WebhookRestServer extends BaseRestServer {
   }
 
   /**
-   * Create singleton instance of the conversion webhook's RestServer. Should only be called once.
+   * Create an instance of the conversion webhook's RestServer.
    *
-   * @param restConfig - the conversion webhook's REST configuration. Throws IllegalStateException if
-   *     instance already created.
+   * @param restConfig - the conversion webhook's REST configuration.
+   * @return Conversion webhook RestServer
    */
-  public static synchronized void create(RestConfig restConfig) {
+  public static WebhookRestServer create(RestConfig restConfig) {
     LOGGER.entering();
     try {
-      if (INSTANCE == null) {
-        INSTANCE = new WebhookRestServer(restConfig);
-        return;
-      }
-
-      throw new IllegalStateException();
+      return new WebhookRestServer(restConfig);
     } finally {
       LOGGER.exiting();
     }

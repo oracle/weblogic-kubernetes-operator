@@ -47,20 +47,15 @@ public class OperatorRestServer extends BaseRestServer {
   }
 
   /**
-   * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
+   * Create an instance of the WebLogic Operator's RestServer.
    *
-   * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
-   *     instance already created.
+   * @param restConfig - the WebLogic Operator's REST configuration.
+   * @return WebLogic Operator's RestServer
    */
-  public static synchronized void create(RestConfig restConfig) {
+  public static OperatorRestServer create(RestConfig restConfig) {
     LOGGER.entering();
     try {
-      if (INSTANCE == null) {
-        INSTANCE = new OperatorRestServer(restConfig);
-        return;
-      }
-
-      throw new IllegalStateException();
+      return new OperatorRestServer(restConfig);
     } finally {
       LOGGER.exiting();
     }
