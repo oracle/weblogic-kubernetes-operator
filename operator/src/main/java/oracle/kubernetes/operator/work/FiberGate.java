@@ -109,14 +109,20 @@ public class FiberGate {
         new CompletionCallback() {
           @Override
           public void onCompletion(Packet packet) {
-            gateMap.remove(key, f);
-            callback.onCompletion(packet);
+            try {
+              callback.onCompletion(packet);
+            } finally {
+              gateMap.remove(key, f);
+            }
           }
 
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
-            gateMap.remove(key, f);
-            callback.onThrowable(packet, throwable);
+            try {
+              callback.onThrowable(packet, throwable);
+            } finally {
+              gateMap.remove(key, f);
+            }
           }
         });
     return f;
