@@ -413,6 +413,9 @@ class ItLiftAndShiftFromOnPremDomain {
           "name: ocir", "name: ocir-secret");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "\\{\\{\\{modelHome\\}\\}\\}", "/u01/wdt/models");
+      // TODO: when wdt or webhook is ready then remove this
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
+          "    istio:\n      enabled: false", "");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");
     }
