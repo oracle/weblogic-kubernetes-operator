@@ -27,6 +27,7 @@ public class AdmissionReview {
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
   @Expose
   @Description("The API version defines the versioned schema of this AdminssionReview. Required.")
@@ -37,6 +38,7 @@ public class AdmissionReview {
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
   @Expose
   @Description("The type of the REST resource. Must be \"AdmissionReview\". Required.")

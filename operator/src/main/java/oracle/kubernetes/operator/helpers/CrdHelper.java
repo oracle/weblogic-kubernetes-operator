@@ -303,11 +303,13 @@ public class CrdHelper {
 
     static V1JSONSchemaProps createOpenApiV3Schema() {
       Gson gson = new Gson();
+      Class<DomainSpec> specClass = DomainSpec.class;
       JsonElement jsonElementSpec =
-          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainSpec.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(specClass));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
+      Class<DomainStatus> statusClass = DomainStatus.class;
       JsonElement jsonElementStatus =
-          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainStatus.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(statusClass));
       V1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
       return new V1JSONSchemaProps()

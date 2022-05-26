@@ -24,6 +24,7 @@ public class DomainList implements KubernetesListObject {
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
    * More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources.
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
   @Expose
   private String apiVersion;
@@ -32,6 +33,7 @@ public class DomainList implements KubernetesListObject {
    * List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md.
    * Required.
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("items")
   @Expose
   @Valid
@@ -43,6 +45,7 @@ public class DomainList implements KubernetesListObject {
    * this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More
    * info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
   @Expose
   private String kind;
@@ -51,6 +54,7 @@ public class DomainList implements KubernetesListObject {
    * Standard list metadata. More info:
    * https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.
    */
+  @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("metadata")
   @Expose
   @Valid
