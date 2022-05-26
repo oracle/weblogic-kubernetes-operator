@@ -894,7 +894,7 @@ function wdtCreatePrimordialDomain() {
 
   trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
 
-  trace "Operator DEBUG: WLSDEPLOY_PROPERTIES is ${WLSDEPLOY_PROPERTIES}"
+  trace "DEBUG: WLSDEPLOY_PROPERTIES is ${WLSDEPLOY_PROPERTIES}"
 
   cd ${DOMAIN_HOME} || exitOrLoop
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
@@ -902,7 +902,7 @@ function wdtCreatePrimordialDomain() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/custom
     done
 
-  traceDirs before $IMG_ARCHIVES_ROOTDIR
+  traceDirs before ${DOMAIN_HOME}/wlsdeploy/custom
 
   if [ -z "${OPSS_FLAGS}" ]; then
 
@@ -1000,7 +1000,7 @@ function wdtUpdateModelDomain() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/custom
     done
 
-  traceDirs before ${DOMAIN_HOME}/wlsdeploy
+  traceDirs before ${DOMAIN_HOME}/wlsdeploy/custom
 
   ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
