@@ -889,10 +889,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
-    volumes.addAll(getServerSpec().getAdditionalVolumes());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
+    volumes.addAll(getServerSpec().getAdditionalVolumes());
 
     return volumes;
   }
@@ -947,10 +947,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
-    mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
+    mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     return mounts;
   }
 
@@ -968,7 +968,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
    * @param vars a list to which new variables are to be added
    */
-  void addStartupEnvVars(List<V1EnvVar> vars, TuningParameters tuningParameters) {
+  void addStartupEnvVars(List<V1EnvVar> vars) {
     addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
@@ -993,7 +993,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
-    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
+    Optional.ofNullable(getKubernetesPlatform()).ifPresent(v ->
             addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
@@ -1141,10 +1141,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean mockWls() {
     return Boolean.getBoolean("mockWLS");
-  }
-
-  private String getKubernetesPlatform(TuningParameters tuningParameters) {
-    return tuningParameters.getKubernetesPlatform();
   }
 
   private abstract class BaseStep extends Step {
