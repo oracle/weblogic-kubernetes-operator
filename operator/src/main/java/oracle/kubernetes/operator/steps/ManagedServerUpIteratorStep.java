@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 
@@ -148,7 +148,7 @@ public class ManagedServerUpIteratorStep extends Step {
       Collection<ServerStartupInfo> startupInfos,
       Packet packet) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    Domain domain = info.getDomain();
+    DomainResource domain = info.getDomain();
 
     Map<String, StartClusteredServersStepFactory> factories = new HashMap<>();
     startupInfos.stream()
@@ -219,7 +219,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
   }
 
-  private int getMaxConcurrentStartup(Domain domain, ServerStartupInfo ssi) {
+  private int getMaxConcurrentStartup(DomainResource domain, ServerStartupInfo ssi) {
     return domain.getMaxConcurrentStartup(ssi.getClusterName());
   }
 

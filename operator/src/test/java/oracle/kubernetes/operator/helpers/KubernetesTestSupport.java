@@ -86,8 +86,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -158,7 +158,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         V1ValidatingWebhookConfiguration.class, this::createValidatingWebhookConfigurationList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
-    supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
+    supportNamespaced(DOMAIN, DomainResource.class, this::createDomainList).withStatusSubresource();
     supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
@@ -175,7 +175,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new V1ConfigMapList().metadata(createListMeta()).items(items);
   }
 
-  private DomainList createDomainList(List<Domain> items) {
+  private DomainList createDomainList(List<DomainResource> items) {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
@@ -392,6 +392,20 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   public void doOnDelete(String resourceType, Consumer<Integer> consumer) {
     selectRepository(resourceType).addDeleteAction(consumer);
+  }
+
+
+  /**
+   * Specifies that a read operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnRead(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(Operation.read, resourceType, name, namespace, httpStatus);
   }
 
   /**

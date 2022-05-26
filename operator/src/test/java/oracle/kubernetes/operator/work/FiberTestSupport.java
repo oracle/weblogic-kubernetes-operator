@@ -261,7 +261,9 @@ public class FiberTestSupport {
     public ScheduledFuture<?> schedule(
         @Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
       scheduledItems.add(new ScheduledItem(currentTime + unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 
@@ -272,7 +274,9 @@ public class FiberTestSupport {
       scheduledItems.add(
           new PeriodicScheduledItem(
               currentTime + unit.toMillis(initialDelay), unit.toMillis(delay), command));
-      runNextRunnable();
+      if (current == null) {
+        runNextRunnable();
+      }
       return createStub(ScheduledFuture.class);
     }
 

@@ -32,14 +32,14 @@ setupTerraform() {
     mkdir ${terraformDir}
     cd ${terraformDir}
     if [[ "${OSTYPE}" == "darwin"* ]]; then
-      curl -O https://releases.hashicorp.com/terraform/0.11.15/terraform_0.12.31_darwin_amd64.zip
-      unzip terraform_0.12.31_darwin_amd64.zip
+      os_type="darwin"
     elif [[ "${OSTYPE}" == "linux"* ]]; then
-       curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.12.31/terraform_0.12.31_linux_amd64.zip
-       unzip -o terraform_0.12.31_linux_amd64.zip -d ${terraformDir}
+       os_type="linux"
     else
        echo "Unsupported OS"
     fi
+    curl -O https://releases.hashicorp.com/terraform/1.2.0/terraform_1.2.0_${os_type}_amd64.zip
+    unzip terraform_1.2.0_${os_type}_amd64.zip
     chmod +x ${terraformDir}/terraform
     export PATH=${terraformDir}:${PATH}
 }

@@ -27,7 +27,7 @@ import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -130,8 +130,8 @@ public class NamespaceTest {
     return new V1Namespace().metadata(new V1ObjectMeta().name(n));
   }
 
-  private Domain createDomain(String ns) {
-    return new Domain().withMetadata(new V1ObjectMeta().namespace(ns).name(createUid(ns)));
+  private DomainResource createDomain(String ns) {
+    return new DomainResource().withMetadata(new V1ObjectMeta().namespace(ns).name(createUid(ns)));
   }
 
   @NotNull
@@ -173,8 +173,8 @@ public class NamespaceTest {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private Domain getDomainsInNamespace(String namespace) {
-    return testSupport.<Domain>getResources(DOMAIN).stream()
+  private DomainResource getDomainsInNamespace(String namespace) {
+    return testSupport.<DomainResource>getResources(DOMAIN).stream()
           .filter(d -> d.getDomainUid().equals(createUid(namespace)))
           .findFirst()
           .orElse(null);
