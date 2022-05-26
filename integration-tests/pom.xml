@@ -370,7 +370,7 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
 		  **/ItMultiDomainModels,
-                  **/ItServerStartPolicy*,
+                  **/ItServerStartPolicy,
                   **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
@@ -387,29 +387,46 @@
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
                   **/ItManageNameSpace,
-                    **/ItMii*
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiCreateAuxImageWithImageTool,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiServiceMigration,
+                    **/ItMiiDomain,
                     **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItLivenessProbeCustomization,
-                    **/ItConfigDistributionStrategy,
-                    **/ItDiagnosticsCompleteAvailableCondition,
-                    **/ItDiagnosticsFailedCondition,
-                    **/ItMultiDomainModels*,
-                    **/ItWlsSamples,
-                    **/ItIstio*,
-                    **/ItKubernetes*,
-                    **/ItLB*,
-                    **/ItLogHomeFlatStructure,
-                    **/ItManagedCoherence,
-                    **/ItFmw*,
-                    **/ItElastic*,
-                    **/ItDBOperator,
-                    **/ItExternalNodePortService
-
-
-
-
-
+                    **/ItLivenessProbeCustomization
                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-sequential</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItT3Channel,
+                    **/ItAuxV8DomainImplicitUpgrade,
+                    **/ItDedicatedMode,
+                    **/ItOperatorFmwUpgrade,
+                    **/ItOperatorWlsUpgrade,
+                    **/ItFmwDynamicDomainInPV,
+                    **/ItFmwDomainInPVUsingWDT,
+                    **/ItMiiSampleFmwMain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItT3Channel,
+                    **/ItAuxV8DomainImplicitUpgrade,
+                    **/ItDedicatedMode,
+                    **/ItOperatorFmwUpgrade,
+                    **/ItOperatorWlsUpgrade,
+                    **/ItFmwDynamicDomainInPV,
+                    **/ItFmwDomainInPVUsingWDT,
+                    **/ItMiiSampleFmwMain
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
