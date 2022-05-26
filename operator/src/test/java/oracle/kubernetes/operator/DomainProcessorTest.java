@@ -308,6 +308,24 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainChangedSpecNewer_setWillInterrupt() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
+
+    assertThat(operation.isWillInterrupt(), is(true));
+  }
+
+  @Test
+  void whenDomainChangedSpecNotNewer_dontSetWillInterrupt() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
+
+    final MakeRightDomainOperation operation = processor.createMakeRightOperation(new DomainPresenceInfo(domain));
+
+    assertThat(operation.isWillInterrupt(), is(false));
+  }
+
+  @Test
   void whenDomainChangedSpecButProcessingAborted_dontRunUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));

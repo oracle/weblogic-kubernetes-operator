@@ -1357,7 +1357,7 @@ abstract class DomainStatusUpdateTestBase {
     clearPacketServerStatusMaps();
 
     testSupport.runSteps(
-        Step.chain(processor.createPopulatePacketServerMapsStep(),
+        Step.chain(new DomainProcessorImpl.PopulatePacketServerMapsStep(),
             DomainStatusUpdater.createStatusUpdateStep(endStep)));
 
     assertThat(getRecordedDomain().getMetadata().getResourceVersion(), equalTo(cachedResourceVersion));

@@ -424,7 +424,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
           null);
 
-    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_CREATED));
 
@@ -445,7 +445,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
           null);
 
-    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep(domainPresenceInfo, null));
+    testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_REPLACED));
   }
 

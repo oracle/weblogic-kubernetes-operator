@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
@@ -24,6 +25,8 @@ public interface MakeRightDomainOperation {
    */
   MakeRightDomainOperation forDeletion();
 
+  MakeRightDomainOperation createRetry(DomainPresenceInfo info);
+
   MakeRightDomainOperation withExplicitRecheck();
 
   MakeRightDomainOperation withEventData(EventItem eventItem, String message);
@@ -34,14 +37,21 @@ public interface MakeRightDomainOperation {
 
   boolean isWillInterrupt();
 
+  boolean isExplicitRecheck();
+
   // for unit testing only
   MakeRightDomainOperation throwNPE();
 
   void execute();
 
+  @Nonnull
+  Packet createPacket();
+
   Step createSteps();
 
   void setInspectionRun();
+
+  DomainPresenceInfo getPresenceInfo();
 
   void setLiveInfo(DomainPresenceInfo info);
 
