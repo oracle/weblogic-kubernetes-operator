@@ -440,7 +440,6 @@
                     **/ItMiiDynamicUpdatePart1,
                     **/ItMiiDynamicUpdatePart2,
                     **/ItMiiDynamicUpdatePart3,
-                    **/ItMiiUpdateDomainConfig,
                     **/ItMiiSampleFmwAux,
                     **/ItMiiCreateAuxImageWithImageTool,
                     **/ItMiiDomain,
@@ -448,8 +447,30 @@
                     **/ItMiiCustomSslStore,
                     **/ItMiiMultiModel,
                     **/ItLiftAndShiftFromOnPremDomain,
-                    **/ItLivenessProbeCustomization
-
+                    **/ItLivenessProbeCustomization,
+                    **/ItLogHomeFlatStructure,
+                    **/ItSystemResOverrides,
+                    **/ItIstioDBOperator,
+                    **/ItManagedCoherence,
+                    **/ItFmwDynamicClusterMiiDomain,
+                    **/ItIstioProductionSecureMode,
+                    **/ItIstioDomainInImage,
+                    **/ItDiagnosticsCompleteAvailableCondition,
+                    **/ItIstioCoherenceTests,
+                    **/ItIstioMiiDomain,
+                    **/ItExternalNodePortService,
+                    **/ItDBOperator,
+                    **/ItIstioGatewaySessionMigration,
+                    **/ItFmwBigCMMiiDomain,
+                    **/ItElasticLogging,
+                    **/ItRemoteConsole,
+                    **/ItKubernetesNameSpaceWatchingEvents,
+                    **/ItFmwDiiSample,
+                    **/ItIstioSessionMigration,
+                    **/ItMultiDomainModelsWithLoadBalancer,
+                    **/ItFmwSample,
+                    **/ItIstioDomainInPV,
+                    **/ItFmwMiiDomain
                 </includes-failsafe>
             </properties>
         </profile>

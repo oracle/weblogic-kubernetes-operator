@@ -56,7 +56,8 @@ pipeline {
                 description: 'Profile to use in mvn command to run the tests.  Possible values are wls-srg (the default), integration-tests, toolkits-srg, and kind-sequential.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
                         'oke-cert',
-                        'oke-sequential'
+                        'oke-sequential',
+                        'oke-parallel',
                         'integration-tests',
                         'toolkits-srg'
                 ]
