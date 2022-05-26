@@ -40,8 +40,8 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -102,7 +102,7 @@ abstract class DomainStatusUpdateTestBase {
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
@@ -193,7 +193,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   // Examines the domain status and returns the server status for the specified server, if it is defined
-  private ServerStatus getServerStatus(Domain domain, String serverName) {
+  private ServerStatus getServerStatus(DomainResource domain, String serverName) {
     return domain.getStatus().getServers().stream()
           .filter(status -> status.getServerName().equals(serverName))
           .findAny()
@@ -1379,7 +1379,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.addToPacket(SERVER_HEALTH_MAP, null);
   }
 
-  private Domain getRecordedDomain() {
+  private DomainResource getRecordedDomain() {
     return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, NAME);
   }
 
@@ -1605,7 +1605,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("unused")
-  static class ServerStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+  static class ServerStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
     private final String serverName;
     private final MultiFieldMatcher<ServerStatus> matcher;
 
@@ -1651,11 +1651,11 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(Domain domain, Description description) {
+    protected boolean matchesSafely(DomainResource domain, Description description) {
       return matcher.matches(getServerStatus(domain), description);
     }
 
-    private ServerStatus getServerStatus(Domain domain) {
+    private ServerStatus getServerStatus(DomainResource domain) {
       return getServerStatuses(domain).stream()
             .filter(serverStatus -> serverStatus.getServerName().equals(serverName))
             .findFirst()
@@ -1663,9 +1663,9 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Nonnull
-    private List<ServerStatus> getServerStatuses(Domain domain) {
+    private List<ServerStatus> getServerStatuses(DomainResource domain) {
       return Optional.ofNullable(domain)
-            .map(Domain::getStatus)
+            .map(DomainResource::getStatus)
             .map(DomainStatus::getServers)
             .orElse(Collections.emptyList());
     }
@@ -1677,7 +1677,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("unused")
-  static class ClusterStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+  static class ClusterStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
     private final String clusterName;
     private final MultiFieldMatcher<ClusterStatus> matcher;
 
@@ -1716,11 +1716,11 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Override
-    protected boolean matchesSafely(Domain domain, Description description) {
+    protected boolean matchesSafely(DomainResource domain, Description description) {
       return matcher.matches(getClusterStatus(domain), description);
     }
 
-    private ClusterStatus getClusterStatus(Domain domain) {
+    private ClusterStatus getClusterStatus(DomainResource domain) {
       return getClusterStatuses(domain).stream()
           .filter(clusterStatus -> clusterStatus.getClusterName().equals(clusterName))
           .findFirst()
@@ -1728,9 +1728,9 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @Nonnull
-    private List<ClusterStatus> getClusterStatuses(Domain domain) {
+    private List<ClusterStatus> getClusterStatuses(DomainResource domain) {
       return Optional.ofNullable(domain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getClusters)
           .orElse(Collections.emptyList());
     }

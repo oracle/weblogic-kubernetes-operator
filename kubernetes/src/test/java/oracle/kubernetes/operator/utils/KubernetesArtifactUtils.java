@@ -61,7 +61,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -105,8 +105,8 @@ public class KubernetesArtifactUtils {
     return (new V1ServiceAccount()).apiVersion(API_VERSION_V1).kind(KIND_SERVICE_ACCOUNT);
   }
 
-  public static Domain newDomain() {
-    return (new Domain()).withApiVersion(API_VERSION_WEBLOGIC_ORACLE).withKind(KIND_DOMAIN);
+  public static DomainResource newDomain() {
+    return (new DomainResource()).withApiVersion(API_VERSION_WEBLOGIC_ORACLE).withKind(KIND_DOMAIN);
   }
 
   /**

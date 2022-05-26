@@ -10,7 +10,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.utils.SystemClock;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
@@ -53,7 +53,7 @@ public class DomainProcessorTestSetup {
    *
    * @return a domain
    */
-  public static Domain createTestDomain() {
+  public static DomainResource createTestDomain() {
     return createTestDomain(UID);
   }
 
@@ -63,7 +63,7 @@ public class DomainProcessorTestSetup {
    * @param generation Generation value
    * @return a domain
    */
-  public static Domain createTestDomain(Long generation) {
+  public static DomainResource createTestDomain(Long generation) {
     return createTestDomain(UID, generation);
   }
 
@@ -74,7 +74,7 @@ public class DomainProcessorTestSetup {
    * @return a domain
 
    */
-  public static Domain createTestDomain(String uid) {
+  public static DomainResource createTestDomain(String uid) {
     return createTestDomain(uid, 1L);
 
   }
@@ -87,12 +87,12 @@ public class DomainProcessorTestSetup {
    * @return a domain
 
    */
-  public static Domain createTestDomain(String uid, Long generation) {
+  public static DomainResource createTestDomain(String uid, Long generation) {
     DomainSpec ds = new DomainSpec()
         .withDomainUid(uid)
         .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
     ds.setNodeName(NODE_NAME);
-    return new Domain()
+    return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
         .withMetadata(withTimestamps(

@@ -8,8 +8,8 @@ import java.time.OffsetDateTime;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
-import oracle.kubernetes.operator.rest.model.AdmissionReview;
-import oracle.kubernetes.operator.rest.model.ConversionReviewModel;
+import oracle.kubernetes.operator.http.rest.model.AdmissionReview;
+import oracle.kubernetes.operator.http.rest.model.ConversionReviewModel;
 
 public class GsonBuilderUtils {
 

@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
@@ -171,7 +171,7 @@ public class ManagedServersUpStep extends Step {
 
   static class ServersUpStepFactory {
     final WlsDomainConfig domainTopology;
-    final Domain domain;
+    final DomainResource domain;
     final DomainPresenceInfo info;
     List<ServerStartupInfo> startupInfos;
     List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();

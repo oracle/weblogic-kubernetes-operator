@@ -7,7 +7,7 @@ import java.util.Collections;
 
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.utils.ValidationUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
@@ -24,8 +24,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ValidationUtilsTest {
-  private final Domain existingDomain = AdmissionWebhookTestSetUp.createDomain();
-  private final Domain proposedDomain = AdmissionWebhookTestSetUp.createDomain();
+  private final DomainResource existingDomain = AdmissionWebhookTestSetUp.createDomain();
+  private final DomainResource proposedDomain = AdmissionWebhookTestSetUp.createDomain();
 
   @Test
   void whenSameObject_returnTrue() {

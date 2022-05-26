@@ -9,7 +9,7 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 
@@ -37,8 +37,8 @@ public class AdmissionWebhookTestSetUp {
    * Create a Domain resource model that contains the domain configuration and status for WebhookRestTest
    * and ValidationUtilsTest.
    */
-  public static Domain createDomain() {
-    Domain domain = createTestDomain().withStatus(createDomainStatus());
+  public static DomainResource createDomain() {
+    DomainResource domain = createTestDomain().withStatus(createDomainStatus());
     domain.getSpec()
         .withReplicas(ORIGINAL_REPLICAS)
         .withImage(ORIGINAL_IMAGE_NAME)
@@ -67,7 +67,7 @@ public class AdmissionWebhookTestSetUp {
     return new AuxiliaryImage().image(imageName);
   }
 
-  static void setAuxiliaryImages(Domain domain, List<AuxiliaryImage> images) {
+  static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
   }
 

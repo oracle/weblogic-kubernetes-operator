@@ -22,8 +22,8 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
-import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.http.client.HttpAsyncTestSupport;
+import oracle.kubernetes.operator.http.client.HttpResponseStub;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -34,7 +34,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,8 +49,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_H
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
-import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
+import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.OK_RESPONSE;
+import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.createExpectedRequest;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_NOT_AVAILABLE;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -88,7 +88,7 @@ class ReadHealthStepTest {
   private final Step readHealthStep = ReadHealthStep.createReadHealthStep(terminalStep);
   private final Map<String, ServerHealth> serverHealthMap = new HashMap<>();
   private final Map<String, String> serverStateMap = new HashMap<>();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach

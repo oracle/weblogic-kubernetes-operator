@@ -400,7 +400,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainsAreConfiguredAlike_objectsAreEqual() {
-    Domain domain1 = createDomain();
+    DomainResource domain1 = createDomain();
 
     configureDomain(domain).configureCluster("cls1");
     configureDomain(domain1).configureCluster("cls1");
@@ -511,7 +511,7 @@ class DomainV2Test extends DomainTestBase {
     assertThat(asResourceReq.getLimits(), hasResourceQuantity("memory", "128Mi"));
   }
 
-  private void configureDomainWithResourceRequirements(Domain domain) {
+  private void configureDomainWithResourceRequirements(DomainResource domain) {
     configureDomain(domain)
         .withRequestRequirement("memory", "64Mi")
         .withRequestRequirement("cpu", "250m")
@@ -598,7 +598,7 @@ class DomainV2Test extends DomainTestBase {
     assertThat(asPodSecCtx.getSupplementalGroups(), nullValue());
   }
 
-  private void configureDomainWithPodSecurityContext(Domain domain) {
+  private void configureDomainWithPodSecurityContext(DomainResource domain) {
     configureDomain(domain)
         .withPodSecurityContext(
             new V1PodSecurityContext()
@@ -690,7 +690,7 @@ class DomainV2Test extends DomainTestBase {
     assertThat(asContainerSecSpec.getPrivileged(), nullValue());
   }
 
-  private void configureDomainWithContainerSecurityContext(Domain domain) {
+  private void configureDomainWithContainerSecurityContext(DomainResource domain) {
     configureDomain(domain)
         .withContainerSecurityContext(
             new V1SecurityContext()
@@ -726,7 +726,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
-    Domain domain1 = createDomain();
+    DomainResource domain1 = createDomain();
 
     configureDomain(domain).configureCluster("cls1").withReplicas(2);
     configureDomain(domain1).configureCluster("cls1").withReplicas(3);
@@ -736,7 +736,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
@@ -754,28 +754,28 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.IMAGE));
   }
 
   @Test
   void whenDomainReadFromYaml_domainHomeSourceTypePersistentVolume() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PERSISTENT_VOLUME));
   }
 
   @Test
   void whenDomainReadFromYamlWithNoSetting_defaultsToServerOutInPodLog() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.isIncludeServerOutInPodLog(), is(true));
   }
 
   @Test
   void whenDomainReadFromYaml_serverOutInPodLogIsSet() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.isIncludeServerOutInPodLog(), is(false));
   }
@@ -783,7 +783,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_unconfiguredClusteredServerHasDomainDefaults()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", "cluster0");
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
@@ -801,7 +801,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_adminServerOverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
@@ -809,7 +809,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_server1OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", "cluster1");
 
     assertThat(serverSpec.getImage(), equalTo(DEFAULT_IMAGE));
@@ -829,7 +829,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_cluster2OverridesDefaults() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", "cluster2");
 
     assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
@@ -848,7 +848,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_AdminAndManagedOverrideDomainNodeSelectors()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     final ServerSpec server1Spec = domain.getServer("server1", null);
     final ServerSpec server2Spec = domain.getServer("server2", null);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os_arch", "x86_64"));
@@ -862,7 +862,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_ManagedServerOverrideDomainResourceRequirements()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     final V1ResourceRequirements server1ResReq = domain.getServer("server1", null).getResources();
     final V1ResourceRequirements server2ResReq = domain.getServer("server2", null).getResources();
 
@@ -884,7 +884,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_AdminAndManagedOverrideResourceRequirements()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     V1ResourceRequirements asResReq = domain.getAdminServerSpec().getResources();
 
     // Admin server override requests cpu: "150m" and limit cpu: "200m"
@@ -903,7 +903,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_AdminServiceIsDefined() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     AdminService adminService = domain.getAdminServerSpec().getAdminService();
 
     assertThat(adminService.getChannels(), containsInAnyOrder(
@@ -917,7 +917,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_unknownClusterUseDefaultReplicaCount() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.getReplicaCount("unknown"), equalTo(3));
   }
@@ -925,14 +925,14 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_unconfiguredClusterUseDefaultReplicaCount()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.getReplicaCount("cluster1"), equalTo(3));
   }
 
   @Test
   void whenDomain2ReadFromYaml_serverReadsDomainDefaultOfNever() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(serverSpec.shouldStart(0), is(false));
@@ -940,7 +940,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_serverConfiguresReadinessProbe() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
 
     assertThat(serverSpec.getReadinessProbe().getInitialDelaySeconds(), equalTo(10));
@@ -950,7 +950,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_serverConfiguresLivenessProbe() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
 
     assertThat(serverSpec.getLivenessProbe().getInitialDelaySeconds(), equalTo(20));
@@ -960,7 +960,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_clusterHasNodeSelector() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer(SERVER2, "cluster1");
     assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
   }
@@ -968,7 +968,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_clusterAndManagedServerHaveDifferentNodeSelectors()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
     assertThat(serverSpec.getNodeSelectors(), hasEntry("os", "linux"));
     assertThat(serverSpec.getNodeSelectors(), hasEntry("os_type", "oel7"));
@@ -977,7 +977,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_ManagedServerInheritContainerSecurityContextFromDomain()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     V1SecurityContext server2ContainerSecCtx =
         domain.getServer("server2", null).getContainerSecurityContext();
@@ -993,8 +993,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_objectsEquals()
       throws IOException {
-    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain1, equalTo(domain2));
   }
@@ -1002,8 +1002,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_matchingIntrospectionVersionValuesLeaveDomainsEqual()
       throws IOException {
-    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     domain1.getSpec().setIntrospectVersion("123");
     domain2.getSpec().setIntrospectVersion("123");
@@ -1013,8 +1013,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_differentIntrospectionVersionValuesLeaveDomainsUnequal()
       throws IOException {
-    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     domain1.getSpec().setIntrospectVersion("123");
     domain2.getSpec().setIntrospectVersion("124");
@@ -1024,7 +1024,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_ManagedServerInheritContainerSecurityContextFromCluster()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     V1SecurityContext server1ContainerSecCtx =
         domain.getServer("server1", "cluster1").getContainerSecurityContext();
@@ -1042,7 +1042,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritContainerSecurityContextFromDomain()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     V1SecurityContext asContainerSecCtx = domain.getAdminServerSpec().getContainerSecurityContext();
     assertThat(asContainerSecCtx.getRunAsGroup(), is(420L));
@@ -1058,7 +1058,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_ManagedServerInheritPodSecurityContextFromDomain()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     V1PodSecurityContext server2PodSecCtx =
         domain.getServer("server2", null).getPodSecurityContext();
     assertThat(server2PodSecCtx.getRunAsGroup(), is(422L));
@@ -1072,7 +1072,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_ManagedServerInheritPodSecurityContextFromCluster()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     V1PodSecurityContext server1PodSecCtx =
         domain.getServer("server1", "cluster1").getPodSecurityContext();
     assertThat(server1PodSecCtx.getRunAsGroup(), is(421L));
@@ -1086,7 +1086,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritPodSecurityContextFromDomain()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     V1PodSecurityContext asPodSecCtx = domain.getAdminServerSpec().getPodSecurityContext();
     assertThat(asPodSecCtx.getRunAsGroup(), is(420L));
     assertThat(asPodSecCtx.getSysctls(), contains(DOMAIN_SYSCTL));
@@ -1098,7 +1098,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecInitContainers = domain.getSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
@@ -1111,7 +1111,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromAdminServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecInitContainers = domain.getAdminServerSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
@@ -1127,7 +1127,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromManagedServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecInitContainers =
         domain.getServer("server1", null).getInitContainers();
@@ -1145,7 +1145,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreInheritedFromServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecInitContainers =
         domain.getServer("server2", null).getInitContainers();
@@ -1159,7 +1159,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromClusteredServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecInitContainers = domain.getCluster("cluster2").getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
@@ -1175,7 +1175,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecContainers = domain.getSpec().getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1187,7 +1187,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromAdminServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecContainers = domain.getAdminServerSpec().getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1202,7 +1202,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromManagedServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecContainers = domain.getServer("server1", null).getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1217,7 +1217,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreInheritedFromServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecContainers = domain.getServer("server2", null).getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1230,7 +1230,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromClusteredServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     List<V1Container> serverSpecContainers = domain.getCluster("cluster2").getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1245,7 +1245,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ShutdownIsReadFromSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getSpec().getShutdown();
     assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
@@ -1254,7 +1254,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ShutdownIsReadFromClusterSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
@@ -1264,7 +1264,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ShutdownIsReadFromServerSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
@@ -1274,7 +1274,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     V1PodSpec.RestartPolicyEnum restartPolicy = domain.getSpec().getRestartPolicy();
     assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
@@ -1282,7 +1282,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromClusterSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     V1PodSpec.RestartPolicyEnum restartPolicy = domain.getCluster("cluster2").getRestartPolicy();
     assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
@@ -1290,7 +1290,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     String runtimeClassName = domain.getSpec().getRuntimeClassName();
     assertThat(runtimeClassName, is("weblogic-class"));
@@ -1298,7 +1298,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromClusterSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     String runtimeClassName = domain.getCluster("cluster2").getRuntimeClassName();
     assertThat(runtimeClassName, is("weblogic-class"));
@@ -1306,7 +1306,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_SchedulerNameIsReadFromSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     String schedulerName = domain.getSpec().getSchedulerName();
     assertThat(schedulerName, is("my-scheduler"));
@@ -1314,7 +1314,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_SchedulerClassNameIsReadFromClusterSpec() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
 
     String schedulerName = domain.getCluster("cluster2").getSchedulerName();
     assertThat(schedulerName, is("my-scheduler"));
@@ -1323,7 +1323,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_sessionAffinityIsReadFromClusteredServerSpec()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     V1ServiceSpec.SessionAffinityEnum sessionAffinity = domain.getCluster("cluster1").getClusterSessionAffinity();
     assertThat(sessionAffinity, is(V1ServiceSpec.SessionAffinityEnum.CLIENTIP));
@@ -1332,7 +1332,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_sessionAffinityIsNotPresent()
       throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     V1ServiceSpec.SessionAffinityEnum sessionAffinity = domain.getCluster("cluster2").getClusterSessionAffinity();
     assertThat(sessionAffinity, nullValue());
@@ -1340,27 +1340,27 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
     assertThat(serverSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_hasExportedNaps() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
     assertThat(domain.getAdminServerChannelNames(), containsInAnyOrder("channelA", "channelB"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_adminServerHasAnnotationsAndLabels() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(
         domain.getAdminServerSpec().getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
     assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey1", "testValue1"));
@@ -1369,13 +1369,13 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain3ReadFromYaml_AdminServerRestartVersion() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getServerRestartVersion(), is("1"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     final ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
     final ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
@@ -1388,7 +1388,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     assertThat(domain.getAdminServerSpec().getDomainRestartVersion(), is("1"));
     assertThat(domain.getAdminServerSpec().getClusterRestartVersion(), nullValue());
     assertThat(domain.getAdminServerSpec().getServerRestartVersion(), nullValue());
@@ -1396,7 +1396,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_ClusterRestartVersion() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", "cluster2");
 
     assertThat(serverSpec.getDomainRestartVersion(), is("1"));
@@ -1406,7 +1406,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_ServerRestartVersion() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(serverSpec.getDomainRestartVersion(), is("1"));
@@ -1416,7 +1416,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_livenessCustomScriptMatches() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     assertThat(domain.getLivenessProbeCustomScript(), is(LIVENESS_PROBE_CUSTOM_SCRIPT));
   }
 
@@ -1672,14 +1672,14 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenNoDistributionStrategySpecified_defaultToDynamic() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.DYNAMIC));
   }
 
   @Test
   void whenDistributionStrategySpecified_readIt() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
   }

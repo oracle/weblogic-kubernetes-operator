@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -306,7 +306,7 @@ public class PodDisruptionBudgetHelper {
       LOGGER.fine(CLUSTER_PDB_PATCHED, getDomainUid(), clusterName);
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 

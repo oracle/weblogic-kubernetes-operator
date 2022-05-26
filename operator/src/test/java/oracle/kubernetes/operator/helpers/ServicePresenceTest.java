@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,7 +68,7 @@ class ServicePresenceTest {
 
     domains.put(NS, ImmutableMap.of(UID, info));
     disableMakeRightDomainProcessing();
-    Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID));
+    DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID));
     DomainConfiguratorFactory.forDomain(domain)
         .configureAdminServer()
         .configureAdminService()
