@@ -418,14 +418,38 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItT3Channel,
-                    **/ItAuxV8DomainImplicitUpgrade,
-                    **/ItDedicatedMode,
-                    **/ItOperatorFmwUpgrade,
-                    **/ItOperatorWlsUpgrade,
-                    **/ItFmwDynamicDomainInPV,
+                    **/ItMultiDomainModels,
+                    **/ItServerStartPolicy,
+                    **/ItServiceStartPolicyDynamicCluster,
+                    **/ItServerStartPolicyConfigCluster,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItIntrospectVersion,
+                    **/ItFmwDomainInPVUsingWLST,
                     **/ItFmwDomainInPVUsingWDT,
-                    **/ItMiiSampleFmwMain
+                    **/ItStickySession,
+                    **/ItSessionMigration,
+                    **/ItIstioTwoDomainsInImage,
+                    **/ItPodsRestart,
+                    **/ItUsabilityOperatorHelmChart,
+                    **/ItInitContainers,
+                    **/ItOperatorRestart,
+                    **/ItPodsShutdownOption,
+                    **/ItOCILoadBalancer,
+                    **/ItManageNameSpace,
+                    **/ItMiiDomainModelInPV,
+                    **/ItMiiDynamicUpdatePart1,
+                    **/ItMiiDynamicUpdatePart2,
+                    **/ItMiiDynamicUpdatePart3,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItMiiSampleFmwAux,
+                    **/ItMiiCreateAuxImageWithImageTool,
+                    **/ItMiiDomain,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiCustomSslStore,
+                    **/ItMiiMultiModel,
+                    **/ItLiftAndShiftFromOnPremDomain,
+                    **/ItLivenessProbeCustomization
+
                 </includes-failsafe>
             </properties>
         </profile>
