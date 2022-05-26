@@ -54,13 +54,11 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
 
 class CrdHelperTest {
-  private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
-
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
@@ -75,12 +73,12 @@ class CrdHelperTest {
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
   private final Function<URI, Path> pathFunctionWithException = fileSystem::getPathThrowsIllegaArgumentException;
-  private final Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
+  private final Function<String, Path> getInMemoryPath = fileSystem::getPath;
   private final TerminalStep terminalStep = new TerminalStep();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   private V1CustomResourceDefinition defineDefaultCrd() {
-    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION, getCertificates());
+    return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
   }
 
   private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
@@ -96,7 +94,7 @@ class CrdHelperTest {
     return new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
         .putLabelsItem(LabelConstants.OPERATOR_VERSION,
-            Optional.ofNullable(operatorVersion).map(o -> o.toString()).orElse(null));
+            Optional.ofNullable(operatorVersion).map(SemanticVersion::toString).orElse(null));
   }
 
   private V1CustomResourceDefinitionSpec createSpec() {
@@ -159,7 +157,7 @@ class CrdHelperTest {
 
   @Test
   void whenCrdV1SupportedAndNoCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -170,7 +168,7 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
   }
@@ -180,7 +178,7 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
@@ -191,7 +189,7 @@ class CrdHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16,PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(Step.chain(scriptCrdStep, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
@@ -202,12 +200,12 @@ class CrdHelperTest {
   void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION_FUTURE));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
     V1CustomResourceDefinition crd = crds.stream().findFirst().orElse(null);
-    assertNotNull(crd);
+    assertThat(crd, notNullValue());
     assertThat(getProductVersionFromMetadata(crd.getMetadata()), equalTo(PRODUCT_VERSION_FUTURE));
   }
 
@@ -227,7 +225,7 @@ class CrdHelperTest {
             .conversion(new V1CustomResourceConversion().strategy("Webhook"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
@@ -243,7 +241,7 @@ class CrdHelperTest {
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(defaultCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -256,7 +254,7 @@ class CrdHelperTest {
         .conversion(CrdHelper.CrdContext.createConversionWebhook("asdf"));
     testSupport.defineResources(defaultCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
@@ -268,7 +266,7 @@ class CrdHelperTest {
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
     testSupport.defineResources(defaultCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
@@ -280,7 +278,7 @@ class CrdHelperTest {
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
     testSupport.defineResources(defaultCrd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null, getCertificates()));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(null, getCertificates()));
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
@@ -293,7 +291,7 @@ class CrdHelperTest {
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
 
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
@@ -310,7 +308,7 @@ class CrdHelperTest {
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -328,7 +326,7 @@ class CrdHelperTest {
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));
@@ -346,7 +344,7 @@ class CrdHelperTest {
                 .served(true)
                 .name(KubernetesConstants.DOMAIN_VERSION));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -357,7 +355,7 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -370,7 +368,7 @@ class CrdHelperTest {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -400,17 +398,13 @@ class CrdHelperTest {
 
   @Test
   void whenCrdMainCalledWithNoArguments_illegalArgumentExceptionThrown() {
-    Assertions.assertThrows(IllegalArgumentException.class, () -> {
-      CrdHelper.main();
-    });
+    Assertions.assertThrows(IllegalArgumentException.class, CrdHelper::main);
   }
 
   @Test
   void testCrdCreationExceptionWhenWritingCrd() throws NoSuchFieldException {
     StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunctionWithException);
 
-    Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> {
-      CrdHelper.main("crd.yaml");
-    });
+    Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> CrdHelper.main("crd.yaml"));
   }
 }

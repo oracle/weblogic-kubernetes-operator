@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +52,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -89,7 +89,7 @@ public class CrdHelper {
   }
 
   static void writeCrdFiles(String crdFileName) throws URISyntaxException {
-    CrdContext context = new CrdContext(null, null, null, null);
+    CrdContext context = new DomainCrdContext();
 
     final URI outputFile = asFileURI(crdFileName);
 
@@ -135,25 +135,26 @@ public class CrdHelper {
   // Map = gson.fromJson(Map.class)
   // yaml dump ?  // ordering and format likely to change massively
 
-  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
-    return new CrdStep(version, productVersion, null);
+  public static Step createDomainCrdStep(SemanticVersion productVersion) {
+    return new CrdStep(productVersion, null);
   }
 
-  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion,
+  public static Step createDomainCrdStep(SemanticVersion productVersion,
                                          Certificates certificates) {
-    return new CrdStep(version, productVersion, certificates);
+    return new CrdStep(productVersion, certificates);
   }
 
   interface CrdComparator {
     boolean isOutdatedCrd(
-        SemanticVersion productVersion, V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
+        SemanticVersion productVersion, String resourceVersion,
+        V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
   }
 
   static class CrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(KubernetesVersion version, SemanticVersion productVersion, Certificates certificates) {
-      context = new CrdContext(version, productVersion, this, certificates);
+    CrdStep(SemanticVersion productVersion, Certificates certificates) {
+      context = new DomainCrdContext(productVersion, this, certificates);
     }
 
     @Override
@@ -163,36 +164,78 @@ public class CrdHelper {
   }
 
   @SuppressWarnings("ConstantConditions")
-  static class CrdContext {
+  abstract static class CrdContext {
     private final Step conflictStep;
     private final V1CustomResourceDefinition model;
-    private final KubernetesVersion version;
+
     private final SemanticVersion productVersion;
     private final Certificates certificates;
 
-    CrdContext(KubernetesVersion version, SemanticVersion productVersion,
-               Step conflictStep, Certificates certificates) {
-      this.version = version;
-      this.productVersion = productVersion;
-      this.conflictStep = conflictStep;
-      this.model = createModel(productVersion, certificates);
-      this.certificates = certificates;
+    CrdContext() {
+      this(null, null, null);
     }
 
-    static V1CustomResourceDefinition createModel(SemanticVersion productVersion, Certificates certificates) {
-      V1CustomResourceDefinition model = new V1CustomResourceDefinition()
+    CrdContext(SemanticVersion productVersion, Step conflictStep, Certificates certificates) {
+      this.productVersion = productVersion;
+      this.conflictStep = conflictStep;
+      this.certificates = certificates;
+      this.model = createModel(productVersion, certificates);
+    }
+
+    /**
+     * Returns the string used by Kubernetes to distinguish the kind of resource.
+     */
+    abstract String getKind();
+
+    /**
+     * Returns the name of the generated CRD.
+     */
+    abstract String getCrdName();
+
+    /**
+     * Returns the version of the CRD.
+     */
+    abstract String getVersionString();
+
+    /**
+     * Returns the name that Kubernetes will use for kubectl commands dealing with single resources.
+     */
+    abstract String getSingularName();
+
+    /**
+     * Returns the name that Kubernetes will use for kubectl commands dealing with multiple resources.
+     */
+    abstract String getPluralName();
+
+    /**
+     * Returns a list of name abbreviations that Kubernetes will recognize.
+     */
+    abstract List<String> getShortNames();
+
+    /**
+     * Returns the class that represents the spec portion of the resource.
+     */
+    abstract Class<?> getSpecClass();
+
+    /**
+     * Returns the class that represents the status portion of the resource.
+     */
+    abstract Class<?> getStatusClass();
+
+    V1CustomResourceDefinition createModel(SemanticVersion productVersion, Certificates certificates) {
+      V1CustomResourceDefinition result = new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
           .spec(createSpec(certificates));
-      return AnnotationHelper.withSha256Hash(model,
+      return AnnotationHelper.withSha256Hash(result,
           Objects.requireNonNull(
-              model.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
+              result.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
     }
 
-    static V1ObjectMeta createMetadata(SemanticVersion productVersion) {
+    V1ObjectMeta createMetadata(SemanticVersion productVersion) {
       V1ObjectMeta metadata = new V1ObjectMeta()
-          .name(KubernetesConstants.CRD_NAME);
+          .name(getCrdName());
 
       if (productVersion != null) {
         metadata.putLabelsItem(LabelConstants.OPERATOR_VERSION, productVersion.toString());
@@ -200,7 +243,7 @@ public class CrdHelper {
       return metadata;
     }
 
-    static V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
+    private V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
       return new V1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .preserveUnknownFields(false)
@@ -221,7 +264,7 @@ public class CrdHelper {
     private static V1CustomResourceConversion createConversionWebhook(byte[] caBundle) {
       return new V1CustomResourceConversion().strategy(WEBHOOK)
               .webhook(new V1WebhookConversion().conversionReviewVersions(
-                      Arrays.asList(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
+                      List.of(VERSION_V1)).clientConfig(new ApiextensionsV1WebhookClientConfig()
                       .service(new ApiextensionsV1ServiceReference().name(WEBLOGIC_OPERATOR_WEBHOOK_SVC)
                               .namespace(getWebhookNamespace()).port(CONVERSION_WEBHOOK_HTTPS_PORT)
                               .path(WEBHOOK_PATH))
@@ -244,17 +287,15 @@ public class CrdHelper {
     }
 
     static V1CustomResourceValidation getValidationFromCrdSchemaFile(String fileContents) {
-      Map<String, Object> data = getSnakeYaml(null).load(new StringReader(fileContents));
+      Map<String, Object> data = getSnakeYaml().load(new StringReader(fileContents));
       final Gson gson = new Gson();
       return gson.fromJson(gson.toJsonTree(data), V1CustomResourceValidation.class);
     }
 
-    private static org.yaml.snakeyaml.Yaml getSnakeYaml(Class<?> type) {
+    private static org.yaml.snakeyaml.Yaml getSnakeYaml() {
       LoaderOptions loaderOptions = new LoaderOptions();
       loaderOptions.setEnumCaseSensitive(false);
-      return type != null ? new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(type, loaderOptions),
-          new Yaml.CustomRepresenter()) :
-          new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
+      return new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
     }
 
     static V1CustomResourceSubresources createSubresources() {
@@ -266,9 +307,16 @@ public class CrdHelper {
                   .statusReplicasPath(".status.replicas"));
     }
 
-    static List<V1CustomResourceDefinitionVersion> getCrdVersions() {
-      Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
-      List<V1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
+    List<V1CustomResourceDefinitionVersion> getCrdVersions() {
+      List<V1CustomResourceDefinitionVersion> versions = getExistingVersions();
+      versions.add(0, createNewVersion());
+      return versions;
+    }
+
+    @NotNull
+    private List<V1CustomResourceDefinitionVersion> getExistingVersions() {
+      final Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
+      return schemas.entrySet().stream()
           .sorted(Map.Entry.comparingByKey())
           .map(entry -> new V1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
@@ -277,41 +325,35 @@ public class CrdHelper {
               .served(true)
               .storage(false))
           .collect(Collectors.toList());
-
-      versions.add(
-          0, // must be first
-          new V1CustomResourceDefinitionVersion()
-              .name(KubernetesConstants.DOMAIN_VERSION)
-              .schema(createSchemaValidation())
-              .subresources(createSubresources())
-              .served(true)
-              .storage(true));
-      return versions;
     }
 
-    static V1CustomResourceDefinitionNames getCrdNames() {
+    private V1CustomResourceDefinitionVersion createNewVersion() {
+      return new V1CustomResourceDefinitionVersion()
+          .name(getVersionString())
+          .schema(createSchemaValidation())
+          .subresources(createSubresources())
+          .served(true)
+          .storage(true);
+    }
+
+    V1CustomResourceDefinitionNames getCrdNames() {
       return new V1CustomResourceDefinitionNames()
-          .plural(KubernetesConstants.DOMAIN_PLURAL)
-          .singular(KubernetesConstants.DOMAIN_SINGULAR)
-          .kind(KubernetesConstants.DOMAIN)
-          .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT));
+          .plural(getPluralName())
+          .singular(getSingularName())
+          .kind(getKind())
+          .shortNames(getShortNames());
     }
 
-    static V1CustomResourceValidation createSchemaValidation() {
+    V1CustomResourceValidation createSchemaValidation() {
       return new V1CustomResourceValidation().openAPIV3Schema(createOpenApiV3Schema());
     }
 
-    static V1JSONSchemaProps createOpenApiV3Schema() {
+    private V1JSONSchemaProps createOpenApiV3Schema() {
       Gson gson = new Gson();
-      Class<DomainSpec> specClass = DomainSpec.class;
-      JsonElement jsonElementSpec =
-          gson.toJsonTree(createCrdSchemaGenerator().generate(specClass));
+      JsonElement jsonElementSpec = gson.toJsonTree(createCrdSchemaGenerator().generate(getSpecClass()));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
-      Class<DomainStatus> statusClass = DomainStatus.class;
-      JsonElement jsonElementStatus =
-          gson.toJsonTree(createCrdSchemaGenerator().generate(statusClass));
-      V1JSONSchemaProps status =
-          gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
+      JsonElement jsonElementStatus = gson.toJsonTree(createCrdSchemaGenerator().generate(getStatusClass()));
+      V1JSONSchemaProps status = gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
       return new V1JSONSchemaProps()
           .type("object")
           .putPropertiesItem("spec", spec)
@@ -343,7 +385,7 @@ public class CrdHelper {
       }
       versions.add(0,
           new V1CustomResourceDefinitionVersion()
-              .name(KubernetesConstants.DOMAIN_VERSION)
+              .name(getVersionString())
               .schema(createSchemaValidation())
               .subresources(createSubresources())
               .served(true)
@@ -400,17 +442,16 @@ public class CrdHelper {
       }
 
       private boolean crdVersionHigherThanProductVersion(V1CustomResourceDefinition existingCrd) {
-        if (productVersion != null) {
-          SemanticVersion existingCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
-          if (existingCrdVersion != null && existingCrdVersion.compareTo(productVersion) > 0) {
-            return true;
-          }
+        if (productVersion == null) {
+          return false;
         }
-        return false;
+        
+        SemanticVersion existingCrdVersion = KubernetesUtils.getProductVersionFromMetadata(existingCrd.getMetadata());
+        return existingCrdVersion != null && existingCrdVersion.compareTo(productVersion) > 0;
       }
 
       private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
-        return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, CrdContext.this.model);
+        return COMPARATOR.isOutdatedCrd(productVersion, getVersionString(), existingCrd, CrdContext.this.model);
       }
 
       private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
@@ -418,7 +459,7 @@ public class CrdHelper {
         boolean found = false;
         if (versions != null) {
           for (V1CustomResourceDefinitionVersion v : versions) {
-            if (KubernetesConstants.DOMAIN_VERSION.equals(v.getName())) {
+            if (getVersionString().equals(v.getName())) {
               found = true;
               break;
             }
@@ -508,6 +549,56 @@ public class CrdHelper {
 
   }
 
+  static class DomainCrdContext extends CrdContext {
+
+    DomainCrdContext() {
+    }
+
+    DomainCrdContext(SemanticVersion productVersion, Step conflictStep, Certificates certificates) {
+      super(productVersion, conflictStep, certificates);
+    }
+
+    @Override
+    Class<?> getSpecClass() {
+      return DomainSpec.class;
+    }
+
+    @Override
+    Class<?> getStatusClass() {
+      return DomainStatus.class;
+    }
+
+    @Override
+    protected String getSingularName() {
+      return KubernetesConstants.DOMAIN_SINGULAR;
+    }
+
+    @Override
+    protected String getKind() {
+      return KubernetesConstants.DOMAIN;
+    }
+
+    @Override
+    protected List<String> getShortNames() {
+      return Collections.singletonList(KubernetesConstants.DOMAIN_SHORT);
+    }
+
+    @Override
+    protected String getPluralName() {
+      return KubernetesConstants.DOMAIN_PLURAL;
+    }
+
+    @Override
+    protected String getVersionString() {
+      return KubernetesConstants.DOMAIN_VERSION;
+    }
+
+    @Override
+    protected String getCrdName() {
+      return KubernetesConstants.CRD_NAME;
+    }
+  }
+
   static class CrdComparatorImpl implements CrdComparator {
     private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
       List<ResourceVersion> versions = new ArrayList<>();
@@ -522,9 +613,9 @@ public class CrdHelper {
     }
 
     @Override
-    public boolean isOutdatedCrd(SemanticVersion productVersion,
+    public boolean isOutdatedCrd(SemanticVersion productVersion, String resourceVersionString,
                                  V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {
-      ResourceVersion current = new ResourceVersion(KubernetesConstants.DOMAIN_VERSION);
+      ResourceVersion current = new ResourceVersion(resourceVersionString);
       List<ResourceVersion> actualVersions = getVersions(actual);
 
       for (ResourceVersion v : actualVersions) {

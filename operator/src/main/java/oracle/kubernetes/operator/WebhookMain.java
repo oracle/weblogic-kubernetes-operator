@@ -106,7 +106,7 @@ public class WebhookMain extends BaseMain {
     Certificates certs = new Certificates(delegate);
     return nextStepFactory.createInitializationStep(conversionWebhookMainDelegate,
         Step.chain(
-            createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(), certs),
+            createDomainCrdStep(delegate.getProductVersion(), certs),
             new CheckFailureAndCreateEventStep(),
             WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
   }
@@ -140,8 +140,9 @@ public class WebhookMain extends BaseMain {
   }
 
   Step createCRDRecheckSteps() {
-    return Step.chain(createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion(),
-            new Certificates(delegate)), createCRDPresenceCheck());
+    return Step.chain(
+        createDomainCrdStep(delegate.getProductVersion(), new Certificates(delegate)),
+        createCRDPresenceCheck());
   }
 
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
