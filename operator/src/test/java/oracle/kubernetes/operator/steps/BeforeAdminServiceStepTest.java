@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -38,7 +38,7 @@ class BeforeAdminServiceStepTest {
   private static final int NODE_PORT_NUM = 5678;
   private static final String NS = "namespace";
   private static final String UID = "uid1";
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final Step nextStep = new TerminalStep();
   private final List<Memento> mementos = new ArrayList<>();
@@ -50,8 +50,8 @@ class BeforeAdminServiceStepTest {
     return new DomainPresenceInfo(domain);
   }
 
-  private Domain createDomain() {
-    return new Domain().withMetadata(createMetaData()).withSpec(createDomainSpec());
+  private DomainResource createDomain() {
+    return new DomainResource().withMetadata(createMetaData()).withSpec(createDomainSpec());
   }
 
   private V1ObjectMeta createMetaData() {

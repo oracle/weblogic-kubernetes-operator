@@ -40,7 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -524,7 +524,7 @@ public class ServiceHelper {
       return domainTopology.getName();
     }
 
-    Domain getDomain() {
+    DomainResource getDomain() {
       return info.getDomain();
     }
 

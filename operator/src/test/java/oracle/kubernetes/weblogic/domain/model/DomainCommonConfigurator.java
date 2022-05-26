@@ -33,17 +33,17 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainCommonConfigurator() {
   }
 
-  public DomainCommonConfigurator(@Nonnull Domain domain) {
+  public DomainCommonConfigurator(@Nonnull DomainResource domain) {
     super(domain);
     setApiVersion(domain);
   }
 
   @Override
-  public DomainConfigurator createFor(Domain domain) {
+  public DomainConfigurator createFor(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
 
-  private void setApiVersion(Domain domain) {
+  private void setApiVersion(DomainResource domain) {
     domain.setApiVersion(
         KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION);
   }

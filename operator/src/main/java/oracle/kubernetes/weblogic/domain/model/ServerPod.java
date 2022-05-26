@@ -846,16 +846,16 @@ class ServerPod extends KubernetesResource {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(
-            Domain.sortOrNull(env, ENV_VAR_COMPARATOR),
-            Domain.sortOrNull(that.env, ENV_VAR_COMPARATOR))
+            DomainResource.sortOrNull(env, ENV_VAR_COMPARATOR),
+            DomainResource.sortOrNull(that.env, ENV_VAR_COMPARATOR))
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
         .append(
-            Domain.sortOrNull(volumes, VOLUME_COMPARATOR),
-            Domain.sortOrNull(that.volumes, VOLUME_COMPARATOR))
+            DomainResource.sortOrNull(volumes, VOLUME_COMPARATOR),
+            DomainResource.sortOrNull(that.volumes, VOLUME_COMPARATOR))
         .append(
-            Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR),
-            Domain.sortOrNull(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
+            DomainResource.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR),
+            DomainResource.sortOrNull(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector, that.nodeSelector)
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
@@ -880,11 +880,11 @@ class ServerPod extends KubernetesResource {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(Domain.sortOrNull(env, ENV_VAR_COMPARATOR))
+        .append(DomainResource.sortOrNull(env, ENV_VAR_COMPARATOR))
         .append(livenessProbe)
         .append(readinessProbe)
-        .append(Domain.sortOrNull(volumes, VOLUME_COMPARATOR))
-        .append(Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR))
+        .append(DomainResource.sortOrNull(volumes, VOLUME_COMPARATOR))
+        .append(DomainResource.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
         .append(resources)
         .append(podSecurityContext)

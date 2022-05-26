@@ -40,7 +40,7 @@ import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -479,8 +479,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  private Domain getDomain() {
-    return (Domain) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
+  private DomainResource getDomain() {
+    return (DomainResource) testSupport.getResources(KubernetesTestSupport.DOMAIN).get(0);
   }
 
   @Test

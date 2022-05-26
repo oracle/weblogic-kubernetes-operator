@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
@@ -255,7 +255,7 @@ abstract class WaitForReadyStep<T> extends Step {
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       if (makeRightDomainOperation != null) {
         makeRightDomainOperation.clear();
-        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain) callResponse.getResult()));
+        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((DomainResource) callResponse.getResult()));
         makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
       }
       callback.fiber.terminate(new Exception(WAIT_TIMEOUT_EXCEEDED), packet);

@@ -44,7 +44,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
   private static final String LONG_CONTAINER_PORT_NAME = "long-container-port-name";
 
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -160,7 +160,7 @@ class DomainValidationTest extends DomainValidationTestBase {
                 "modelHome must be outside the directory for the wdtInstallHome")));
   }
 
-  private DomainConfigurator configureDomainWithRuntimeEncryptionSecret(Domain domain) {
+  private DomainConfigurator configureDomainWithRuntimeEncryptionSecret(DomainResource domain) {
     return configureDomain(domain)
           .withRuntimeEncryptionSecret("mysecret");
   }
@@ -798,7 +798,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidExceedMaxAllowed_reportError() {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -814,7 +814,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -831,7 +831,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -847,7 +847,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
-    Domain myDomain = createTestDomain(domainUID);
+    DomainResource myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
         .withDomainHomeSourceType(IMAGE)
         .withWebLogicCredentialsSecret(SECRET_NAME, null)
@@ -871,7 +871,7 @@ class DomainValidationTest extends DomainValidationTestBase {
             "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
-  private DomainConfigurator configureDomain(Domain domain) {
+  private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
 }

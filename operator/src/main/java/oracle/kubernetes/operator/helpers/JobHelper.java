@@ -48,7 +48,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
@@ -164,7 +164,7 @@ public class JobHelper {
       return getDomain().getSpec();
     }
 
-    private Domain getDomain() {
+    private DomainResource getDomain() {
       return info.getDomain();
     }
   }
@@ -378,7 +378,7 @@ public class JobHelper {
 
       private String getDomainGeneration() {
         return Optional.ofNullable(getDomain())
-              .map(Domain::getMetadata)
+              .map(DomainResource::getMetadata)
               .map(V1ObjectMeta::getGeneration)
               .map(Object::toString)
               .orElse("");
@@ -411,7 +411,7 @@ public class JobHelper {
       }
 
       private String getIntrospectVersion() {
-        return Optional.ofNullable(getDomain()).map(Domain::getSpec).map(DomainSpec::getIntrospectVersion)
+        return Optional.ofNullable(getDomain()).map(DomainResource::getSpec).map(DomainSpec::getIntrospectVersion)
                 .orElse("");
       }
     }

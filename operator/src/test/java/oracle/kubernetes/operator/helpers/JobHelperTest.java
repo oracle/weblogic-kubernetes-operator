@@ -55,8 +55,8 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
@@ -153,7 +153,7 @@ class JobHelperTest extends DomainValidationTestBase {
   public static final int MODE_365 = 365;
   public static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE = 180L;
   private Method getDomainSpec;
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
@@ -1356,7 +1356,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
     configureDomain(domainPresenceInfo)
           .withDefaultServerStartPolicy(ServerStartPolicy.NEVER);

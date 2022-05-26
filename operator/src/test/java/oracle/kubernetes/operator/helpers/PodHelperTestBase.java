@@ -89,7 +89,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -241,7 +241,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   static final String DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH = "/auxiliary";
 
   final TerminalStep terminalStep = new TerminalStep();
-  private final Domain domain = createDomain();
+  private final DomainResource domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
@@ -269,7 +269,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return consoleHandlerMemento;
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return testSupport.getResourceWithName(DOMAIN, DOMAIN_NAME);
   }
 
@@ -419,7 +419,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     testSupport.throwOnCompletionFailure();
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
     return new DomainPresenceInfo(domain);
   }
 
@@ -649,8 +649,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   abstract void setServerPort(int port);
 
-  private Domain createDomain() {
-    return new Domain()
+  private DomainResource createDomain() {
+    return new DomainResource()
         .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
         .withKind(DOMAIN)
         .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))

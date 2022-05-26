@@ -12,10 +12,10 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.WebhookHelper;
-import oracle.kubernetes.operator.rest.BaseRestServer;
-import oracle.kubernetes.operator.rest.RestConfig;
-import oracle.kubernetes.operator.rest.RestConfigImpl;
-import oracle.kubernetes.operator.rest.WebhookRestServer;
+import oracle.kubernetes.operator.http.rest.BaseRestServer;
+import oracle.kubernetes.operator.http.rest.RestConfig;
+import oracle.kubernetes.operator.http.rest.RestConfigImpl;
+import oracle.kubernetes.operator.http.rest.WebhookRestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.InitializeWebhookIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -82,7 +82,7 @@ public class WebhookMain extends BaseMain {
       main.waitForDeath();
 
       // stop the webhook REST server
-      stopWebhookRestServer();
+      main.stopRestServer();
     } finally {
       LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
@@ -118,7 +118,7 @@ public class WebhookMain extends BaseMain {
   void completeBegin() {
     try {
       // start the conversion webhook REST server
-      startRestServer();
+      startRestServer(container);
 
       // start periodic recheck of CRD
       int recheckInterval = TuningParameters.getInstance().getDomainNamespaceRecheckIntervalSeconds();
@@ -171,15 +171,9 @@ public class WebhookMain extends BaseMain {
   }
 
   @Override
-  protected void startRestServer()
+  protected BaseRestServer createRestServer()
           throws Exception {
-    WebhookRestServer.create(restConfig);
-    BaseRestServer.getInstance().start(container);
-  }
-
-  private static void stopWebhookRestServer() {
-    BaseRestServer.getInstance().stop();
-    BaseRestServer.destroy();
+    return WebhookRestServer.create(restConfig);
   }
 
   @Override

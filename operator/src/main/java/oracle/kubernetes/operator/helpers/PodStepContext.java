@@ -68,7 +68,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -204,7 +204,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getDomainUid();
   }
 
-  Domain getDomain() {
+  DomainResource getDomain() {
     return info.getDomain();
   }
 
@@ -760,7 +760,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Volume> getFluentdVolumes() {
     List<V1Volume> volumes = new ArrayList<>();
     Optional.ofNullable(getDomain())
-            .map(Domain::getFluentdSpecification)
+            .map(DomainResource::getFluentdSpecification)
             .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
                     .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
     return volumes;
