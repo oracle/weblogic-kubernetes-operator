@@ -104,7 +104,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   /** A map that holds at most one FiberGate per namespace to run status update steps. */
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
-  private static final boolean NW = true;
 
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -351,10 +350,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static Step bringManagedServersUp() {
     return new ManagedServersUpStep(null);
-  }
-
-  private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
-    return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
   /**
@@ -1036,6 +1031,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
     }
 
+    private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
+      return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
+    }
+
     private void execute() {
       LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, operation.getPresenceInfo().getDomainUid());
 
@@ -1079,7 +1078,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
     }
 
-    class FailureReportCompletionCallback extends ThrowableCallback {
+    static class FailureReportCompletionCallback extends ThrowableCallback {
       @Override
       public void onThrowable(Packet packet, Throwable throwable) {
         logThrowable(throwable);
