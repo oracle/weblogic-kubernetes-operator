@@ -28,7 +28,7 @@ class AdminServerTest extends BaseConfigurationTestBase {
   private static final String VALUE2 = "value2";
   private final AdminServer server1;
   private final AdminServer server2;
-  private final Domain domain = new Domain();
+  private final DomainResource domain = new DomainResource();
 
   /**
    * Administration server tests.

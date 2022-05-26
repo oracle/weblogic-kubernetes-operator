@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class IntrospectionLoggingTest {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int MAX_RETRY_COUNT = 2;
 
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -111,7 +111,7 @@ class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(updatedDomain.getStatus().getMessage(), containsString(SEVERE_PROBLEM_1));
   }
@@ -151,7 +151,7 @@ class IntrospectionLoggingTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
     logRecords.clear();
 
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(INTROSPECTION.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),

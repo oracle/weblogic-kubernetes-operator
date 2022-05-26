@@ -67,7 +67,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
@@ -585,7 +585,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    *
    * @param item An item received from a Watch response.
    */
-  public void dispatchDomainWatch(Watch.Response<Domain> item) {
+  public void dispatchDomainWatch(Watch.Response<DomainResource> item) {
     switch (item.type) {
       case ADDED:
         handleAddedDomain(item.object);
@@ -602,7 +602,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private void handleAddedDomain(Domain domain) {
+  private void handleAddedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -611,7 +611,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .execute();
   }
 
-  private void handleModifiedDomain(Domain domain) {
+  private void handleModifiedDomain(DomainResource domain) {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
@@ -619,7 +619,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         .execute();
   }
 
-  private void handleDeletedDomain(Domain domain) {
+  private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
         .withEventData(EventItem.DOMAIN_DELETED, null)
@@ -660,7 +660,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Map<String, String> serverState = new ConcurrentHashMap<>();
       DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getServers)
           .ifPresent(servers -> servers.forEach(item -> addServerToMaps(serverHealth, serverState, item)));
       if (!serverState.isEmpty()) {
@@ -714,7 +714,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
       return Optional.ofNullable(dpi.getDomain())
-          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+          .map(DomainResource::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
     }
 
     private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
@@ -863,7 +863,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean isDomainProcessingAborted(DomainPresenceInfo info) {
       return Optional.ofNullable(info)
               .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
+              .map(DomainResource::getStatus)
               .map(DomainStatus::isAborted)
               .orElse(false);
     }
@@ -875,7 +875,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean isFatalIntrospectorError() {
       String existingError = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
+          .map(DomainResource::getStatus)
           .map(DomainStatus::getMessage)
           .orElse(null);
       return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
@@ -909,7 +909,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return packet;
     }
 
-    private Domain getDomain() {
+    private DomainResource getDomain() {
       return liveInfo.getDomain();
     }
 
@@ -941,14 +941,13 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step createDomainDownPlan(DomainPresenceInfo info) {
       String ns = info.getNamespace();
-      String domainUid = info.getDomainUid();
       return Step.chain(
           new DownHeadStep(info, ns),
-          new DeleteDomainStep(info, ns, domainUid),
+          new DeleteDomainStep(),
           new UnregisterStep(info));
     }
 
-    private Step createDomainValidationStep(@Nullable Domain domain) {
+    private Step createDomainValidationStep(@Nullable DomainResource domain) {
       return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(getNamespace());
     }
 
@@ -976,7 +975,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
     return Optional.ofNullable(dpi)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getMetadata)
+        .map(DomainResource::getMetadata)
         .map(V1ObjectMeta::getGeneration);
   }
 
@@ -989,7 +988,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static String getIntrospectImage(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
+        .map(DomainResource::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
   }
@@ -997,14 +996,14 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static String getRestartVersion(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
+        .map(DomainResource::getRestartVersion)
         .orElse(null);
   }
 
   private static String getIntrospectVersion(DomainPresenceInfo info) {
     return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
+        .map(DomainResource::getSpec)
         .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
   }

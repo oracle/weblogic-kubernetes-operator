@@ -15,13 +15,13 @@ import oracle.kubernetes.operator.helpers.GsonOffsetDateTime;
 
 public class DomainTestUtils {
 
-  public Domain readDomain(String resourceName) throws IOException {
+  public DomainResource readDomain(String resourceName) throws IOException {
     return readDomain(resourceName, false);
   }
 
-  public Domain readDomain(String resourceName, boolean isFile) throws IOException {
+  public DomainResource readDomain(String resourceName, boolean isFile) throws IOException {
     String json = jsonFromYaml(resourceName, isFile);
-    return getGsonBuilder().fromJson(json, Domain.class);
+    return getGsonBuilder().fromJson(json, DomainResource.class);
   }
 
   private String jsonFromYaml(String resourceName, boolean isFile) throws IOException {

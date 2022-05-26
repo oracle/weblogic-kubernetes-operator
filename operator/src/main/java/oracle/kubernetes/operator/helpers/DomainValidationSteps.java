@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
@@ -108,7 +108,7 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
+      DomainResource domain = info.getDomain();
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
@@ -141,7 +141,7 @@ public class DomainValidationSteps {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
+      DomainResource domain = info.getDomain();
       List<String> validationFailures = domain.getAdditionalValidationFailures(podSpec);
 
       if (validationFailures.isEmpty()) {

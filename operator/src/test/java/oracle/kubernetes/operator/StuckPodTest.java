@@ -24,7 +24,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class StuckPodTest {
   private static final String FOREIGN_POD = "foreign";
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final Domain domain = createTestDomain();
+  private final DomainResource domain = createTestDomain();
   private final MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class, testSupport);
   private final StuckPodProcessing processing = new StuckPodProcessing(mainDelegate);
   private final V1Pod managedPod1 = defineManagedPod(SERVER_POD_1);
@@ -187,7 +187,7 @@ class StuckPodTest {
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
-    private final List<Domain> invocations = new ArrayList<>();
+    private final List<DomainResource> invocations = new ArrayList<>();
     private final DomainProcessorStub domainProcessor = createStrictStub(DomainProcessorStub.class, this);
     private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
     private final KubernetesTestSupport testSupport;
@@ -196,7 +196,7 @@ class StuckPodTest {
       this.testSupport = testSupport;
     }
 
-    boolean makeRightInvoked(Domain domain) {
+    boolean makeRightInvoked(DomainResource domain) {
       return invocations.contains(domain);
     }
 

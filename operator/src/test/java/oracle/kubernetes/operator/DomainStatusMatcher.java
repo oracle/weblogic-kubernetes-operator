@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -18,7 +18,7 @@ import static oracle.kubernetes.utils.OperatorUtils.joinListGrammatically;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @SuppressWarnings("unused")
-public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<DomainResource> {
   private String expectedReason;
   private List<String> expectedMessageStrings = Collections.emptyList();
   private boolean expectEmptyReasonAndMessage;
@@ -50,7 +50,7 @@ public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   }
 
   @Override
-  protected boolean matchesSafely(Domain domain, Description mismatchDescription) {
+  protected boolean matchesSafely(DomainResource domain, Description mismatchDescription) {
     if (domain.getStatus() == null) {
       mismatchDescription.appendText("found domain with no status");
       return false;
@@ -73,7 +73,7 @@ public class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     }
   }
 
-  private boolean foundEmptyReasonAndMessage(Domain domain, Description description) {
+  private boolean foundEmptyReasonAndMessage(DomainResource domain, Description description) {
     final String reason = domain.getStatus().getReason();
     final String message = domain.getStatus().getMessage();
 
