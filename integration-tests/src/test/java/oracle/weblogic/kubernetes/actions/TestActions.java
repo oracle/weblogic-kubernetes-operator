@@ -345,7 +345,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace, String clusterName,
-                                                               int numOfServers, String introspectVersion)
+                                                               int numOfServers, int introspectVersion)
       throws ApiException {
     return Domain.scaleClusterAndChangeIntrospectVersion(domainUid, namespace, clusterName, numOfServers,
         introspectVersion);

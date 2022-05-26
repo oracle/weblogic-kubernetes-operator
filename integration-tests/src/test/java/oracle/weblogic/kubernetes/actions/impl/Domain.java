@@ -408,7 +408,7 @@ public class Domain {
    */
   public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace,
                                                                String clusterName, int numOfServers,
-                                                               String introspectVersion)
+                                                               int introspectVersion)
       throws ApiException {
     LoggingFacade logger = getLogger();
     // get the domain cluster list
@@ -436,9 +436,9 @@ public class Domain {
         .append("/replicas\", ")
         .append("\"value\": ")
         .append(numOfServers)
-        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": ")
+        .append("}, {\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"")
         .append(introspectVersion)
-        .append("}]");
+        .append("\"}]");
 
     logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
         clusterName, domainUid, patchStr.toString());
