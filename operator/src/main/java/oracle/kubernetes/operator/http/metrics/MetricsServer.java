@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.http.metrics;
 
+import io.prometheus.client.hotspot.DefaultExports;
 import io.prometheus.client.servlet.jakarta.exporter.MetricsServlet;
 import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.work.Container;
@@ -16,6 +17,7 @@ public class MetricsServer extends BaseServer {
 
   @Override
   public void start(Container container) throws Exception {
+    DefaultExports.initialize();
     metricsServer = createHttpServer(container, "http://0.0.0.0:8083");
   }
 

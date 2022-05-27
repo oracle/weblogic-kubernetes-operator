@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.kubernetes.client.monitoring.Monitoring;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.util.ClientBuilder;
@@ -32,7 +33,7 @@ public class ClientPool extends Pool<ApiClient> {
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
-  // With OKHttp3, each client has it's own connection pool, so instance will be shared
+  // With OKHttp3, each client has its own connection pool, so instance will be shared
   private final AtomicReference<ApiClient> instance = new AtomicReference<>();
 
   public static void initialize(ThreadFactory threadFactory) {
@@ -132,6 +133,8 @@ public class ClientPool extends Pool<ApiClient> {
               client.getHttpClient().newBuilder().dispatcher(new Dispatcher(exec)).build();
           client.setHttpClient(httpClient);
         }
+
+        Monitoring.installMetrics(client);
 
         return client;
       } catch (IOException e) {
