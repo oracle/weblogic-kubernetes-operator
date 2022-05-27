@@ -94,6 +94,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusCond
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -247,6 +248,9 @@ class ItOperatorWlsUpgrade {
     logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
     installOldOperator(oldVersion);
     createSecrets();
+
+    // Create the repo secret to pull base WebLogic image
+    createBaseRepoSecret(domainNamespace);
 
     // Creating an aux image domain with v8 version
     final String auxiliaryImagePath = "/auxiliary";
@@ -495,7 +499,7 @@ class ItOperatorWlsUpgrade {
   }
 
   private void createSecrets() {
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 

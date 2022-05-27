@@ -190,6 +190,7 @@ class ItManageNameSpace {
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
   @Tag("gate")
+  @Tag("crio")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];

@@ -275,6 +275,10 @@ class ItDBOperator {
   @Test
   void  testWlsModelInImageWithDbOperator() {
 
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(wlsDomainNamespace);
+
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";

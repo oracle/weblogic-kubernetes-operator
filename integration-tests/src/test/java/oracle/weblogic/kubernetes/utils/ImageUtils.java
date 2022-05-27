@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -538,9 +539,12 @@ public class ImageUtils {
       logger.info("docker login");
       assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
            BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), "docker login failed");
-
       logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
+      testUntil(() -> dockerPush(dockerImage),
+          logger,
+          "docker push succeeds for image {0} to repo {1}",
+          dockerImage,
+          DOMAIN_IMAGES_REPO);
     }
   }
 

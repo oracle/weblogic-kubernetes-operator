@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -581,11 +582,19 @@ class ItWlsSamples {
       createTestRepoSecret(domainNamespace);
     }
 
+    // wait until domain.yaml file exits
+    String domainYamlFileString = get(sampleBase.toString(), "weblogic-domains/"
+        + domainName + "/domain.yaml").toString();
+    File domainYamlFile = new File(domainYamlFileString);
+    testUntil(() -> domainYamlFile.exists(),
+        logger,
+        "domain yaml file {0} exists",
+        domainYamlFileString);
+
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-            + get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+    params.command("kubectl apply -f " + domainYamlFileString);
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -641,6 +650,15 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
+    // wait until domain.yaml file exits
+    String domainYamlFileString = get(sampleBase.toString(), "weblogic-domains/"
+        + domainName + "/domain.yaml").toString();
+    File domainYamlFile = new File(domainYamlFileString);
+    testUntil(() -> domainYamlFile.exists(),
+        logger,
+        "domain yaml file {0} exists",
+        domainYamlFileString);
+
     // For the domain created by WLST, we have to apply domain.yaml created by update-domain.sh
     // before initiating introspection of the domain to start the second cluster that was just added
     // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
@@ -648,11 +666,7 @@ class ItWlsSamples {
       // run kubectl to update the domain
       logger.info("Run kubectl to create the domain");
       params = new CommandParams().defaults();
-      params.command("kubectl apply -f "
-          + get(sampleBase.toString(), "weblogic-domains/"
-          + domainName
-          + "/domain.yaml").toString());
-
+      params.command("kubectl apply -f " + domainYamlFileString);
       result = Command.withParams(params).execute();
       assertTrue(result, "Failed to create domain custom resource");
     }
