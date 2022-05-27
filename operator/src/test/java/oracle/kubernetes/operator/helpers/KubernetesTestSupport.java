@@ -133,6 +133,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
   private Failure failure;
+  private AfterCallAction afterCallAction;
   private long resourceVersion;
   private int numCalls;
   private boolean addCreationTimestamp;
@@ -480,6 +481,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
     failure = null;
   }
 
+  /**
+   * Specifies an action to perform after completing the next matching invocation.
+   * @param resourceType the type of resource
+   * @param call the call string
+   * @param action the action to perform
+   */
+  public void doAfterCall(@Nonnull String resourceType, @Nonnull String call, @Nonnull Runnable action) {
+    afterCallAction = new AfterCallAction(resourceType, call, action);
+  }
+
   @SuppressWarnings("unused")
   private enum Operation {
     create {
@@ -588,6 +599,27 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     HttpErrorException getException() {
       return new HttpErrorException(apiException);
+    }
+  }
+
+  static class AfterCallAction {
+    private final String resourceType;
+    private final String call;
+    private final Runnable action;
+
+    AfterCallAction(@Nonnull String resourceType, @Nonnull String call, @Nonnull Runnable action) {
+      this.resourceType = resourceType;
+      this.call = call;
+      this.action = action;
+    }
+
+    boolean matches(String resourceType, RequestParams requestParams) {
+      return this.resourceType.equals(resourceType)
+          && (this.call.equals(requestParams.call));
+    }
+
+    void doAction() {
+      action.run();
     }
   }
 
@@ -1174,15 +1206,22 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Object execute() {
-      if (failure != null && failure.matches(resourceType, requestParams, operation)) {
-        try {
-          throw failure.getException();
-        } finally {
-          failure = null;
+      try {
+        if (failure != null && failure.matches(resourceType, requestParams, operation)) {
+          try {
+            throw failure.getException();
+          } finally {
+            failure = null;
+          }
+        }
+
+        return operation.execute(this, selectRepository(resourceType));
+      } finally {
+        if (afterCallAction != null && afterCallAction.matches(resourceType, requestParams)) {
+          afterCallAction.doAction();
+          afterCallAction = null;
         }
       }
-
-      return operation.execute(this, selectRepository(resourceType));
     }
 
     @SuppressWarnings("unchecked")

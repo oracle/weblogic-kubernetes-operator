@@ -58,6 +58,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.recordLastIntrospec
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
@@ -368,8 +369,8 @@ public class JobHelper {
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Job job = (V1Job) callResponse.getResult();
-      if ((job != null) && (packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB) == null)) {
-        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+      if ((job != null) && (packet.get(DOMAIN_INTROSPECTOR_JOB) == null)) {
+        packet.put(DOMAIN_INTROSPECTOR_JOB, job);
       }
       return doNext(getIntrospectorPodStatus(info.getDomainUid(), info.getNamespace(), getNext()), packet);
     }
@@ -443,7 +444,7 @@ public class JobHelper {
                 .orElseGet(Collections::emptyList)
                 .forEach(pod -> recordJobPodNameAndStatus(packet, pod));
 
-        V1Job job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+        V1Job job = (V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB);
         OffsetDateTime startTime = createNextSteps(nextSteps, packet, job, getNext());
         packet.putIfAbsent(START_TIME, startTime);
         return doContinueListOrNext(callResponse, packet, nextSteps.get(0));
@@ -571,7 +572,7 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-              (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+              (V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB);
       boolean jobPodContainerTerminated = JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER
           .equals(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED));
 
@@ -790,7 +791,7 @@ public class JobHelper {
 
   static void logJobDeleted(String domainUid, String namespace, String jobName, Packet packet) {
     V1Job domainIntrospectorJob =
-            (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+            (V1Job) packet.remove(DOMAIN_INTROSPECTOR_JOB);
 
     packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     if (domainIntrospectorJob != null
@@ -908,6 +909,9 @@ public class JobHelper {
           .orElse(null);
 
       if (jobPod != null) {
+        if (isJobPodTimedOut(jobPod)) {
+          return onFailureNoRetry(packet, callResponse);
+        }
         addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
         recordJobPodName(packet, getName(jobPod));
       }
@@ -920,6 +924,20 @@ public class JobHelper {
 
     private String getName(V1Pod pod) {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+    }
+
+    private boolean isJobPodTimedOut(V1Pod jobPod) {
+      return "DeadlineExceeded".equals(getJobPodStatusReason(jobPod));
+    }
+
+    private String getJobPodStatusReason(V1Pod jobPod) {
+      return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
+    }
+
+    @Override
+    protected Throwable createTerminationException(Packet packet,
+        CallResponse<V1PodList> callResponse) {
+      return new JobWatcher.DeadlineExceededException((V1Job) packet.get(DOMAIN_INTROSPECTOR_JOB));
     }
 
     private void recordJobPodName(Packet packet, String podName) {
