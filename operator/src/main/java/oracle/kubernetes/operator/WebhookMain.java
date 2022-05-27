@@ -81,8 +81,8 @@ public class WebhookMain extends BaseMain {
       // now we just wait until the pod is terminated
       main.waitForDeath();
 
-      // stop the webhook REST server
       main.stopRestServer();
+      main.stopMetricsServer();
     } finally {
       LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
@@ -117,7 +117,7 @@ public class WebhookMain extends BaseMain {
 
   void completeBegin() {
     try {
-      // start the conversion webhook REST server
+      startMetricsServer(container);
       startRestServer(container);
 
       // start periodic recheck of CRD

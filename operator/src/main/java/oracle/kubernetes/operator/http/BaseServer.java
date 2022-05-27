@@ -64,19 +64,44 @@ public abstract class BaseServer {
 
   protected abstract ResourceConfig createResourceConfig();
 
+  protected void configureServer(HttpServer h) {
+    // no-op
+  }
+
+  protected HttpServer createHttpServer(Container container, String uri) throws Exception {
+    HttpServer h =
+        GrizzlyHttpServerFactory.createHttpServer(
+            URI.create(uri),
+            createResourceConfig(),
+            false);
+    updateHttpServer(h, container);
+
+    configureServer(h);
+
+    h.start();
+    return h;
+  }
+
   protected HttpServer createHttpsServer(Container container, SSLContext ssl, String uri) throws Exception {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
             createResourceConfig(),
-            true, // used for call
-            // org.glassfish.jersey.grizzly2.httpserver.NetworkListener#setSecure(boolean)}.
+            true,
             new SSLEngineConfigurator(ssl)
                 .setClientMode(false)
                 .setNeedClientAuth(false)
                 .setEnabledProtocols(SSL_PROTOCOLS),
             false);
+    updateHttpServer(h, container);
 
+    configureServer(h);
+
+    h.start();
+    return h;
+  }
+
+  private void updateHttpServer(HttpServer h, Container container) {
     // We discovered the default thread pool configuration was generating hundreds of
     // threads.  Tune it down to something more modest.  Note: these are core
     // pool sizes, so they can still grow if there is sufficient load.
@@ -100,9 +125,6 @@ public abstract class BaseServer {
         transport.setSelectorRunnersCount(CORE_POOL_SIZE);
       }
     }
-
-    h.start();
-    return h;
   }
 
   private void updateThreadPoolConfig(ThreadPoolConfig threadPoolConfig, Container container) {

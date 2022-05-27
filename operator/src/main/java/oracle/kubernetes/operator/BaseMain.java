@@ -22,6 +22,8 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.http.BaseServer;
+import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -59,7 +61,8 @@ public abstract class BaseMain {
   static final File probesHome;
   final CoreDelegate delegate;
 
-  private final AtomicReference<BaseRestServer> restServer = new AtomicReference<>();
+  private final AtomicReference<BaseServer> restServer = new AtomicReference<>();
+  private final AtomicReference<BaseServer> metricsServer = new AtomicReference<>();
 
   static {
     try {
@@ -141,7 +144,17 @@ public abstract class BaseMain {
   abstract BaseRestServer createRestServer() throws Exception;
 
   void stopRestServer() {
-    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseRestServer::stop);
+    Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
+  }
+
+  void startMetricsServer(Container container) throws Exception {
+    BaseServer value = new MetricsServer();
+    metricsServer.set(value);
+    value.start(container);
+  }
+
+  void stopMetricsServer() {
+    Optional.ofNullable(metricsServer.getAndSet(null)).ifPresent(BaseServer::stop);
   }
 
   abstract Step createStartupSteps();

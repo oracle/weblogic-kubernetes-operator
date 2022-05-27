@@ -179,8 +179,8 @@ public class OperatorMain extends BaseMain {
       // now we just wait until the pod is terminated
       operatorMain.waitForDeath();
 
-      // stop the REST server
       operatorMain.stopRestServer();
+      operatorMain.stopMetricsServer();
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -277,7 +277,7 @@ public class OperatorMain extends BaseMain {
 
   private void completeBegin() {
     try {
-      // start the REST server
+      startMetricsServer(container);
       startRestServer(container);
 
       // start periodic retry and recheck
