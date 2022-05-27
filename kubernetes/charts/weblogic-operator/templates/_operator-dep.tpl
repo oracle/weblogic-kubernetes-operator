@@ -21,7 +21,7 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/port: 8083
+        prometheus.io/port: '8083'
         prometheus.io/scrape: 'true'
       {{- range $key, $value := .annotations }}
         {{ $key }}: {{ $value | quote }}
