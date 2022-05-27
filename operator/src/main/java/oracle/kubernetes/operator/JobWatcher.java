@@ -408,14 +408,15 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     }
   }
 
-  static class DeadlineExceededException extends Exception {
+  public static class DeadlineExceededException extends Exception {
     final V1Job job;
 
-    DeadlineExceededException(V1Job job) {
+    public DeadlineExceededException(V1Job job) {
       super();
       this.job = job;
     }
 
+    @Override
     public String toString() {
       return LOGGER.formatMessage(
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
