@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -23,12 +25,16 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.JobWatcher;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
@@ -127,6 +133,7 @@ class DomainIntrospectorJobTest {
   private static final String FATAL_MESSAGE_1 = "@[SEVERE] " + FATAL_PROBLEM_1;
   public static final String TEST_VOLUME_NAME = "test";
   public static final String JOB_UID = "some-unique-id";
+  private static final String JOB_NAME = UID + "-introspector";
   public static final String INFO_MESSAGE_1 = "informational message";
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
 
@@ -878,4 +885,60 @@ class DomainIntrospectorJobTest {
   private String getDomainHome() {
     return "/shared/domains/" + UID;
   }
+
+  @Test
+  void whenPreviousFailedJobWithDeadlineExceeded_terminateWithException() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionPodWithDeadlineExceeded();
+    testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
+
+    testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));
+
+    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+  }
+
+  private void defineFailedIntrospectionPodWithDeadlineExceeded() {
+    testSupport.defineResources(asFailedJobPodWithDeadlineExceeded(createIntrospectorJobPod()));
+  }
+
+  private V1Pod asFailedJobPodWithDeadlineExceeded(V1Pod introspectorJobPod) {
+    return introspectorJobPod.status(new V1PodStatus().reason("DeadlineExceeded"));
+  }
+
+  private void ignoreIntrospectorFailureLogs() {
+    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+  }
+
+  private void ignoreJobCreatedAndDeletedLogs() {
+    consoleHandlerMemento.ignoreMessage(getJobCreatedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
+  }
+
+  private V1Job affectedJob;
+
+  private void recordJob(Object job) {
+    affectedJob = asCompletedJob((V1Job) job);
+  }
+
+  private V1Job asCompletedJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(
+        new V1JobCondition().status("True").type("Complete")));
+    return job;
+  }
+
+  private void replaceFailedJobPodWithSuccess() {
+    testSupport.deleteResources(createIntrospectorJobPod());
+    testSupport.defineResources(createIntrospectorJobPod());
+  }
+
+  private V1Pod createIntrospectorJobPod() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, JOB_NAME);
+    return new V1Pod().metadata(new V1ObjectMeta().name(JOB_NAME).labels(labels).namespace(NS));
+  }
+
 }
