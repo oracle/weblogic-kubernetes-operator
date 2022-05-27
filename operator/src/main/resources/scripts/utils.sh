@@ -101,6 +101,7 @@ function traceEnv() {
     INTROSPECT_HOME \
     PATH \
     TRACE_TIMING \
+    WLSDEPLOY_PROPERTIES \
     OPERATOR_ENVVAR_NAMES
   do
     echo "    ${env_var}='${!env_var}'"
