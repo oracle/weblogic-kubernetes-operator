@@ -150,7 +150,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Test domain status condition with serverStartPolicy set to ADMIN_ONLY.
    * Verify the following conditions are generated:
    * type: Completed, status: true
-   * type: Available, status: true
+   * type: Available, status: false
    * Verify no Failed type condition generated.
    */
   @Test

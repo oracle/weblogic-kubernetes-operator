@@ -176,6 +176,7 @@ class ItPodsShutdownOption {
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
   @Tag("gate")
+  @Tag("crio")
   void testShutdownPropsAllLevels() {
 
 
@@ -308,12 +309,11 @@ class ItPodsShutdownOption {
                 .serverStartState("RUNNING")
                 )
             .configuration(new Configuration()
-                .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .configMap(cmName)
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L))
+                .introspectorJobActiveDeadlineSeconds(600L))
             .addManagedServersItem(new ManagedServer()
                 .serverStartState("RUNNING")
                 .serverStartPolicy("ALWAYS")
@@ -346,7 +346,7 @@ class ItPodsShutdownOption {
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
+        .atMost(20, MINUTES).await(), adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPodNamePrefix + i;
@@ -356,7 +356,7 @@ class ItPodsShutdownOption {
           managedServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await(), managedServerPodName, domainUid, domainNamespace);
+          .atMost(20, MINUTES).await(), managedServerPodName, domainUid, domainNamespace);
     }
 
     // check for independent managed server pods existence in the domain namespace
@@ -366,7 +366,7 @@ class ItPodsShutdownOption {
           podName, domainNamespace);
       checkPodReadyAndServiceExists(with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await(), podName, domainUid, domainNamespace);
+          .atMost(20, MINUTES).await(), podName, domainUid, domainNamespace);
     }
   }
 
