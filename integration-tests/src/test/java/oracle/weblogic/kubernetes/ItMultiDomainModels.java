@@ -110,6 +110,7 @@ class ItMultiDomainModels {
       + "verify admin console login using admin node port.")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @Tag("gate")
+  @Tag("crio")
   @DisabledOnSlimImage
   void testScaleClustersAndAdminConsoleLogin(String domainType) {
     Domain domain = createDomainBasedOnDomainType(domainType);
