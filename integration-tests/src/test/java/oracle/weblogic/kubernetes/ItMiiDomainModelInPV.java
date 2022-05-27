@@ -239,6 +239,7 @@ public class ItMiiDomainModelInPV {
   @MethodSource("paramProvider")
   @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
   @Tag("gate")
+  @Tag("crio")
   void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
     String domainUid = params.getKey();
