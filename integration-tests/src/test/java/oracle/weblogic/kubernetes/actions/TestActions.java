@@ -335,6 +335,25 @@ public class TestActions {
   }
 
   /**
+   * Scale the cluster of the domain and change introspect version in the specified namespace by
+   * patching the domain resource.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
+   * @param clusterName cluster in the domain to be scaled
+   * @param numOfServers number of servers to be scaled to
+   * @param introspectVersion new introspectVersion value
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleClusterAndChangeIntrospectVersion(String domainUid, String namespace, String clusterName,
+                                                               int numOfServers, int introspectVersion)
+      throws ApiException {
+    return Domain.scaleClusterAndChangeIntrospectVersion(domainUid, namespace, clusterName, numOfServers,
+        introspectVersion);
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace using REST API.
    *
    * @param domainUid domainUid of the domain to be scaled
