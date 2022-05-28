@@ -11,6 +11,8 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.http.rest.resource.AdmissionWebhookResource;
 import oracle.kubernetes.operator.http.rest.resource.ConversionWebhookResource;
@@ -31,7 +33,7 @@ import org.glassfish.jersey.server.ResourceConfig;
  */
 public class WebhookRestServer extends BaseRestServer {
   private final String baseWebhookHttpsUri;
-  private HttpServer webhookHttpsServer;
+  private final AtomicReference<HttpServer> webhookHttpsServer = new AtomicReference<>();
 
   /**
    * Constructs the conversion webhook REST server.
@@ -111,7 +113,7 @@ public class WebhookRestServer extends BaseRestServer {
     LOGGER.entering();
     boolean fullyStarted = false;
     try {
-      webhookHttpsServer = createWebhookHttpsServer(container);
+      webhookHttpsServer.set(createWebhookHttpsServer(container));
       LOGGER.info(
               "Started the webhook ssl REST server on "
                       + getWebhookHttpsUri());
@@ -134,11 +136,7 @@ public class WebhookRestServer extends BaseRestServer {
    */
   public void stop() {
     LOGGER.entering();
-    if (webhookHttpsServer != null) {
-      webhookHttpsServer.shutdownNow();
-      webhookHttpsServer = null;
-      LOGGER.fine("Stopped the webhook ssl REST server");
-    }
+    Optional.ofNullable(webhookHttpsServer.getAndSet(null)).ifPresent(HttpServer::shutdownNow);
     LOGGER.exiting();
   }
 

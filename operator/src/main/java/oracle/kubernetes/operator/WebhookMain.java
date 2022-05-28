@@ -171,8 +171,7 @@ public class WebhookMain extends BaseMain {
   }
 
   @Override
-  protected BaseRestServer createRestServer()
-          throws Exception {
+  protected BaseRestServer createRestServer() {
     return WebhookRestServer.create(restConfig);
   }
 

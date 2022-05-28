@@ -9,6 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Properties;
@@ -135,19 +141,22 @@ public abstract class BaseMain {
     }
   }
 
-  void startRestServer(Container container) throws Exception {
+  void startRestServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     BaseRestServer value = createRestServer();
     restServer.set(value);
     value.start(container);
   }
 
-  abstract BaseRestServer createRestServer() throws Exception;
+  abstract BaseRestServer createRestServer();
 
   void stopRestServer() {
     Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
   }
 
-  void startMetricsServer(Container container) throws Exception {
+  void startMetricsServer(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
+      NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
     BaseServer value = new MetricsServer();
     metricsServer.set(value);
     value.start(container);

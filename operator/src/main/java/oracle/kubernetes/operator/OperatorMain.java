@@ -404,8 +404,7 @@ public class OperatorMain extends BaseMain {
   }
 
   @Override
-  protected BaseRestServer createRestServer()
-      throws Exception {
+  protected BaseRestServer createRestServer() {
     return OperatorRestServer.create(
         new RestConfigImpl(mainDelegate.getPrincipal(), mainDelegate.getDomainNamespaces()::getNamespaces,
                 new Certificates(mainDelegate)));

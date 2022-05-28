@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.http.metrics;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.prometheus.client.hotspot.DefaultExports;
 import io.prometheus.client.servlet.jakarta.exporter.MetricsServlet;
@@ -15,18 +17,17 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 public class MetricsServer extends BaseServer {
 
-  private HttpServer metricsHttpServer = null;
+  private final AtomicReference<HttpServer> metricsHttpServer = new AtomicReference<>();
 
   @Override
   public void start(Container container) throws IOException {
     DefaultExports.initialize();
-    metricsHttpServer = createHttpServer(container, "http://0.0.0.0:8083");
+    metricsHttpServer.set(createHttpServer(container, "http://0.0.0.0:8083"));
   }
 
   @Override
   public void stop() {
-    metricsHttpServer.shutdownNow();
-    metricsHttpServer = null;
+    Optional.ofNullable(metricsHttpServer.getAndSet(null)).ifPresent(HttpServer::shutdownNow);
   }
 
   @Override

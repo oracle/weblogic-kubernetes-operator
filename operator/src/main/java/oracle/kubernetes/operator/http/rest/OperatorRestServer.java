@@ -11,6 +11,8 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.http.rest.resource.VersionsResource;
 import oracle.kubernetes.operator.work.Container;
@@ -35,8 +37,8 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
 public class OperatorRestServer extends BaseRestServer {
   private final String baseExternalHttpsUri;
   private final String baseInternalHttpsUri;
-  private HttpServer externalHttpsServer;
-  private HttpServer internalHttpsServer;
+  private final AtomicReference<HttpServer> externalHttpsServer = new AtomicReference<>();
+  private final AtomicReference<HttpServer> internalHttpsServer = new AtomicReference<>();
 
   /**
    * Constructs the WebLogic Operator REST server.
@@ -130,13 +132,13 @@ public class OperatorRestServer extends BaseRestServer {
   public void start(Container container) throws UnrecoverableKeyException, CertificateException,
       IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
-    if (externalHttpsServer != null || internalHttpsServer != null) {
+    if (externalHttpsServer.get() != null || internalHttpsServer.get() != null) {
       throw new AssertionError("Already started");
     }
     boolean fullyStarted = false;
     try {
       if (isExternalSslConfigured()) {
-        externalHttpsServer = createExternalHttpsServer(container);
+        externalHttpsServer.set(createExternalHttpsServer(container));
         LOGGER.info(
             "Started the external ssl REST server on "
                 + getExternalHttpsUri()
@@ -144,7 +146,7 @@ public class OperatorRestServer extends BaseRestServer {
       }
 
       if (isInternalSslConfigured()) {
-        internalHttpsServer = createInternalHttpsServer(container);
+        internalHttpsServer.set(createInternalHttpsServer(container));
         LOGGER.info(
             "Started the internal ssl REST server on "
                 + getInternalHttpsUri()
@@ -170,16 +172,8 @@ public class OperatorRestServer extends BaseRestServer {
    */
   public void stop() {
     LOGGER.entering();
-    if (externalHttpsServer != null) {
-      externalHttpsServer.shutdownNow();
-      externalHttpsServer = null;
-      LOGGER.fine("Stopped the external ssl REST server");
-    }
-    if (internalHttpsServer != null) {
-      internalHttpsServer.shutdownNow();
-      internalHttpsServer = null;
-      LOGGER.fine("Stopped the internal ssl REST server");
-    }
+    Optional.ofNullable(externalHttpsServer.getAndSet(null)).ifPresent(HttpServer::shutdownNow);
+    Optional.ofNullable(internalHttpsServer.getAndSet(null)).ifPresent(HttpServer::shutdownNow);
     LOGGER.exiting();
   }
 
