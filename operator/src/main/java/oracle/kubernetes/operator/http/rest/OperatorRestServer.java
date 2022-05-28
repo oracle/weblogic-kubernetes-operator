@@ -3,6 +3,13 @@
 
 package oracle.kubernetes.operator.http.rest;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 
 import oracle.kubernetes.operator.http.rest.resource.VersionsResource;
@@ -109,12 +116,19 @@ public class OperatorRestServer extends BaseRestServer {
    * continues (v.s. throwing an exception and not starting any ports).
    *
    * @param container Container
-   * @throws Exception if the REST api could not be started for reasons other than a port was not
-   *     configured. When an exception is thrown, then none of the ports will be leftrunning,
+   * @throws IOException if the REST api could not be started for reasons other than a port was not
+   *     configured. When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
+   * @throws UnrecoverableKeyException Unrecoverable key
+   * @throws CertificateException Bad certificate
+   * @throws NoSuchAlgorithmException No such algorithm
+   * @throws KeyStoreException Bad keystore
+   * @throws InvalidKeySpecException Invalid key
+   * @throws KeyManagementException Key management failed
    */
   @Override
-  public void start(Container container) throws Exception {
+  public void start(Container container) throws UnrecoverableKeyException, CertificateException,
+      IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     if (externalHttpsServer != null || internalHttpsServer != null) {
       throw new AssertionError("Already started");
@@ -140,7 +154,7 @@ public class OperatorRestServer extends BaseRestServer {
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
-        // if we didn't get a chance to start all of the ports because an exception
+        // if we didn't get a chance to start all the ports because an exception
         // was thrown, then stop the ones we did manage to start
         stop();
       }
@@ -169,7 +183,9 @@ public class OperatorRestServer extends BaseRestServer {
     LOGGER.exiting();
   }
 
-  private HttpServer createExternalHttpsServer(Container container) throws Exception {
+  private HttpServer createExternalHttpsServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
         createHttpsServer(
@@ -185,7 +201,9 @@ public class OperatorRestServer extends BaseRestServer {
     return result;
   }
 
-  private HttpServer createInternalHttpsServer(Container container) throws Exception {
+  private HttpServer createInternalHttpsServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
         createHttpsServer(

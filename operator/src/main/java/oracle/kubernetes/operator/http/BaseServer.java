@@ -7,7 +7,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -48,11 +54,18 @@ public abstract class BaseServer {
    * Starts WebLogic operator's or conversion webhook's REST api.
    *
    * @param container Container
-   * @throws Exception if the REST api could not be started for reasons other than a port was not
+   * @throws IOException if the REST api could not be started for reasons other than a port was not
    *                   configured. When an exception is thrown, then none of the ports will be left running,
    *                   however it is still OK to call stop (which will be a no-op).
+   * @throws UnrecoverableKeyException Unrecoverable key
+   * @throws CertificateException Bad certificate
+   * @throws NoSuchAlgorithmException No such algorithm
+   * @throws KeyStoreException Bad keystore
+   * @throws InvalidKeySpecException Invalid key
+   * @throws KeyManagementException Key management failed
    */
-  public abstract void start(Container container) throws Exception;
+  public abstract void start(Container container) throws UnrecoverableKeyException, CertificateException,
+      IOException, NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException;
 
   /**
    * Stops WebLogic operator's or conversion webhook's REST api.
@@ -68,7 +81,7 @@ public abstract class BaseServer {
     // no-op
   }
 
-  protected HttpServer createHttpServer(Container container, String uri) throws Exception {
+  protected HttpServer createHttpServer(Container container, String uri) throws IOException {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
@@ -82,7 +95,7 @@ public abstract class BaseServer {
     return h;
   }
 
-  protected HttpServer createHttpsServer(Container container, SSLContext ssl, String uri) throws Exception {
+  protected HttpServer createHttpsServer(Container container, SSLContext ssl, String uri) throws IOException {
     HttpServer h =
         GrizzlyHttpServerFactory.createHttpServer(
             URI.create(uri),
@@ -172,7 +185,7 @@ public abstract class BaseServer {
     return result;
   }
 
-  protected SSLContext createSslContext(KeyManager[] kms) throws Exception {
+  protected SSLContext createSslContext(KeyManager[] kms) throws NoSuchAlgorithmException, KeyManagementException {
     SSLContext ssl = SSLContext.getInstance(SSL_PROTOCOL);
     ssl.init(kms, null, new SecureRandom());
     return ssl;
@@ -180,7 +193,8 @@ public abstract class BaseServer {
 
   protected KeyManager[] createKeyManagers(
       String certificateData, String certificateFile, String keyData, String keyFile)
-      throws Exception {
+      throws IOException, UnrecoverableKeyException, CertificateException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException {
     LOGGER.entering(certificateData, certificateFile);
     KeyManager[] result =
         SSLUtils.keyManagers(

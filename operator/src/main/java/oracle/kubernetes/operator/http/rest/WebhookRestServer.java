@@ -3,6 +3,13 @@
 
 package oracle.kubernetes.operator.http.rest;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 
 import oracle.kubernetes.operator.http.rest.resource.AdmissionWebhookResource;
@@ -87,19 +94,27 @@ public class WebhookRestServer extends BaseRestServer {
    * Starts conversion webhook's REST api.
    *
    * @param container Container
-   * @throws Exception if the REST api could not be started.
-   *     When an exception is thrown, then none of the ports will be leftrunning,
+   * @throws IOException if the REST api could not be started.
+   *     When an exception is thrown, then none of the ports will be left running,
    *     however it is still OK to call stop (which will be a no-op).
+   * @throws UnrecoverableKeyException Unrecoverable key
+   * @throws CertificateException Bad certificate
+   * @throws NoSuchAlgorithmException No such algorithm
+   * @throws KeyStoreException Bad keystore
+   * @throws InvalidKeySpecException Invalid key
+   * @throws KeyManagementException Key management failed
    */
   @Override
-  public void start(Container container) throws Exception {
+  public void start(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     boolean fullyStarted = false;
     try {
       webhookHttpsServer = createWebhookHttpsServer(container);
       LOGGER.info(
               "Started the webhook ssl REST server on "
-                      + getWebhookHttpsUri()); // TBD .fine ?
+                      + getWebhookHttpsUri());
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
@@ -127,7 +142,9 @@ public class WebhookRestServer extends BaseRestServer {
     LOGGER.exiting();
   }
 
-  private HttpServer createWebhookHttpsServer(Container container) throws Exception {
+  private HttpServer createWebhookHttpsServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
     LOGGER.entering();
     HttpServer result =
             createHttpsServer(
