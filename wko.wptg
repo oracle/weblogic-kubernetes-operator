@@ -1,0 +1,4 @@
+Languages: Std_Admin
+
+common/src/main/resources
+    Operator%j.properties FileType: Javaproperties

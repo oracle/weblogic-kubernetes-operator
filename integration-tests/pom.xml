@@ -542,6 +542,13 @@
             </properties>
         </profile>
         <profile>
+            <id>crio-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>crio</groups>
+            </properties>
+        </profile>
+        <profile>
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>

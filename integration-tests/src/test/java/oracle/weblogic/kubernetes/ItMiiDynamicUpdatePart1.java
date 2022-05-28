@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
@@ -138,6 +139,7 @@ class ItMiiDynamicUpdatePart1 {
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
   @Tag("gate")
+  @Tag("crio")
   void testMiiAddWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -353,7 +355,7 @@ class ItMiiDynamicUpdatePart1 {
     // Scale the cluster by updating the replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
     boolean p1Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, helper.domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, helper.domainNamespace, "cluster-1", 5, 1234),
         String.format("Patching replica to 5 failed for domain %s in namespace %s", domainUid, helper.domainNamespace));
     assertTrue(p1Success,
         String.format("Patching replica to 5 failed for domain %s in namespace %s", domainUid, helper.domainNamespace));
@@ -422,7 +424,7 @@ class ItMiiDynamicUpdatePart1 {
     // Scale the cluster using replica count 5, managed-server5 should not come up as new MaxClusterSize is 4
     logger.info("[After Patching] updating the replica count to 5");
     boolean p3Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, helper.domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, helper.domainNamespace, "cluster-1", 5, 5678),
         String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed",
             domainUid, helper.domainNamespace));
     assertTrue(p3Success,
