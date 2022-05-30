@@ -894,6 +894,8 @@ wdtCreatePrimordialDomain() {
 
   trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
 
+  expandWdtArchiveCustomDir
+
   if [ -z "${OPSS_FLAGS}" ]; then
 
     # We get here for WLS domains, and for the JRF 'first time' case
@@ -982,6 +984,8 @@ wdtUpdateModelDomain() {
   wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
 
   trace "About to call '${WDT_BINDIR}/updateDomain.sh ${wdtArgs}'."
+
+  expandWdtArchiveCustomDir
 
   ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
@@ -1376,4 +1380,15 @@ wdtRotateAndCopyLogFile() {
   logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
 
   cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
+}
+
+# Function to expand the WDT custom folder from the archive before calling update or create domain.
+expandWdtArchiveCustomDir() {
+  cd ${DOMAIN_HOME} || exitOrLoop
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
+    do
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/custom
+    done
+
+  traceDirs before ${DOMAIN_HOME}/wlsdeploy/custom
 }

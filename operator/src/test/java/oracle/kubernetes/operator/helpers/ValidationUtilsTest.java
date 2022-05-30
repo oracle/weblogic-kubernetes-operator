@@ -4,66 +4,28 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Collections;
-import java.util.List;
 
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.utils.ValidationUtils;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.AUX_IMAGE_1;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.AUX_IMAGE_2;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.NEW_LOG_HOME;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.createAuxiliaryImage;
+import static oracle.kubernetes.operator.helpers.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ValidationUtilsTest {
-  private static final String CLUSTER_NAME_1 = "C1";
-  private static final String CLUSTER_NAME_2 = "C2";
-  public static final String ORIGINAL_IMAGE_NAME = "abcd";
-  public static final int ORIGINAL_REPLICAS = 2;
-  public static final String ORIGINAL_INTROSPECT_VERSION = "1234";
-  public static final String NEW_IMAGE_NAME = "NewImage";
-  public static final String NEW_INTROSPECT_VERSION = "5678";
-  public static final int BAD_REPLICAS = 4;
-  public static final int GOOD_REPLICAS = 1;
-  public static final String NEW_LOG_HOME = "/home/dir";
-  public static final String AUX_IMAGE_1 = "image1";
-  public static final String AUX_IMAGE_2 = "Image2";
-
-  private final DomainResource existingDomain = createDomain();
-  private final DomainResource proposedDomain = createDomain();
-
-  private DomainResource createDomain() {
-    DomainResource domain = createTestDomain().withStatus(createDomainStatus());
-    domain.getSpec()
-        .withReplicas(ORIGINAL_REPLICAS)
-        .withImage(ORIGINAL_IMAGE_NAME)
-        .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
-    domain.getSpec()
-        .withCluster(createCluster(CLUSTER_NAME_1))
-        .withCluster(createCluster(CLUSTER_NAME_2));
-    return domain;
-  }
-
-  private Cluster createCluster(String clusterName) {
-    return new Cluster().withClusterName(clusterName);
-  }
-
-  private DomainStatus createDomainStatus() {
-    return new DomainStatus()
-        .addCluster(createClusterStatus(CLUSTER_NAME_1))
-        .addCluster(createClusterStatus(CLUSTER_NAME_2));
-  }
-
-  private ClusterStatus createClusterStatus(String clusterName) {
-    return new ClusterStatus().withClusterName(clusterName).withMaximumReplicas(ORIGINAL_REPLICAS);
-  }
+  private final DomainResource existingDomain = AdmissionWebhookTestSetUp.createDomain();
+  private final DomainResource proposedDomain = AdmissionWebhookTestSetUp.createDomain();
 
   @Test
   void whenSameObject_returnTrue() {
@@ -323,13 +285,4 @@ class ValidationUtilsTest {
 
     assertThat(ValidationUtils.isProposedChangeAllowed(existingDomain, proposedDomain), equalTo(true));
   }
-
-  private AuxiliaryImage createAuxiliaryImage(String imageName) {
-    return new AuxiliaryImage().image(imageName);
-  }
-
-  private void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
-    domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
-  }
-
 }
