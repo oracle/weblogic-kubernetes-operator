@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -136,12 +138,12 @@ public class CrdHelper {
   // yaml dump ?  // ordering and format likely to change massively
 
   public static Step createDomainCrdStep(SemanticVersion productVersion) {
-    return new CrdStep(productVersion, null);
+    return new DomainCrdStep(productVersion, null);
   }
 
   public static Step createDomainCrdStep(SemanticVersion productVersion,
                                          Certificates certificates) {
-    return new CrdStep(productVersion, certificates);
+    return new DomainCrdStep(productVersion, certificates);
   }
 
   interface CrdComparator {
@@ -150,11 +152,28 @@ public class CrdHelper {
         V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
   }
 
-  static class CrdStep extends Step {
+  static class DomainCrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(SemanticVersion productVersion, Certificates certificates) {
+    DomainCrdStep(SemanticVersion productVersion, Certificates certificates) {
       context = new DomainCrdContext(productVersion, this, certificates);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(context.verifyCrd(getNext()), packet);
+    }
+  }
+
+  public static Step createClusterCrdStep(SemanticVersion productVersion) {
+    return new ClusterCrdStep(productVersion);
+  }
+
+  static class ClusterCrdStep extends Step {
+    final CrdContext context;
+
+    ClusterCrdStep(SemanticVersion productVersion) {
+      context = new ClusterCrdContext(productVersion, this);
     }
 
     @Override
@@ -222,6 +241,11 @@ public class CrdHelper {
      */
     abstract Class<?> getStatusClass();
 
+    /**
+     * Returns a prefix which identifies the CRD schema files for this type of resource.
+     */
+    abstract String getPrefix();
+
     V1CustomResourceDefinition createModel(SemanticVersion productVersion, Certificates certificates) {
       V1CustomResourceDefinition result = new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
@@ -243,7 +267,7 @@ public class CrdHelper {
       return metadata;
     }
 
-    private V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
+    V1CustomResourceDefinitionSpec createSpec(Certificates certificates) {
       return new V1CustomResourceDefinitionSpec()
           .group(KubernetesConstants.DOMAIN_GROUP)
           .preserveUnknownFields(false)
@@ -279,13 +303,6 @@ public class CrdHelper {
       return Optional.ofNullable(certificateData).map(Base64::decodeBase64).orElse(null);
     }
 
-    static String getVersionFromCrdSchemaFileName(String name) {
-      // names will be like "domain-crd-schemav2-201.yaml"
-      // want "v2"
-      String end = name.substring(17);
-      return end.substring(0, end.indexOf('-'));
-    }
-
     static V1CustomResourceValidation getValidationFromCrdSchemaFile(String fileContents) {
       Map<String, Object> data = getSnakeYaml().load(new StringReader(fileContents));
       final Gson gson = new Gson();
@@ -318,6 +335,7 @@ public class CrdHelper {
       final Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       return schemas.entrySet().stream()
           .sorted(Map.Entry.comparingByKey())
+          .filter(entry -> getVersionFromCrdSchemaFileName(entry.getKey()) != null)
           .map(entry -> new V1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
               .schema(getValidationFromCrdSchemaFile(entry.getValue()))
@@ -325,6 +343,12 @@ public class CrdHelper {
               .served(true)
               .storage(false))
           .collect(Collectors.toList());
+    }
+
+    private String getVersionFromCrdSchemaFileName(String name) {
+      final Pattern versionPattern = Pattern.compile(getPrefix() + "-schema(\\w*)-");
+      final Matcher matcher = versionPattern.matcher(name);
+      return matcher.find() ? matcher.group(1) : null;
     }
 
     private V1CustomResourceDefinitionVersion createNewVersion() {
@@ -596,6 +620,66 @@ public class CrdHelper {
     @Override
     protected String getCrdName() {
       return KubernetesConstants.CRD_NAME;
+    }
+
+    @Override
+    protected String getPrefix() {
+      return "domain-crd";
+    }
+  }
+
+  static class ClusterCrdContext extends CrdContext {
+
+    ClusterCrdContext() {
+    }
+
+    ClusterCrdContext(SemanticVersion productVersion, Step conflictStep) {
+      super(productVersion, conflictStep, null);
+    }
+
+    @Override
+    Class<?> getSpecClass() {
+      return Object.class;
+    }
+
+    @Override
+    Class<?> getStatusClass() {
+      return Objects.class;
+    }
+
+    @Override
+    protected String getSingularName() {
+      return KubernetesConstants.CLUSTER_SINGULAR;
+    }
+
+    @Override
+    protected String getKind() {
+      return KubernetesConstants.CLUSTER;
+    }
+
+    @Override
+    protected List<String> getShortNames() {
+      return List.of(KubernetesConstants.CLUSTER_SHORT);
+    }
+
+    @Override
+    protected String getPluralName() {
+      return KubernetesConstants.CLUSTER_PLURAL;
+    }
+
+    @Override
+    protected String getVersionString() {
+      return KubernetesConstants.CLUSTER_VERSION;
+    }
+
+    @Override
+    protected String getCrdName() {
+      return KubernetesConstants.CLUSTERS_CRD_NAME;
+    }
+
+    @Override
+    protected String getPrefix() {
+      return "cluster-crd";
     }
   }
 

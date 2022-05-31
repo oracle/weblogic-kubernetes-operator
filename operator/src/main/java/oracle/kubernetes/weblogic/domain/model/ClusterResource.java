@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec.SessionAffinityEnum;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -46,8 +47,8 @@ public class ClusterResource implements KubernetesObject {
    */
   @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("apiVersion")
-  @Description("The API version defines the versioned schema of this Domain.")
-  private String apiVersion;
+  @Description("The API version defines the versioned schema of this cluster.")
+  private String apiVersion = KubernetesConstants.CLUSTER_VERSION;
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -56,8 +57,8 @@ public class ClusterResource implements KubernetesObject {
    */
   @SuppressWarnings("common-java:DuplicatedBlocks")
   @SerializedName("kind")
-  @Description("The type of the REST resource. Must be \"Domain\".")
-  private String kind;
+  @Description("The type of the REST resource. Must be \"Cluster\".")
+  private String kind = KubernetesConstants.CLUSTER;
 
   /**
    * Standard object's metadata. More info:
@@ -96,7 +97,7 @@ public class ClusterResource implements KubernetesObject {
   }
 
   public String getClusterName() {
-    return metadata.getName();
+    return Optional.ofNullable(spec.getClusterName()).orElse(metadata.getName());
   }
 
   public void setClusterName(@Nonnull String clusterName) {
