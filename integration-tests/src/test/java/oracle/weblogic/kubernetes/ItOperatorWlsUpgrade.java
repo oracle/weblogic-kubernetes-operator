@@ -61,12 +61,12 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -94,7 +94,8 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusCond
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
@@ -206,9 +207,11 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Auxiliary Image Domain upgrade from Operator v3.3.8 to current.
+   * Currently we do not support AuxDomain upgrade 3.3.5 to Latest with 
+   * independent webhook only WebLogic Operator in Latest branch.
+   * Temporarily disabled, re-enable after webhook not pre-created in 
+   * InitializationTasks or the test is moved to a different test suite.
    */
-  // Temporarily disabled, re-enable after webhook not pre-created in InitializationTasks
-  // or the test is moved to a different test suite.
   @Disabled
   @DisplayName("Upgrade 3.3.8 Auxiliary Domain(v8 schema) Image to current")
   void testOperatorWlsAuxDomainUpgradeFrom338ToCurrent() {
@@ -245,6 +248,9 @@ class ItOperatorWlsUpgrade {
     logger.info("Upgrade version/{0} Auxiliary Domain(v8) to current", oldVersion);
     installOldOperator(oldVersion);
     createSecrets();
+
+    // Create the repo secret to pull base WebLogic image
+    createBaseRepoSecret(domainNamespace);
 
     // Creating an aux image domain with v8 version
     final String auxiliaryImagePath = "/auxiliary";
@@ -493,9 +499,9 @@ class ItOperatorWlsUpgrade {
   }
 
   private void createSecrets() {
-    // Create the repo secret to pull the image
+    // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -675,7 +681,7 @@ class ItOperatorWlsUpgrade {
                     .domainHomeSourceType(domainHomeSourceType)
                     .image(domainImage)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(OCIR_SECRET_NAME))
+                            .name(TEST_IMAGES_REPO_SECRET_NAME))
                     .webLogicCredentialsSecret(new V1SecretReference()
                             .name(adminSecretName)
                             .namespace(domainNamespace))
