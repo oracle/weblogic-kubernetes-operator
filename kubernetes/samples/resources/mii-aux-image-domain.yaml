@@ -1,3 +1,6 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
 apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
@@ -20,7 +23,7 @@ spec:
       #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
       #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
       auxiliaryImages:
-      - image: "mii-aux-image:v1"
+      - image: "ghcr.io/oracle/mii-aux-image:v1"
         #imagePullPolicy: IfNotPresent
         #sourceWDTInstallHome: /auxiliary/weblogic-deploy
         #sourceModelHome: /auxiliary/models
@@ -46,7 +49,7 @@ spec:
 
   # Identify which Secret contains the credentials for pulling an image
   imagePullSecrets:
-  - name: operator-repo-credentials
+  - name: weblogic-repo-credentials
 
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.

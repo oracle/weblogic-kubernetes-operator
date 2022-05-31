@@ -37,6 +37,8 @@ weight: 7
           1. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar. 
 
                 {{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
+    # Copyright (c) 2022, Oracle and/or its affiliates.
+    # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
     apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
@@ -85,7 +87,7 @@ weight: 7
   
       # Identify which Secret contains the credentials for pulling an image
       imagePullSecrets:
-      - name: ocr-credentials
+      - name: weblogic-repo-credentials
   
       # Identify which Secret contains the WebLogic Admin credentials,
       # the secret must contain 'username' and 'password' fields.

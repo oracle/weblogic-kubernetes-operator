@@ -21,7 +21,7 @@ Create a namespace for the ingress controller.
 $ kubectl create namespace traefik
 ```
 
-Set the unsecure and secure nodeports of the Traefik ingress controller and the `kubernetes.namespaces`.
+Set the node ports of the Traefik ingress controller and the `kubernetes.namespaces`.
 
 
 ```shell
