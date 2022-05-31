@@ -67,6 +67,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterAndChangeIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
@@ -607,7 +608,7 @@ class ItMiiUpdateDomainConfig {
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
     boolean p1Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 1234),
         String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -681,7 +682,7 @@ class ItMiiUpdateDomainConfig {
     // Here managed-server5 should not come up as new MaxClusterSize is 4
     logger.info("[After Patching] updating the replica count to 5");
     boolean p3Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+            scaleClusterAndChangeIntrospectVersion(domainUid, domainNamespace, "cluster-1", 5, 5678),
         String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));

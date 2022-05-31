@@ -381,18 +381,38 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Scale the cluster beyond maximum dynamic cluster size and verify the
+   * Scale the cluster beyond maximum dynamic cluster size and verify the patch operation failed.
+   */
+  @Test
+  void testDomainK8sEventsScalePastMaxWithoutChangingIntrospectVersion() {
+    OffsetDateTime timestamp = now();
+    logger.info("Scaling cluster using patching");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+        + "]";
+
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Patching domain with a replica count that exceeds the cluster size did not fail as expected");
+  }
+
+  /**
+   * Scale the cluster beyond maximum dynamic cluster size and change the introspectVersion as well, verify the
    * Failed warning event is generated.
    */
   @Test
-  void testDomainK8sEventsScalePastMax() {
+  void testDomainK8sEventsScalePastMaxAndChangeIntrospectVersion() {
     OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}"
           + "]";
+
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
