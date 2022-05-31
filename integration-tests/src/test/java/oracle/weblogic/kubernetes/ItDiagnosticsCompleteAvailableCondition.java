@@ -37,7 +37,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -107,7 +107,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace1);
+    createBaseRepoSecret(domainNamespace1);
 
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",

@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -53,7 +53,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test multiple WDT model files in a model-in-image domain are processed in the expected order.
- * 
+ *
  * <p>There are three test methods in this class, covering three basic scenarios. </p>
  *
  * <ul>
@@ -94,7 +94,7 @@ class ItMiiMultiModel {
 
   private static int replicaCount = 2;
 
-  // There are four model files in this test case. 
+  // There are four model files in this test case.
   // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in the MII image.
   // "multi-model-two-ds.10.yaml" and "multi-model-two-ds.10.yaml" are in the domain's ConfigMap.
 
@@ -145,8 +145,7 @@ class ItMiiMultiModel {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -172,8 +171,8 @@ class ItMiiMultiModel {
     miiImageMultiModel = createMiiImageAndVerify(
         "mii-test-multi-model-image",
         Arrays.asList(
-            MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE, 
-            MODEL_DIR + "/" + modelFileName2, 
+            MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE,
+            MODEL_DIR + "/" + modelFileName2,
             MODEL_DIR + "/" + modelFileName1),
         Collections.singletonList(MII_BASIC_APP_NAME));
 
@@ -189,7 +188,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. </p>
    *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also 
+   * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also
    * specifies a second DataSource "TestDataSource3" with the maxCapacity set to 5. </p>
    *
    * <p>According to the ordering rules, the resultant configuration should have two DataSources,
@@ -219,13 +218,13 @@ class ItMiiMultiModel {
         domainUid1,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid1, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -234,7 +233,7 @@ class ItMiiMultiModel {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid1, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
@@ -251,7 +250,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. </p>
    *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second 
+   * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second
    * DataSource "TestDataSource2", which is deleted by the second model. </p>
    *
    * <p>According to the ordering rules, When the two model files are applied, the resultant domain should
@@ -270,13 +269,13 @@ class ItMiiMultiModel {
         domainUid2,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         miiImageMultiModel,
         null);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid2, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -303,7 +302,7 @@ class ItMiiMultiModel {
    * Verify that the effective configuration of the domain is as expected. Note that the model files
    * in the image are ordered independently from the model files in the domain's ConfigMap. </p>
    *
-   * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with 
+   * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with
    * the connection pool's MaxCapacity set to 15 and 20 respectively.
    * In addition, the first model defines a second DataSource "TestDataSource2", which is deleted by
    * the second model. When the two model files are applied, the resultant domain will only have
@@ -314,7 +313,7 @@ class ItMiiMultiModel {
    * and, in addition, the first model defines another DataSource "TestDataSource3" with MaxCapacity
    * set to 5. </p>
    *
-   * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with 
+   * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with
    * MaxCapacity set to 40, "TestDataSource3" with MaxCapacity set to "5", and "TestDataSource2"
    * should not exist after all four model files are processed by the WebLogic Deploy Tooling. </p>
    */
@@ -342,13 +341,13 @@ class ItMiiMultiModel {
         domainUid3,
         domainNamespace,
         adminServerPodName,
-        managedServerPrefix, 
+        managedServerPrefix,
         miiImageMultiModel,
         configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid3, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
@@ -357,7 +356,7 @@ class ItMiiMultiModel {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue,
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
             domainUid3, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
@@ -371,7 +370,7 @@ class ItMiiMultiModel {
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid3, domainNamespace, dsName2));
-    
+
     ingressHost = null;
   }
 
@@ -390,8 +389,8 @@ class ItMiiMultiModel {
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
-    
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
+
     createDomainAndVerify(domain, domainNamespace);
 
     // check admin server pod is ready
@@ -448,7 +447,7 @@ class ItMiiMultiModel {
    */
   private Domain createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String miiImage, String configMapName) {
     // create the domain CR
     Domain domain = new Domain()
@@ -535,7 +534,7 @@ class ItMiiMultiModel {
         "Get max capacity of data source");
     return params.stdout();
   }
-  
+
   /**
    * Check if a DataSource does not exist.
    */
@@ -574,5 +573,5 @@ class ItMiiMultiModel {
         "Get max capacity of data source");
     return true;
   }
-  
+
 }

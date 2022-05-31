@@ -34,8 +34,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -49,7 +49,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -120,16 +120,16 @@ class ItIstioTwoDomainsInImage {
 
   /**
    * Create two domains using domainhome-in-image model.
-   * Add istio configuration with default readinessPort. 
+   * Add istio configuration with default readinessPort.
    * Deploy istio gateway and virtual service on each domain namespaces.
    * Add host information to gateway and virtual service configurations.
-   * Put the namespace.org as host configuration 
+   * Put the namespace.org as host configuration
    * Verify server pods are in ready state and services are created
-   * Verify login to WebLogic console on domain1 through istio ingress http 
+   * Verify login to WebLogic console on domain1 through istio ingress http
    * port by passing host information in HTTP header.
-   * Deploy a web application to domain1 through istio ingress http port 
-   * using host information in HTTP header. 
-   * Access web application through istio http ingress port using host 
+   * Deploy a web application to domain1 through istio ingress http port
+   * using host information in HTTP header.
+   * Access web application through istio http ingress port using host
    * information in HTTP header.
    * Repeat the same steps for domain2.
    */
@@ -142,23 +142,23 @@ class ItIstioTwoDomainsInImage {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace1);
-    createOcirRepoSecret(domainNamespace2);
+    createTestRepoSecret(domainNamespace1);
+    createTestRepoSecret(domainNamespace2);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName1 = "weblogic-credentials-1";
-    createSecretWithUsernamePassword(adminSecretName1, domainNamespace1, 
+    createSecretWithUsernamePassword(adminSecretName1, domainNamespace1,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     String adminSecretName2 = "weblogic-credentials-2";
-    createSecretWithUsernamePassword(adminSecretName2, domainNamespace2, 
+    createSecretWithUsernamePassword(adminSecretName2, domainNamespace2,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR(s)
-    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, OCIR_SECRET_NAME,
+    createDomainResource(domainUid1, domainNamespace1, adminSecretName1, TEST_IMAGES_REPO_SECRET_NAME,
         replicaCount);
-    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, OCIR_SECRET_NAME,
+    createDomainResource(domainUid2, domainNamespace2, adminSecretName2, TEST_IMAGES_REPO_SECRET_NAME,
         replicaCount);
 
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace1);
@@ -177,7 +177,7 @@ class ItIstioTwoDomainsInImage {
         domainUid2,
         domainNamespace2);
 
-    // check admin services are created 
+    // check admin services are created
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName1, domainNamespace1);
     checkServiceExists(adminServerPodName1, domainNamespace1);
@@ -225,7 +225,7 @@ class ItIstioTwoDomainsInImage {
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http1.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0} for domain1", targetHttpFile);
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
@@ -246,9 +246,9 @@ class ItIstioTwoDomainsInImage {
         () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http2.yaml", templateMap));
     logger.info("Generated Http VS/Gateway file path is {0} for domain2", targetHttpFile);
     deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile2)); 
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile2));
     assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
-    
+
     Path targetDrFile2 = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr2.yaml", templateMap));
     logger.info("Generated DestinationRule file path is {0}", targetDrFile);
@@ -260,23 +260,23 @@ class ItIstioTwoDomainsInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort 
+    // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = 
+      boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
       logger.info("WebLogic console on domain1 is accessible");
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-  
+
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
@@ -287,11 +287,11 @@ class ItIstioTwoDomainsInImage {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace1 + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application on domain1");
 
-    // We can not verify Rest Management console thru Adminstration NodePort 
+    // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = 
+      boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
       assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
       logger.info("WebLogic console on domain2 is accessible");
@@ -299,9 +299,9 @@ class ItIstioTwoDomainsInImage {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
 
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());

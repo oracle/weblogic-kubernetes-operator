@@ -43,21 +43,6 @@ class ItMiiSampleWlsMain {
   }
 
   /**
-   * Generate sample and verify that this matches the source
-   * checked into the mii sample git location.
-   */
-  @Test
-  @Order(1)
-  @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
-  @DisplayName("Test to verify MII Sample source")
-  void testCheckMiiSampleSource() {
-    assertDoesNotThrow(() -> {
-      myItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
-          "Sample source doesn't match with the generated source");
-    });
-  }
-
-  /**
    * Test to verify MII sample WLS initial use case. 
    * Builds image required for the initial use case, creates secrets, and
    * creates domain resource.
@@ -67,7 +52,7 @@ class ItMiiSampleWlsMain {
    * (response includes "Hello World!").
    */
   @Test
-  @Order(2)
+  @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   void testWlsInitialUseCase() {
@@ -87,7 +72,7 @@ class ItMiiSampleWlsMain {
    * "mynewdatasource").
    */
   @Test
-  @Order(3)
+  @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   void testWlsUpdate1UseCase() {
@@ -108,7 +93,7 @@ class ItMiiSampleWlsMain {
    * (response includes "domain1" or "domain2" depending on domain).
    */
   @Test
-  @Order(4)
+  @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   void testWlsUpdate2UseCase() {
@@ -129,7 +114,7 @@ class ItMiiSampleWlsMain {
    * and is at the new version (response includes "v2").
    */
   @Test
-  @Order(5)
+  @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   void testWlsUpdate3UseCase() {
@@ -147,7 +132,7 @@ class ItMiiSampleWlsMain {
    * and detects the updated configured count for the Min and Max Threads Constraints.
    */
   @Test
-  @Order(6)
+  @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case")
   void testWlsUpdate4UseCase() {

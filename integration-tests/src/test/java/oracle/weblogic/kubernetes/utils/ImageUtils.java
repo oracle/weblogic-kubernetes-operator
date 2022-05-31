@@ -18,25 +18,24 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -449,27 +448,29 @@ public class ImageUtils {
   }
 
   /**
-   * Create secret for OCR registry credentials in the specified namespace.
-   *
-   * @param namespace namespace in which the secret will be created
-   */
-  public static void createOcrRepoSecret(String namespace) {
-    LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret {0} in namespace {1}", OCR_SECRET_NAME, namespace);
-    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-  }
-
-
-  /**
    * Create a Docker registry secret in the specified namespace.
+   * for BASE_IMAGES_REPO to download base images.
    *
    * @param namespace the namespace in which the secret will be created
    */
-  public static void createOcirRepoSecret(String namespace) {
+  public static void createBaseRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
-    logger.info("Creating image pull secret {0} in namespace {1}", OCIR_SECRET_NAME, namespace);
-    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
-        OCIR_REGISTRY, OCIR_SECRET_NAME, namespace);
+    logger.info("Creating base image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
+    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+            TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_SECRET_NAME, namespace);
+  }
+
+  /**
+   * Create a Docker registry secret in the specified namespace.
+   * for TEST_IMAGES_REPO to upload/download test images.
+   * @param namespace the namespace in which the secret will be created
+   */
+  public static void createTestRepoSecret(String namespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
+    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
+            TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
+            TEST_IMAGES_REPO, TEST_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**
@@ -520,10 +521,8 @@ public class ImageUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-      createOcrRepoSecret(namespace);
-    } else {
-      createOcirRepoSecret(namespace);
+    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
+      createBaseRepoSecret(namespace);
     }
   }
 
@@ -537,14 +536,9 @@ public class ImageUtils {
     // push image, if necessary
     if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
       // docker login, if necessary
-      if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-        logger.info("docker login");
-        testUntil(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
-            logger,
-            "docker login to repo {0} succeeds",
-            OCIR_REGISTRY);
-      }
-
+      logger.info("docker login");
+      assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
+           BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), "docker login failed");
       logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
       testUntil(() -> dockerPush(dockerImage),
           logger,
@@ -582,8 +576,8 @@ public class ImageUtils {
     }
 
     //create registry docker secret
-    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
-        OCIR_REGISTRY, secretName, namespace);
+    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+            TestConstants.BASE_IMAGES_REPO, secretName, namespace);
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(image);
 
