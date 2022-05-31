@@ -166,6 +166,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
         // docker login to BASE_IMAGES_REPO 
+        logger.info("docker login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
         testUntil(withVeryLongRetryPolicy,
                 () -> dockerLogin(TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
