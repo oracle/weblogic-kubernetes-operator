@@ -51,9 +51,6 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
-  public static final String REPO_DUMMY_VALUE = "dummy";
-
-
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
   // Default for BASE_IMAGES_REPO is phx.ocir.io
