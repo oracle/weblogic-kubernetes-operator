@@ -29,12 +29,12 @@ weight: 7
    - **Option 1**: If you decided to use the ready-made, off-the-shelf auxiliary image and skipped the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then create the domain using following `kubectl apply` command. This command uses the pre-created WLS Domain YAML file from github.
 
        ```shell
-       $ kubectl apply -f https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/mii-aux-image-domain.yaml
        ```
    - **Option 2**: If you created an auxiliary image by following the steps in the optional [create auxiliary image]({{< relref "/quickstart/create-auxiliary-image.md" >}}) section, then use the following steps to create the domain.
 
        1. Prepare the domain resource.
-          1. Copy the following WLS Domain YAML to a file called `/tmp/sample/mii-aux-image-domain.yaml` or similar. 
+          1. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/mii-aux-image-domain.yaml` or similar. 
 
                 {{%expand "Click here to view the WLS Domain YAML file using auxiliary images." %}}
     apiVersion: "weblogic.oracle/v9"
@@ -85,7 +85,7 @@ weight: 7
   
       # Identify which Secret contains the credentials for pulling an image
       imagePullSecrets:
-      - name: operator-repo-credentials
+      - name: ocr-credentials
   
       # Identify which Secret contains the WebLogic Admin credentials,
       # the secret must contain 'username' and 'password' fields.
@@ -195,7 +195,7 @@ weight: 7
        3. Create the domain by applying the domain resource. Run the following command:
 
           ```shell
-          $ kubectl apply -f /tmp/sample/mii-aux-image-domain.yaml
+          $ kubectl apply -f /tmp/quickstart/mii-aux-image-domain.yaml
           ```
 
 
@@ -219,7 +219,7 @@ weight: 7
     $ kubectl get services -n sample-domain1-ns
     ```
 
-1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file. Copy the following WLS Domain YAML to a file called /tmp/sample/ingress-route.yaml or similar:
+1.	Create an ingress route for the domain, in the domain namespace, by using the following YAML file. Copy the following WLS Domain YAML to a file called `/tmp/quickstart/ingress-route.yaml` or similar:
 
 
     {{%expand "Click here to view the ingress route YAML file." %}}
@@ -252,7 +252,7 @@ weight: 7
           port: 8001
     {{% /expand %}}
     ```shell
-    $ kubectl apply -f /tmp/sample/ingress-route.yaml \
+    $ kubectl apply -f /tmp/quickstart/ingress-route.yaml \
       --namespace sample-domain1-ns 
     ```
 

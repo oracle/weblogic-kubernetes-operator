@@ -12,7 +12,9 @@ description = "Auxiliary images are an alternative approach for supplying a doma
 * [Create the auxiliary image](#create-the-auxiliary-image)
 
 #### Introduction
-The auxiliary image is your domain image containing WDT model files, application archives, and the WDT installation files. The instructions in following sections will guide you, step-by-step, through the process of creating an auxiliary image. This lets you understand and customize the auxiliary image creation steps. If you wish to use a ready-made, off-the-shelf auxiliary image instead of creating your own image, then you can skip to the next section and revisit this section at a later time to learn the auxiliary image creation process.
+The quick start guide uses the Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) and supplies the WebLogic configuration using the [WebLogic Deployment Tool](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) model YAML file in a separate [auxiliary image]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}). The WDT model YAML file compactly defines a WebLogic domain and is a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. WDT model supports including application archives in a ZIP file which is also supplied using the auxiliary image. 
+
+The instructions in following sections will guide you, step-by-step, through the process of creating an auxiliary image using [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). This lets you understand and customize the auxiliary image creation steps. If you wish to use a ready-made, off-the-shelf auxiliary image instead of creating your own image, then you can skip to the next section and revisit this section at a later time to learn the auxiliary image creation process.
 
 
 #### Prerequisites
@@ -27,7 +29,7 @@ The auxiliary image is your domain image containing WDT model files, application
    ```
    The `rm -rf` command is included in case there's an
    old version of the tool from a
-   previous run of this quickstart.
+   previous run of this quickstart tutorial.
 
    ```shell
    $ cd /tmp/quickstart/tools
@@ -82,15 +84,15 @@ The auxiliary image is your domain image containing WDT model files, application
 
 
    ```
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/resources/model.yaml -o /tmp/quickstart/models/model.yaml
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/model.yaml -o /tmp/quickstart/models/model.yaml
    ```
 
    ```
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/resources/variables.properties -o /tmp/quickstart/models/variables.properties
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/variables.properties -o /tmp/quickstart/models/variables.properties
    ```
 
    ```
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/resources/archive.zip -o /tmp/quickstart/models/archive.zip
+   $ curl -m 120 -fL https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/resources/archive.zip -o /tmp/quickstart/models/archive.zip
    ```
 
 #### Create the auxiliary image

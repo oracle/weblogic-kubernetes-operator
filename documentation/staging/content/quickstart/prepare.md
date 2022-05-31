@@ -32,7 +32,7 @@ weight: 5
 1. Create a docker-registry secret to enable pulling the example image from the registry.
 
    ```shell
-   $ kubectl create secret docker-registry operator-repo-credentials \
+   $ kubectl create secret docker-registry ocr-credentials \
         --docker-server=container-registry.oracle.com \
         --docker-username=YOUR_REGISTRY_USERNAME \
         --docker-password=YOUR_REGISTRY_PASSWORD \

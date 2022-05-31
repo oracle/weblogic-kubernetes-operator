@@ -21,7 +21,7 @@ weight: 8
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
     ```
 
-1.	Confirm that the WebLogic Server instance Pods and Domain are gone:
+1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone:
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
