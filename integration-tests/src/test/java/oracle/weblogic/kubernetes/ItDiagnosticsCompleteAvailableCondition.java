@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -150,7 +151,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Test domain status condition with serverStartPolicy set to ADMIN_ONLY.
    * Verify the following conditions are generated:
    * type: Completed, status: true
-   * type: Available, status: true
+   * type: Available, status: false
    * Verify no Failed type condition generated.
    */
   @Test
@@ -333,6 +334,25 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   /**
    * Test domain status condition with cluster replica set to larger than max size of cluster.
+   * Verify the patch operation failed.
+   */
+  @Test
+  @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
+  void testCompleteAvailableConditionWithReplicaExceedMaxSizeWithoutChangingIntrospectVersion() {
+    String patchStr;
+    logger.info("patch the domain resource with replica larger than max size of cluster and change introspectVersion");
+    int newReplicaCount = maxClusterSize + 1;
+    patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
+
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    assertFalse(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+  }
+
+  /**
+   * Test domain status condition with cluster replica set to larger than max size of cluster and introspectVersion
+   * changed.
    * Verify all the cluster servers pods will be up and running.
    * Verify the following conditions are generated:
    * type: Completed, status: false
@@ -341,12 +361,13 @@ class ItDiagnosticsCompleteAvailableCondition {
    */
   @Test
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
-  void testCompleteAvailableConditionWithReplicaExceedMaxSize() {
+  void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
     String patchStr;
     try {
       logger.info("patch the domain resource with replica larger than max size of cluster");
       int newReplicaCount = maxClusterSize + 1;
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "}]";
+      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),

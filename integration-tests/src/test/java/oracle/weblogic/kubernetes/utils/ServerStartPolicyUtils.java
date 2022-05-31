@@ -290,7 +290,7 @@ public class ServerStartPolicyUtils {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(600L)));
 
     setPodAntiAffinity(domain);
 
