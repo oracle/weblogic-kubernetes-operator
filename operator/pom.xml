@@ -223,6 +223,7 @@
                 <classpath/>
                 <argument>oracle.kubernetes.operator.helpers.CrdHelper</argument>
                 <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
+                <argument>${project.basedir}/../kubernetes/crd/cluster-crd.yaml</argument>
               </arguments>
             </configuration>
           </execution>

@@ -32,6 +32,7 @@ import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,6 @@ class CrdHelperTest {
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
   public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
 
-  private V1CustomResourceDefinition defaultCrd;
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -77,7 +77,7 @@ class CrdHelperTest {
   private final TerminalStep terminalStep = new TerminalStep();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
-  private V1CustomResourceDefinition defineDefaultCrd() {
+  private V1CustomResourceDefinition defineDomainCrd() {
     return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
   }
 
@@ -122,8 +122,7 @@ class CrdHelperTest {
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(Certificates.class, "getPath", getInMemoryPath));
     mementos.add(TuningParametersStub.install());
-
-    defaultCrd = defineDefaultCrd();
+    mementos.add(UnitTestHash.install());
   }
 
   @AfterEach
@@ -135,24 +134,39 @@ class CrdHelperTest {
 
   @Test
   void verifyOperatorMapPropertiesGenerated() {
-    assertThat(getAdditionalPropertiesMap("spec", "serverService", "labels"), hasEntry("type", "string"));
-    assertThat(getAdditionalPropertiesMap("spec", "serverService", "annotations"), hasEntry("type", "string"));
-    assertThat(getAdditionalPropertiesMap("spec", "adminServer", "adminService", "labels"), hasEntry("type", "string"));
+    final V1CustomResourceDefinition crd = defineDomainCrd();
+    assertThat(getAdditionalPropertiesMap(crd, "spec", "serverService", "labels"), hasEntry("type", "string"));
+    assertThat(getAdditionalPropertiesMap(crd, "spec", "serverService", "annotations"), hasEntry("type", "string"));
     assertThat(
-          getAdditionalPropertiesMap("spec", "adminServer", "adminService", "annotations"),
-          hasEntry("type", "string"));
-    assertThat(getAdditionalPropertiesMap("spec", "serverPod", "resources", "limits"), hasEntry("type", "string"));
+        getAdditionalPropertiesMap(crd, "spec", "adminServer", "adminService", "labels"),
+        hasEntry("type", "string"));
+    assertThat(
+        getAdditionalPropertiesMap(crd, "spec", "adminServer", "adminService", "annotations"),
+        hasEntry("type", "string"));
+    assertThat(getAdditionalPropertiesMap(crd, "spec", "serverPod", "resources", "limits"), hasEntry("type", "string"));
   }
 
+  @Nullable
   @SuppressWarnings({"ConstantConditions", "unchecked"})
-  <T> Map<String, T> getAdditionalPropertiesMap(String... pathElements) {
-    V1JSONSchemaProps schemaProps = defaultCrd.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema();
+  private <T> Map<String, T> getAdditionalPropertiesMap(V1CustomResourceDefinition crd, String... pathElements) {
+    V1JSONSchemaProps schemaProps = getProperties(crd, pathElements);
+
+    assertThat(schemaProps.getAdditionalProperties(), instanceOf(Map.class));
+    return (Map<String, T>) schemaProps.getAdditionalProperties();
+  }
+
+  @Nullable
+  private String getPropertiesType(V1CustomResourceDefinition crd, String... pathElements) {
+    return getProperties(crd, pathElements).getType();
+  }
+
+  @Nullable
+  private V1JSONSchemaProps getProperties(V1CustomResourceDefinition crd, String[] pathElements) {
+    V1JSONSchemaProps schemaProps = crd.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema();
     for (String pathElement : pathElements) {
       schemaProps = schemaProps.getProperties().get(pathElement);
     }
-
-    assertThat(schemaProps.getAdditionalProperties(), instanceOf(Map.class));
-    return (Map<String,T>) schemaProps.getAdditionalProperties();
+    return schemaProps;
   }
 
   @Test
@@ -232,14 +246,15 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasNoneConversionStrategy_replaceIt() {
-    defaultCrd
+    final V1CustomResourceDefinition crd = defineDomainCrd();
+    crd
             .getSpec()
             .addVersionsItem(
                     new V1CustomResourceDefinitionVersion()
                             .served(true)
                             .name(KubernetesConstants.DOMAIN_VERSION))
             .conversion(new V1CustomResourceConversion().strategy("None"));
-    testSupport.defineResources(defaultCrd);
+    testSupport.defineResources(crd);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
 
@@ -248,11 +263,12 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasCompatibleConversionWebhook_dontReplaceIt() {
+    V1CustomResourceDefinition crd = defineDomainCrd();
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    defaultCrd.getSpec().addVersionsItem(
+    crd.getSpec().addVersionsItem(
         new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("asdf"));
-    testSupport.defineResources(defaultCrd);
+    testSupport.defineResources(crd);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
@@ -260,11 +276,12 @@ class CrdHelperTest {
 
   @Test
   void whenExistingCrdHasIncompatibleConversionWebhook_replaceIt() {
+    V1CustomResourceDefinition crd = defineDomainCrd();
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    defaultCrd.getSpec().addVersionsItem(
+    crd.getSpec().addVersionsItem(
         new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
-    testSupport.defineResources(defaultCrd);
+    testSupport.defineResources(crd);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
     assertThat(logRecords, containsInfo(CREATING_CRD));
@@ -272,11 +289,12 @@ class CrdHelperTest {
 
   @Test
   void whenCrdStepCalledWithNullProductVersionAndIncompatibleConversionWebhook_replaceIt() {
+    V1CustomResourceDefinition crd = defineDomainCrd();
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    defaultCrd.getSpec().addVersionsItem(
+    crd.getSpec().addVersionsItem(
         new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
-    testSupport.defineResources(defaultCrd);
+    testSupport.defineResources(crd);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(null, getCertificates()));
     assertThat(logRecords, containsInfo(CREATING_CRD));
@@ -376,35 +394,70 @@ class CrdHelperTest {
   }
 
   @Test
-  void whenCrdWritten_containsPreserveFieldsAnnotation() throws URISyntaxException {
-    CrdHelper.writeCrdFiles("/crd.yaml");
-
-    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
-  }
-
-  @Test
-  void whenCrdCreatedWithMainMethod_containsPreserveFieldsAnnotation() throws URISyntaxException {
-    CrdHelper.main("/crd.yaml");
-
-    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
-  }
-
-  @Test
-  void whenCrdCreatedWithRelativeFileName_containsPreserveFieldsAnnotation() throws URISyntaxException {
-    CrdHelper.main("crd.yaml");
-
-    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
-  }
-
-  @Test
   void whenCrdMainCalledWithNoArguments_illegalArgumentExceptionThrown() {
     Assertions.assertThrows(IllegalArgumentException.class, CrdHelper::main);
+  }
+
+  @Test
+  void whenCrdMainCalledWithJustOneArgument_illegalArgumentExceptionThrown() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> CrdHelper.main("/crd.yaml"));
+  }
+
+  @Test
+  void whenDomainCrdCreatedWithMainMethod_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("/crd.yaml", "/cluster-crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
+
+  @Test
+  void whenDomainCrdCreatedWithRelativeFileName_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("crd.yaml", "cluster-crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
+
+  @Test
+  void whenClusterCrdCreatedWithMainMethod_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("/crd.yaml", "/cluster-crd.yaml");
+
+    assertThat(fileSystem.getContents("/cluster-crd.yaml"), notNullValue());
+  }
+
+  @Test
+  void whenClusterCrdCreatedWithRelativeFileName_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.main("crd.yaml", "cluster-crd.yaml");
+
+    assertThat(fileSystem.getContents("/cluster-crd.yaml"), notNullValue());
   }
 
   @Test
   void testCrdCreationExceptionWhenWritingCrd() throws NoSuchFieldException {
     StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunctionWithException);
 
-    Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> CrdHelper.main("crd.yaml"));
+    Assertions.assertThrows(CrdHelper.CrdCreationException.class, () -> CrdHelper.main("crd.yaml", "cluster.yaml"));
   }
+
+  @Test
+  void whenClusterCrdCreated_specContainsFields() {
+    V1CustomResourceDefinition crd = defineClusterCrd();
+    assertThat(getPropertiesType(crd, "spec", "clusterName"), equalTo("string"));
+    assertThat(getPropertiesType(crd, "spec", "replicas"), equalTo("number"));
+  }
+
+  private V1CustomResourceDefinition defineClusterCrd() {
+    return new CrdHelper.ClusterCrdContext().createModel(PRODUCT_VERSION, null);
+  }
+
+
+  @Test
+  void whenClusterCrdCreated_statusContainsExpectedFields() {
+    V1CustomResourceDefinition crd = defineClusterCrd();
+    assertThat(getPropertiesType(crd, "spec", "replicas"), equalTo("number"));
+    assertThat(getPropertiesType(crd, "status", "readyReplicas"), equalTo("number"));
+    assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("number"));
+  }
+
+  // todo check additional arguments: if second arg not present: error or skip cluster resource ?
+
 }

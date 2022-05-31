@@ -51,6 +51,8 @@ import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
@@ -75,6 +77,22 @@ public class CrdHelper {
   public static final String VERSION_V1 = "v1";
   public static final String WEBHOOK_PATH = "/webhook";
 
+  private enum CrdType {
+    DOMAIN {
+      @Override
+      CrdContext createContext() {
+        return new DomainCrdContext();
+      }
+    }, CLUSTER {
+      @Override
+      CrdContext createContext() {
+        return new ClusterCrdContext();
+      }
+    };
+
+    abstract CrdContext createContext();
+  }
+
   private CrdHelper() {
   }
 
@@ -83,19 +101,18 @@ public class CrdHelper {
    * @param args Arguments that must be one value giving file name to create
    */
   public static void main(String... args) throws URISyntaxException {
-    if (args == null || args.length != 1) {
+    if (args == null || args.length != CrdType.values().length) {
       throw new IllegalArgumentException();
     }
 
-    writeCrdFiles(args[0]);
+    writeCrdFiles(args);
   }
 
-  static void writeCrdFiles(String crdFileName) throws URISyntaxException {
-    CrdContext context = new DomainCrdContext();
-
-    final URI outputFile = asFileURI(crdFileName);
-
-    writeAsYaml(outputFile, context.model);
+  static void writeCrdFiles(String... filenames) throws URISyntaxException {
+    for (CrdType type : CrdType.values()) {
+      final URI outputFile = asFileURI(filenames[type.ordinal()]);
+      writeAsYaml(outputFile, type.createContext().model);
+    }
   }
 
   private static URI asFileURI(String fileName) throws URISyntaxException {
@@ -639,12 +656,12 @@ public class CrdHelper {
 
     @Override
     Class<?> getSpecClass() {
-      return Object.class;
+      return Cluster.class;
     }
 
     @Override
     Class<?> getStatusClass() {
-      return Objects.class;
+      return ClusterStatus.class;
     }
 
     @Override

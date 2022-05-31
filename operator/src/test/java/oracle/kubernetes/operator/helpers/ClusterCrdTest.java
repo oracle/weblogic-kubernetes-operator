@@ -38,7 +38,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class ClusterCrdTest {
 
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
-  private static final URL SCHEMA_ROOT = ClusterCrdTest.class.getResource("/schema");
   public static final String EMPTY_YAML = "{}";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -46,7 +45,6 @@ class ClusterCrdTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
   private final Function<URI, Path> pathFunction = fileSystem::getPath;
-  private V1CustomResourceDefinition defaultCrd;
 
   private static V1CustomResourceDefinition createCrd() {
     return new CrdHelper.ClusterCrdContext().createModel(PRODUCT_VERSION, getCertificates());
@@ -61,8 +59,6 @@ class ClusterCrdTest {
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
     mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
     mementos.add(TuningParametersStub.install());
-
-    defaultCrd = createCrd();
   }
 
   @AfterEach
@@ -72,6 +68,7 @@ class ClusterCrdTest {
 
   @Test
   void defaultCrd_hasExpectedNames() {
+    final V1CustomResourceDefinition defaultCrd = createCrd();
     assertThat(defaultCrd.getSpec().getNames().getKind(), equalTo(KubernetesConstants.CLUSTER));
     assertThat(defaultCrd.getSpec().getNames().getSingular(), equalTo(KubernetesConstants.CLUSTER_SINGULAR));
     assertThat(defaultCrd.getSpec().getNames().getPlural(), equalTo(KubernetesConstants.CLUSTER_PLURAL));
@@ -81,7 +78,7 @@ class ClusterCrdTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   void defaultCrd_hasExpectedMetaData() {
-    assertThat(defaultCrd.getMetadata().getName(), equalTo(KubernetesConstants.CLUSTERS_CRD_NAME));
+    assertThat(createCrd().getMetadata().getName(), equalTo(KubernetesConstants.CLUSTERS_CRD_NAME));
   }
 
   @Test
@@ -99,6 +96,7 @@ class ClusterCrdTest {
 
   @SuppressWarnings("ConstantConditions")
   private void createCrdFile(String fileName) {
+    final URL SCHEMA_ROOT = ClusterCrdTest.class.getResource("/schema");
     fileSystem.defineFile(SCHEMA_ROOT.getPath() + fileName, EMPTY_YAML);
   }
 
@@ -113,6 +111,6 @@ class ClusterCrdTest {
 
   @Test
   void crdDoesNotHaveConversionWebhook() {
-    assertThat(defaultCrd.getSpec().getConversion(), nullValue());
+    assertThat(createCrd().getSpec().getConversion(), nullValue());
   }
 }
