@@ -43,8 +43,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -64,9 +64,9 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -146,7 +146,7 @@ class ItCrossDomainTransaction {
     final int dbListenerPort = getNextFreePort();
     ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
     dbUrl = ORACLEDBURLPREFIX + domain2Namespace + ORACLEDBSUFFIX;
-    createSecretForBaseImages(domain2Namespace);
+    createBaseRepoSecret(domain2Namespace);
 
     //Start oracleDB
     logger.info("Start Oracle DB with namespace: {0}, dbListenerPort:{1}",
@@ -183,11 +183,11 @@ class ItCrossDomainTransaction {
   public void beforeEach() {
     int replicaCount = 2;
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i, 
+      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i,
             domainUid2, domain2Namespace);
     }
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i, 
+      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i,
             domainUid1, domain1Namespace);
     }
   }
@@ -237,7 +237,7 @@ class ItCrossDomainTransaction {
 
     //build application archive
 
-    Path targetDir = Paths.get(WORK_DIR, 
+    Path targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace, targetDir);
@@ -249,7 +249,7 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
         ItCrossDomainTransaction.class.getName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace, targetDir);
@@ -261,7 +261,7 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
         ItCrossDomainTransaction.class.getName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
         "build", domain1Namespace, targetDir);
@@ -289,7 +289,7 @@ class ItCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
-    targetDir = Paths.get(WORK_DIR, 
+    targetDir = Paths.get(WORK_DIR,
          ItCrossDomainTransaction.class.getName() + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
         "build", domain1Namespace, targetDir);
@@ -512,10 +512,10 @@ class ItCrossDomainTransaction {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    createTestRepoSecret(domainNamespace);
 
     // create the domain CR
-    createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
+    createDomainResource(domainUid, domainNamespace, adminSecretName, TEST_IMAGES_REPO_SECRET_NAME,
         replicaCount, domainImage);
 
     // wait for the domain to exist
@@ -544,9 +544,9 @@ class ItCrossDomainTransaction {
     adminExtSvcRouteHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     // The fail inject test case, the response to the curl command takes longer than the default timeout of 30s
     // So, have to increase the proxy timeout for the route
-    String command = "oc -n " + domainNamespace + " annotate route " 
-                      + getExternalServicePodName(adminServerPodName) 
-                      + " --overwrite haproxy.router.openshift.io/timeout=600s"; 
+    String command = "oc -n " + domainNamespace + " annotate route "
+                      + getExternalServicePodName(adminServerPodName)
+                      + " --overwrite haproxy.router.openshift.io/timeout=600s";
     logger.info("command to set timeout = {0}", command);
     assertDoesNotThrow(
         () -> exec(command, true));
