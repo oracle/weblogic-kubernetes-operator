@@ -51,6 +51,7 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -62,12 +63,12 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -81,16 +82,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 
 /**
  * Utility class to start DB service and RCU schema.
@@ -125,7 +124,7 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
+    createBaseRepoSecret(dbNamespace);
 
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
@@ -245,7 +244,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
         dbNamespace, dbListenerPort);
@@ -342,7 +341,7 @@ public class DbUtils {
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
+                            .name(TestConstants.BASE_IMAGES_REPO_SECRET_NAME))));  // secret for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
@@ -705,10 +704,11 @@ public class DbUtils {
     FileUtils.copy(operatorYamlSrcFile, operatorYamlDestFile);
     replaceStringInFile(operatorYamlDestFile.toString(), "replicas: 3", "replicas: 1");
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
-    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", OCIR_SECRET_NAME);
+    replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
         "container-registry.oracle.com/database/operator:0.1.0", DB_OPERATOR_IMAGE);
-    createOcirRepoSecret(namespace);
+    createTestRepoSecret(namespace);
+    createBaseRepoSecret(namespace);
 
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + operatorYamlDestFile);
@@ -761,7 +761,7 @@ public class DbUtils {
       String namespace) throws ApiException, IOException {
 
     LoggingFacade logger = getLogger();
-    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    final String DB_IMAGE_19C = DB_IMAGE_NAME + ":" + DB_19C_IMAGE_TAG;
     String hostPath = Paths.get(WORK_DIR, namespace, "oracledatabase").toString();
     String secretName = "db-password";
     String secretKey = "password";
@@ -774,7 +774,7 @@ public class DbUtils {
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
 
-    createOcirRepoSecret(namespace);
+    createTestRepoSecret(namespace);
 
     createHostPathProvisioner(namespace, hostPath);
 
@@ -788,7 +788,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCIR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));

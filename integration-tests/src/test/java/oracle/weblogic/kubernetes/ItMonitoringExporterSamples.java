@@ -47,10 +47,10 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -409,7 +409,7 @@ class ItMonitoringExporterSamples {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        labelMap, OCIR_SECRET_NAME), "Failed to start webhook");
+        labelMap, BASE_IMAGES_REPO_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -488,7 +488,7 @@ class ItMonitoringExporterSamples {
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, OCIR_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, BASE_IMAGES_REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");
