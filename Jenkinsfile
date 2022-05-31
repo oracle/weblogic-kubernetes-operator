@@ -491,7 +491,9 @@ EOF
                         BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
                         BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
-
+                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
+                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
+                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
                         sh '''
