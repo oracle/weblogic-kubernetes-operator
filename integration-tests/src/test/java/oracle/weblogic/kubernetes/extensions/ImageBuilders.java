@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -38,6 +38,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -49,15 +51,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -149,28 +147,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
-        // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
-          if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
+        // docker login into BASE_IMAGES_REPO
+        withStandardRetryPolicy
                 .conditionEvaluationListener(
                     condition -> logger.info("Waiting for docker login to OCR to be successful"
                             + "(elapsed time {0} ms, remaining time {1} ms)",
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
-          }
-        } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
-          if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to OCIR to be successful"
-                            + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
-          }
-        }
+                .until(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD));
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // The kind clusters can't pull images from OCR using the image pull secret.
@@ -182,7 +166,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           //   4. docker push this new image name
           //   5. use this image name to create the domain resource
           Collection<String> images = new ArrayList<>();
-
           images.add(WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG);
           images.add(FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG);
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
@@ -201,6 +184,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
+          logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
+          logger.info("WEBLOGIC_IMAGE_TAG {0}", WEBLOGIC_IMAGE_TAG);
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
           withStandardRetryPolicy
               .conditionEvaluationListener(
@@ -238,16 +223,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         }
 
-        if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          logger.info("docker login");
-          withStandardRetryPolicy
+        logger.info("docker login into TEST_IMAGES_REPO {0}", TEST_IMAGES_REPO);
+        withStandardRetryPolicy
               .conditionEvaluationListener(
                   condition -> logger.info("Waiting for docker login to OCIR to be successful"
                           + "(elapsed time {0} ms, remaining time {1} ms)",
                       condition.getElapsedTimeInMS(),
                       condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
-        }
+              .until(() -> dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD));
 
         // push the images to repo
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -384,9 +367,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     StringBuilder cmd = new StringBuilder()
         .append(scriptPath.toFile().getAbsolutePath())
-        .append(" -u " + OCIR_USERNAME)
-        .append(" -p \"" + OCIR_PASSWORD + "\"")
-        .append(" -e " + OCIR_REGISTRY);
+        .append(" -u " + TEST_IMAGES_REPO_USERNAME)
+        .append(" -p \"" + TEST_IMAGES_REPO_PASSWORD + "\"")
+        .append(" -e " + TEST_IMAGES_REPO);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(cmd.toString(), true);

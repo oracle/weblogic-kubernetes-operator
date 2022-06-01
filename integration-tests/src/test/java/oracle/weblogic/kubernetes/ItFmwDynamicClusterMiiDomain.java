@@ -39,7 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
@@ -211,7 +211,7 @@ class ItFmwDynamicClusterMiiDomain {
     createDomainCrAndVerify(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+            TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,

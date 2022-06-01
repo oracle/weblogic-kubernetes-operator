@@ -42,8 +42,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -212,7 +212,7 @@ class ItMiiDynamicUpdate {
     // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
         dbSecretName, false, true, false);
 

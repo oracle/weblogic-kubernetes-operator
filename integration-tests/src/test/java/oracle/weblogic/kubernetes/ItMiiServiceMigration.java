@@ -31,7 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -192,7 +192,7 @@ class ItMiiServiceMigration {
 
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
+        adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
         dbSecretName, false, false, true);
 

@@ -53,9 +53,9 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
@@ -423,7 +423,7 @@ class ItElasticLogging {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage);
 
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",

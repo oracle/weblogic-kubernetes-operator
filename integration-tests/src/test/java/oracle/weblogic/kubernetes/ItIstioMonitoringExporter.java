@@ -26,8 +26,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -182,7 +182,7 @@ class ItIstioMonitoringExporter {
     String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
     String exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain2Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
+        domain2Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
     String managedServerPrefix = domain2Uid + "-managed-server";
@@ -270,7 +270,7 @@ class ItIstioMonitoringExporter {
     Domain domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+            TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,

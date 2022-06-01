@@ -105,10 +105,10 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -309,7 +309,7 @@ class ItMonitoringExporter {
     logger.info("install monitoring exporter");
     installMonitoringExporter();
     exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain5Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
+        domain5Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     //this is temporary untill image is released
     //buildMonitoringExporterImage("phx.ocir.io/weblogick8s/exporter:beta");
@@ -873,7 +873,7 @@ class ItMonitoringExporter {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        "app=webhook", OCIR_SECRET_NAME), "Failed to start webhook");
+        "app=webhook", TEST_IMAGES_REPO_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -1008,7 +1008,7 @@ class ItMonitoringExporter {
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, OCIR_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, TEST_IMAGES_REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");
@@ -1517,7 +1517,7 @@ class ItMonitoringExporter {
     // create domain and verify
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+    createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
             namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig);
     String adminServerPodName = domainUid + "-admin-server";
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -44,8 +44,8 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
@@ -326,14 +326,14 @@ public class LoadBalancerUtils {
 
     // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
     // this secret is used only for non-kind cluster
-    if (!secretExists(OCIR_SECRET_NAME, apacheNamespace)) {
+    if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
       logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
       createOcirRepoSecret(apacheNamespace);
     }
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", OCIR_SECRET_NAME);
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
 
     // Helm install parameters
     HelmParams apacheHelmParams = new HelmParams()

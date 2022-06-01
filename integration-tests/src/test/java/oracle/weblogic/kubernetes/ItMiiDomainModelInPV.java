@@ -44,17 +44,16 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -256,7 +255,7 @@ public class ItMiiDomainModelInPV {
     logger.info("Creating domain custom resource with domainUid {0} and image {1}",
         domainUid, image);
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
-        image, adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
+        image, adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount, clusterName);
     domainCR.spec().configuration().model().withModelHome(modelMountPath + "/model");
     domainCR.spec().serverPod()
         .addVolumesItem(new V1Volume()
@@ -364,7 +363,7 @@ public class ItMiiDomainModelInPV {
                             .name(pvName) // mount the persistent volume to /shared inside the pod
                             .mountPath(modelMountPath)))))
             .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
-                .name(BASE_IMAGES_REPO_SECRET)))
+                .name(BASE_IMAGES_REPO_SECRET_NAME)))
             // the persistent volume claim used by the test
             .volumes(Arrays.asList(
                 new V1Volume()
@@ -424,16 +423,14 @@ public class ItMiiDomainModelInPV {
 
   private static void dockerLoginAndPushImage(String image) {
     // login to docker
-    if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      withStandardRetryPolicy
+    logger.info("docker login into TEST_IMAGES_REPO {0}", TEST_IMAGES_REPO);
+    withStandardRetryPolicy
           .conditionEvaluationListener(
               condition -> logger.info("Waiting for docker login to be successful"
                   + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
-    }
+          .until(() -> dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD));
 
     // push the image to repo
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {

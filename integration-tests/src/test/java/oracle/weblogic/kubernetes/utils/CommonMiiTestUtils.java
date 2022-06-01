@@ -58,12 +58,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -137,9 +137,9 @@ public class CommonMiiTestUtils {
   ) {
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
-    logger.info("Create the repo secret {0} to pull the image", OCIR_SECRET_NAME);
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createOcirRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", OCIR_SECRET_NAME));
+            String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -169,7 +169,7 @@ public class CommonMiiTestUtils {
         domainNamespace,
         imageName,
         adminSecretName,
-        OCIR_SECRET_NAME,
+            TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         "cluster-1");
@@ -890,7 +890,7 @@ public class CommonMiiTestUtils {
                                     .claimName(pvcName))))
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1352,7 +1352,7 @@ public class CommonMiiTestUtils {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -1460,7 +1460,7 @@ public class CommonMiiTestUtils {
     Domain domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
-        OCIR_SECRET_NAME,
+            TEST_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,

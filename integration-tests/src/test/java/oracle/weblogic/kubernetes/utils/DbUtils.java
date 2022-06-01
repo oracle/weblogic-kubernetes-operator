@@ -45,7 +45,7 @@ import org.awaitility.core.ConditionFactory;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -209,7 +209,7 @@ public class DbUtils {
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));
+                            .name(BASE_IMAGES_REPO_SECRET_NAME))))));
 
     logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
         dbNamespace, dbListenerPort);
@@ -312,7 +312,7 @@ public class DbUtils {
                     .addArgsItem("infinity")))
             .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET_NAME))));  // this secret is used only for non-kind cluster
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
