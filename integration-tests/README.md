@@ -26,12 +26,18 @@ weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, 
 - Clone the `weblogic-kubernetes-operator` repository.
 - Set up a personal account on `container-registry.oracle.com`.
 - Log in to `https://container-registry.oracle.com` and accept Oracle Standard Terms and Restrictions to pull WebLogic images from `container-registry.oracle.com/middleware/weblogic`.
-- Export the following environment variables before running the tests:
+- Following environment variables must be set before running the tests. BASE_IMAGES_REPO variables are used to download the Oracle public images. TEST_IMAGES_REPO variable are used to store any public image used to certify the WebLogic Kubernates Operator (such as NGNIX Controller, Prometheous etc.) and to store the intermediate WebLogic domain images while running the integration tests.
    ```
     export BASE_IMAGES_REPO="container-registry.oracle.com"
-    export OCR_EMAIL=<ocr_email>
-    export OCR_USERNAME=<ocr_username>
-    export OCR_PASSWORD=<ocr_password> 
+    export BASE_IMAGES_REPO_USERNAME=<ocr_username>
+    export BASE_IMAGES_REPO_PASSWORD=<ocr_password> 
+    export BASE_IMAGES_REPO_EMAIL=<ocr_email>
+
+    export TEST_IMAGES_REPO="local-registry.oracle.com"
+    export TEST_IMAGES_REPO_USERNAME=<local_username>
+    export TEST_IMAGES_REPO_PASSWORD=<local_password> 
+    export TEST_IMAGES_REPO_EMAIL=<local_email>
+
    ```
 - `cd  weblogic-kubernetes-operator` and run the following commands:
   ```
