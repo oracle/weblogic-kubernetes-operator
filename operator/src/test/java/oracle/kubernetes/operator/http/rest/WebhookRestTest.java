@@ -189,10 +189,6 @@ class WebhookRestTest extends RestTestBase {
 
   @Test
   void whenGoodValidatingWebhookRequestSentUsingJavaRequest_hasExpectedResponse() {
-    AdmissionResponseStatus expectedStatus = new AdmissionResponseStatus();
-    expectedStatus.setCode(HTTP_OK);
-    expectedStatus.setMessage(null);
-
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(admissionReview);
 
     assertThat(isAllowed(responseReview), equalTo(true));
