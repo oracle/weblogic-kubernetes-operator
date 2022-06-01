@@ -78,7 +78,7 @@ class ClusterCrdTest {
   @SuppressWarnings("ConstantConditions")
   @Test
   void defaultCrd_hasExpectedMetaData() {
-    assertThat(createCrd().getMetadata().getName(), equalTo(KubernetesConstants.CLUSTERS_CRD_NAME));
+    assertThat(createCrd().getMetadata().getName(), equalTo(KubernetesConstants.CLUSTER_CRD_NAME));
   }
 
   @Test

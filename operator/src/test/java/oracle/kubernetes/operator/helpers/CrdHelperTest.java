@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -32,11 +33,14 @@ import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -48,6 +52,7 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.WebhookMainTest.getCertificates;
+import static oracle.kubernetes.operator.helpers.CrdHelperTest.TestSubject.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -81,18 +86,18 @@ class CrdHelperTest {
     return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
   }
 
-  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
+  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion, String crdName) {
     return new V1CustomResourceDefinition()
         .apiVersion("apiextensions.k8s.io/v1")
         .kind("CustomResourceDefinition")
-        .metadata(createMetadata(operatorVersion))
+        .metadata(createMetadata(operatorVersion, crdName))
         .spec(createSpec());
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion) {
+  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String crdName) {
     return new V1ObjectMeta()
-        .name(KubernetesConstants.CRD_NAME)
+        .name(crdName)
         .putLabelsItem(LabelConstants.OPERATOR_VERSION,
             Optional.ofNullable(operatorVersion).map(SemanticVersion::toString).orElse(null));
   }
@@ -132,8 +137,89 @@ class CrdHelperTest {
     mementos.forEach(Memento::revert);
   }
 
+  enum TestSubject {
+    DOMAIN {
+      @Override
+      @NotNull
+      protected String getExpectedCrdName() {
+        return KubernetesConstants.DOMAIN_CRD_NAME;
+      }
+
+      @NotNull
+      @Override
+      String getLatestCrdVersion() {
+        return KubernetesConstants.DOMAIN_VERSION;
+      }
+
+      @Override
+      @Nonnull
+      Step createCrdStep(SemanticVersion semanticVersion, Certificates certificates) {
+        return CrdHelper.createDomainCrdStep(semanticVersion, certificates);
+      }
+
+      @Nonnull
+      @Override
+      CrdHelper.CrdContext createCrdContext() {
+        return new CrdHelper.DomainCrdContext();
+      }
+    }, CLUSTER {
+      @Override
+      @NotNull
+      protected String getExpectedCrdName() {
+        return KubernetesConstants.CLUSTER_CRD_NAME;
+      }
+
+      @NotNull
+      @Override
+      String getLatestCrdVersion() {
+        return KubernetesConstants.CLUSTER_VERSION;
+      }
+
+      @Override
+      @Nonnull
+      Step createCrdStep(SemanticVersion semanticVersion, Certificates certificates) {
+        return CrdHelper.createClusterCrdStep(semanticVersion);
+      }
+
+      @Nonnull
+      @Override
+      CrdHelper.CrdContext createCrdContext() {
+        return new CrdHelper.ClusterCrdContext();
+      }
+    };
+
+    Step createCrdStep(SemanticVersion semanticVersion) {
+      return createCrdStep(semanticVersion, null);
+    }
+
+    @Nonnull
+    abstract Step createCrdStep(SemanticVersion semanticVersion, Certificates certificates);
+
+    @Nonnull
+    abstract CrdHelper.CrdContext createCrdContext();
+
+    @Nonnull
+    abstract String getExpectedCrdName();
+
+    @Nonnull
+    abstract String getLatestCrdVersion();
+
+    boolean isCurrentCrd(V1CustomResourceDefinition crd) {
+      return getExpectedCrdName().equals(getName(crd));
+    }
+
+    @Nonnull
+    private String getName(V1CustomResourceDefinition crd) {
+      return Optional.of(crd).map(V1CustomResourceDefinition::getMetadata).map(V1ObjectMeta::getName).orElse("");
+    }
+
+    V1CustomResourceDefinition createCrd(Certificates certificates) {
+      return createCrdContext().createModel(CrdHelperTest.PRODUCT_VERSION, certificates);
+    }
+  }
+
   @Test
-  void verifyOperatorMapPropertiesGenerated() {
+  void verifyDomainCrdMapPropertiesGenerated() {
     final V1CustomResourceDefinition crd = defineDomainCrd();
     assertThat(getAdditionalPropertiesMap(crd, "spec", "serverService", "labels"), hasEntry("type", "string"));
     assertThat(getAdditionalPropertiesMap(crd, "spec", "serverService", "annotations"), hasEntry("type", "string"));
@@ -155,11 +241,13 @@ class CrdHelperTest {
     return (Map<String, T>) schemaProps.getAdditionalProperties();
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Nullable
   private String getPropertiesType(V1CustomResourceDefinition crd, String... pathElements) {
     return getProperties(crd, pathElements).getType();
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Nullable
   private V1JSONSchemaProps getProperties(V1CustomResourceDefinition crd, String[] pathElements) {
     V1JSONSchemaProps schemaProps = crd.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema();
@@ -169,56 +257,61 @@ class CrdHelperTest {
     return schemaProps;
   }
 
-  @Test
-  void whenCrdV1SupportedAndNoCrd_createIt() {
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenCrdV1SupportedAndNoCrd_createIt(TestSubject testSubject) {
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
-  @Test
-  void whenNotAuthorizedToReadCrd_retryOnFailureAndLogWarningMessageInOnFailureNoRetry() {
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenNotAuthorizedToReadCrd_retryOnFailureAndLogWarningMessageInOnFailureNoRetry(TestSubject testSubject) {
     consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY);
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
   }
 
-  @Test
-  void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry(TestSubject testSubject) {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
-  @Test
-  void whenNoCrd_proceedToNextStep() {
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenNoCrd_proceedToNextStep(TestSubject testSubject) {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(Step.chain(scriptCrdStep, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
     logRecords.clear();
   }
 
-  @Test
-  void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
-    testSupport.defineResources(defineCrd(PRODUCT_VERSION));
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt(TestSubject testSubject) {
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION, testSubject.getExpectedCrdName()));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION_FUTURE));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION_FUTURE));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
-    V1CustomResourceDefinition crd = crds.stream().findFirst().orElse(null);
+    V1CustomResourceDefinition crd = crds.stream().filter(testSubject::isCurrentCrd).findFirst().orElse(null);
     assertThat(crd, notNullValue());
     assertThat(getProductVersionFromMetadata(crd.getMetadata()), equalTo(PRODUCT_VERSION_FUTURE));
   }
@@ -231,149 +324,158 @@ class CrdHelperTest {
             .orElse(null);
   }
 
-  @Test
-  void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt() {
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingCrdHasFutureVersionWithConversionWebhook_dontReplaceIt(TestSubject testSubject) {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, testSubject.getExpectedCrdName());
     existing.getSpec().addVersionsItem(
-            new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+            new V1CustomResourceDefinitionVersion().served(true).name(testSubject.getLatestCrdVersion()))
             .conversion(new V1CustomResourceConversion().strategy("Webhook"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
-  @Test
-  void whenExistingCrdHasNoneConversionStrategy_replaceIt() {
-    final V1CustomResourceDefinition crd = defineDomainCrd();
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenExistingCrdHasNoneConversionStrategy_replaceIt(TestSubject testSubject) {
+    final V1CustomResourceDefinition crd = testSubject.createCrd(getCertificates());
     crd
-            .getSpec()
-            .addVersionsItem(
-                    new V1CustomResourceDefinitionVersion()
-                            .served(true)
-                            .name(KubernetesConstants.DOMAIN_VERSION))
-            .conversion(new V1CustomResourceConversion().strategy("None"));
+        .getSpec()
+        .addVersionsItem(
+            new V1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(testSubject.getLatestCrdVersion()))
+        .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(crd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
-  @Test
-  void whenExistingCrdHasCompatibleConversionWebhook_dontReplaceIt() {
-    V1CustomResourceDefinition crd = defineDomainCrd();
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingCrdHasCompatibleConversionWebhook_dontReplaceIt(TestSubject testSubject) {
+    final V1CustomResourceDefinition crd = testSubject.createCrd(getCertificates());
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
     crd.getSpec().addVersionsItem(
-        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        new V1CustomResourceDefinitionVersion().served(true).name(testSubject.getLatestCrdVersion()))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("asdf"));
     testSupport.defineResources(crd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION, getCertificates()));
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
-  @Test
-  void whenExistingCrdHasIncompatibleConversionWebhook_replaceIt() {
-    V1CustomResourceDefinition crd = defineDomainCrd();
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenExistingCrdHasIncompatibleConversionWebhook_replaceIt(TestSubject testSubject) {
+    final V1CustomResourceDefinition crd = testSubject.createCrd(getCertificates());
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
     crd.getSpec().addVersionsItem(
-        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        new V1CustomResourceDefinitionVersion().served(true).name(testSubject.getLatestCrdVersion()))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
     testSupport.defineResources(crd);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION, getCertificates()));
+    assertThat(logRecords, containsInfo(CREATING_CRD));
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class, names = {"DOMAIN"})
+  void whenCrdStepCalledWithNullProductVersionAndIncompatibleConversionWebhook_replaceIt(TestSubject testSubject) {
+    final V1CustomResourceDefinition crd = testSubject.createCrd(getCertificates());
+    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
+    crd.getSpec().addVersionsItem(
+        new V1CustomResourceDefinitionVersion().served(true).name(DOMAIN.getLatestCrdVersion()))
+        .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
+    testSupport.defineResources(crd);
+
+    testSupport.runSteps(DOMAIN.createCrdStep(null, getCertificates()));
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
-  void whenCrdStepCalledWithNullProductVersionAndIncompatibleConversionWebhook_replaceIt() {
-    V1CustomResourceDefinition crd = defineDomainCrd();
+  void whenExistingDomainCrdHasFutureVersionAndIncompatibleConversionWebhook_dontReplaceIt() {
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    crd.getSpec().addVersionsItem(
-        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
-        .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
-    testSupport.defineResources(crd);
-
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(null, getCertificates()));
-    assertThat(logRecords, containsInfo(CREATING_CRD));
-  }
-
-  @Test
-  void whenExistingCrdHasFutureVersionAndIncompatibleConversionWebhook_dontReplaceIt() {
-    fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, DOMAIN.getExpectedCrdName());
     existing.getSpec().addVersionsItem(
-        new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+        new V1CustomResourceDefinitionVersion().served(true).name(DOMAIN.getLatestCrdVersion()))
         .conversion(CrdHelper.CrdContext.createConversionWebhook("xyz"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(DOMAIN.createCrdStep(PRODUCT_VERSION, getCertificates()));
 
     assertThat(logRecords, not(containsInfo(CREATING_CRD)));
   }
 
-  @Test
-  void whenExistingCrdHasOldVersionAndNoneConversionStrategy_replaceIt() {
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_OLD);
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenExistingCrdHasOldVersionAndNoneConversionStrategy_replaceIt(TestSubject testSubject) {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_OLD, testSubject.getExpectedCrdName());
     existing
             .getSpec()
             .addVersionsItem(
                     new V1CustomResourceDefinitionVersion()
                             .served(true)
-                            .name(KubernetesConstants.DOMAIN_VERSION))
+                            .name(testSubject.getLatestCrdVersion()))
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
+    testSupport.runSteps(testSubject.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test
-  void whenExistingCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
+  void whenExistingDomainCrdHasFutureVersionButNoneConversionStrategy_updateCrdWithWebhook() {
     fileSystem.defineFile(WEBHOOK_CERTIFICATE, "asdf");
-    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE, DOMAIN.getExpectedCrdName());
     existing
             .getSpec()
             .addVersionsItem(
                     new V1CustomResourceDefinitionVersion()
                             .served(true)
-                            .name(KubernetesConstants.DOMAIN_VERSION))
+                            .name(DOMAIN.getLatestCrdVersion()))
             .conversion(new V1CustomResourceConversion().strategy("None"));
     testSupport.defineResources(existing);
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION, getCertificates()));
+    testSupport.runSteps(DOMAIN.createCrdStep(PRODUCT_VERSION, getCertificates()));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
     assertThat(existing.getSpec().getConversion().getStrategy(), is(WEBHOOK));
   }
 
-  @Test
-  void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
-    testSupport.defineResources(defineCrd(PRODUCT_VERSION_FUTURE));
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt(TestSubject testSubject) {
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_FUTURE, testSubject.getExpectedCrdName()));
 
-    V1CustomResourceDefinition replacement = defineCrd(PRODUCT_VERSION_FUTURE);
+    V1CustomResourceDefinition replacement = defineCrd(PRODUCT_VERSION_FUTURE, testSubject.getExpectedCrdName());
     replacement
         .getSpec()
         .addVersionsItem(
             new V1CustomResourceDefinitionVersion()
                 .served(true)
-                .name(KubernetesConstants.DOMAIN_VERSION));
+                .name(testSubject.getLatestCrdVersion()));
 
-    testSupport.runSteps(CrdHelper.createDomainCrdStep(PRODUCT_VERSION));
+    testSupport.runSteps(DOMAIN.createCrdStep(PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
-  @Test
-  void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry(TestSubject testSubject) {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
-    testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD, testSubject.getExpectedCrdName()));
+    testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, testSubject.getExpectedCrdName(), null, HTTP_UNAUTHORIZED);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -383,10 +485,10 @@ class CrdHelperTest {
   @Test
   void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
-    testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
+    testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD, DOMAIN.getExpectedCrdName()));
+    testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, DOMAIN.getExpectedCrdName(), null);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(PRODUCT_VERSION);
+    Step scriptCrdStep = DOMAIN.createCrdStep(PRODUCT_VERSION);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
@@ -453,7 +555,7 @@ class CrdHelperTest {
   @Test
   void whenClusterCrdCreated_statusContainsExpectedFields() {
     V1CustomResourceDefinition crd = defineClusterCrd();
-    assertThat(getPropertiesType(crd, "spec", "replicas"), equalTo("number"));
+    assertThat(getPropertiesType(crd, "status", "replicas"), equalTo("number"));
     assertThat(getPropertiesType(crd, "status", "readyReplicas"), equalTo("number"));
     assertThat(getPropertiesType(crd, "status", "maximumReplicas"), equalTo("number"));
   }

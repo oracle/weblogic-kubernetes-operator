@@ -241,6 +241,21 @@ public class ClusterResource implements KubernetesObject {
   }
 
   /**
+   * Returns the status for this resource.
+   */
+  public ClusterStatus getStatus() {
+    return status;
+  }
+
+  /**
+   * Sets the status for this resource.
+   * @param status the new status
+   */
+  public void setStatus(ClusterStatus status) {
+    this.status = status;
+  }
+
+  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID

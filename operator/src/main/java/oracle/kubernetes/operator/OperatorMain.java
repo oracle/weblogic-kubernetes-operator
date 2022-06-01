@@ -337,7 +337,7 @@ public class OperatorMain extends BaseMain {
     @Override
     public NextAction apply(Packet packet) {
       return doNext(new CallBuilder().readCustomResourceDefinitionAsync(
-              KubernetesConstants.CRD_NAME, createReadResponseStep(getNext())), packet);
+              KubernetesConstants.DOMAIN_CRD_NAME, createReadResponseStep(getNext())), packet);
     }
   }
 

@@ -636,7 +636,7 @@ public class CrdHelper {
 
     @Override
     protected String getCrdName() {
-      return KubernetesConstants.CRD_NAME;
+      return KubernetesConstants.DOMAIN_CRD_NAME;
     }
 
     @Override
@@ -691,7 +691,7 @@ public class CrdHelper {
 
     @Override
     protected String getCrdName() {
-      return KubernetesConstants.CLUSTERS_CRD_NAME;
+      return KubernetesConstants.CLUSTER_CRD_NAME;
     }
 
     @Override

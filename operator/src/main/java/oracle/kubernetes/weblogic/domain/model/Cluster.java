@@ -27,7 +27,6 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
       + "in the WebLogic domain configuration. Required.")
-  @Nonnull
   private String clusterName;
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */

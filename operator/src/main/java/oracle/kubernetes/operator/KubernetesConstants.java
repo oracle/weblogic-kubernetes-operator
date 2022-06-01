@@ -13,7 +13,7 @@ public interface KubernetesConstants {
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
 
-  String CRD_NAME = "domains.weblogic.oracle";
+  String DOMAIN_CRD_NAME = "domains.weblogic.oracle";
   String DOMAIN = "Domain";
   String DOMAIN_GROUP = "weblogic.oracle";
   String DOMAIN_PLURAL = "domains";
@@ -22,7 +22,7 @@ public interface KubernetesConstants {
   String DOMAIN_VERSION = "v9";
   String OLD_DOMAIN_VERSION = "v8";
 
-  String CLUSTERS_CRD_NAME = "clusters.weblogic.oracle";
+  String CLUSTER_CRD_NAME = "clusters.weblogic.oracle";
   String CLUSTER = "Cluster";
   String CLUSTER_PLURAL = "clusters";
   String CLUSTER_SINGULAR = "cluster";

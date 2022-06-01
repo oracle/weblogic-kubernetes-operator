@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6ba922e260e080bf58f708eb8e7bd9389e90b1bdf554d35093a21dd2ebd58099
+    weblogic.sha256: eb697282e8cf67ddf56fa6cc35cf7deb6c572ab1df40e4a4598eaedc1b57c7c3
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -6594,8 +6594,6 @@ spec:
                         Server instances will start in parallel. Defaults to 0.
                       type: number
                       minimum: 0.0
-                  required:
-                  - clusterName
                 type: array
               serverStartState:
                 description: The WebLogic runtime state in which the server is to

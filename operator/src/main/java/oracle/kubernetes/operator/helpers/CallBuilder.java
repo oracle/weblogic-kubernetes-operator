@@ -71,6 +71,7 @@ import oracle.kubernetes.operator.tuning.CallBuilderTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -321,6 +322,9 @@ public class CallBuilder {
 
   private Integer maxRetryCount = 10;
   private final Boolean watch = null;
+  private final CallFactory<ClusterList> listCluster =
+      (requestParams, usage, cont, callback) ->
+          wrap(listClusterAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
@@ -638,6 +642,35 @@ public class CallBuilder {
       // We are intentionally not limiting the number of retries as described in the implementation note above.
     } while (true);
     return result;
+  }
+
+  /**
+   * Asynchronous step for listing clusters.
+   *
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listClusterAsync(String namespace, ResponseStep<ClusterList> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("listCluster", namespace, null, null, callParams), listCluster);
+  }
+
+  private Call listClusterAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<ClusterList> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .listNamespacedClusterAsync(
+            namespace,
+            pretty,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
   }
 
   /**

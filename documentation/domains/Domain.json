@@ -179,10 +179,7 @@
           "type": "number",
           "minimum": 0
         }
-      },
-      "required": [
-        "clusterName"
-      ]
+      }
     },
     "ClusterService": {
       "type": "object",

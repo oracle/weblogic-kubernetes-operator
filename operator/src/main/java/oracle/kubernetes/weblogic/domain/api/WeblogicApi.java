@@ -15,9 +15,12 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import okhttp3.Call;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
@@ -105,6 +108,39 @@ public class WeblogicApi extends CustomObjectsApi {
     return toDomainList(listNamespacedCustomObject(DOMAIN_GROUP, DOMAIN_VERSION, namespace, DOMAIN_PLURAL, pretty,
         null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
         timeoutSeconds, watch));
+  }
+
+  /**
+   * Asynchronously list clusters.
+   *
+   * @param namespace       namespace
+   * @param pretty          pretty flag
+   * @param cont            continuation
+   * @param fieldSelector   field selector
+   * @param labelSelector   label selector
+   * @param limit           limit
+   * @param resourceVersion resource version
+   * @param timeoutSeconds  timeout
+   * @param watch           watch
+   * @param callback        callback
+   * @return call
+   * @throws ApiException on failure
+   */
+  public Call listNamespacedClusterAsync(
+      String namespace,
+      String pretty,
+      String cont,
+      String fieldSelector,
+      String labelSelector,
+      Integer limit,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      Boolean watch,
+      ApiCallback<ClusterList> callback)
+      throws ApiException {
+    return listNamespacedCustomObjectAsync(DOMAIN_GROUP, CLUSTER_VERSION, namespace, CLUSTER_PLURAL,
+        pretty, null, cont, fieldSelector, labelSelector, limit, resourceVersion, null,
+        timeoutSeconds, watch, wrapForClusterList(callback));
   }
 
   /**
@@ -269,8 +305,40 @@ public class WeblogicApi extends CustomObjectsApi {
     }
   }
 
+  private ApiCallback<Object> wrapForClusterList(ApiCallback<ClusterList> inner) {
+    return Optional.ofNullable(inner).map(ClusterListApiCallbackWrapper::new).orElse(null);
+  }
+
   private ApiCallback<Object> wrapForDomainList(ApiCallback<DomainList> inner) {
     return Optional.ofNullable(inner).map(DomainListApiCallbackWrapper::new).orElse(null);
+  }
+
+  private class ClusterListApiCallbackWrapper implements ApiCallback<Object> {
+    private final ApiCallback<ClusterList> clusterListApiCallback;
+
+    public ClusterListApiCallbackWrapper(ApiCallback<ClusterList> clusterListApiCallback) {
+      this.clusterListApiCallback = clusterListApiCallback;
+    }
+
+    @Override
+    public void onFailure(ApiException e, int i, Map<String, List<String>> map) {
+      clusterListApiCallback.onFailure(e, i, map);
+    }
+
+    @Override
+    public void onSuccess(Object o, int i, Map<String, List<String>> map) {
+      clusterListApiCallback.onSuccess(toClusterList(o), i, map);
+    }
+
+    @Override
+    public void onUploadProgress(long l, long l1, boolean b) {
+      clusterListApiCallback.onUploadProgress(l, l1, b);
+    }
+
+    @Override
+    public void onDownloadProgress(long l, long l1, boolean b) {
+      clusterListApiCallback.onDownloadProgress(l, l1, b);
+    }
   }
 
   private class DomainListApiCallbackWrapper implements ApiCallback<Object> {
@@ -311,6 +379,13 @@ public class WeblogicApi extends CustomObjectsApi {
       return null;
     }
     return getApiClient().getJSON().getGson().fromJson(convertToJson(o), DomainResource.class);
+  }
+
+  private ClusterList toClusterList(Object o) {
+    if (o == null) {
+      return null;
+    }
+    return getApiClient().getJSON().getGson().fromJson(convertToJson(o), ClusterList.class);
   }
 
   private DomainList toDomainList(Object o) {
